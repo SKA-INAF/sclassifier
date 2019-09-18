@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-__title__ = 'sclassencoders'
+__title__ = 'svaeclassifier'
 __version__ = '1.0.0'
 __author__ = 'Simone Riggi'
 __license__ = 'GPL3'

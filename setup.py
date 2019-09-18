@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 """
-Setup for sfinder-nn
+Setup for sclassifier-vae
 """
 import os
 import sys
@@ -14,8 +14,8 @@ def read(fname):
 
 def get_version():
 	""" Get the package version number """
-	import sclassencoders
-	return sclassencoders.__version__
+	import svaeclassifier
+	return svaeclassifier.__version__
 
 
 #reqs = ['numpy>=1.10',
@@ -53,16 +53,16 @@ reqs.append('tensorflow>=1.13')
 data_dir = 'data'
 
 setup(
-	name="sclassencoders",
+	name="svaeclassifier",
 	version=get_version(),
 	author="Simone Riggi",
 	author_email="simone.riggi@gmail.com",
-	description="Source finder unsupervised classification using autoencoders",
+	description="Source finder unsupervised classification using variational autoencoders (VAE)",
 	license = "GPL3",
-	url="https://github.com/SKA-INAF/sclass-autoencoders",
+	url="https://github.com/SKA-INAF/sclassifier-vae",
 	long_description=read('README.md'),
-	packages=['sclassencoders'],
+	packages=['svaeclassifier'],
 	install_requires=reqs,
-	scripts=['scripts/read_imgdata.py'],
+	scripts=['scripts/read_imgdata.py','scripts/train_nn.py'],
 	
 )
