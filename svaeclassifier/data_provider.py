@@ -103,7 +103,11 @@ class DataProvider(object):
 	def set_img_weights(self,w):
 		""" Set input image weights """
 		self.img_weights= w
-	
+
+	def get_data(self):
+		""" Return read data """
+		return self.input_data	
+
 	#############################
 	##     READ INPUT DATA
 	#############################

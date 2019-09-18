@@ -39,6 +39,8 @@ from keras.layers import Flatten
 from keras.layers import Input
 from keras.utils.generic_utils import get_custom_objects
 import tensorflow as tf
+from keras.losses import mse, binary_crossentropy
+
 
 ## GRAPHICS MODULES
 import matplotlib.pyplot as plt
@@ -84,6 +86,7 @@ class VAEClassifier(object):
 		# - NN architecture
 		self.use_shallow_network= True
 		self.inputs= None	
+		self.flattened_inputs= None	
 		self.encoder= None
 		self.nlayers_intermediate= 1
 		self.intermediate_dim= 512
@@ -148,13 +151,13 @@ class VAEClassifier(object):
 		self.ny= imgshape[1]
 		self.nchannels= imgshape[3] 
 		
-		logger.info("Train data size (N,nx,ny,nchan)=(%d,%d,%d)" % (self.nsamples_train,self.nx,self.ny,self.nchannels))
+		logger.info("Train data size (N,nx,ny,nchan)=(%d,%d,%d,%d)" % (self.nsamples_train,self.nx,self.ny,self.nchannels))
 		
 
 		return 0
 
 	#####################################
-	##     SALING FUNCTION
+	##     SAMPLING FUNCTION
 	#####################################
 	def __sampling(self,args):
 		""" Reparameterization trick by sampling from an isotropic unit Gaussian.
@@ -204,32 +207,33 @@ class VAEClassifier(object):
 		#===========================	
 		# - Build model
 		logger.info("Creating VAE model ...")
-		self.outputs = self.decoder(self.encoder(self.inputs)[2])
+		self.flattened_outputs = self.decoder(self.encoder(self.inputs)[2])
+		self.outputs= layers.Reshape( (self.nx,self.ny,self.nchannels) )(self.flattened_outputs)
 		self.vae = Model(self.inputs, self.outputs, name='vae_mlp')
 
 		# - Set model loss = mse_loss or xent_loss + kl_loss
 		# Reconstruction loss
-    if self.use_mse_loss:
-			reconstruction_loss = mse(self.inputs,self.outputs)
-    else:
-			reconstruction_loss = binary_crossentropy(self.inputs,self.outputs)
+		if self.use_mse_loss:
+			reconstruction_loss = mse(self.flattened_inputs,self.flattened_outputs)
+		else:
+			reconstruction_loss = binary_crossentropy(self.flattened_inputs,self.flattened_outputs)
 
-    reconstruction_loss*= self.input_data_dim
+		reconstruction_loss*= self.input_data_dim[1]
 
 		# Kl loss
-    kl_loss = 1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var)
-    kl_loss = K.sum(kl_loss, axis=-1)
-    kl_loss*= -0.5
+		kl_loss = 1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var)
+		kl_loss = K.sum(kl_loss, axis=-1)
+		kl_loss*= -0.5
 
 		# Total loss
-    vae_loss = K.mean(reconstruction_loss + kl_loss)
+		vae_loss = K.mean(reconstruction_loss + kl_loss)
 
-    self.vae.add_loss(vae_loss)    
+		self.vae.add_loss(vae_loss)
 		self.vae.compile(optimizer=self.optimizer)
     
 		# - Print and draw model
 		self.vae.summary()
-    plot_model(self.vae,to_file='vae_mlp.png',show_shapes=True)
+		plot_model(self.vae,to_file='vae_mlp.png',show_shapes=True)
 
 		return 0
 
@@ -247,8 +251,9 @@ class VAEClassifier(object):
 
 		# - Flatten layer
 		x = layers.Flatten()(x)
+		self.flattened_inputs= x
 		self.input_data_dim= K.int_shape(x)
-		logger.info("Input data dim= %d" % (self.input_data_dim))
+		print("Input data dim=", self.input_data_dim)
 
 		# - Intermediate layers
 		for index in range(self.nlayers_intermediate):
@@ -257,10 +262,10 @@ class VAEClassifier(object):
 		# - Output layers
 		self.z_mean = layers.Dense(self.latent_dim,name='z_mean')(x)
 		self.z_log_var = layers.Dense(self.latent_dim,name='z_log_var')(x)
-		self.z = Lambda(self.__sampling, output_shape=(self.latent_dim,), name='z')([z_mean, z_log_var])
+		self.z = Lambda(self.__sampling, output_shape=(self.latent_dim,), name='z')([self.z_mean, self.z_log_var])
 
 		# - Instantiate encoder model
-		self.encoder = Model(self.inputs, [z_mean, z_log_var, z], name='encoder')
+		self.encoder = Model(self.inputs, [self.z_mean, self.z_log_var, self.z], name='encoder')
 
 		# - Print and plot model
 		self.encoder.summary()
@@ -284,7 +289,9 @@ class VAEClassifier(object):
 			x = layers.Dense(self.intermediate_dim, activation=self.intermediate_layer_activation)(x)
 
 		# - Output layer
-		outputs = layers.Dense(self.input_data_dim, activation=self.output_layer_activation)(x)
+		print("self.input_data_dim type=",type(self.input_data_dim))
+		print("self.input_data_dim=",self.input_data_dim[1])
+		outputs = layers.Dense(self.input_data_dim[1], activation=self.output_layer_activation)(x)
 
 		# - Create decoder model
 		self.decoder = Model(latent_inputs, outputs, name='decoder')
@@ -510,7 +517,7 @@ class VAEClassifier(object):
 		#===========================
 		#- Create the network
 		logger.info("Building network architecture ...")
-		#if self.use_shallow_network:
+		if self.use_shallow_network:
 			status= self.__build_shallow_network()
 		#else:
 		#	status= self.__build_network(self.nnarc_file)

@@ -25,11 +25,10 @@ import argparse
 import collections
 
 ## MODULES
-from sfindernn import __version__, __date__
-from sfindernn import logger
-from sfindernn.data_provider import DataProvider
-from sfindernn.network import NNTrainer
-
+from svaeclassifier import __version__, __date__
+from svaeclassifier import logger
+from svaeclassifier.data_provider import DataProvider
+from svaeclassifier.classifier import VAEClassifier
 
 #### GET SCRIPT ARGS ####
 def str2bool(v):
@@ -47,7 +46,6 @@ def get_args():
 	"""This function parses and return arguments passed in"""
 	parser = argparse.ArgumentParser(description="Parse args.")
 
-	# - Input options
 	# - Input options
 	parser.add_argument('-filelists','--filelists', dest='filelists', required=True, nargs='+', type=str, default=[], help='List of image filelists') 
 
@@ -120,26 +118,17 @@ def main():
 	crop_img= args.crop_img
 	nx= args.nx
 	ny= args.ny
-
 	normalize_img= args.normalize_img
 	normdatamin= args.normdatamin
 	normdatamax= args.normdatamax
-
 	normalize_img_to_first_chan= args.normalize_img_to_first_chan
-	
 	apply_weights= args.apply_weights
 	img_weights= args.img_weights
 
 	# - NN architecture
 	nnarcfile= args.nnarcfile
 
-	# - Train data options
-	normalize_targets= args.normalize_targets
-	normalize_inputs= args.normalize_inputs
-	normdatamin= args.normdatamin
-	normdatamax= args.normdatamax
-	test_size= args.test_size
-
+	
 	# - Train options
 	optimizer= args.optimizer
 	learning_rate= args.learning_rate
