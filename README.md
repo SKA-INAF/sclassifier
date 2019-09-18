@@ -1,2 +1,2 @@
-# sclass-autoencoders
-Source classifier using autoencoders
+# sclassifier-vae
+Source classifier using variational autoencoders (VAE)
