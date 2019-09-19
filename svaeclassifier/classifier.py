@@ -85,6 +85,7 @@ class VAEClassifier(object):
 		self.inputs_train= None
 		self.flattened_inputs= None	
 		self.input_data_dim= 0
+		self.encoded_data= None
 		
 		# - NN architecture
 		self.use_shallow_network= True
@@ -112,6 +113,7 @@ class VAEClassifier(object):
 		self.outfile_accuracy= 'nn_accuracy.png'
 		self.outfile_model= 'nn_model.png'
 		self.outfile_nnout_metrics= 'nnout_metrics.dat'
+		self.outfile_encoded_data= 'encoded_data.dat'
 
 	#####################################
 	##     SETTERS/GETTERS
@@ -528,6 +530,18 @@ class VAEClassifier(object):
 		head= '# epoch - loss'
 		Utils.write_ascii(metrics_data,self.outfile_nnout_metrics,head)	
 
+		#================================
+		#==   SAVE ENCODED DATA
+		#================================
+		logger.info("Saving encoded data to file ...")
+		self.encoded_data, _, _= self.encoder.predict(self.inputs_train, batch_size=self.batch_size)
+		print("encoded_data type=",type(self.encoded_data))
+		print("encoded_data len=",len(self.encoded_data))
+		print("encoded_data=",self.encoded_data)
+		N= self.encoded_data.shape[1]
+		
+		head= '# z1 - z2'
+		Utils.write_ascii(self.encoded_data,self.outfile_encoded_data,head)	
 
 
 		return 0
@@ -589,20 +603,13 @@ class VAEClassifier(object):
 		#================================
 		#==   PLOT LOSS
 		#================================
-		# - Plot the total loss, type loss, spars loss
+		# - Plot the total loss
 		logger.info("Plot the network loss metric to file ...")
-		lossNames = ["loss"]
-		plt.style.use("ggplot")
-		#(fig, ax) = plt.subplots(1, 1, figsize=(20,20),squeeze=False)
-		(fig, ax) = plt.subplots(3, 1, figsize=(20,20))
-		
-		# Total loss
-		ax[0].set_title("Total Loss")
-		ax[0].set_xlabel("Epoch #")
-		ax[0].set_ylabel("Loss")
-		ax[0].plot(np.arange(0, self.nepochs), self.train_loss_vs_epoch[0], label="TRAIN SAMPLE")
-		ax[0].legend()		
-
+		plt.figure(figsize=(20,20))
+		plt.xlabel("#epochs")
+		plt.ylabel("loss")
+		plt.title("Total Loss vs Epochs")
+		plt.plot(np.arange(0, self.nepochs), self.train_loss_vs_epoch[0], label="TRAIN SAMPLE")
 		plt.tight_layout()
 		plt.savefig(self.outfile_loss)
 		plt.close()
@@ -610,17 +617,14 @@ class VAEClassifier(object):
 		#================================
 		#==   PLOT ENCODED DATA
 		#================================
-		# - Get input encoded data
-		z_mean, _, _ = self.encoder.predict(self.inputs_train, batch_size=self.batch_size)
-    
 		# - Display a 2D plot of the encoded data in the latent space
+		logger.info("Plot a 2D plot of the encoded data in the latent space ...")
 		plt.figure(figsize=(12, 10))
-		#plt.scatter(z_mean[:, 0], z_mean[:, 1], c=y_test)
-		plt.scatter(z_mean[:, 0], z_mean[:, 1])
+		plt.scatter(self.encoded_data[:, 0], self.encoded_data[:, 1])
 		#plt.colorbar()
-		plt.xlabel("z[0]")
-		plt.ylabel("z[1]")
-		plt.savefig('vae_mean.png')
+		plt.xlabel("z0")
+		plt.ylabel("z1")
+		plt.savefig('encoded_data.png')
 		plt.show()
 
 
