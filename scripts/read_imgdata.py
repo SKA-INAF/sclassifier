@@ -25,9 +25,9 @@ import argparse
 import collections
 
 ## MODULES
-from sclassencoders import __version__, __date__
-from sclassencoders import logger
-from sclassencoders.data_provider import DataProvider
+from svaeclassifier import __version__, __date__
+from svaeclassifier import logger
+from svaeclassifier.data_provider import DataProvider
 
 
 #### GET SCRIPT ARGS ####
