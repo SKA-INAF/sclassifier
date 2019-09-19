@@ -17,6 +17,6 @@ import logging.config
 logging.basicConfig(format="%(asctime)-15s %(levelname)s - %(message)s",datefmt='%Y-%m-%d %H:%M:%S')
 logger= logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-logger.info("This is sfindernn {0}-({1})".format(__version__, __date__))
+logger.info("This is svaeclassifier {0}-({1})".format(__version__, __date__))
 
 

@@ -134,6 +134,9 @@ class VAEClassifier(object):
 		""" Set batch size """
 		self.batch_size= bs
 
+	def set_intermediate_layer_size(self,n):
+		""" Set intermediate layer size """
+		self.intermediate_dim= n
 
 	#####################################
 	##     SET TRAIN DATA

@@ -76,6 +76,7 @@ def get_args():
 	parser.add_argument('-optimizer', '--optimizer', dest='optimizer', required=False, type=str, default='rmsprop', action='store',help='Optimizer used (default=rmsprop)')
 	parser.add_argument('-learning_rate', '--learning_rate', dest='learning_rate', required=False, type=float, default=1.e-4, action='store',help='Learning rate (default=1.e-4)')
 	parser.add_argument('-batch_size', '--batch_size', dest='batch_size', required=False, type=int, default=32, action='store',help='Batch size used in training (default=32)')
+	parser.add_argument('-intermediate_layer_size', '--intermediate_layer_size', dest='intermediate_layer_size', required=False, type=int, default=512, action='store',help='Intermediate dense layer size used in shallow network (default=512)')
 	
 
 	# - Output options
@@ -127,7 +128,7 @@ def main():
 
 	# - NN architecture
 	nnarcfile= args.nnarcfile
-
+	intermediate_layer_size= args.intermediate_layer_size
 	
 	# - Train options
 	optimizer= args.optimizer
@@ -185,6 +186,8 @@ def main():
 	nn.set_learning_rate(learning_rate)	
 	nn.set_batch_size(batch_size)
 	nn.set_nepochs(nepochs)
+
+	nn.set_intermediate_layer_size(intermediate_layer_size)
 	
 	#nn.set_outfile_loss(outfile_loss)
 	#nn.set_outfile_accuracy(outfile_accuracy)	
