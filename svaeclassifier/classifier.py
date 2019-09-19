@@ -81,19 +81,21 @@ class VAEClassifier(object):
 		self.nx= 0
 		self.ny= 0
 		self.nchannels= 1
+		self.inputs= None	
 		self.inputs_train= None
+		self.flattened_inputs= None	
+		self.input_data_dim= 0
 		
 		# - NN architecture
 		self.use_shallow_network= True
-		self.inputs= None	
-		self.flattened_inputs= None	
+		self.fitout= None		
+		self.vae= None
 		self.encoder= None
+		self.decoder= None
 		self.nlayers_intermediate= 1
 		self.intermediate_dim= 512
 		self.intermediate_layer_activation= 'relu'
 		self.output_layer_activation= 'sigmoid'
-		self.decoder= None
-		self.input_data_dim= 0
 		self.z_mean = None
 		self.z_log_var = None
 		self.z = None
@@ -109,6 +111,7 @@ class VAEClassifier(object):
 		self.outfile_loss= 'nn_loss.png'
 		self.outfile_accuracy= 'nn_accuracy.png'
 		self.outfile_model= 'nn_model.png'
+		self.outfile_nnout_metrics= 'nnout_metrics.dat'
 
 	#####################################
 	##     SETTERS/GETTERS
@@ -461,17 +464,31 @@ class VAEClassifier(object):
 	def __train_network(self):
 		""" Train deep network """
 	
+		# - Initialize train/test loss vs epoch
+		self.train_loss_vs_epoch= np.zeros((1,self.nepochs))	
+		deltaLoss_train= 0
+
 		#===========================
 		#==   TRAIN VAE
 		#===========================
 		logger.info("Start VAE training ...")
-		self.vae.fit(
-			x=self.inputs_train,
-			epochs=self.nepochs,
-			batch_size=self.batch_size,
-			validation_data=(self.inputs_train, None)
-		)
-        
+		for epoch in range(self.nepochs):
+			self.fitout= self.vae.fit(
+				x=self.inputs_train,
+				epochs=1,
+				batch_size=self.batch_size,
+				validation_data=(self.inputs_train, None),
+				verbose=1
+			)
+
+			loss_train= self.fitout.history['loss'][0]
+			self.train_loss_vs_epoch[0,epoch]= loss_train
+			if epoch>=1:
+				deltaLoss_train= (loss_train/self.train_loss_vs_epoch[0,epoch-1]-1)*100.
+
+			logger.info("EPOCH %d: loss(train)=%s (dl=%s)" % (epoch,loss_train,deltaLoss_train))
+				
+				
 
 		#===========================
 		#==   SAVE NN
@@ -492,6 +509,25 @@ class VAEClassifier(object):
 		# - Save the networkarchitecture diagram
 		logger.info("Saving network model architecture to file ...")
 		plot_model(self.vae, to_file=self.outfile_model)
+
+
+		#================================
+		#==   SAVE TRAIN METRICS
+		#================================
+		logger.info("Saving train metrics (loss, ...) to file ...")
+		N= self.train_loss_vs_epoch.shape[1]
+		epoch_ids= np.array(range(N))
+		epoch_ids+= 1
+		epoch_ids= epoch_ids.reshape(N,1)
+
+		metrics_data= np.concatenate(
+			(epoch_ids,self.train_loss_vs_epoch.reshape(N,1)),
+			axis=1
+		)
+			
+		head= '# epoch - loss'
+		Utils.write_ascii(metrics_data,self.outfile_nnout_metrics,head)	
+
 
 
 		return 0
@@ -535,5 +571,56 @@ class VAEClassifier(object):
 			logger.error("NN train failed!")
 			return -1
 
+		#===========================
+		#==   PLOT RESULTS
+		#===========================
+		logger.info("Plotting results ...")
+		self.__plot_results()
+
 		return 0
+
+
+	#####################################
+	##     PLOT RESULTS
+	#####################################
+	def __plot_results(self):
+		""" Plot training results """
+
+		#================================
+		#==   PLOT LOSS
+		#================================
+		# - Plot the total loss, type loss, spars loss
+		logger.info("Plot the network loss metric to file ...")
+		lossNames = ["loss"]
+		plt.style.use("ggplot")
+		#(fig, ax) = plt.subplots(1, 1, figsize=(20,20),squeeze=False)
+		(fig, ax) = plt.subplots(3, 1, figsize=(20,20))
+		
+		# Total loss
+		ax[0].set_title("Total Loss")
+		ax[0].set_xlabel("Epoch #")
+		ax[0].set_ylabel("Loss")
+		ax[0].plot(np.arange(0, self.nepochs), self.train_loss_vs_epoch[0], label="TRAIN SAMPLE")
+		ax[0].legend()		
+
+		plt.tight_layout()
+		plt.savefig(self.outfile_loss)
+		plt.close()
+
+		#================================
+		#==   PLOT ENCODED DATA
+		#================================
+		# - Get input encoded data
+		z_mean, _, _ = self.encoder.predict(self.inputs_train, batch_size=self.batch_size)
+    
+		# - Display a 2D plot of the encoded data in the latent space
+		plt.figure(figsize=(12, 10))
+		#plt.scatter(z_mean[:, 0], z_mean[:, 1], c=y_test)
+		plt.scatter(z_mean[:, 0], z_mean[:, 1])
+		#plt.colorbar()
+		plt.xlabel("z[0]")
+		plt.ylabel("z[1]")
+		plt.savefig('vae_mean.png')
+		plt.show()
+
 
