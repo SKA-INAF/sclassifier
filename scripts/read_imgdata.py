@@ -25,9 +25,9 @@ import argparse
 import collections
 
 ## MODULES
-from svaeclassifier import __version__, __date__
-from svaeclassifier import logger
-from svaeclassifier.data_provider import DataProvider
+from sclassifier_vae import __version__, __date__
+from sclassifier_vae import logger
+from sclassifier_vae.data_provider import DataProvider
 
 
 #### GET SCRIPT ARGS ####
@@ -48,6 +48,7 @@ def get_args():
 
 	# - Input options
 	parser.add_argument('-filelists','--filelists', dest='filelists', required=True, nargs='+', type=str, default=[], help='List of image filelists') 
+	parser.add_argument('-catalog_file','--catalog_file', dest='catalog_file', required=False, type=str, default='', help='Caesar source catalog ascii file') 
 
 	# - Data process options
 	parser.add_argument('--crop_img', dest='crop_img', action='store_true',help='Crop input images')	
@@ -92,6 +93,7 @@ def main():
 
 	# - Input filelist
 	filelists= args.filelists
+	catalog_file= args.catalog_file
 	print(filelists)
 
 	# - Data process options	
@@ -122,6 +124,7 @@ def main():
 	dp= DataProvider(filelists=filelists)
 
 	# - Set options
+	dp.set_catalog_filename(catalog_file)
 	dp.enable_inputs_normalization(normalize_img)
 	dp.set_input_data_norm_range(normdatamin,normdatamax)
 	dp.enable_inputs_normalization_to_first_channel(normalize_img_to_first_chan)

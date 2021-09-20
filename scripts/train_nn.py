@@ -25,10 +25,10 @@ import argparse
 import collections
 
 ## MODULES
-from svaeclassifier import __version__, __date__
-from svaeclassifier import logger
-from svaeclassifier.data_provider import DataProvider
-from svaeclassifier.classifier import VAEClassifier
+from sclassifier_vae import __version__, __date__
+from sclassifier_vae import logger
+from sclassifier_vae.data_provider import DataProvider
+from sclassifier_vae.classifier import VAEClassifier
 
 #### GET SCRIPT ARGS ####
 def str2bool(v):
@@ -48,6 +48,7 @@ def get_args():
 
 	# - Input options
 	parser.add_argument('-filelists','--filelists', dest='filelists', required=True, nargs='+', type=str, default=[], help='List of image filelists') 
+	parser.add_argument('-catalog_file','--catalog_file', dest='catalog_file', required=False, type=str, default='', help='Caesar source catalog ascii file') 
 
 	# - Data process options
 	parser.add_argument('--crop_img', dest='crop_img', action='store_true',help='Crop input images')	
@@ -62,6 +63,8 @@ def get_args():
 	
 	parser.add_argument('--normalize_img_to_first_chan', dest='normalize_img_to_first_chan', action='store_true',help='Normalize input images to first channel')	
 	parser.set_defaults(normalize_img_to_first_chan=False)
+	parser.add_argument('--normalize_img_to_chanmax', dest='normalize_img_to_chanmax', action='store_true',help='Normalize input images to channel maximum')	
+	parser.set_defaults(normalize_img_to_chanmax=False)
 
 	parser.add_argument('--apply_weights', dest='apply_weights', action='store_true',help='Apply weights to input image channels')	
 	parser.set_defaults(apply_weights=False)	
@@ -77,8 +80,10 @@ def get_args():
 	parser.add_argument('-learning_rate', '--learning_rate', dest='learning_rate', required=False, type=float, default=1.e-4, action='store',help='Learning rate (default=1.e-4)')
 	parser.add_argument('-batch_size', '--batch_size', dest='batch_size', required=False, type=int, default=32, action='store',help='Batch size used in training (default=32)')
 	parser.add_argument('-intermediate_layer_size', '--intermediate_layer_size', dest='intermediate_layer_size', required=False, type=int, default=512, action='store',help='Intermediate dense layer size used in shallow network (default=512)')
+	parser.add_argument('-n_intermediate_layers', '--n_intermediate_layers', dest='n_intermediate_layers', required=False, type=int, default=1, action='store',help='Number of intermediate dense layers used in shallow network (default=1)')
+	parser.add_argument('-intermediate_layer_size_factor', '--intermediate_layer_size_factor', dest='intermediate_layer_size_factor', required=False, type=float, default=1, action='store',help='Reduction factor used to compute number of neurons in dense layers (default=1)')
 	
-
+	
 	# - Output options
 	#parser.add_argument('-outfile_loss', '--outfile_loss', dest='outfile_loss', required=False, type=str, default='nn_loss.png', action='store',help='Name of NN loss plot file (default=nn_loss.png)')
 	#parser.add_argument('-outfile_accuracy', '--outfile_accuracy', dest='outfile_accuracy', required=False, type=str, default='nn_accuracy.png', action='store',help='Name of NN accuracy plot file (default=nn_accuracy.png)')
@@ -113,6 +118,7 @@ def main():
 
 	# - Input filelist
 	filelists= args.filelists
+	catalog_file= args.catalog_file
 	print(filelists)
 
 	# - Data process options	
@@ -123,13 +129,16 @@ def main():
 	normdatamin= args.normdatamin
 	normdatamax= args.normdatamax
 	normalize_img_to_first_chan= args.normalize_img_to_first_chan
+	normalize_img_to_chanmax= args.normalize_img_to_chanmax
 	apply_weights= args.apply_weights
 	img_weights= args.img_weights
 
 	# - NN architecture
 	nnarcfile= args.nnarcfile
 	intermediate_layer_size= args.intermediate_layer_size
-	
+	n_intermediate_layers= args.n_intermediate_layers
+	intermediate_layer_size_factor= args.intermediate_layer_size_factor
+
 	# - Train options
 	optimizer= args.optimizer
 	learning_rate= args.learning_rate
@@ -159,9 +168,11 @@ def main():
 	dp= DataProvider(filelists=filelists)
 
 	# - Set options
+	dp.set_catalog_filename(catalog_file)
 	dp.enable_inputs_normalization(normalize_img)
 	dp.set_input_data_norm_range(normdatamin,normdatamax)
 	dp.enable_inputs_normalization_to_first_channel(normalize_img_to_first_chan)
+	dp.enable_inputs_normalization_to_chanmax(normalize_img_to_chanmax)
 	dp.enable_img_crop(crop_img)
 	dp.set_img_crop_size(nx,ny)
 	dp.enable_img_weights(apply_weights)
@@ -188,7 +199,9 @@ def main():
 	nn.set_nepochs(nepochs)
 
 	nn.set_intermediate_layer_size(intermediate_layer_size)
-	
+	nn.set_n_intermediate_layers(n_intermediate_layers)
+	nn.set_intermediate_layer_size_factor(intermediate_layer_size_factor)
+
 	#nn.set_outfile_loss(outfile_loss)
 	#nn.set_outfile_accuracy(outfile_accuracy)	
 	#nn.set_outfile_model(outfile_model)
