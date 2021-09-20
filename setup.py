@@ -14,8 +14,8 @@ def read(fname):
 
 def get_version():
 	""" Get the package version number """
-	import svaeclassifier
-	return svaeclassifier.__version__
+	import sclassifier_vae
+	return sclassifier_vae.__version__
 
 
 #reqs = ['numpy>=1.10',
@@ -53,7 +53,7 @@ reqs.append('tensorflow>=1.13')
 data_dir = 'data'
 
 setup(
-	name="svaeclassifier",
+	name="sclassifier_vae",
 	version=get_version(),
 	author="Simone Riggi",
 	author_email="simone.riggi@gmail.com",
@@ -61,8 +61,7 @@ setup(
 	license = "GPL3",
 	url="https://github.com/SKA-INAF/sclassifier-vae",
 	long_description=read('README.md'),
-	packages=['svaeclassifier'],
+	packages=['sclassifier_vae'],
 	install_requires=reqs,
 	scripts=['scripts/read_imgdata.py','scripts/train_nn.py'],
-	
 )
