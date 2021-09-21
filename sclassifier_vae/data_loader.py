@@ -389,7 +389,7 @@ class DataLoader(object):
 				if nb>=batch_size:
 					logger.info("Batch size (%d) reached, yielding generated data ..." % nb)
 					#yield (inputs, inputs)
-					yield (inputs,)
+					yield (inputs,None)
 					nb= 0
 
 			except (GeneratorExit, KeyboardInterrupt):
