@@ -477,20 +477,20 @@ class VAEClassifier(object):
 			#	verbose=1
 			#)
 
-			try:
-				self.fitout= self.vae.fit(
-					x=self.train_data_generator,
-					epochs=1,
-					steps_per_epoch=steps_per_epoch,
-					validation_data=self.train_data_generator,
-					validation_steps=self.validation_steps,
-					use_multiprocessing=self.use_multiprocessing,
-					workers=self.nworkers,
-					verbose=2
-				)
-			except Exception as e:
-				logger.error("Failed training step (err=%s)" % str(e))
-				return -1
+			#try:
+			self.fitout= self.vae.fit(
+				x=self.train_data_generator,
+				epochs=1,
+				steps_per_epoch=steps_per_epoch,
+				validation_data=self.train_data_generator,
+				validation_steps=self.validation_steps,
+				use_multiprocessing=self.use_multiprocessing,
+				workers=self.nworkers,
+				verbose=2
+			)
+			#except Exception as e:
+			#	logger.error("Failed training step (err=%s)" % str(e))
+			#	return -1
 
 			loss_train= self.fitout.history['loss'][0]
 			self.train_loss_vs_epoch[0,epoch]= loss_train
