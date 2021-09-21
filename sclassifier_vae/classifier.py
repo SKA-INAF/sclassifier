@@ -434,14 +434,14 @@ class VAEClassifier(object):
 		padding= "same"
 		#x = layers.Conv2D(self.nchannels, (3, 3), activation='sigmoid', padding=padding)(x)
 		x = layers.Conv2DTranspose(self.nchannels, (3, 3), activation='sigmoid', padding=padding)(x)
-		#self.outputs = x
+		outputs = x
 
 		# - Flatten layer
 		x = layers.Flatten()(x)
 		self.flattened_outputs= x
 
 		# - Create decoder model
-		self.decoder = Model(latent_inputs, self.outputs, name='decoder')
+		self.decoder = Model(latent_inputs, outputs, name='decoder')
 
 		# - Print and draw model		
 		self.decoder.summary()
