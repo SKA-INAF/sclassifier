@@ -19,6 +19,9 @@ import random
 import math
 import logging
 
+## ASTROPY MODULES 
+from astropy.io import ascii 
+
 ## ADDON ML MODULES
 from sklearn.model_selection import train_test_split
 
@@ -48,6 +51,7 @@ class DataProvider(object):
 
 		# - Input data
 		self.filelists= filelists	
+		self.catalog_file= ''
 		self.nx= 0
 		self.ny= 0	
 		self.nimgs= 0
@@ -57,7 +61,11 @@ class DataProvider(object):
 		
 		# - Input data normalization
 		self.input_data= None
+		self.input_data_labels= {}
+		self.source_names= []
+		self.component_ids= []
 		self.normalize_to_first_chan= False	
+		self.normalize_to_chanmax= False
 		self.apply_weights= False
 		self.img_weights= []
 		self.normalize_inputs= True
@@ -70,9 +78,17 @@ class DataProvider(object):
 	#################################
 	##     SETTERS/GETTERS
 	#################################
+	def set_catalog_filename(self,filename):
+		""" Set name of source catalog file """
+		self.catalog_file= filename	
+
 	def enable_inputs_normalization_to_first_channel(self,choice):
 		""" Turn on/off inputs normalization to first channel"""
 		self.normalize_to_first_chan= choice
+
+	def enable_inputs_normalization_to_chanmax(self,choice):
+		""" Turn on/off inputs normalization to channel maximum"""
+		self.normalize_to_chanmax= choice
 
 	def enable_inputs_normalization(self,choice):
 		""" Turn on/off inputs normalization """
@@ -108,10 +124,48 @@ class DataProvider(object):
 		""" Return read data """
 		return self.input_data	
 
+	def get_source_names(self):
+		""" Return read source names """
+		return self.source_names
+
+	def get_component_ids(self):
+		""" Return read source component ids """
+		return self.component_ids
+
+	def get_data_labels(self):
+		""" Return source labels """
+		return self.input_data_labels
+
 	#############################
 	##     READ INPUT DATA
 	#############################
 	def read_data(self):	
+		""" Read data (images & source catalog if given) """
+
+		#===========================
+		#==   READ SOURCE CATALOG
+		#===========================	
+		logger.info("Reading source catalog data ...")
+		status= self.__read_source_catalog_data(self.catalog_file)
+		if status<0:
+			logger.warn("Failed to read source catalog data, no labels will be available")
+			
+		#===========================
+		#==   READ IMAGE DATA
+		#===========================	
+		logger.info("Reading source image data ...")
+		status= self.__read_source_image_data()
+		if status<0:
+			logger.error("Failed to read source image data!")
+			return -1
+
+		return 0
+
+
+	#############################
+	##     READ INPUT IMAGES
+	#############################
+	def __read_source_image_data(self):	
 		""" Read data from disk recursively """
 			
 		# - Check data filelists
@@ -163,12 +217,17 @@ class DataProvider(object):
 
 		# - Loop over image files and read them
 		imgcounter= 0
+		imgcubecounter= 0
 		input_data_list= []
+		
 
 		for i in range(len(imgfilenames)):
 		
 			imgdata_stack= []
 			isGoodImage= True
+			source_name_full= ''
+			source_name= ''
+			componentId= ''
 
 			for j in range(len(imgfilenames[i])):
 				imgcounter+= 1
@@ -182,12 +241,22 @@ class DataProvider(object):
 					logger.warn(errmsg)
 					isGoodImage= False
 					break
-	
+
 				imgsize= np.shape(data)
 				nx= imgsize[1]
 				ny= imgsize[0]
 				nchannels= len(imgfilenames[i])
-				logger.info("Image no. %d (chan=%d) has size (%d,%d)" % (i+1,j+1,nx,ny) )	
+				
+				# Retrieve image name
+				dir_names= os.path.dirname(filename).split('/')
+				source_name_full= dir_names[len(dir_names)-1]
+				tmp= source_name_full.split('_')
+				source_name= tmp[0]
+				fitcomp_name= tmp[1]
+				p= fitcomp_name.find("fitcomp")
+				componentId= fitcomp_name[p+7:len(fitcomp_name)]
+				logger.info("Image no. %d (full_name=%s, name=%s, compid=%s, chan=%d) has size (%d,%d)" % (i+1,source_name_full,source_name,componentId,j+1,nx,ny) )	
+		
 
 				# - Extract crop img data
 				data_crop= data
@@ -241,12 +310,18 @@ class DataProvider(object):
 				logger.warn("Skipping image no. %d as marked as bad..." % (i+1) )
 				continue	
 
+			# - Set source & component names
+			self.source_names.append(source_name_full)
+			#self.source_names.append(source_name)
+			self.component_ids.append(componentId)
+			imgcubecounter+= 1
+
 			# - Apply weights to images
 			if self.apply_weights:
 				for index in range(0,len(imgdata_stack)):
 					print('DEBUG: Chan %d weight=%f' % (index,self.img_weights[index]))
 					imgdata_stack[index]*= self.img_weights[index]
-					logger.info("Cropped image no. %d (chan=%d) (AFTER WEIGHTS): min/max=%f/%f" % (i+1,index+1,np.min(imgdata_stack[index]),np.max(imgdata_stack[index])))
+					logger.info("Cropped image no. %d (name=%s, compid=%s, chan=%d) (AFTER WEIGHTS): min/max=%f/%f" % (i+1,self.source_names[imgcubecounter-1],self.component_ids[imgcubecounter-1],index+1,np.min(imgdata_stack[index]),np.max(imgdata_stack[index])))
 			
 
 			# - Normalize data to first channel?	
@@ -267,7 +342,19 @@ class DataProvider(object):
 				(imgdata_stack[index])[~np.isfinite( (imgdata_stack[index]) )]= badPixSafeVal
 				logger.info("Cropped image no. %d (chan=%d) (AFTER NORM & WEIGHTS & SANITIZE): min/max=%f/%f" % (i+1,index+1,np.min(imgdata_stack[index]),np.max(imgdata_stack[index])))
 			
+			# - Normalize data to maximum among all channels
+			if self.normalize_to_chanmax:
+				chanmax_list= []
+				for index in range(0,len(imgdata_stack)):
+					chanmax= np.max(imgdata_stack[index])					
+					chanmax_list.append(chanmax)		
+				chanmax= max(chanmax_list)
+
+				for index in range(0,len(imgdata_stack)):
+					imgdata_stack[index]/= chanmax	
+					logger.info("Cropped image no. %d (chan=%d) (AFTER WEIGHTS & SANITIZE & CHAN NORM): min/max=%f/%f" % (i+1,index+1,np.min(imgdata_stack[index]),np.max(imgdata_stack[index])))
 			
+
 			#	- Set image data as a tensor of size [Nsamples,Nx,Ny,Nchan]
 			imgdata_cube= np.dstack(imgdata_stack)
 			input_data_list.append(imgdata_cube)
@@ -290,6 +377,40 @@ class DataProvider(object):
 				
 		return 0
 
-	
+	#################################
+	##     READ SOURCE CATALOG DATA
+	#################################
+	def __read_source_catalog_data(self,filename,row_start=0,delimiter='|'):	
+		""" Read source catalog data table """
 		
+		# - Read ascii table
+		try:
+			table= Utils.read_ascii_table(filename,row_start,delimiter)
+		except IOError:
+			errmsg= 'Cannot read file: ' + filename
+			logger.error(errmsg)
+			return -1
 
+		print(table)
+
+		# - Create source label dictionary
+		rowIndex= 0
+		for data in table:
+			source_name= data['col1']
+			componentId= data['col3']	
+			source_full_name= str(source_name) + '_fitcomp' + str(componentId)
+			obj_id= data['col57']
+			obj_subid= data['col58']
+			obj_name= data['col60']
+			obj_info= {}
+			obj_info['id']= obj_id
+			obj_info['subid']= obj_subid
+			obj_info['name']= obj_name
+			
+			self.input_data_labels[source_full_name]= obj_info
+
+		print('Source catalog dict')			
+		print(self.input_data_labels)
+
+
+		return 0
