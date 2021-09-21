@@ -310,7 +310,7 @@ class VAEClassifier(object):
 		#self.flattened_outputs = self.decoder(self.encoder(self.inputs)[2])
 		#self.outputs= layers.Reshape( (self.ny,self.nx,self.nchannels) )(self.flattened_outputs)
 		#self.vae = Model(self.inputs, self.outputs, name='vae_mlp')
-		self.vae = Model(self.inputs, vae_decoder_output, name='vae_mlp')
+		self.vae = Model(self.inputs, self.outputs, name='vae_mlp')
 		
 
 		# - Set model loss = mse_loss or xent_loss + kl_loss
@@ -434,7 +434,7 @@ class VAEClassifier(object):
 		padding= "same"
 		#x = layers.Conv2D(self.nchannels, (3, 3), activation='sigmoid', padding=padding)(x)
 		x = layers.Conv2DTranspose(self.nchannels, (3, 3), activation='sigmoid', padding=padding)(x)
-		self.outputs = x
+		#self.outputs = x
 
 		# - Flatten layer
 		x = layers.Flatten()(x)
