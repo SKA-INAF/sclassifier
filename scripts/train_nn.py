@@ -106,6 +106,13 @@ def main():
 	kernsizes_cnn= [int(x.strip()) for x in args.kernsizes_cnn.split(',')]	
 	strides_cnn= [int(x.strip()) for x in args.strides_cnn.split(',')]
 
+	print("nfilters_cnn")
+	print(nfilters_cnn)
+	print("kernsizes_cnn")
+	print(kernsizes_cnn)
+	print("strides_cnn")
+	print(strides_cnn)
+
 	intermediate_layer_size= args.intermediate_layer_size
 	n_intermediate_layers= args.n_intermediate_layers
 	intermediate_layer_size_factor= args.intermediate_layer_size_factor
