@@ -542,6 +542,7 @@ class VAEClassifier(object):
 		self.decoder.summary()
 		plot_model(self.decoder, to_file='vae_mlp_decoder.png', show_shapes=True)
 
+		return 0
 
 	#####################################
 	##     BUILD NETWORK FROM SPEC FILE
