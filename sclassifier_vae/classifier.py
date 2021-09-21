@@ -285,6 +285,18 @@ class VAEClassifier(object):
 		#===========================
 		#==   CREATE VAE MODEL
 		#===========================	
+		# - Build model
+		logger.info("Creating VAE model ...")
+
+		#vae_encoder_output = self.encoder(self.inputs)
+		#print("vae_encoder_output shape")
+		#print(K.int_shape(vae_encoder_output))
+
+		#vae_decoder_output = self.decoder(vae_encoder_output)
+		#print("vae_decoder_output shape")
+		#print(K.int_shape(vae_decoder_output))
+
+		self.outputs= self.decoder(self.encoder(self.inputs))
 		print("inputs shape")
 		print(K.int_shape(self.inputs))
 		print("outputs shape")
@@ -294,21 +306,6 @@ class VAEClassifier(object):
 		print("flattened outputs shape")
 		print(K.int_shape(self.flattened_outputs))
 
-				
-		# - Build model
-		logger.info("Creating VAE model ...")
-
-		vae_encoder_output = self.encoder(self.inputs)
-		print("vae_encoder_output shape")
-		print(K.int_shape(vae_encoder_output))
-
-		vae_decoder_output = self.decoder(vae_encoder_output)
-		print("vae_decoder_output shape")
-		print(K.int_shape(vae_decoder_output))
-
-		#self.outputs= self.decoder(self.encoder(self.inputs))
-		#print("outputs shape")
-		#print(K.int_shape(self.outputs))
 
 		#self.flattened_outputs = self.decoder(self.encoder(self.inputs)[2])
 		#self.outputs= layers.Reshape( (self.ny,self.nx,self.nchannels) )(self.flattened_outputs)
