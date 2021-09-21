@@ -518,7 +518,7 @@ class VAEClassifier(object):
 			#)
 
 			#try:
-			self.fitout= self.vae.fit(
+			self.fitout= self.vae.fit_generator(
 				x=self.train_data_generator,
 				epochs=1,
 				steps_per_epoch=steps_per_epoch,
