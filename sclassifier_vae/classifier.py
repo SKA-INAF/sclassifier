@@ -522,8 +522,8 @@ class VAEClassifier(object):
 				x=self.train_data_generator,
 				epochs=1,
 				steps_per_epoch=steps_per_epoch,
-				validation_data=self.train_data_generator,
-				validation_steps=self.validation_steps,
+				#validation_data=self.train_data_generator,
+				#validation_steps=self.validation_steps,
 				use_multiprocessing=self.use_multiprocessing,
 				workers=self.nworkers,
 				verbose=2
