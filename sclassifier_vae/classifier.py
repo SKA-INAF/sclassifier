@@ -312,8 +312,10 @@ class VAEClassifier(object):
 
 		#self.flattened_outputs = self.decoder(self.encoder(self.inputs)[2])
 		#self.outputs= layers.Reshape( (self.ny,self.nx,self.nchannels) )(self.flattened_outputs)
-		self.vae = Model(self.inputs, self.outputs, name='vae_mlp')
+		#self.vae = Model(self.inputs, self.outputs, name='vae_mlp')
+		self.vae = Model(self.inputs, vae_decoder_output, name='vae_mlp')
 		
+
 		# - Set model loss = mse_loss or xent_loss + kl_loss
 		# Reconstruction loss
 		if self.use_mse_loss:
@@ -386,7 +388,7 @@ class VAEClassifier(object):
 		self.z_log_var = layers.Dense(self.latent_dim,name='z_log_var')(x)
 		#self.z = Lambda(self.__sampling, output_shape=(self.latent_dim,), name='z')([self.z_mean, self.z_log_var])
 		#self.z = Sampling()([self.z_mean, self.z_log_var])
-		encoder_output= Lambda(self.__sampling, name="x")([self.z_mean, self.z_log_var])
+		encoder_output= Lambda(self.__sampling, name="z")([self.z_mean, self.z_log_var])
 
 		# - Instantiate encoder model
 		#self.encoder = Model(self.inputs, [self.z_mean, self.z_log_var, self.z], name='encoder')
