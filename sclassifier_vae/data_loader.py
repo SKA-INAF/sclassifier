@@ -351,7 +351,7 @@ class DataLoader(object):
 				
 				sdata= self.read_data(
 					data_index, 
-					resize=resize, nx=nx, ny=ny
+					resize=resize, nx=nx, ny=ny,
 					normalize=normalize, 
 					augment=augment
 				)
