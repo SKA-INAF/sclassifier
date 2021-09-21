@@ -303,7 +303,7 @@ class DataLoader(object):
 		logger.debug("Reading source image data %d ..." % index)
 		d= self.datalist["data"][index]
 		sdata= SourceData()
-		if sdata.set_from_dict()<0:
+		if sdata.set_from_dict(d)<0:
 			logger.error("Failed to set source image data %d!" % index)
 			return None
 
