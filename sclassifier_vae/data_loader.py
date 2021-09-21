@@ -165,7 +165,7 @@ class SourceData(object):
 
 		# - Resize data cube
 		try:
-			data_resized= Utils.resize_img(self.img_cube, (ny, nx, ), preserve_range=True)
+			data_resized= Utils.resize_img(self.img_cube, (ny, nx, self.nchannels), preserve_range=True)
 		except Exception as e:
 			logger.warn("Failed to resize data to size (%")
 			return -1
@@ -176,6 +176,8 @@ class SourceData(object):
 		self.nx= self.img_cube.shape[1]
 		self.ny= self.img_cube.shape[0]
 		self.nchannels= self.img_cube.shape[-1]
+		print("Image cube size after resizing")
+		print(self.img_cube.shape)
 
 		return 0	
 		
@@ -315,12 +317,14 @@ class DataLoader(object):
 
 		# - Run augmentation?
 		if augment:
+			logger.info("Augmenting source image data %d ..." % index)
 			if sdata.augment_imgs(self.augmenter)<0:
 				logger.error("Failed to augment source image %d!" % index)
 				return None
 
 		# - Resize image?
 		if resize:
+			logger.info("Resizing source image data %d ..." % index)
 			if sdata.resize_imgs(nx, ny, preserve_range=True)<0:
 				logger.error("Failed to resize source image %d to size (%d,%d)!" % (index,nx,ny))
 				return None
