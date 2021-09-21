@@ -97,7 +97,7 @@ class VAEClassifier(object):
 		self.nworkers= 1
 		
 		# - NN architecture
-		self.use_shallow_network= True
+		self.use_shallow_network= False
 		self.fitout= None		
 		self.vae= None
 		self.encoder= None
