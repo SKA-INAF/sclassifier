@@ -415,12 +415,16 @@ class VAEClassifier(object):
 		#===========================	
 		# - Build model
 		logger.info("Creating VAE model ...")
-		self.outputs= self.decoder(self.encoder(self.inputs))
+		#self.outputs= self.decoder(self.encoder(self.inputs))
 		print("inputs shape")
 		print(self.inputs.shape)
 		print("outputs shape")
 		print(self.outputs.shape)
-		self.flattened_outputs = self.decoder(self.encoder(self.inputs)[2])
+		print("flattened inputs shape")
+		print(self.flattened_inputs)
+		print("flattened outputs shape")
+		print(self.flattened_outputs.shape)
+		#self.flattened_outputs = self.decoder(self.encoder(self.inputs)[2])
 		#self.outputs= layers.Reshape( (self.ny,self.nx,self.nchannels) )(self.flattened_outputs)
 		self.vae = Model(self.inputs, self.outputs, name='vae_mlp')
 		
@@ -537,10 +541,14 @@ class VAEClassifier(object):
 		padding= "same"
 		x = layers.Conv2D(self.nchannels, (3, 3), activation='sigmoid', padding=padding)(x)
 		#x = layers.Conv2DTranspose(self.nchannels, (3, 3), activation='sigmoid', padding=padding)(x)
-		outputs = x
+		self.outputs = x
+
+		# - Flatten layer
+		x = layers.Flatten()(x)
+		self.flattened_outputs= x
 
 		# - Create decoder model
-		self.decoder = Model(latent_inputs, outputs, name='decoder')
+		self.decoder = Model(latent_inputs, self.outputs, name='decoder')
 
 		# - Print and draw model		
 		self.decoder.summary()
