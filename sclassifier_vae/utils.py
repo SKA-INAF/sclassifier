@@ -9,6 +9,8 @@ import sys
 import string
 import logging
 import numpy as np
+from distutils.version import LooseVersion
+
 
 ## ASTRO MODULES
 from astropy.io import fits
