@@ -34,7 +34,7 @@ from .utils import Utils
 ##############################
 ##     GLOBAL VARS
 ##############################
-from sclassifier import logger
+from sclassifier_vae import logger
 
 
 ##############################
