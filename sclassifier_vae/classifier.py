@@ -461,6 +461,10 @@ class VAEClassifier(object):
 		inputShape = (self.ny, self.nx, self.nchannels)
 		self.inputs= Input(shape=inputShape,dtype='float', name='encoder_input')
 		x= self.inputs
+	
+		self.flattened_inputs= layers.Flatten()(x)
+		self.input_data_dim= K.int_shape(x)
+		print("Input data dim=", self.input_data_dim)
 
 		# - Create a number of CNN layers
 		for k in range(len(self.nfilters_cnn)):
@@ -487,9 +491,9 @@ class VAEClassifier(object):
 
 		# - Flatten layer
 		x = layers.Flatten()(x)
-		self.flattened_inputs= x
-		self.input_data_dim= K.int_shape(x)
-		print("Input data dim=", self.input_data_dim)
+		#self.flattened_inputs= x
+		#self.input_data_dim= K.int_shape(x)
+		#print("Input data dim=", self.input_data_dim)
 
 		# - Output layers
 		self.z_mean = layers.Dense(self.latent_dim,name='z_mean')(x)
