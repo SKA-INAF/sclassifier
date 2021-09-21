@@ -56,9 +56,18 @@ from .data_loader import SourceData
 logger = logging.getLogger(__name__)
 
 
+class Sampling(layers.Layer):
+	"""Uses (z_mean, z_log_var) to sample z, the vector encoding a digit."""
+
+	def call(self, inputs):
+		z_mean, z_log_var = inputs
+		batch = tf.shape(z_mean)[0]
+		dim = tf.shape(z_mean)[1]
+		epsilon = tf.keras.backend.random_normal(shape=(batch, dim))
+		return z_mean + tf.exp(0.5 * z_log_var) * epsilon
 
 ##############################
-##     Classifier CLASS
+##     VAEClassifier CLASS
 ##############################
 class VAEClassifier(object):
 	""" Class to create and train a VAE classifier
@@ -498,7 +507,8 @@ class VAEClassifier(object):
 		# - Output layers
 		self.z_mean = layers.Dense(self.latent_dim,name='z_mean')(x)
 		self.z_log_var = layers.Dense(self.latent_dim,name='z_log_var')(x)
-		self.z = Lambda(self.__sampling, output_shape=(self.latent_dim,), name='z')([self.z_mean, self.z_log_var])
+		#self.z = Lambda(self.__sampling, output_shape=(self.latent_dim,), name='z')([self.z_mean, self.z_log_var])
+		self.z = Sampling()([self.z_mean, self.z_log_var])
 
 		# - Instantiate encoder model
 		self.encoder = Model(self.inputs, [self.z_mean, self.z_log_var, self.z], name='encoder')
