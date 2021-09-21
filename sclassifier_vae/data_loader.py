@@ -334,7 +334,7 @@ class DataLoader(object):
 	###################################
 	##     GENERATE DATA FOR TRAINING
 	###################################
-	def data_generator(self, batch_size=1, shuffle=True, resize=True, nx=128, ny=128, normalize=True, augment=False):	
+	def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=128, ny=128, normalize=True, augment=False):	
 		""" Generator function reading nsamples images from disk and returning to caller """
 	
 		nb= 0
@@ -348,6 +348,8 @@ class DataLoader(object):
 				data_index = (data_index + 1) % self.datasize
 				if shuffle:
 					data_index= np.random.choice(data_indexes)
+
+				logger.info("Reading data at index %d ..." % data_index)
 				
 				sdata= self.read_data(
 					data_index, 
@@ -362,6 +364,9 @@ class DataLoader(object):
 				data_shape= sdata.img_cube.shape
 				inputs_shape= (nb,)+ data_shape
 
+				print("inputs_shape")
+				print(inputs_shape)
+
 				# - Initialize return data
 				if nb==0:
 					inputs= np.zeros(inputs_shape, dtype=np.float32)
@@ -372,7 +377,8 @@ class DataLoader(object):
 
 				# - Return data if number of batch is reached and restart the batch
 				if nb>=batch_size:
-					yield (inputs,inputs)
+					logger.info("Batch size (%d) reached, yielding generated data ..." % nb)
+					yield (inputs, inputs)
 					nb= 0
 
 			except (GeneratorExit, KeyboardInterrupt):
