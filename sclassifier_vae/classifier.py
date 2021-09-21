@@ -422,9 +422,6 @@ class VAEClassifier(object):
 		#===========================
 		#==   CREATE VAE MODEL
 		#===========================	
-		# - Build model
-		logger.info("Creating VAE model ...")
-		#self.outputs= self.decoder(self.encoder(self.inputs))
 		print("inputs shape")
 		print(K.int_shape(self.inputs))
 		print("outputs shape")
@@ -433,6 +430,13 @@ class VAEClassifier(object):
 		print(K.int_shape(self.flattened_inputs))
 		print("flattened outputs shape")
 		print(K.int_shape(self.flattened_outputs))
+		
+		# - Build model
+		logger.info("Creating VAE model ...")
+		self.outputs= self.decoder(self.encoder(self.inputs))
+		print("outputs shape")
+		print(K.int_shape(self.outputs))
+
 		#self.flattened_outputs = self.decoder(self.encoder(self.inputs)[2])
 		#self.outputs= layers.Reshape( (self.ny,self.nx,self.nchannels) )(self.flattened_outputs)
 		self.vae = Model(self.inputs, self.outputs, name='vae_mlp')
@@ -553,8 +557,8 @@ class VAEClassifier(object):
 
 		# - Apply a single conv (or Conv tranpose??) layer to recover the original depth of the image
 		padding= "same"
-		x = layers.Conv2D(self.nchannels, (3, 3), activation='sigmoid', padding=padding)(x)
-		#x = layers.Conv2DTranspose(self.nchannels, (3, 3), activation='sigmoid', padding=padding)(x)
+		#x = layers.Conv2D(self.nchannels, (3, 3), activation='sigmoid', padding=padding)(x)
+		x = layers.Conv2DTranspose(self.nchannels, (3, 3), activation='sigmoid', padding=padding)(x)
 		self.outputs = x
 
 		# - Flatten layer
