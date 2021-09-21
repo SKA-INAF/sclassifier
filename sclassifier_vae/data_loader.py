@@ -84,6 +84,8 @@ class SourceData(object):
 		# - Read images
 		nimgs= len(self.filepaths)
 		self.nchannels= nimgs
+		print("filepaths")
+		print(self.filepaths)
 
 		for filename in self.filepaths:
 			# - Read image
