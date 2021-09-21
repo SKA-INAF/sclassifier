@@ -312,7 +312,9 @@ class VAEClassifier(object):
 		#self.vae = Model(self.inputs, self.outputs, name='vae_mlp')
 		self.vae = Model(self.inputs, self.outputs, name='vae_mlp')
 		
-
+		#===========================
+		#==   SET LOSS
+		#===========================	
 		# - Set model loss = mse_loss or xent_loss + kl_loss
 		# Reconstruction loss
 		if self.use_mse_loss:
@@ -320,7 +322,19 @@ class VAEClassifier(object):
 		else:
 			reconstruction_loss = binary_crossentropy(self.flattened_inputs,self.flattened_outputs)
 
-		reconstruction_loss*= self.input_data_dim[1]
+		flatten_datadim= K.int_shape(self.flattened_inputs)[1]
+		print("flatten_datadim")
+		print(flatten_datadim)		
+
+		#reconstruction_loss*= self.input_data_dim[1]
+		reconstruction_loss*= flatten_datadim
+
+		#reconstruction_loss = tf.reduce_mean(
+		#	tf.reduce_sum(
+		#		keras.losses.binary_crossentropy(data, reconstruction), 
+		#		axis=(1, 2)
+		#	)
+    #)
 
 		# Kl loss
 		kl_loss = 1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var)
@@ -450,6 +464,32 @@ class VAEClassifier(object):
 		return 0
 
 	
+	###########################
+	##     LOSS DEFINITION
+	###########################
+	def loss_func(self, encoder_mu, encoder_log_variance):
+		""" Loss function definition """
+		def vae_reconstruction_loss(y_true, y_predict):
+			reconstruction_loss_factor = 1000
+			reconstruction_loss = tensorflow.keras.backend.mean(tensorflow.keras.backend.square(y_true-y_predict), axis=[1, 2, 3])
+			return reconstruction_loss_factor * reconstruction_loss
+
+		def vae_kl_loss(encoder_mu, encoder_log_variance):
+			kl_loss = -0.5 * tensorflow.keras.backend.sum(1.0 + encoder_log_variance - tensorflow.keras.backend.square(encoder_mu) - tensorflow.keras.backend.exp(encoder_log_variance), axis=1)
+			return kl_loss
+
+		def vae_kl_loss_metric(y_true, y_predict):
+			kl_loss = -0.5 * tensorflow.keras.backend.sum(1.0 + encoder_log_variance - tensorflow.keras.backend.square(encoder_mu) - tensorflow.keras.backend.exp(encoder_log_variance), axis=1)
+			return kl_loss
+
+		def vae_loss(y_true, y_predict):
+			reconstruction_loss = vae_reconstruction_loss(y_true, y_predict)
+			kl_loss = vae_kl_loss(y_true, y_predict)
+
+			loss = reconstruction_loss + kl_loss
+			return loss
+
+		return vae_loss
 
 	###########################
 	##     TRAIN NETWORK
