@@ -385,7 +385,7 @@ class DataLoader(object):
 				logger.warn("Generator or keyboard exception catched while generating data...")
 				raise
 			except Exception as e:
-				logger.warn("Exception catched while generating data (err=%d) ..." % str(e))
+				logger.warn("Exception catched while generating data (err=%s) ..." % str(e))
 				raise
 			
 
