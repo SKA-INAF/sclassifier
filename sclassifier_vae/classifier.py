@@ -209,7 +209,7 @@ class VAEClassifier(object):
 		self.nsamples_train= len(self.source_labels)
 
 		# - Create train data generator
-		self.train_data_generator= self.dp.data_generator(
+		self.train_data_generator= self.dl.data_generator(
 			batch_size=self.batch_size, 
 			shuffle=True,
 			resize=True, nx=self.nx, ny=self.ny, 
@@ -217,7 +217,7 @@ class VAEClassifier(object):
 			augment=self.augmentation
 		)	
 
-		self.test_data_generator= self.dp.data_generator(
+		self.test_data_generator= self.dl.data_generator(
 			batch_size=self.nsamples_train, 
 			shuffle=False,
 			resize=True, nx=self.nx, ny=self.ny, 
