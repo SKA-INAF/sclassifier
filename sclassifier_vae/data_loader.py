@@ -361,8 +361,12 @@ class DataLoader(object):
 					logger.warn("Failed to read source data at index %d, skip to next ..." % data_index)
 					continue
 
+				if sdata.img_cube is None:
+					logger.warn("Failed to read source data cube at index %d, skip to next ..." % data_index)
+					continue
+
 				data_shape= sdata.img_cube.shape
-				inputs_shape= (nb,)+ data_shape
+				inputs_shape= (batch_size,)+ data_shape
 
 				print("inputs_shape")
 				print(inputs_shape)
