@@ -167,7 +167,7 @@ class SourceData(object):
 		try:
 			data_resized= Utils.resize_img(self.img_cube, (ny, nx, self.nchannels), preserve_range=True)
 		except Exception as e:
-			logger.warn("Failed to resize data to size (%")
+			logger.warn("Failed to resize data to size (%d,%d)!" % (nx,ny))
 			return -1
 		
 		self.img_cube= data_resized
