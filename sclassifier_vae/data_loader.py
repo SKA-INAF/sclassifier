@@ -158,9 +158,9 @@ class SourceData(object):
 			return -1
 
 		# - Check if resizing is needed
-		size_changed= (nx==self.nx) and (ny==self.ny)
-		if not size_changed:
-			logger.debug("Images have already the desired size (%d,%d), nothing to be done..." % (nx,ny))
+		is_same_size= (nx==self.nx) and (ny==self.ny)
+		if is_same_size:
+			logger.info("Images have already the desired size (%d,%d), nothing to be done..." % (nx,ny))
 			return 0
 
 		# - Resize data cube
