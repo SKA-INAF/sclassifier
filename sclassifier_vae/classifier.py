@@ -204,7 +204,7 @@ class VAEClassifier(object):
 		# - Retrieve info from data loader
 		self.nchannels= self.dl.nchannels
 		self.source_labels= self.dl.labels
-		self.source_ids= self.dl.class_ids
+		self.source_ids= self.dl.classids
 		self.source_names= self.dl.snames
 		self.nsamples_train= len(self.source_labels)
 
