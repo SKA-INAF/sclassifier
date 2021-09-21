@@ -258,142 +258,7 @@ class VAEClassifier(object):
 		return z_mean + K.exp(0.5 * z_log_var) * epsilon
 		#return z_mean + K.exp(z_log_var) * epsilon
 
-	#####################################
-	##     BUILD SHALLOW NETWORK
-	#####################################
-	def __build_shallow_network(self):
-		""" Build VAE model architecture """
 	
-		#===========================
-		#==   CREATE ENCODER
-		#===========================	
-		logger.info("Creating shallow encoder network ...")
-		status= self.__build_shallow_encoder()
-		if status<0:
-			logger.error("Encoder model creation failed!")
-			return -1
-		
-		#===========================
-		#==   CREATE DECODER
-		#===========================	
-		logger.info("Creating shallow decoder network ...")
-		status= self.__build_shallow_decoder()
-		if status<0:
-			logger.error("Decoder model creation failed!")
-			return -1
-
-		#===========================
-		#==   CREATE VAE MODEL
-		#===========================	
-		# - Build model
-		logger.info("Creating VAE model ...")
-		self.flattened_outputs = self.decoder(self.encoder(self.inputs)[2])
-		#self.outputs= layers.Reshape( (self.nx,self.ny,self.nchannels) )(self.flattened_outputs)
-		self.outputs= layers.Reshape( (self.ny,self.nx,self.nchannels) )(self.flattened_outputs)
-		self.vae = Model(self.inputs, self.outputs, name='vae_mlp')
-
-		# - Set model loss = mse_loss or xent_loss + kl_loss
-		# Reconstruction loss
-		if self.use_mse_loss:
-			reconstruction_loss = mse(self.flattened_inputs,self.flattened_outputs)
-		else:
-			reconstruction_loss = binary_crossentropy(self.flattened_inputs,self.flattened_outputs)
-
-		reconstruction_loss*= self.input_data_dim[1]
-
-		# Kl loss
-		kl_loss = 1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var)
-		kl_loss = K.sum(kl_loss, axis=-1)
-		kl_loss*= -0.5
-
-		# Total loss
-		vae_loss = K.mean(reconstruction_loss + kl_loss)
-
-		self.vae.add_loss(vae_loss)
-		self.vae.compile(optimizer=self.optimizer)
-    
-		# - Print and draw model
-		self.vae.summary()
-		plot_model(self.vae,to_file='vae_mlp.png',show_shapes=True)
-
-		return 0
-
-
-	#####################################
-	##     BUILD SHALLOW ENCODER
-	#####################################
-	def __build_shallow_encoder(self):
-		""" Set encoder shallow network """
-
-		# - Input layer	
-		inputShape = (self.ny, self.nx, self.nchannels)
-		self.inputs= Input(shape=inputShape,dtype='float', name='encoder_input')
-		x= self.inputs
-
-		# - Flatten layer
-		x = layers.Flatten()(x)
-		self.flattened_inputs= x
-		self.input_data_dim= K.int_shape(x)
-		print("Input data dim=", self.input_data_dim)
-
-		# - Intermediate layers
-		layer_size= self.intermediate_dim
-		for index in range(self.nlayers_intermediate):
-			if index>0:
-				layer_size/= self.intermediate_layer_size_factor
-			x = layers.Dense(int(layer_size), activation=self.intermediate_layer_activation)(x)
-
-		# - Output layers
-		self.z_mean = layers.Dense(self.latent_dim,name='z_mean')(x)
-		self.z_log_var = layers.Dense(self.latent_dim,name='z_log_var')(x)
-		self.z = Lambda(self.__sampling, output_shape=(self.latent_dim,), name='z')([self.z_mean, self.z_log_var])
-
-		# - Instantiate encoder model
-		self.encoder = Model(self.inputs, [self.z_mean, self.z_log_var, self.z], name='encoder')
-
-		# - Print and plot model
-		self.encoder.summary()
-		plot_model(self.encoder, to_file='vae_mlp_encoder.png', show_shapes=True)
-
-		return 0
-		
-
-	#####################################
-	##     BUILD SHALLOW DECODER
-	#####################################
-	def __build_shallow_decoder(self):
-		""" Set decoder shallow network """
-
-		# - Input layer	
-		latent_inputs = Input(shape=(self.latent_dim,),dtype='float', name='z_sampling')
-		x= latent_inputs
-
-		# - Intermediate layers
-		layer_size= self.intermediate_dim
-		for index in range(self.nlayers_intermediate):
-			if index>0:
-				layer_size/= self.intermediate_layer_size_factor
-
-		for index in range(self.nlayers_intermediate):	
-			if index>0:
-				layer_size*= self.intermediate_layer_size_factor
-			x = layers.Dense(int(layer_size), activation=self.intermediate_layer_activation)(x)
-
-		# - Output layer
-		print("self.input_data_dim type=",type(self.input_data_dim))
-		print("self.input_data_dim=",self.input_data_dim[1])
-		outputs = layers.Dense(self.input_data_dim[1], activation=self.output_layer_activation)(x)
-
-		# - Create decoder model
-		self.decoder = Model(latent_inputs, outputs, name='decoder')
-
-		# - Print and draw model		
-		self.decoder.summary()
-		plot_model(self.decoder, to_file='vae_mlp_decoder.png', show_shapes=True)
-
-		return 0
-
-
 
 	#####################################
 	##     BUILD PARAMETRIZED NETWORK
@@ -405,8 +270,7 @@ class VAEClassifier(object):
 		#==   CREATE ENCODER
 		#===========================	
 		logger.info("Creating parametrized encoder network ...")
-		status= self.__build_parametrized_encoder()
-		if status<0:
+		if self.__build_parametrized_encoder()<0:
 			logger.error("Encoder model creation failed!")
 			return -1
 		
@@ -414,8 +278,7 @@ class VAEClassifier(object):
 		#==   CREATE DECODER
 		#===========================	
 		logger.info("Creating parametrized decoder network ...")
-		status= self.__build_parametrized_decoder()
-		if status<0:
+		if self.__build_parametrized_decoder()<0:
 			logger.error("Decoder model creation failed!")
 			return -1
 
@@ -430,12 +293,22 @@ class VAEClassifier(object):
 		print(K.int_shape(self.flattened_inputs))
 		print("flattened outputs shape")
 		print(K.int_shape(self.flattened_outputs))
-		
+
+				
 		# - Build model
 		logger.info("Creating VAE model ...")
-		self.outputs= self.decoder(self.encoder(self.inputs))
-		print("outputs shape")
-		print(K.int_shape(self.outputs))
+
+		vae_encoder_output = self.encoder(self.inputs)
+		print("vae_encoder_output shape")
+		print(K.int_shape(vae_encoder_output))
+
+		vae_decoder_output = self.decoder(vae_encoder_output)
+		print("vae_decoder_output shape")
+		print(K.int_shape(vae_decoder_output))
+
+		#self.outputs= self.decoder(self.encoder(self.inputs))
+		#print("outputs shape")
+		#print(K.int_shape(self.outputs))
 
 		#self.flattened_outputs = self.decoder(self.encoder(self.inputs)[2])
 		#self.outputs= layers.Reshape( (self.ny,self.nx,self.nchannels) )(self.flattened_outputs)
@@ -472,7 +345,7 @@ class VAEClassifier(object):
 		
 		# - Input layer	
 		inputShape = (self.ny, self.nx, self.nchannels)
-		self.inputs= Input(shape=inputShape,dtype='float', name='encoder_input')
+		self.inputs= Input(shape=inputShape, dtype='float', name='encoder_input')
 		x= self.inputs
 	
 		self.flattened_inputs= layers.Flatten()(x)
@@ -512,11 +385,14 @@ class VAEClassifier(object):
 		self.z_mean = layers.Dense(self.latent_dim,name='z_mean')(x)
 		self.z_log_var = layers.Dense(self.latent_dim,name='z_log_var')(x)
 		#self.z = Lambda(self.__sampling, output_shape=(self.latent_dim,), name='z')([self.z_mean, self.z_log_var])
-		self.z = Sampling()([self.z_mean, self.z_log_var])
+		#self.z = Sampling()([self.z_mean, self.z_log_var])
+		encoder_output= Lambda(self.__sampling, name="x")([self.z_mean, self.z_log_var])
 
 		# - Instantiate encoder model
-		self.encoder = Model(self.inputs, [self.z_mean, self.z_log_var, self.z], name='encoder')
-
+		#self.encoder = Model(self.inputs, [self.z_mean, self.z_log_var, self.z], name='encoder')
+		self.encoder = Model(self.inputs, encoder_output, name='encoder')
+		
+		
 		# - Print and plot model
 		self.encoder.summary()
 		plot_model(self.encoder, to_file='vae_mlp_encoder.png', show_shapes=True)
@@ -574,157 +450,7 @@ class VAEClassifier(object):
 
 		return 0
 
-	#####################################
-	##     BUILD NETWORK FROM SPEC FILE
-	#####################################
-	def __build_network(self,encoder_filename,decoder_filename):
-		""" Build VAE model architecture """
 	
-		#===========================
-		#==   CREATE ENCODER
-		#===========================	
-		logger.info("Creating encoder ...")
-		status= self.__build_encoder(encoder_filename)
-		if status<0:
-			logger.error("Encoder model creation failed!")
-			return -1
-		
-		#===========================
-		#==   CREATE DECODER
-		#===========================	
-		logger.info("Creating decoder ...")
-		status= self.__build_decoder(decoder_filename)
-		if status<0:
-			logger.error("Decoder model creation failed!")
-			return -1
-
-		return 0
-
-	#####################################
-	##     BUILD ENCODER
-	#####################################
-	def __build_encoder(self,filename):
-		""" Set encoder network """
-	
-		# - Read NN architecture file
-		nn_data= []
-		skip_patterns= ['#']
-		try:
-			nn_data= Utils.read_ascii(filename,skip_patterns)
-		except IOError:
-			print("ERROR: Failed to read nn arc file %d!" % filename)
-			return -1
-
-		nlayers= np.shape(nn_data)[0]		
-		
-		# - Input layer	
-		inputShape = (self.ny, self.nx, self.nchannels)
-		self.inputs= Input(shape=inputShape,dtype='float', name='input')
-		x= self.inputs
-
-		# - Parse NN architecture file and create intermediate layers
-		for index in range(nlayers):
-			layer_info= nn_data[index]
-			logger.info("Layer no. %d: %s" % (index,layer_info))
-
-			layer_type= layer_info[0]
-
-			# - Add Conv2D layer?
-			if layer_type=='Conv2D':
-				nfields= len(layer_info)
-				if nfields!=5:
-					logger.error("Invalid number of fields (n=%d) given in Conv2D layer specification (5 expected)" % nfields)
-					return -1
-				nfilters= int(layer_info[1])
-				kernSize= int(layer_info[2])
-				activation= str(layer_info[3])
-				padding= str(layer_info[4])
-				x = layers.Conv2D(filters=nfilters, kernel_size=(kernSize,kernSize), activation=activation, padding=padding)(x)	
-				self.shape_before_flattening= K.int_shape(x)		
-	
-			# - Add MaxPooling2D layer?
-			elif layer_type=='MaxPooling2D':
-				nfields= len(layer_info)
-				if nfields!=3:
-					logger.error("Invalid number of fields (n=%d) given in MaxPooling2D layer specification (3 expected)" % nfields)
-					return -1
-				poolSize= int(layer_info[1])
-				padding= str(layer_info[2])
-				x = layers.MaxPooling2D(pool_size=(poolSize,poolSize),strides=None,padding=padding)(x)
-				self.shape_before_flattening= K.int_shape(x)
-
-			# - Add Dropout layer?
-			elif layer_type=='Dropout':
-				nfields= len(layer_info)
-				if nfields!=2:
-					logger.error("Invalid number of fields (n=%d) given in Dropout layer specification (2 expected)" % nfields)
-					return -1
-				dropout= float(layer_info[1])
-				x = layers.Dropout(dropout)(x)
-
-			# - Add BatchNormalization layer?
-			elif layer_type=='BatchNormalization':
-				x = layers.BatchNormalization()(x)
-	
-			# - Add Flatten layer?
-			elif layer_type=='Flatten':
-				x = layers.Flatten()(x)
-
-			# - Add Dense layer?
-			elif layer_type=='Dense':
-				nfields= len(layer_info)
-				if nfields!=3:
-					logger.error("Invalid number of fields (n=%d) given in Dense layer specification (3 expected)" % nfields)
-				nNeurons= int(layer_info[1])
-				activation= str(layer_info[2])
-				x = layers.Dense(nNeurons, activation=activation)(x)
-
-			else:
-				logger.error("Invalid/unknown layer type parsed (%s)!" % layer_type)
-				return -1
-
-		# - Output layers
-		z_mean = layers.Dense(self.latent_dim,name='z_mean')(x)
-		z_log_var = layers.Dense(self.latent_dim,name='z_log_var')(x)
-		z = Lambda(self.__sampling, output_shape=(self.latent_dim,), name='z')([z_mean, z_log_var])
-
-		# - Instantiate encoder model
-		self.encoder = Model(self.inputs, [z_mean, z_log_var, z], name='encoder')
-
-		# - Print and plot model
-		self.encoder.summary()
-		plot_model(self.encoder, to_file='vae_mlp_encoder.png', show_shapes=True)
-
-		return 0
-
-
-	#####################################
-	##     BUILD DECODER
-	#####################################
-	def __build_decoder(self,filename):
-		""" Set decoder network """
-
-		# - Read NN architecture file
-		nn_data= []
-		skip_patterns= ['#']
-		try:
-			nn_data= Utils.read_ascii(filename,skip_patterns)
-		except IOError:
-			print("ERROR: Failed to read nn arc file %d!" % filename)
-			return -1
-
-		nlayers= np.shape(nn_data)[0]		
-
-		# - Set decoder inputs
-		latent_inputs = Input(shape=(self.latent_dim,), name='z_sampling')
-		#decoder_input = Input(K.int_shape(z)[1:])
-
-		#x = Dense(intermediate_dim, activation='relu')(latent_inputs)
-		#outputs = Dense(original_dim, activation='sigmoid')(x)
-		# ...
-		# ...
-
-		return 0
 
 	###########################
 	##     TRAIN NETWORK
@@ -868,13 +594,7 @@ class VAEClassifier(object):
 		#===========================
 		#- Create the network
 		logger.info("Building network architecture ...")
-		if self.use_shallow_network:
-			status= self.__build_shallow_network()
-		else:
-			status= self.__build_parametrized_network()
-			#status= self.__build_network(self.nnarc_file)
-
-		if status<0:
+		if self.__build_parametrized_network()<0:
 			logger.error("NN build failed!")
 			return -1
 
