@@ -285,7 +285,7 @@ class DataLoader(object):
 		self.labels= [item["label"] for item in self.datalist["data"]]
 		self.snames= [item["sname"] for item in self.datalist["data"]]
 		self.classids= 	[item["id"] for item in self.datalist["data"]]
-		self.classfract_map= dict(Counter(classids).items())
+		self.classfract_map= dict(Counter(self.classids).items())
 
 		logger.info("#%d objects in dataset" % self.datasize)
 
