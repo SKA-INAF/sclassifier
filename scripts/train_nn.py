@@ -60,6 +60,12 @@ def get_args():
 	parser.add_argument('-batch_size', '--batch_size', dest='batch_size', required=False, type=int, default=32, action='store',help='Batch size used in training (default=32)')
 	
 	# - Network architecture options
+	parser.add_argument('--add_maxpooling_layer', dest='add_maxpooling_layer', action='store_true',help='Add max pooling layer after conv layers ')	
+	parser.set_defaults(add_maxpooling_layer=False)	
+	parser.add_argument('-nfilters_cnn', '--nfilters_cnn', dest='nfilters_cnn', required=False, type=str, default='32,64,128', action='store',help='Number of convolution filters per each layer')
+	parser.add_argument('-kernsizes_cnn', '--kernsizes_cnn', dest='kernsizes_cnn', required=False, type=str, default='3,5,7', action='store',help='Convolution filter kernel sizes per each layer')
+	parser.add_argument('-strides_cnn', '--strides_cnn', dest='strides_cnn', required=False, type=str, default='2,2,2', action='store',help='Convolution strides per each layer')
+	
 	parser.add_argument('-intermediate_layer_size', '--intermediate_layer_size', dest='intermediate_layer_size', required=False, type=int, default=512, action='store',help='Intermediate dense layer size used in shallow network (default=512)')
 	parser.add_argument('-n_intermediate_layers', '--n_intermediate_layers', dest='n_intermediate_layers', required=False, type=int, default=1, action='store',help='Number of intermediate dense layers used in shallow network (default=1)')
 	parser.add_argument('-intermediate_layer_size_factor', '--intermediate_layer_size_factor', dest='intermediate_layer_size_factor', required=False, type=float, default=1, action='store',help='Reduction factor used to compute number of neurons in dense layers (default=1)')
@@ -95,6 +101,11 @@ def main():
 	ny= args.ny
 
 	# - NN architecture
+	add_maxpooling_layer= args.add_maxpooling_layer
+	nfilters_cnn= [int(x.strip()) for x in args.nfilters_cnn.split(',')]
+	kernsizes_cnn= [int(x.strip()) for x in args.kernsizes_cnn.split(',')]	
+	strides_cnn= [int(x.strip()) for x in args.strides_cnn.split(',')]
+
 	intermediate_layer_size= args.intermediate_layer_size
 	n_intermediate_layers= args.n_intermediate_layers
 	intermediate_layer_size_factor= args.intermediate_layer_size_factor
@@ -130,6 +141,10 @@ def main():
 	nn.set_batch_size(batch_size)
 	nn.set_nepochs(nepochs)
 
+	nn.add_max_pooling= add_maxpooling_layer
+	nn.nfilters_cnn= nfilters_cnn
+	nn.kernsizes_cnn= kernsizes_cnn
+	nn.strides_cnn= strides_cnn
 	nn.set_intermediate_layer_size(intermediate_layer_size)
 	nn.set_n_intermediate_layers(n_intermediate_layers)
 	nn.set_intermediate_layer_size_factor(intermediate_layer_size_factor)

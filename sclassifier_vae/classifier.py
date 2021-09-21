@@ -105,7 +105,7 @@ class VAEClassifier(object):
 		self.nfilters_cnn= [32,64,128]
 		self.kernsizes_cnn= [3,5,7]
 		self.strides_cnn= [2,2,2]
-		self.add_max_pooling= True
+		self.add_max_pooling= False
 		self.pool_size= 2
 		self.add_leakyrelu= False
 		self.leakyrelu_alpha= 0.2
@@ -119,7 +119,7 @@ class VAEClassifier(object):
 		self.z_log_var = None
 		self.z = None
 		self.shape_before_flattening= 0
-		self.batch_size= 16
+		self.batch_size= 32
 		self.latent_dim= 2
 		self.nepochs= 10
 		self.optimizer= 'adam' # 'rmsprop'
