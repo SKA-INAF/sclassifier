@@ -415,11 +415,15 @@ class VAEClassifier(object):
 		#===========================	
 		# - Build model
 		logger.info("Creating VAE model ...")
+		self.outputs= self.decoder(self.encoder(self.inputs))
+		print("inputs shape")
+		print(self.inputs.shape)
+		print("outputs shape")
+		print(self.outputs.shape)
 		self.flattened_outputs = self.decoder(self.encoder(self.inputs)[2])
-		#self.outputs= layers.Reshape( (self.nx,self.ny,self.nchannels) )(self.flattened_outputs)
-		self.outputs= layers.Reshape( (self.ny,self.nx,self.nchannels) )(self.flattened_outputs)
+		#self.outputs= layers.Reshape( (self.ny,self.nx,self.nchannels) )(self.flattened_outputs)
 		self.vae = Model(self.inputs, self.outputs, name='vae_mlp')
-
+		
 		# - Set model loss = mse_loss or xent_loss + kl_loss
 		# Reconstruction loss
 		if self.use_mse_loss:
