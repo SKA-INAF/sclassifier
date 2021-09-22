@@ -346,6 +346,7 @@ class DataLoader(object):
 		nb= 0
 		data_index= -1
 		data_indexes= np.arange(0,self.datasize)
+		logger.info("Starting data generator ...")
 
 		while True:
 			try:
