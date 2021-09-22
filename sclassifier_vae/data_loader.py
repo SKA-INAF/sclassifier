@@ -377,7 +377,8 @@ class DataLoader(object):
 
 				data_shape= sdata.img_cube.shape
 				inputs_shape= (batch_size,) + data_shape
-				#print(inputs_shape)
+				print("Generating batch %d/%d ..." % (nb, batch_size))
+				print(inputs_shape)
 				logger.info("Data %d shape=(%d,%d,%d)" % (data_index,data_shape[0],data_shape[1],data_shape[2]))
 				
 
