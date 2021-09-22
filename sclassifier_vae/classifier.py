@@ -24,7 +24,10 @@ import keras
 from keras import layers
 from keras import models
 from keras import optimizers
-from keras.utils import plot_model
+try:
+	from keras.utils import plot_model
+except:
+	from keras.utils.vis_utils import plot_model
 from keras import backend as K
 from keras.models import Model
 from keras.models import load_model
