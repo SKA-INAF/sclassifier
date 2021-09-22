@@ -296,7 +296,8 @@ class VAEClassifier(object):
 		#print("vae_decoder_output shape")
 		#print(K.int_shape(vae_decoder_output))
 
-		self.outputs= self.decoder(self.encoder(self.inputs))
+		#self.outputs= self.decoder(self.encoder(self.inputs))
+		self.outputs= self.decoder(self.encoder(self.inputs)[2]) ## TEST
 		print("inputs shape")
 		print(K.int_shape(self.inputs))
 		print("outputs shape")
@@ -318,9 +319,12 @@ class VAEClassifier(object):
 		# - Set model loss = mse_loss or xent_loss + kl_loss
 		# Reconstruction loss
 		if self.use_mse_loss:
-			reconstruction_loss = mse(self.flattened_inputs,self.flattened_outputs)
+			#reconstruction_loss = mse(self.flattened_inputs,self.flattened_outputs)
+			reconstruction_loss = mse(K.flatten(self.inputs), K.flatten(self.outputs))
 		else:
-			reconstruction_loss = binary_crossentropy(self.flattened_inputs,self.flattened_outputs)
+			#reconstruction_loss = binary_crossentropy(self.flattened_inputs,self.flattened_outputs)
+			reconstruction_loss = binary_crossentropy(K.flatten(self.inputs), K.flatten(self.outputs))
+      
 
 		flatten_datadim= K.int_shape(self.flattened_inputs)[1]
 		print("flatten_datadim")
@@ -338,9 +342,9 @@ class VAEClassifier(object):
 		vae_loss = K.mean(reconstruction_loss + kl_loss)
 
 
-		#self.vae.add_loss(vae_loss)
-		#self.vae.compile(optimizer=self.optimizer)
-		self.vae.compile(optimizer=self.optimizer, loss=self.loss_func(self.z_mean, self.z_log_var))
+		self.vae.add_loss(vae_loss)
+		self.vae.compile(optimizer=self.optimizer)
+		#self.vae.compile(optimizer=self.optimizer, loss=self.loss_func(self.z_mean, self.z_log_var))
 
 		# - Print and draw model
 		self.vae.summary()
@@ -397,8 +401,8 @@ class VAEClassifier(object):
 		encoder_output= Lambda(self.__sampling, name="z")([self.z_mean, self.z_log_var])
 
 		# - Instantiate encoder model
-		#self.encoder = Model(self.inputs, [self.z_mean, self.z_log_var, self.z], name='encoder')
-		self.encoder = Model(self.inputs, encoder_output, name='encoder')
+		self.encoder = Model(self.inputs, [self.z_mean, self.z_log_var, self.z], name='encoder')
+		#self.encoder = Model(self.inputs, encoder_output, name='encoder')
 		
 		
 		# - Print and plot model
@@ -527,7 +531,6 @@ class VAEClassifier(object):
 			#	verbose=1
 			#)
 
-			#try:
 			self.fitout= self.vae.fit_generator(
 				self.train_data_generator,
 				epochs=1,
@@ -538,9 +541,6 @@ class VAEClassifier(object):
 				workers=self.nworkers,
 				verbose=2
 			)
-			#except Exception as e:
-			#	logger.error("Failed training step (err=%s)" % str(e))
-			#	return -1
 
 			loss_train= self.fitout.history['loss'][0]
 			self.train_loss_vs_epoch[0,epoch]= loss_train
