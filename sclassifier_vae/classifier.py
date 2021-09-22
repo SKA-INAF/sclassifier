@@ -559,6 +559,7 @@ class VAEClassifier(object):
 		logger.info("Start VAE training (dataset_size=%d, batch_size=%d, steps_per_epoch=%d) ..." % (self.nsamples_train, self.batch_size, steps_per_epoch))
 		for epoch in range(self.nepochs):
 	
+			logger.info("== EPOCH %d ==" % epoch)
 			#self.fitout= self.vae.fit(
 			#	x=self.inputs_train,
 			#	epochs=1,

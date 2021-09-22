@@ -317,14 +317,14 @@ class DataLoader(object):
 
 		# - Run augmentation?
 		if augment:
-			logger.info("Augmenting source image data %d ..." % index)
+			logger.debug("Augmenting source image data %d ..." % index)
 			if sdata.augment_imgs(self.augmenter)<0:
 				logger.error("Failed to augment source image %d!" % index)
 				return None
 
 		# - Resize image?
 		if resize:
-			logger.info("Resizing source image data %d ..." % index)
+			logger.debug("Resizing source image data %d ..." % index)
 			if sdata.resize_imgs(nx, ny, preserve_range=True)<0:
 				logger.error("Failed to resize source image %d to size (%d,%d)!" % (index,nx,ny))
 				return None
@@ -359,7 +359,7 @@ class DataLoader(object):
 				if shuffle:
 					data_index= np.random.choice(data_indexes)
 
-				logger.info("Reading data at index %d ..." % data_index)
+				logger.info("Reading data at index %d (batch %d/%d) ..." % (data_index,nb, batch_size))
 				
 				sdata= self.read_data(
 					data_index, 
@@ -377,9 +377,9 @@ class DataLoader(object):
 
 				data_shape= sdata.img_cube.shape
 				inputs_shape= (batch_size,) + data_shape
-				print("Generating batch %d/%d ..." % (nb, batch_size))
-				print(inputs_shape)
-				logger.info("Data %d shape=(%d,%d,%d)" % (data_index,data_shape[0],data_shape[1],data_shape[2]))
+				#print("Generating batch %d/%d ..." % (nb, batch_size))
+				#print(inputs_shape)
+				logger.debug("Data %d shape=(%d,%d,%d)" % (data_index,data_shape[0],data_shape[1],data_shape[2]))
 				
 
 				# - Initialize return data
@@ -392,8 +392,8 @@ class DataLoader(object):
 
 				# - Return data if number of batch is reached and restart the batch
 				if nb>=batch_size:
-					print("inputs.shape")
-					print(inputs.shape)
+					#print("inputs.shape")
+					#print(inputs.shape)
 					logger.info("Batch size (%d) reached, yielding generated data of size (%d,%d,%d,%d) ..." % (nb,inputs.shape[0],inputs.shape[1],inputs.shape[2],inputs.shape[3]))
 					yield inputs, inputs
 					nb= 0
