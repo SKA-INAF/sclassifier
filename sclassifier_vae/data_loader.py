@@ -89,7 +89,7 @@ class SourceData(object):
 
 		for filename in self.filepaths:
 			# - Read image
-			logger.info("Reading file %s ..." % filename) 
+			logger.debug("Reading file %s ..." % filename) 
 			data= None
 			try:
 				data, header= Utils.read_fits(filename)
