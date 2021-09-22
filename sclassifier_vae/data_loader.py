@@ -84,8 +84,8 @@ class SourceData(object):
 		# - Read images
 		nimgs= len(self.filepaths)
 		self.nchannels= nimgs
-		print("filepaths")
-		print(self.filepaths)
+		#print("filepaths")
+		#print(self.filepaths)
 
 		for filename in self.filepaths:
 			# - Read image
@@ -176,8 +176,8 @@ class SourceData(object):
 		self.nx= self.img_cube.shape[1]
 		self.ny= self.img_cube.shape[0]
 		self.nchannels= self.img_cube.shape[-1]
-		print("Image cube size after resizing")
-		print(self.img_cube.shape)
+		#print("Image cube size after resizing")
+		#print(self.img_cube.shape)
 
 		return 0	
 		
@@ -375,10 +375,10 @@ class DataLoader(object):
 					continue
 
 				data_shape= sdata.img_cube.shape
-				inputs_shape= (batch_size,)+ data_shape
-
-				print("inputs_shape")
-				print(inputs_shape)
+				inputs_shape= (batch_size,) + data_shape
+				#print(inputs_shape)
+				logger.info("Data %d shape=(%d,%d,%d)" % (data_shape[0],data_shape[1],data_shape[2]))
+				
 
 				# - Initialize return data
 				if nb==0:
@@ -390,7 +390,9 @@ class DataLoader(object):
 
 				# - Return data if number of batch is reached and restart the batch
 				if nb>=batch_size:
-					logger.info("Batch size (%d) reached, yielding generated data ..." % nb)
+					print("inputs.shape")
+					print(inputs.shape)
+					logger.info("Batch size (%d) reached, yielding generated data of size (%d,%d,%d,%d) ..." % (nb,inputs.shape[0],inputs.shape[1],inputs.shape[2],inputs.shape[3]))
 					yield inputs, inputs
 					nb= 0
 
