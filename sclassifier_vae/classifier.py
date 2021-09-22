@@ -396,7 +396,7 @@ class VAEClassifier(object):
 		# - Output layers
 		self.z_mean = layers.Dense(self.latent_dim,name='z_mean')(x)
 		self.z_log_var = layers.Dense(self.latent_dim,name='z_log_var')(x)
-		#self.z = Lambda(self.__sampling, output_shape=(self.latent_dim,), name='z')([self.z_mean, self.z_log_var])
+		self.z = Lambda(self.__sampling, output_shape=(self.latent_dim,), name='z')([self.z_mean, self.z_log_var])
 		#self.z = Sampling()([self.z_mean, self.z_log_var])
 		encoder_output= Lambda(self.__sampling, name="z")([self.z_mean, self.z_log_var])
 
