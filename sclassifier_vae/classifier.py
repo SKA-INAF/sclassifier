@@ -330,7 +330,7 @@ class VAEClassifier(object):
 		print("flatten_datadim")
 		print(flatten_datadim)		
 
-		#reconstruction_loss*= self.input_data_dim[1]
+		
 		reconstruction_loss*= flatten_datadim
 
 		# Kl loss
@@ -345,6 +345,7 @@ class VAEClassifier(object):
 		#self.vae.add_loss(vae_loss)
 		#self.vae.compile(optimizer=self.optimizer)
 		#self.vae.compile(optimizer=self.optimizer, loss=self.loss_func(self.z_mean, self.z_log_var))
+		self.vae.compile(optimizer=self.optimizer, loss=self.loss)
 
 		# - Print and draw model
 		self.vae.summary()
