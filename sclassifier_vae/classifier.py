@@ -19,6 +19,12 @@ import random
 import math
 import logging
 
+##############################
+##     GLOBAL VARS
+##############################
+#logger = logging.getLogger(__name__)
+from sclassifier_vae import logger
+
 ## KERAS MODULES
 import keras
 from keras import layers
@@ -33,7 +39,8 @@ from keras.models import Model
 from keras.models import load_model
 try:
 	from keras.layers.normalization import BatchNormalization
-except:
+except Exception as e:
+	logger.warn("Failed to import BatchNormalization (err=%s), trying in another way ..." % str(e))
 	from keras.layers.normalization import layer_normalization as BatchNormalization
 from keras.layers.convolutional import Conv2D
 from keras.layers.convolutional import MaxPooling2D
@@ -56,10 +63,7 @@ from .utils import Utils
 from .data_loader import DataLoader
 from .data_loader import SourceData
 
-##############################
-##     GLOBAL VARS
-##############################
-logger = logging.getLogger(__name__)
+
 
 
 class Sampling(layers.Layer):
