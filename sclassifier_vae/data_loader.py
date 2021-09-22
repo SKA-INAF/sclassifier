@@ -359,7 +359,7 @@ class DataLoader(object):
 				if shuffle:
 					data_index= np.random.choice(data_indexes)
 
-				logger.info("Reading data at index %d (batch %d/%d) ..." % (data_index,nb, batch_size))
+				logger.debug("Reading data at index %d (batch %d/%d) ..." % (data_index,nb, batch_size))
 				
 				sdata= self.read_data(
 					data_index, 
