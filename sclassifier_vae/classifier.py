@@ -133,7 +133,7 @@ class VAEClassifier(object):
 		self.nepochs= 10
 		self.optimizer= 'adam' # 'rmsprop'
 		self.learning_rate= 1.e-4
-		self.use_mse_loss= True
+		self.use_mse_loss= False
 
 		# - Draw options
 		self.marker_mapping= {
@@ -342,8 +342,8 @@ class VAEClassifier(object):
 		vae_loss = K.mean(reconstruction_loss + kl_loss)
 
 
-		self.vae.add_loss(vae_loss)
-		self.vae.compile(optimizer=self.optimizer)
+		#self.vae.add_loss(vae_loss)
+		#self.vae.compile(optimizer=self.optimizer)
 		#self.vae.compile(optimizer=self.optimizer, loss=self.loss_func(self.z_mean, self.z_log_var))
 
 		# - Print and draw model
@@ -466,7 +466,27 @@ class VAEClassifier(object):
 	###########################
 	##     LOSS DEFINITION
 	###########################
-	def loss_func(self, encoder_mu, encoder_log_variance):
+	def loss(self, y_true, y_pred):
+		""" Loss function definition """
+
+		# - Compute reconstruction loss term
+		logger.info("Computing the reconstruction loss ...")
+		if self.use_mse_loss:
+			reconstruction_loss = mse(K.flatten(y_true), K.flatten(y_pred))
+		else:
+			reconstruction_loss = binary_crossentropy(K.flatten(y_true), K.flatten(y_pred))
+      
+		# - Compute KL loss term
+		kl_loss= - 0.5 * K.sum(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
+		
+		# Total loss
+		vae_loss = K.mean(reconstruction_loss + kl_loss)
+
+		return vae_loss
+
+
+
+	def loss_v2(self, encoder_mu, encoder_log_variance):
 		""" Loss function definition """
 
 		def vae_reconstruction_loss(y_true, y_predict):
