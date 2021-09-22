@@ -557,36 +557,57 @@ class VAEClassifier(object):
 		#==   TRAIN VAE
 		#===========================
 		logger.info("Start VAE training (dataset_size=%d, batch_size=%d, steps_per_epoch=%d) ..." % (self.nsamples_train, self.batch_size, steps_per_epoch))
-		for epoch in range(self.nepochs):
-	
-			logger.info("== EPOCH %d ==" % epoch)
-			#self.fitout= self.vae.fit(
-			#	x=self.inputs_train,
-			#	epochs=1,
-			#	batch_size=self.batch_size,
-			#	validation_data=(self.inputs_train, None),
-			#	verbose=1
-			#)
 
-			self.fitout= self.vae.fit(
-				x=self.train_data_generator,
-				epochs=1,
-				steps_per_epoch=steps_per_epoch,
-				#validation_data=self.train_data_generator,
-				#validation_steps=self.validation_steps,
-				use_multiprocessing=self.use_multiprocessing,
-				workers=self.nworkers,
-				verbose=2
-			)
+		self.fitout= self.vae.fit(
+			x=self.train_data_generator,
+			epochs=self.nepochs,
+			steps_per_epoch=steps_per_epoch,
+			#validation_data=self.train_data_generator,
+			#validation_steps=self.validation_steps,
+			use_multiprocessing=self.use_multiprocessing,
+			workers=self.nworkers,
+			verbose=2
+		)
 
-			loss_train= self.fitout.history['loss'][0]
-			self.train_loss_vs_epoch[0,epoch]= loss_train
-			if epoch>=1:
-				deltaLoss_train= (loss_train/self.train_loss_vs_epoch[0,epoch-1]-1)*100.
+		#for epoch in range(self.nepochs):
+		#	logger.info("== EPOCH %d ==" % epoch)
+		#	self.fitout= self.vae.fit(
+		#		x=self.train_data_generator,
+		#		epochs=1,
+		#		steps_per_epoch=steps_per_epoch,
+		#		###validation_data=self.train_data_generator,
+		#		###validation_steps=self.validation_steps,
+		#		use_multiprocessing=self.use_multiprocessing,
+		#		workers=self.nworkers,
+		#		verbose=2
+		#	)
 
-			logger.info("EPOCH %d: loss(train)=%s (dl=%s)" % (epoch,loss_train,deltaLoss_train))
+		#	loss_train= self.fitout.history['loss'][0]
+		#	self.train_loss_vs_epoch[0,epoch]= loss_train
+		#	if epoch>=1:
+		#		deltaLoss_train= (loss_train/self.train_loss_vs_epoch[0,epoch-1]-1)*100.
+
+		#	logger.info("EPOCH %d: loss(train)=%s (dl=%s)" % (epoch,loss_train,deltaLoss_train))
 				
-				
+
+		# - Get losses and plot
+		logger.info("Retrieving losses and plot ...")
+		loss_train= self.fitout.history['loss']
+		print("loss_train.shape")
+		print(loss_train.shape)
+		print(loss_train)
+
+		plt.plot(history.history['loss'])				
+		plt.title('loss')
+		plt.ylabel('loss')
+		plt.xlabel('epochs')
+		plt.xlim(left=0)
+		plt.ylim(bottom=0)
+		plt.legend(['train loss'], loc='upper right')
+		plt.show()
+		plt.savefig('loss.png')				
+
+
 
 		#===========================
 		#==   SAVE NN
@@ -612,19 +633,19 @@ class VAEClassifier(object):
 		#================================
 		#==   SAVE TRAIN METRICS
 		#================================
-		logger.info("Saving train metrics (loss, ...) to file ...")
-		N= self.train_loss_vs_epoch.shape[1]
-		epoch_ids= np.array(range(N))
-		epoch_ids+= 1
-		epoch_ids= epoch_ids.reshape(N,1)
+		#logger.info("Saving train metrics (loss, ...) to file ...")
+		#N= self.train_loss_vs_epoch.shape[1]
+		#epoch_ids= np.array(range(N))
+		#epoch_ids+= 1
+		#epoch_ids= epoch_ids.reshape(N,1)
 
-		metrics_data= np.concatenate(
-			(epoch_ids,self.train_loss_vs_epoch.reshape(N,1)),
-			axis=1
-		)
+		#metrics_data= np.concatenate(
+		#	(epoch_ids,self.train_loss_vs_epoch.reshape(N,1)),
+		#	axis=1
+		#)
 			
-		head= '# epoch - loss'
-		Utils.write_ascii(metrics_data,self.outfile_nnout_metrics,head)	
+		#head= '# epoch - loss'
+		#Utils.write_ascii(metrics_data,self.outfile_nnout_metrics,head)	
 
 		#================================
 		#==   SAVE ENCODED DATA
