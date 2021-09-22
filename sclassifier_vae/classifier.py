@@ -464,20 +464,35 @@ class VAEClassifier(object):
 	###########################
 	def loss_func(self, encoder_mu, encoder_log_variance):
 		""" Loss function definition """
+
 		def vae_reconstruction_loss(y_true, y_predict):
 			reconstruction_loss_factor = 1000
+			logger.info("Computing the reconstruction loss ...")
 			reconstruction_loss = tf.keras.backend.mean(tf.keras.backend.square(y_true-y_predict), axis=[1, 2, 3])
+			logger.info("Reconstruction loss done")
 			return reconstruction_loss_factor * reconstruction_loss
 
 		def vae_kl_loss(encoder_mu, encoder_log_variance):
+			logger.info("Computing the KL loss ...")
 			kl_loss = -0.5 * tf.keras.backend.sum(1.0 + encoder_log_variance - tf.keras.backend.square(encoder_mu) - tf.keras.backend.exp(encoder_log_variance), axis=1)
+			logger.info("KL loss done ...")
 			return kl_loss
 
 		def vae_kl_loss_metric(y_true, y_predict):
+			logger.info("Computing the KL loss metric ...")
 			kl_loss = -0.5 * tf.keras.backend.sum(1.0 + encoder_log_variance - tf.keras.backend.square(encoder_mu) - tf.keras.backend.exp(encoder_log_variance), axis=1)
+			logger.info("KL metric loss done ...")
 			return kl_loss
 
 		def vae_loss(y_true, y_predict):
+
+			y_true_dim= K.int_shape(y_true)
+			y_predict_dim= K.int_shape(y_predict)
+			print("y_true_dim")
+			print(y_true_dim)
+			print("y_predict_dim")
+			print(y_predict_dim)
+
 			reconstruction_loss = vae_reconstruction_loss(y_true, y_predict)
 			kl_loss = vae_kl_loss(y_true, y_predict)
 
