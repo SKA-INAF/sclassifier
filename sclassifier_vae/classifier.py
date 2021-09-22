@@ -554,8 +554,8 @@ class VAEClassifier(object):
 			#	verbose=1
 			#)
 
-			self.fitout= self.vae.fit_generator(
-				self.train_data_generator,
+			self.fitout= self.vae.fit(
+				x=self.train_data_generator,
 				epochs=1,
 				steps_per_epoch=steps_per_epoch,
 				#validation_data=self.train_data_generator,
