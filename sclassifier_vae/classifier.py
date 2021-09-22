@@ -55,6 +55,9 @@ import tensorflow as tf
 from keras.losses import mse, binary_crossentropy
 
 
+from tensorflow.python.framework.ops import disable_eager_execution
+disable_eager_execution()
+
 ## GRAPHICS MODULES
 import matplotlib.pyplot as plt
 
@@ -355,7 +358,7 @@ class VAEClassifier(object):
 		#self.vae.add_loss(vae_loss)
 		#self.vae.compile(optimizer=self.optimizer)
 		#self.vae.compile(optimizer=self.optimizer, loss=self.loss_func(self.z_mean, self.z_log_var))
-		self.vae.compile(optimizer=self.optimizer, loss=self.loss)
+		self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
 
 		# - Print and draw model
 		self.vae.summary()
