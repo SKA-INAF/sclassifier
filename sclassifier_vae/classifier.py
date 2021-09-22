@@ -31,7 +31,10 @@ except:
 from keras import backend as K
 from keras.models import Model
 from keras.models import load_model
-from keras.layers.normalization import BatchNormalization
+try:
+	from keras.layers.normalization import BatchNormalization
+except:
+	from keras.layers.normalization import layer_normalization as BatchNormalization
 from keras.layers.convolutional import Conv2D
 from keras.layers.convolutional import MaxPooling2D
 from keras.layers.core import Activation
