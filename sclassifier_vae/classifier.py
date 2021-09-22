@@ -41,7 +41,7 @@ try:
 	from keras.layers.normalization import BatchNormalization
 except Exception as e:
 	logger.warn("Failed to import BatchNormalization (err=%s), trying in another way ..." % str(e))
-	from keras.layers.normalization import layer_normalization as BatchNormalization
+	from keras.layers import BatchNormalization
 from keras.layers.convolutional import Conv2D
 from keras.layers.convolutional import MaxPooling2D
 from keras.layers.core import Activation
