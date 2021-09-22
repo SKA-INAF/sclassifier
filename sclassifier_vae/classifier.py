@@ -310,7 +310,7 @@ class VAEClassifier(object):
 		#self.flattened_outputs = self.decoder(self.encoder(self.inputs)[2])
 		#self.outputs= layers.Reshape( (self.ny,self.nx,self.nchannels) )(self.flattened_outputs)
 		#self.vae = Model(self.inputs, self.outputs, name='vae_mlp')
-		self.vae = Model(self.inputs, self.outputs, name='vae_mlp')
+		self.vae = Model(inputs=self.inputs, outputs=self.outputs, name='vae')
 		
 		#===========================
 		#==   SET LOSS
