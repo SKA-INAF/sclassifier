@@ -388,7 +388,8 @@ class DataLoader(object):
 				# - Return data if number of batch is reached and restart the batch
 				if nb>=batch_size:
 					logger.info("Batch size (%d) reached, yielding generated data ..." % nb)
-					yield (inputs, inputs)
+					
+					yield ([inputs], [inputs])
 					nb= 0
 
 			except (GeneratorExit, KeyboardInterrupt):
