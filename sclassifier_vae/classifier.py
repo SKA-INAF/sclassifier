@@ -329,13 +329,6 @@ class VAEClassifier(object):
 		#reconstruction_loss*= self.input_data_dim[1]
 		reconstruction_loss*= flatten_datadim
 
-		#reconstruction_loss = tf.reduce_mean(
-		#	tf.reduce_sum(
-		#		keras.losses.binary_crossentropy(data, reconstruction), 
-		#		axis=(1, 2)
-		#	)
-    #)
-
 		# Kl loss
 		kl_loss = 1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var)
 		kl_loss = K.sum(kl_loss, axis=-1)
@@ -344,9 +337,11 @@ class VAEClassifier(object):
 		# Total loss
 		vae_loss = K.mean(reconstruction_loss + kl_loss)
 
-		self.vae.add_loss(vae_loss)
-		self.vae.compile(optimizer=self.optimizer)
-    
+
+		#self.vae.add_loss(vae_loss)
+		#self.vae.compile(optimizer=self.optimizer)
+		self.vae.compile(optimizer=self.optimizer, loss=self.loss_func(self.z_mean, self.z_log_var))
+
 		# - Print and draw model
 		self.vae.summary()
 		plot_model(self.vae,to_file='vae_mlp.png',show_shapes=True)
