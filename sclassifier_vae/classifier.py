@@ -37,7 +37,7 @@ except:
 	from tensorflow.keras.utils.vis_utils import plot_model
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model
-from tensorflow,keras.models import load_model
+from tensorflow.keras.models import load_model
 try:
 	from tensorflow.keras.layers.normalization import BatchNormalization
 except Exception as e:
