@@ -487,7 +487,7 @@ class VAEClassifier(object):
 	##     LOSS DEFINITION
 	###########################
 	@tf.function
-	def reco_loss(self, **kwargs):
+	def reco_loss(self, *args, **kwargs):
 		""" Reconstruction loss function definition """
     
 		def fn(y_true, y_pred):
@@ -506,7 +506,7 @@ class VAEClassifier(object):
 
 	
 	@tf.function
-	def kl_loss(self, **kwargs):
+	def kl_loss(self, *args, **kwargs):
 		""" KL loss function definition """
 	
 		def fn(y_true, y_pred):
