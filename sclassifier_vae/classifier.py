@@ -131,7 +131,8 @@ class VAEClassifier(object):
 		self.pool_size= 2
 		self.add_leakyrelu= False
 		self.leakyrelu_alpha= 0.2
-		self.add_batchnorm= True
+		self.add_batchnorm= False
+		self.activation_fcn_cnn= "relu"
 		self.nlayers_intermediate= 1
 		self.intermediate_layer_size_factor= 1
 		self.intermediate_dim= 512
@@ -386,7 +387,7 @@ class VAEClassifier(object):
 
 			# - Add a Convolutional 2D layer
 			padding= "same"
-			x = layers.Conv2D(self.nfilters_cnn[k], (self.kernsizes_cnn[k], self.kernsizes_cnn[k]), strides=self.strides_cnn[k], padding=padding)(x)
+			x = layers.Conv2D(self.nfilters_cnn[k], (self.kernsizes_cnn[k], self.kernsizes_cnn[k]), strides=self.strides_cnn[k], activation=self.activation_fcn_cnn, padding=padding)(x)
 
 			# - Add max pooling?
 			if self.add_max_pooling:
@@ -444,7 +445,7 @@ class VAEClassifier(object):
 		for k in reversed(range(len(self.nfilters_cnn))):
 			# - Add deconv 2D layer
 			padding= "same"
-			x = layers.Conv2DTranspose(self.nfilters_cnn[k], (self.kernsizes_cnn[k], self.kernsizes_cnn[k]), strides=self.strides_cnn[k], padding=padding)(x)
+			x = layers.Conv2DTranspose(self.nfilters_cnn[k], (self.kernsizes_cnn[k], self.kernsizes_cnn[k]), strides=self.strides_cnn[k], activation=self.activation_fcn_cnn, padding=padding)(x)
 
 			# - Add max pooling?
 			if self.add_max_pooling:
