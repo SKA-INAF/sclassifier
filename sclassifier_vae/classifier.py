@@ -488,7 +488,7 @@ class VAEClassifier(object):
 		""" Loss function definition """
 
 		# - Print and fix numerical issues
-		logger.info("Print tensors and fix numerical issues before computing loss ...")		
+		#logger.info("Print tensors and fix numerical issues before computing loss ...")		
 		tf.print("\n y_true_dim:", K.int_shape(y_true), output_stream=sys.stdout)
 		tf.print("\n y_pred_dim:", K.int_shape(y_pred), output_stream=sys.stdout)
 		tf.print("\n y_true min:", tf.math.reduce_min(y_true), output_stream=sys.stdout)
@@ -499,7 +499,7 @@ class VAEClassifier(object):
 		# - Compute flattened tensors
 		y_true_flattened= K.flatten(y_true)
 		y_pred_flattened= K.flatten(y_pred)
-		y_pred_flattened_nonans = tf.where(tf.is_nan(y_pred_flattened_nonans), tf.ones_like(w) * 0, y_pred_flattened_nonans) 
+		y_pred_flattened_nonans = tf.where(tf.math.is_nan(y_pred_flattened_nonans), tf.ones_like(w) * 0, y_pred_flattened_nonans) 
 
 		tf.print("\n flatten y_true:", y_true_flattened, output_stream=sys.stdout)
 		tf.print("\n flatten y_pred:", y_pred_flattened, output_stream=sys.stdout)
@@ -513,7 +513,7 @@ class VAEClassifier(object):
 		tf.print("\n flatten y_pred safe max:", tf.math.reduce_max(y_pred_flattened_nonans), output_stream=sys.stdout)
 		
 		# - Compute reconstruction loss term
-		logger.info("Computing the reconstruction loss ...")		
+		#logger.info("Computing the reconstruction loss ...")		
 		if self.use_mse_loss:
 			reconstruction_loss = mse(y_true_flattened, y_pred_flattened_nonans)
 		else:
@@ -523,13 +523,13 @@ class VAEClassifier(object):
 		tf.print("\n reconstruction_loss:", reconstruction_loss, output_stream=sys.stdout)
 		
 		# - Compute KL loss term
-		logger.info("Computing the KL loss ...")
+		#logger.info("Computing the KL loss ...")
 		kl_loss= - 0.5 * K.sum(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
 		#print("kl_loss=", kl_loss)
 		tf.print("\n kl_loss:", kl_loss, output_stream=sys.stdout)
 		
 		# Total loss
-		logger.info("Computing the total loss ...")
+		#logger.info("Computing the total loss ...")
 		vae_loss = K.mean(reconstruction_loss + kl_loss)
 		#print("vae_loss=", vae_loss)
 		tf.print("\n vae_loss:", vae_loss, output_stream=sys.stdout)
