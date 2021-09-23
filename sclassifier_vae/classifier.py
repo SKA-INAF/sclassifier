@@ -138,6 +138,8 @@ class VAEClassifier(object):
 		self.intermediate_dim= 512
 		self.intermediate_layer_activation= 'relu'
 		self.output_layer_activation= 'sigmoid'
+		self.rec_loss_weight= 0.5
+		self.kl_loss_weight= 0.5
 		self.z_mean = None
 		self.z_log_var = None
 		self.z = None
@@ -528,12 +530,15 @@ class VAEClassifier(object):
 		# - Compute KL loss term
 		#logger.info("Computing the KL loss ...")
 		kl_loss= - 0.5 * K.sum(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
+		kl_loss_mean= K.mean(kl_loss)
 		#print("kl_loss=", kl_loss)
 		tf.print("\n kl_loss:", kl_loss, output_stream=sys.stdout)
+		tf.print("\n kl_loss_mean:", kl_loss_mean, output_stream=sys.stdout)
 		
 		# Total loss
 		#logger.info("Computing the total loss ...")
-		vae_loss = K.mean(reconstruction_loss + kl_loss)
+		#vae_loss = K.mean(reconstruction_loss + kl_loss)
+		vae_loss = self.rec_loss_weight*reconstruction_loss + self.kl_loss_weight*kl_loss_mean
 		#print("vae_loss=", vae_loss)
 		tf.print("\n vae_loss:", vae_loss, output_stream=sys.stdout)
 		
