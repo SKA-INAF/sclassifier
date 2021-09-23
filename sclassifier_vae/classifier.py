@@ -144,8 +144,11 @@ class VAEClassifier(object):
 		self.batch_size= 32
 		self.latent_dim= 2
 		self.nepochs= 10
-		self.optimizer= 'adam' # 'rmsprop'
+		
 		self.learning_rate= 1.e-4
+		#self.optimizer= 'adam' # 'rmsprop'
+		#self.optimizer= tf.keras.optimizers.RMSprop(learning_rate=self.learning_rate)	
+		self.optimizer= tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
 		self.use_mse_loss= False
 
 		# - Draw options
@@ -357,8 +360,8 @@ class VAEClassifier(object):
 
 		#self.vae.add_loss(vae_loss)
 		#self.vae.compile(optimizer=self.optimizer)
-		#self.vae.compile(optimizer=self.optimizer, loss=self.loss_func(self.z_mean, self.z_log_var))
-		self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
+		self.vae.compile(optimizer=self.optimizer, loss=self.loss_v2(self.z_mean, self.z_log_var))
+		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
 
 		# - Print and draw model
 		self.vae.summary()
@@ -487,8 +490,16 @@ class VAEClassifier(object):
 		# - Compute reconstruction loss term
 		logger.info("Computing the reconstruction loss ...")
 
+		y_true_dim= K.int_shape(y_true)
+		y_pred_dim= K.int_shape(y_pred)
+		#flatten_datadim= K.int_shape(y_true)[1]
+		tf.print("\n y_true_dim:", y_true_dim, output_stream=sys.stdout)
+		tf.print("\n y_pred_dim:", y_pred_dim, output_stream=sys.stdout)
+		
 		y_true_flattened= K.flatten(y_true)
 		y_pred_flattened= K.flatten(y_pred)
+		y_pred_flattened_nonans = tf.where(tf.is_nan(y_pred_flattened_nonans), tf.ones_like(w) * 0, y_pred_flattened_nonans) 
+
 		#print("y_true shape=", K.int_shape(y_true_flattened))
 		#print("y_pred shape=", K.int_shape(y_pred_flattened))
 		tf.print("\n y_true:", y_true_flattened, output_stream=sys.stdout)
@@ -498,12 +509,13 @@ class VAEClassifier(object):
 		tf.print("\n y_true max:", tf.math.reduce_max(y_true_flattened), output_stream=sys.stdout)
 		tf.print("\n y_pred min:", tf.math.reduce_min(y_pred_flattened), output_stream=sys.stdout)
 		tf.print("\n y_pred max:", tf.math.reduce_max(y_pred_flattened), output_stream=sys.stdout)
+		tf.print("\n y_pred safe min:", tf.math.reduce_min(y_pred_flattened_nonans), output_stream=sys.stdout)
+		tf.print("\n y_pred safe max:", tf.math.reduce_max(y_pred_flattened_nonans), output_stream=sys.stdout)
 		
-
 		if self.use_mse_loss:
-			reconstruction_loss = mse(y_true_flattened, y_pred_flattened)
+			reconstruction_loss = mse(y_true_flattened, y_pred_flattened_nonans)
 		else:
-			reconstruction_loss = binary_crossentropy(y_true_flattened, y_pred_flattened)
+			reconstruction_loss = binary_crossentropy(y_true_flattened, y_pred_flattened_nonans)
       
 		#print("reconstruction_loss=", reconstruction_loss)
 		tf.print("\n reconstruction_loss:", reconstruction_loss, output_stream=sys.stdout)
@@ -523,42 +535,62 @@ class VAEClassifier(object):
 		return vae_loss
 
 
-
+	@tf.function
 	def loss_v2(self, encoder_mu, encoder_log_variance):
 		""" Loss function definition """
 
-		def vae_reconstruction_loss(y_true, y_predict):
+		# - Taken from https://blog.paperspace.com/how-to-build-variational-autoencoder-keras/
+
+		def vae_reconstruction_loss(y_true, y_pred):
+			""" Define reconstruction loss """
 			reconstruction_loss_factor = 1000
 			logger.info("Computing the reconstruction loss ...")
-			reconstruction_loss = tf.keras.backend.mean(tf.keras.backend.square(y_true-y_predict), axis=[1, 2, 3])
+			reconstruction_loss = tf.keras.backend.mean(tf.keras.backend.square(y_true-y_pred), axis=[1, 2, 3])	
 			logger.info("Reconstruction loss done")
 			return reconstruction_loss_factor * reconstruction_loss
 
-		def vae_kl_loss(encoder_mu, encoder_log_variance):
+		#def vae_kl_loss(encoder_mu, encoder_log_variance): # Original buggy code
+		def vae_kl_loss(y_true, y_pred):
+			""" Define KL loss """
 			logger.info("Computing the KL loss ...")
-			kl_loss = -0.5 * tf.keras.backend.sum(1.0 + encoder_log_variance - tf.keras.backend.square(encoder_mu) - tf.keras.backend.exp(encoder_log_variance), axis=1)
+			#kl_loss = -0.5 * tf.keras.backend.sum(1.0 + encoder_log_variance - tf.keras.backend.square(encoder_mu) - tf.keras.backend.exp(encoder_log_variance), axis=1) # Original buggy code
+			kl_loss = -0.5 * tf.keras.backend.sum(1.0 + encoder_log_variance - tf.keras.backend.square(encoder_mu) - tf.keras.backend.exp(encoder_log_variance), axis=[1, 2, 3])	
 			logger.info("KL loss done ...")
 			return kl_loss
 
-		def vae_kl_loss_metric(y_true, y_predict):
-			logger.info("Computing the KL loss metric ...")
-			kl_loss = -0.5 * tf.keras.backend.sum(1.0 + encoder_log_variance - tf.keras.backend.square(encoder_mu) - tf.keras.backend.exp(encoder_log_variance), axis=1)
-			logger.info("KL metric loss done ...")
-			return kl_loss
+	
+		#def vae_kl_loss_metric(y_true, y_pred):
+		#	logger.info("Computing the KL loss metric ...")
+		#	##kl_loss = -0.5 * tf.keras.backend.sum(1.0 + encoder_log_variance - tf.keras.backend.square(encoder_mu) - tf.keras.backend.exp(encoder_log_variance), axis=1) # Original buggy code
+		#	kl_loss = -0.5 * tf.keras.backend.sum(1.0 + encoder_log_variance - tf.keras.backend.square(encoder_mu) - tf.keras.backend.exp(encoder_log_variance), axis=[1, 2, 3])
+		#	logger.info("KL metric loss done ...")
+		#	return kl_loss
 
-		def vae_loss(y_true, y_predict):
+		def vae_loss(y_true, y_pred):
+			""" Define total loss"""
 
 			y_true_dim= K.int_shape(y_true)
-			y_predict_dim= K.int_shape(y_predict)
-			print("y_true_dim")
-			print(y_true_dim)
-			print("y_predict_dim")
-			print(y_predict_dim)
-
-			reconstruction_loss = vae_reconstruction_loss(y_true, y_predict)
-			kl_loss = vae_kl_loss(y_true, y_predict)
-
+			y_pred_dim= K.int_shape(y_pred)
+			tf.print("\n y_true_dim:", y_true_dim, output_stream=sys.stdout)
+			tf.print("\n y_pred_dim:", y_pred_dim, output_stream=sys.stdout)
+			tf.print("\n y_true min:", tf.math.reduce_min(y_true), output_stream=sys.stdout)
+			tf.print("\n y_true max:", tf.math.reduce_max(y_true), output_stream=sys.stdout)
+			tf.print("\n y_pred min:", tf.math.reduce_min(y_pred), output_stream=sys.stdout)
+			tf.print("\n y_pred max:", tf.math.reduce_max(y_pred), output_stream=sys.stdout)
+		
+			reconstruction_loss = vae_reconstruction_loss(y_true, y_pred)
+			kl_loss = vae_kl_loss(y_true, y_pred)
 			loss = reconstruction_loss + kl_loss
+			#loss = K.mean(reconstruction_loss + kl_loss)	
+
+			tf.print("\n reconstruction_loss dim:", K.int_shape(reconstruction_loss), output_stream=sys.stdout)
+			tf.print("\n reconstruction_loss:", reconstruction_loss, output_stream=sys.stdout)
+			tf.print("\n kl_loss dim:", K.int_shape(kl_loss), output_stream=sys.stdout)
+			tf.print("\n kl_loss:", kl_loss, output_stream=sys.stdout)
+			tf.print("\n loss dim:", K.int_shape(loss), output_stream=sys.stdout)
+			tf.print("\n loss:", loss, output_stream=sys.stdout)
+		
+
 			return loss
 
 		return vae_loss
