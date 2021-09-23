@@ -781,7 +781,8 @@ class VAEClassifier(object):
 		logger.info("Saving encoded data to file ...")
 		#self.encoded_data, _, _= self.encoder.predict(self.inputs_train, batch_size=self.batch_size)
 		self.encoded_data, _, _= self.encoder.predict(
-			x=self.test_data_generator,
+			x=self.test_data_generator,	
+			steps=steps_per_epoch,
     	verbose=2,
     	workers=self.nworkers,
     	use_multiprocessing=self.use_multiprocessing
