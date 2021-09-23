@@ -494,6 +494,12 @@ class VAEClassifier(object):
 		tf.print("\n y_true:", y_true_flattened, output_stream=sys.stdout)
 		tf.print("\n y_pred:", y_pred_flattened, output_stream=sys.stdout)
 
+		tf.print("\n y_true min:", tf.math.reduce_min(y_true_flattened), output_stream=sys.stdout)
+		tf.print("\n y_true max:", tf.math.reduce_max(y_true_flattened), output_stream=sys.stdout)
+		tf.print("\n y_pred min:", tf.math.reduce_min(y_pred_flattened), output_stream=sys.stdout)
+		tf.print("\n y_pred max:", tf.math.reduce_max(y_pred_flattened), output_stream=sys.stdout)
+		
+
 		if self.use_mse_loss:
 			reconstruction_loss = mse(y_true_flattened, y_pred_flattened)
 		else:
