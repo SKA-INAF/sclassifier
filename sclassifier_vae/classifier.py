@@ -490,15 +490,16 @@ class VAEClassifier(object):
 	def reco_loss_metric(self, y_true, y_pred):
 		""" Reconstruction loss function definition """
     
-		y_true_shape= K.shape(y_true)
-		img_cube_size= y_true_shape[1]*y_true_shape[2]*y_true_shape[3]
+		#y_true_shape= K.shape(y_true)
+		#img_cube_size= y_true_shape[1]*y_true_shape[2]*y_true_shape[3]
 
 		if self.use_mse_loss:
 			reco_loss = mse(K.flatten(y_true), K.flatten(y_pred))
 		else:
 			reco_loss = binary_crossentropy(K.flatten(y_true), K.flatten(y_pred))
       
-		return reco_loss*img_cube_size
+		#return reco_loss*img_cube_size
+		return reco_loss
 
 	@tf.function
 	def kl_loss_metric(self, y_true, y_pred):
@@ -555,13 +556,13 @@ class VAEClassifier(object):
 		tf.print("\n y_pred max:", tf.math.reduce_max(y_pred), output_stream=sys.stdout)
 		
 		# - Compute flattened tensors
-		y_true_shape= K.shape(y_true)
-		img_cube_size= y_true_shape[1]*y_true_shape[2]*y_true_shape[3]
+		#y_true_shape= K.shape(y_true)
+		#img_cube_size= y_true_shape[1]*y_true_shape[2]*y_true_shape[3]
 		y_true_flattened= K.flatten(y_true)
 		y_pred_flattened= K.flatten(y_pred)
 		#y_pred_flattened_nonans = tf.where(tf.math.is_nan(y_pred_flattened_nonans), tf.ones_like(w) * 0, y_pred_flattened_nonans) 
 
-		tf.print("\n img_cube_size:", img_cube_size, output_stream=sys.stdout)
+		#tf.print("\n img_cube_size:", img_cube_size, output_stream=sys.stdout)
 		tf.print("\n flatten y_true:", y_true_flattened, output_stream=sys.stdout)
 		tf.print("\n flatten y_pred:", y_pred_flattened, output_stream=sys.stdout)
 		tf.print("\n flatten y_true_dim:", K.int_shape(y_true_flattened), output_stream=sys.stdout)
