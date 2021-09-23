@@ -499,7 +499,7 @@ class VAEClassifier(object):
 		# - Compute flattened tensors
 		y_true_flattened= K.flatten(y_true)
 		y_pred_flattened= K.flatten(y_pred)
-		y_pred_flattened_nonans = tf.where(tf.math.is_nan(y_pred_flattened_nonans), tf.ones_like(w) * 0, y_pred_flattened_nonans) 
+		#y_pred_flattened_nonans = tf.where(tf.math.is_nan(y_pred_flattened_nonans), tf.ones_like(w) * 0, y_pred_flattened_nonans) 
 
 		tf.print("\n flatten y_true:", y_true_flattened, output_stream=sys.stdout)
 		tf.print("\n flatten y_pred:", y_pred_flattened, output_stream=sys.stdout)
@@ -509,8 +509,8 @@ class VAEClassifier(object):
 		tf.print("\n flatten y_true max:", tf.math.reduce_max(y_true_flattened), output_stream=sys.stdout)
 		tf.print("\n flatten y_pred min:", tf.math.reduce_min(y_pred_flattened), output_stream=sys.stdout)
 		tf.print("\n flatten y_pred max:", tf.math.reduce_max(y_pred_flattened), output_stream=sys.stdout)
-		tf.print("\n flatten y_pred safe min:", tf.math.reduce_min(y_pred_flattened_nonans), output_stream=sys.stdout)
-		tf.print("\n flatten y_pred safe max:", tf.math.reduce_max(y_pred_flattened_nonans), output_stream=sys.stdout)
+		#tf.print("\n flatten y_pred safe min:", tf.math.reduce_min(y_pred_flattened_nonans), output_stream=sys.stdout)
+		#tf.print("\n flatten y_pred safe max:", tf.math.reduce_max(y_pred_flattened_nonans), output_stream=sys.stdout)
 		
 		# - Compute reconstruction loss term
 		#logger.info("Computing the reconstruction loss ...")		
