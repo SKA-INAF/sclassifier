@@ -557,7 +557,7 @@ class VAEClassifier(object):
       #reco_loss = binary_crossentropy(y_true_flattened, y_pred_flattened_nonans)
       
 		tf.print("\n reco_loss:", reco_loss, output_stream=sys.stdout)		
-		reco_loss*= tf.cast(img_cube_size, tf.float)
+		reco_loss*= tf.cast(img_cube_size, tf.float32)
 		tf.print("\n reco_loss (after mult):", reco_loss, output_stream=sys.stdout)
 		
 
