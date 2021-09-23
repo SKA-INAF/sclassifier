@@ -501,8 +501,8 @@ class VAEClassifier(object):
       
 			return reco_loss*img_cube_size
 
-    fn.__name__ = 'reco_loss'
-    return fn
+		fn.__name__ = 'reco_loss'
+		return fn
 
 	
 	@tf.function
@@ -515,7 +515,7 @@ class VAEClassifier(object):
 			return kl_loss_mean
 
 		fn.__name__ = 'kl_loss'
-    return fn
+		return fn
 
 
 	@tf.function
