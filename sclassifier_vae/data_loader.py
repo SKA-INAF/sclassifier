@@ -101,7 +101,7 @@ class SourceData(object):
 
 			# - Compute data mask
 			#   NB: =1 good values, =0 bad (pix=0 or pix=inf or pix=nan)
-			data_mask= np.logical_and(data!=0,np.isfinite(data)).astype(uint8)
+			data_mask= np.logical_and(data!=0,np.isfinite(data)).astype(np.uint8)
 		
 			# - Check image integrity
 			has_bad_pixs= self.has_bad_pixel(data, check_fract=False, thr=0)
