@@ -456,7 +456,7 @@ class DataLoader(object):
 			try:
 
 				if nb==0:
-					logger.info("Starting new batch ...")
+					logger.debug("Starting new batch ...")
 
 				# - Generate random data index and read data at this index
 				data_index = (data_index + 1) % self.datasize
@@ -498,7 +498,7 @@ class DataLoader(object):
 				if nb>=batch_size:
 					#print("inputs.shape")
 					#print(inputs.shape)
-					logger.info("Batch size (%d) reached, yielding generated data of size (%d,%d,%d,%d) ..." % (nb,inputs.shape[0],inputs.shape[1],inputs.shape[2],inputs.shape[3]))
+					logger.debug("Batch size (%d) reached, yielding generated data of size (%d,%d,%d,%d) ..." % (nb,inputs.shape[0],inputs.shape[1],inputs.shape[2],inputs.shape[3]))
 					yield inputs, inputs
 					nb= 0
 
