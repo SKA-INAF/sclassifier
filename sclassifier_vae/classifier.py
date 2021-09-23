@@ -43,8 +43,8 @@ try:
 except Exception as e:
 	logger.warn("Failed to import BatchNormalization (err=%s), trying in another way ..." % str(e))
 	from tensorflow.keras.layers import BatchNormalization
-from tensorflow.keras.layers.convolutional import Conv2D
-from tensorflow.keras.layers.convolutional import MaxPooling2D
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import MaxPooling2D
 from tensorflow.keras.layers.core import Activation
 from tensorflow.keras.layers.core import Dropout
 from tensorflow.keras.layers.core import Lambda
