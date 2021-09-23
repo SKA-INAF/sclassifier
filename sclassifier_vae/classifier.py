@@ -45,10 +45,10 @@ except Exception as e:
 	from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import MaxPooling2D
-from tensorflow.keras.layers.core import Activation
-from tensorflow.keras.layers.core import Dropout
-from tensorflow.keras.layers.core import Lambda
-from tensorflow.keras.layers.core import Dense
+from tensorflow.keras.layers import Activation
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.layers import Lambda
+from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import Input
 from tensorflow.keras.utils.generic_utils import get_custom_objects
