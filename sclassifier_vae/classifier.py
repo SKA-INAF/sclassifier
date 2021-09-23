@@ -368,8 +368,8 @@ class VAEClassifier(object):
 		#self.vae.compile(optimizer=self.optimizer, loss=self.loss_v2(self.z_mean, self.z_log_var), experimental_run_tf_function=False)
 		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.reco_loss_metric, self.kl_loss_metric], experimental_run_tf_function=False)
 		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.reco_loss_metric])
-		self.vae.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.reco_loss_metric], experimental_run_tf_function=False)
-		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
+		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.reco_loss_metric], experimental_run_tf_function=False)
+		self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
 
 		# - Print and draw model
 		self.vae.summary()
@@ -495,17 +495,18 @@ class VAEClassifier(object):
 	def reco_loss_metric(self, y_true, y_pred):
 		""" Reconstruction loss function definition """
     
-		#y_true_shape= K.shape(y_true)
-		#img_cube_size= y_true_shape[1]*y_true_shape[2]*y_true_shape[3]
+		y_true_shape= K.shape(y_true)
+		img_cube_size= y_true_shape[1]*y_true_shape[2]*y_true_shape[3]
 
-		#if self.use_mse_loss:
-		#	reco_loss = mse(K.flatten(y_true), K.flatten(y_pred))
-		#else:
-		#	reco_loss = binary_crossentropy(K.flatten(y_true), K.flatten(y_pred))
+		if self.use_mse_loss:
+			reco_loss = mse(K.flatten(y_true), K.flatten(y_pred))
+		else:
+			reco_loss = binary_crossentropy(K.flatten(y_true), K.flatten(y_pred))
       
-		#return reco_loss*tf.cast(img_cube_size, tf.float32)
+		return reco_loss*tf.cast(img_cube_size, tf.float32)
 		#return K.mean(y_pred-y_true)		
-		return 0	
+		#return 0	
+		
 
 
 	@tf.function
