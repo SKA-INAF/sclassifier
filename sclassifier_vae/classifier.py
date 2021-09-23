@@ -723,8 +723,6 @@ class VAEClassifier(object):
 		# - Get losses and plot
 		logger.info("Retrieving losses and plot ...")
 		loss_train= self.fitout.history['loss']
-		print("loss_train.shape")
-		print(loss_train.shape)
 		print(loss_train)
 
 		plt.plot(history.history['loss'])				
