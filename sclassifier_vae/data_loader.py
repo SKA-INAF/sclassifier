@@ -53,8 +53,10 @@ class SourceData(object):
 		self.id= -1
 		self.f_badpix_thr= 0.3
 		self.img_data= []
+		self.img_data_mask= []
 		self.img_heads= []
 		self.img_cube= None
+		self.img_cube_mask= None
 		self.nx= 0
 		self.ny= 0
 		self.nchannels= 0
@@ -96,19 +98,21 @@ class SourceData(object):
 			except Exception as e:
 				logger.error("Failed to read image data from file %s (err=%s)!" % (filename,str(e)))
 				return -1
+
+			# - Compute data mask
+			#   NB: =1 good values, =0 bad (pix=0 or pix=inf or pix=nan)
+			data_mask= np.logical_and(data!=0,np.isfinite(data)).astype(uint8)
 		
 			# - Check image integrity
-			npixels= data.size
-			npixels_nan= np.count_nonzero(np.isnan(data)) 
-			npixels_inf= np.count_nonzero(np.isinf(data))
-			f_badpix= (npixels_nan + npixels_inf)/float(npixels)
-			if f_badpix>self.f_badpix_thr:
+			has_bad_pixs= self.has_bad_pixel(data, check_fract=False, thr=0)
+			if has_bad_pixs:
 				logger.warn("Image %s has too many bad pixels (f=%f>%f)!" % (filename,f_badpix,self.f_badpix_thr) )	
 				return -1
 
 			# - Append image channel data to list
 			self.img_data.append(data)
 			self.img_heads.append(header)
+			self.img_data_mask.append(data_mask)
 		
 		# - Check image sizes
 		if not self.check_img_sizes():
@@ -117,6 +121,7 @@ class SourceData(object):
 
 		# - Set data cube
 		self.img_cube= np.dstack(self.img_data)
+		self.img_cube_mask= np.dstack(self.img_data_mask)
 		self.nx= self.img_cube.shape[1]
 		self.ny= self.img_cube.shape[0]
 		self.nchannels= self.img_cube.shape[-1]
@@ -148,6 +153,45 @@ class SourceData(object):
 
 		return same_size
 
+
+	def has_bad_pixel(self, data, check_fract=True, thr=0.1):
+		""" Check image data values """ 
+		
+		npixels= data.size
+		npixels_nan= np.count_nonzero(np.isnan(data)) 
+		npixels_inf= np.count_nonzero(np.isinf(data))
+		n_badpix= npixels_nan + npixels_inf
+		f_badpix= n_badpix/float(npixels)
+		if check_fract:
+			if f_badpix>thr:
+				logger.warn("Image has too many bad pixels (f=%f>%f)!" % (f_badpix,thr) )	
+				return True
+		else:
+			if n_badpix>thr:
+				logger.warn("Image has too many bad pixels (n=%f>%f)!" % (n_badpix,thr) )	
+				return True
+
+		return False
+
+
+	def has_bad_pixel_cube(self, datacube, check_fract=True, thr=0.1):
+		""" Check image data cube values """ 
+		
+		if datacube.ndim!=3:
+			logger.warn("Given data cube has not 3 dimensions!")
+			return False
+		
+		nchannels= datacube.shape[2]
+		status= 0
+		for i in range(nchannels):
+			data= datacube[:,:,i]
+			check= self.check_img_data(data, check_fract, thr) 
+			if not check:
+				logger.warn("Channel %d in cube has bad pixels ..." % i+1)
+				status= False	
+
+		return status
+
 	
 	def resize_imgs(self, nx, ny, preserve_range=True):
 		""" Resize images to the same size """
@@ -169,10 +213,28 @@ class SourceData(object):
 		except Exception as e:
 			logger.warn("Failed to resize data to size (%d,%d) (err=%s)!" % (nx,ny,str(e)))
 			return -1
-		
-		self.img_cube= data_resized
 
-		# - Update image sizes
+		# - Resize data cube mask
+		try:
+			data_mask_resized= Utils.resize_img(self.img_cube_mask, (ny, nx, self.nchannels), preserve_range=True)
+		except Exception as e:
+			logger.warn("Failed to resize data mask to size (%d,%d) (err=%s)!" % (nx,ny,str(e)))
+			return -1
+
+		# - Check data cube integrity
+		has_bad_pixs= self.has_bad_pixel(data_resized, check_fract=False, thr=0)
+		if has_bad_pixs:
+			logger.warn("Resized data cube has bad pixels!")	
+			return -1
+
+		has_bad_pixs= self.has_bad_pixel(data_mask_resized, check_fract=False, thr=0)
+		if has_bad_pixs:
+			logger.warn("Resized data cube mask has bad pixels!")	
+			return -1
+		
+		# - Update data cube
+		self.img_cube= data_resized
+		self.img_cube_mask= data_mask_resized
 		self.nx= self.img_cube.shape[1]
 		self.ny= self.img_cube.shape[0]
 		self.nchannels= self.img_cube.shape[-1]
@@ -196,9 +258,18 @@ class SourceData(object):
 		data_min= data_masked.min()
 		data_max= data_masked.max()
 
-		# - Normalize in range [0,1]
+		# - Normalize in range [0,1].
+		#   NB: Set previously masked pixels to 0
 		data_norm= (self.img_cube-data_min)/(data_max-data_min)
 		data_norm[self.img_cube==0]= 0
+
+		# - Check data cube integrity
+		has_bad_pixs= self.has_bad_pixel(data_resized, check_fract=False, thr=0)
+		if has_bad_pixs:
+			logger.warn("Resized data cube has bad pixels!")	
+			return -1
+
+		# - Update data cube
 		self.img_cube= data_norm
 	
 		return 0
@@ -211,14 +282,47 @@ class SourceData(object):
 			logger.error("Image data cube is None!")
 			return -1
 
+		# Make augmenters deterministic to apply similarly to images and masks
+		augmenter_det = augmenter.to_deterministic()
+
 		# - Augment data cube
 		try:
-			data_aug= augmenter(images=self.img_cube)
+			#data_aug= augmenter(images=self.img_cube)
+			data_aug= augmenter_det.augment_image(images=self.img_cube)
 		except Exception as e:
 			logger.error("Failed to augment data (err=%s)!" % str(e))
 			return -1
 
+		# - Apply same augmentation to mask
+		#def activator(images, augmenter, parents, default):
+		#	return False if augmenter.name in ["blur", "dropout"] else default
+
+		try:
+			#data_mask_aug= augmenter(images=self.img_cube_mask)
+			data_mask_aug= augmenter_det.augment_image(images=self.img_cube_mask, hooks=imgaug.HooksImages(activator=activator))
+		except Exception as e:
+			logger.error("Failed to augment data mask (err=%s)!" % str(e))
+			return -1
+
+		# - Check data cube integrity
+		has_bad_pixs= self.has_bad_pixel(data_resized, check_fract=False, thr=0)
+		if has_bad_pixs:
+			logger.warn("Resized data cube has bad pixels!")	
+			return -1
+
+		has_bad_pixs= self.has_bad_pixel(data_aug, check_fract=False, thr=0)
+		if has_bad_pixs:
+			logger.warn("Augmented data cube has bad pixels!")	
+			return -1
+
+		has_bad_pixs= self.has_bad_pixel(data_mask_aug, check_fract=False, thr=0)
+		if has_bad_pixs:
+			logger.warn("Augmented data cube mask has bad pixels!")	
+			return -1
+
+		# - Update image cube mask
 		self.img_cube= data_aug
+		self.img_cube_mask= data_mask_aug
 
 		return 0
 
