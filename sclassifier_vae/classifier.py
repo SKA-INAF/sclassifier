@@ -51,7 +51,7 @@ from tensorflow.keras.layers import Lambda
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import Input
-from tensorflow.keras.utils.generic_utils import get_custom_objects
+from tensorflow.keras.utils import get_custom_objects
 from tensorflow.keras.losses import mse, binary_crossentropy
 
 
