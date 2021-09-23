@@ -491,7 +491,7 @@ class VAEClassifier(object):
 		""" Reconstruction loss function definition """
     
 		y_true_shape= K.shape(y_true)
-		img_cube_size= y_true_shape(1)*y_true_shape(2)*y_true_shape(3)
+		img_cube_size= y_true_shape[1]*y_true_shape[2]*y_true_shape[3]
 
 		if self.use_mse_loss:
 			reco_loss = mse(K.flatten(y_true), K.flatten(y_pred))
@@ -515,7 +515,7 @@ class VAEClassifier(object):
     
 		def fn(y_true, y_pred):
 			y_true_shape= K.shape(y_true)
-			img_cube_size= y_true_shape(1)*y_true_shape(2)*y_true_shape(3)
+			img_cube_size= y_true_shape[1]*y_true_shape[2]*y_true_shape[3]
 
 			if self.use_mse_loss:
 				reco_loss = mse(K.flatten(y_true), K.flatten(y_pred))
@@ -556,7 +556,7 @@ class VAEClassifier(object):
 		
 		# - Compute flattened tensors
 		y_true_shape= K.shape(y_true)
-		img_cube_size= y_true_shape(1)*y_true_shape(2)*y_true_shape(3)
+		img_cube_size= y_true_shape[1]*y_true_shape[2]*y_true_shape[3]
 		y_true_flattened= K.flatten(y_true)
 		y_pred_flattened= K.flatten(y_pred)
 		#y_pred_flattened_nonans = tf.where(tf.math.is_nan(y_pred_flattened_nonans), tf.ones_like(w) * 0, y_pred_flattened_nonans) 
