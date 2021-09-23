@@ -25,34 +25,64 @@ import logging
 #logger = logging.getLogger(__name__)
 from sclassifier_vae import logger
 
-## KERAS MODULES
-import keras
-from keras import layers
-from keras import models
-from keras import optimizers
+## TENSORFLOW & KERAS MODULES
+import tensorflow as tf
+from tensorflow import keras 
+from tensorflow.keras import layers
+from tensorflow.keras import models
+from tensorflow.keras import optimizers
 try:
-	from keras.utils import plot_model
+	from tensorflow.keras.utils import plot_model
 except:
-	from keras.utils.vis_utils import plot_model
-from keras import backend as K
-from keras.models import Model
-from keras.models import load_model
+	from tensorflow.keras.utils.vis_utils import plot_model
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import Model
+from tensorflow,keras.models import load_model
 try:
-	from keras.layers.normalization import BatchNormalization
+	from tensorflow.keras.layers.normalization import BatchNormalization
 except Exception as e:
 	logger.warn("Failed to import BatchNormalization (err=%s), trying in another way ..." % str(e))
-	from keras.layers import BatchNormalization
-from keras.layers.convolutional import Conv2D
-from keras.layers.convolutional import MaxPooling2D
-from keras.layers.core import Activation
-from keras.layers.core import Dropout
-from keras.layers.core import Lambda
-from keras.layers.core import Dense
-from keras.layers import Flatten
-from keras.layers import Input
-from keras.utils.generic_utils import get_custom_objects
-import tensorflow as tf
-from keras.losses import mse, binary_crossentropy
+	from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers.convolutional import Conv2D
+from tensorflow.keras.layers.convolutional import MaxPooling2D
+from tensorflow.keras.layers.core import Activation
+from tensorflow.keras.layers.core import Dropout
+from tensorflow.keras.layers.core import Lambda
+from tensorflow.keras.layers.core import Dense
+from tensorflow.keras.layers import Flatten
+from tensorflow.keras.layers import Input
+from tensorflow.keras.utils.generic_utils import get_custom_objects
+from tensorflow.keras.losses import mse, binary_crossentropy
+
+
+
+#import keras
+#from keras import layers
+#from keras import models
+#from keras import optimizers
+#try:
+#	from keras.utils import plot_model
+#except:
+#	from keras.utils.vis_utils import plot_model
+#from keras import backend as K
+#from keras.models import Model
+#from keras.models import load_model
+#try:
+#	from keras.layers.normalization import BatchNormalization
+#except Exception as e:
+#	logger.warn("Failed to import BatchNormalization (err=%s), trying in another way ..." % str(e))
+#	from keras.layers import BatchNormalization
+#from keras.layers.convolutional import Conv2D
+#from keras.layers.convolutional import MaxPooling2D
+#from keras.layers.core import Activation
+#from keras.layers.core import Dropout
+#from keras.layers.core import Lambda
+#from keras.layers.core import Dense
+#from keras.layers import Flatten
+#from keras.layers import Input
+#from keras.utils.generic_utils import get_custom_objects
+#import tensorflow as tf
+#from keras.losses import mse, binary_crossentropy
 
 
 from tensorflow.python.framework.ops import disable_eager_execution
