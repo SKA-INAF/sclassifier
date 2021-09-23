@@ -364,7 +364,8 @@ class VAEClassifier(object):
 		#self.vae.add_loss(vae_loss)
 		#self.vae.compile(optimizer=self.optimizer)
 		#self.vae.compile(optimizer=self.optimizer, loss=self.loss_v2(self.z_mean, self.z_log_var), experimental_run_tf_function=False)
-		self.vae.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.reco_loss_metric, self.kl_loss_metric], experimental_run_tf_function=False)
+		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.reco_loss_metric, self.kl_loss_metric], experimental_run_tf_function=False)
+		self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
 
 		# - Print and draw model
 		self.vae.summary()
