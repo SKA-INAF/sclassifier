@@ -360,8 +360,8 @@ class VAEClassifier(object):
 
 		#self.vae.add_loss(vae_loss)
 		#self.vae.compile(optimizer=self.optimizer)
-		self.vae.compile(optimizer=self.optimizer, loss=self.loss_v2(self.z_mean, self.z_log_var), experimental_run_tf_function=False)
-		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
+		#self.vae.compile(optimizer=self.optimizer, loss=self.loss_v2(self.z_mean, self.z_log_var), experimental_run_tf_function=False)
+		self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
 
 		# - Print and draw model
 		self.vae.summary()
@@ -487,31 +487,33 @@ class VAEClassifier(object):
 	def loss(self, y_true, y_pred):
 		""" Loss function definition """
 
-		# - Compute reconstruction loss term
-		logger.info("Computing the reconstruction loss ...")
-
-		y_true_dim= K.int_shape(y_true)
-		y_pred_dim= K.int_shape(y_pred)
-		#flatten_datadim= K.int_shape(y_true)[1]
-		tf.print("\n y_true_dim:", y_true_dim, output_stream=sys.stdout)
-		tf.print("\n y_pred_dim:", y_pred_dim, output_stream=sys.stdout)
+		# - Print and fix numerical issues
+		logger.info("Print tensors and fix numerical issues before computing loss ...")		
+		tf.print("\n y_true_dim:", K.int_shape(y_true), output_stream=sys.stdout)
+		tf.print("\n y_pred_dim:", K.int_shape(y_pred), output_stream=sys.stdout)
+		tf.print("\n y_true min:", tf.math.reduce_min(y_true), output_stream=sys.stdout)
+		tf.print("\n y_true max:", tf.math.reduce_max(y_true), output_stream=sys.stdout)
+		tf.print("\n y_pred min:", tf.math.reduce_min(y_pred), output_stream=sys.stdout)
+		tf.print("\n y_pred max:", tf.math.reduce_max(y_pred), output_stream=sys.stdout)
 		
+		# - Compute flattened tensors
 		y_true_flattened= K.flatten(y_true)
 		y_pred_flattened= K.flatten(y_pred)
 		y_pred_flattened_nonans = tf.where(tf.is_nan(y_pred_flattened_nonans), tf.ones_like(w) * 0, y_pred_flattened_nonans) 
 
-		#print("y_true shape=", K.int_shape(y_true_flattened))
-		#print("y_pred shape=", K.int_shape(y_pred_flattened))
-		tf.print("\n y_true:", y_true_flattened, output_stream=sys.stdout)
-		tf.print("\n y_pred:", y_pred_flattened, output_stream=sys.stdout)
-
-		tf.print("\n y_true min:", tf.math.reduce_min(y_true_flattened), output_stream=sys.stdout)
-		tf.print("\n y_true max:", tf.math.reduce_max(y_true_flattened), output_stream=sys.stdout)
-		tf.print("\n y_pred min:", tf.math.reduce_min(y_pred_flattened), output_stream=sys.stdout)
-		tf.print("\n y_pred max:", tf.math.reduce_max(y_pred_flattened), output_stream=sys.stdout)
-		tf.print("\n y_pred safe min:", tf.math.reduce_min(y_pred_flattened_nonans), output_stream=sys.stdout)
-		tf.print("\n y_pred safe max:", tf.math.reduce_max(y_pred_flattened_nonans), output_stream=sys.stdout)
+		tf.print("\n flatten y_true:", y_true_flattened, output_stream=sys.stdout)
+		tf.print("\n flatten y_pred:", y_pred_flattened, output_stream=sys.stdout)
+		tf.print("\n flatten y_true_dim:", K.int_shape(y_true_flattened), output_stream=sys.stdout)
+		tf.print("\n flatten y_pred_dim:", K.int_shape(y_pred_flattened), output_stream=sys.stdout)
+		tf.print("\n flatten y_true min:", tf.math.reduce_min(y_true_flattened), output_stream=sys.stdout)
+		tf.print("\n flatten y_true max:", tf.math.reduce_max(y_true_flattened), output_stream=sys.stdout)
+		tf.print("\n flatten y_pred min:", tf.math.reduce_min(y_pred_flattened), output_stream=sys.stdout)
+		tf.print("\n flatten y_pred max:", tf.math.reduce_max(y_pred_flattened), output_stream=sys.stdout)
+		tf.print("\n flatten y_pred safe min:", tf.math.reduce_min(y_pred_flattened_nonans), output_stream=sys.stdout)
+		tf.print("\n flatten y_pred safe max:", tf.math.reduce_max(y_pred_flattened_nonans), output_stream=sys.stdout)
 		
+		# - Compute reconstruction loss term
+		logger.info("Computing the reconstruction loss ...")		
 		if self.use_mse_loss:
 			reconstruction_loss = mse(y_true_flattened, y_pred_flattened_nonans)
 		else:
