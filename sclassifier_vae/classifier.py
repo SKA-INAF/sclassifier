@@ -489,8 +489,8 @@ class VAEClassifier(object):
 
 		# - Print and fix numerical issues
 		#logger.info("Print tensors and fix numerical issues before computing loss ...")		
-		tf.print("\n y_true_dim:", K.int_shape(y_true), output_stream=sys.stdout)
-		tf.print("\n y_pred_dim:", K.int_shape(y_pred), output_stream=sys.stdout)
+		tf.print("\n y_true_dim:", K.shape(y_true), output_stream=sys.stdout)
+		tf.print("\n y_pred_dim:", K.shape(y_pred), output_stream=sys.stdout)
 		tf.print("\n y_true min:", tf.math.reduce_min(y_true), output_stream=sys.stdout)
 		tf.print("\n y_true max:", tf.math.reduce_max(y_true), output_stream=sys.stdout)
 		tf.print("\n y_pred min:", tf.math.reduce_min(y_pred), output_stream=sys.stdout)
