@@ -336,8 +336,8 @@ class VAEClassifier(object):
 		#==   SET LOSS & METRICS
 		#===========================	
 		#self.vae.compile(optimizer=self.optimizer, loss=self.loss_v2(self.z_mean, self.z_log_var), experimental_run_tf_function=False)
-		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.reco_loss_metric, self.kl_loss_metric], experimental_run_tf_function=False)
-		self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
+		self.vae.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.reco_loss_metric, self.kl_loss_metric], experimental_run_tf_function=False)
+		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
 
 		# - Print and draw model
 		self.vae.summary()
@@ -463,16 +463,16 @@ class VAEClassifier(object):
 	def reco_loss_metric(self, y_true, y_pred):
 		""" Reconstruction loss function definition """
     
-		#y_true_shape= K.shape(y_true)
-		#img_cube_size= y_true_shape[1]*y_true_shape[2]*y_true_shape[3]
+		y_true_shape= K.shape(y_true)
+		img_cube_size= y_true_shape[1]*y_true_shape[2]*y_true_shape[3]
 
 		if self.use_mse_loss:
 			reco_loss = mse(K.flatten(y_true), K.flatten(y_pred))
 		else:
 			reco_loss = binary_crossentropy(K.flatten(y_true), K.flatten(y_pred))
       
-		#return reco_loss*img_cube_size
-		return reco_loss
+		return reco_loss*tf.cast(img_cube_size, tf.float32)
+		#return reco_loss
 
 	@tf.function
 	def kl_loss_metric(self, y_true, y_pred):
@@ -496,7 +496,7 @@ class VAEClassifier(object):
 			else:
 				reco_loss = binary_crossentropy(K.flatten(y_true), K.flatten(y_pred))
       
-			return reco_loss*img_cube_size
+			return reco_loss*tf.cast(img_cube_size, tf.float32)
 
 		fn.__name__ = 'reco_loss'
 		return fn
@@ -521,12 +521,12 @@ class VAEClassifier(object):
 
 		# - Print and fix numerical issues
 		#logger.info("Print tensors and fix numerical issues before computing loss ...")		
-		tf.print("\n y_true_dim:", K.shape(y_true), output_stream=sys.stdout)
-		tf.print("\n y_pred_dim:", K.shape(y_pred), output_stream=sys.stdout)
-		tf.print("\n y_true min:", tf.math.reduce_min(y_true), output_stream=sys.stdout)
-		tf.print("\n y_true max:", tf.math.reduce_max(y_true), output_stream=sys.stdout)
-		tf.print("\n y_pred min:", tf.math.reduce_min(y_pred), output_stream=sys.stdout)
-		tf.print("\n y_pred max:", tf.math.reduce_max(y_pred), output_stream=sys.stdout)
+		#tf.print("\n y_true_dim:", K.shape(y_true), output_stream=sys.stdout)
+		#tf.print("\n y_pred_dim:", K.shape(y_pred), output_stream=sys.stdout)
+		#tf.print("\n y_true min:", tf.math.reduce_min(y_true), output_stream=sys.stdout)
+		#tf.print("\n y_true max:", tf.math.reduce_max(y_true), output_stream=sys.stdout)
+		#tf.print("\n y_pred min:", tf.math.reduce_min(y_pred), output_stream=sys.stdout)
+		#tf.print("\n y_pred max:", tf.math.reduce_max(y_pred), output_stream=sys.stdout)
 		
 		# - Compute flattened tensors
 		y_true_shape= K.shape(y_true)
@@ -535,17 +535,15 @@ class VAEClassifier(object):
 		y_pred_flattened= K.flatten(y_pred)
 		#y_pred_flattened_nonans = tf.where(tf.math.is_nan(y_pred_flattened_nonans), tf.ones_like(w) * 0, y_pred_flattened_nonans) 
 
-		tf.print("\n img_cube_size:", img_cube_size, output_stream=sys.stdout)
-		tf.print("\n flatten y_true:", y_true_flattened, output_stream=sys.stdout)
-		tf.print("\n flatten y_pred:", y_pred_flattened, output_stream=sys.stdout)
-		tf.print("\n flatten y_true_dim:", K.int_shape(y_true_flattened), output_stream=sys.stdout)
-		tf.print("\n flatten y_pred_dim:", K.int_shape(y_pred_flattened), output_stream=sys.stdout)
-		tf.print("\n flatten y_true min:", tf.math.reduce_min(y_true_flattened), output_stream=sys.stdout)
-		tf.print("\n flatten y_true max:", tf.math.reduce_max(y_true_flattened), output_stream=sys.stdout)
-		tf.print("\n flatten y_pred min:", tf.math.reduce_min(y_pred_flattened), output_stream=sys.stdout)
-		tf.print("\n flatten y_pred max:", tf.math.reduce_max(y_pred_flattened), output_stream=sys.stdout)
-		#tf.print("\n flatten y_pred safe min:", tf.math.reduce_min(y_pred_flattened_nonans), output_stream=sys.stdout)
-		#tf.print("\n flatten y_pred safe max:", tf.math.reduce_max(y_pred_flattened_nonans), output_stream=sys.stdout)
+		#tf.print("\n img_cube_size:", img_cube_size, output_stream=sys.stdout)
+		#tf.print("\n flatten y_true:", y_true_flattened, output_stream=sys.stdout)
+		#tf.print("\n flatten y_pred:", y_pred_flattened, output_stream=sys.stdout)
+		#tf.print("\n flatten y_true_dim:", K.int_shape(y_true_flattened), output_stream=sys.stdout)
+		#tf.print("\n flatten y_pred_dim:", K.int_shape(y_pred_flattened), output_stream=sys.stdout)
+		#tf.print("\n flatten y_true min:", tf.math.reduce_min(y_true_flattened), output_stream=sys.stdout)
+		#tf.print("\n flatten y_true max:", tf.math.reduce_max(y_true_flattened), output_stream=sys.stdout)
+		#tf.print("\n flatten y_pred min:", tf.math.reduce_min(y_pred_flattened), output_stream=sys.stdout)
+		#tf.print("\n flatten y_pred max:", tf.math.reduce_max(y_pred_flattened), output_stream=sys.stdout)
 		
 		# - Compute reconstruction loss term
 		#logger.info("Computing the reconstruction loss ...")		
@@ -556,9 +554,9 @@ class VAEClassifier(object):
 			reco_loss = binary_crossentropy(y_true_flattened, y_pred_flattened)
       #reco_loss = binary_crossentropy(y_true_flattened, y_pred_flattened_nonans)
       
-		tf.print("\n reco_loss:", reco_loss, output_stream=sys.stdout)		
+		#tf.print("\n reco_loss:", reco_loss, output_stream=sys.stdout)		
 		reco_loss*= tf.cast(img_cube_size, tf.float32)
-		tf.print("\n reco_loss (after mult):", reco_loss, output_stream=sys.stdout)
+		#tf.print("\n reco_loss (after mult):", reco_loss, output_stream=sys.stdout)
 		
 
 		# - Compute KL loss term
@@ -566,14 +564,14 @@ class VAEClassifier(object):
 		kl_loss= - 0.5 * K.sum(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
 		kl_loss_mean= K.mean(kl_loss)
 		#print("kl_loss=", kl_loss)
-		tf.print("\n kl_loss:", kl_loss, output_stream=sys.stdout)
-		tf.print("\n kl_loss_mean:", kl_loss_mean, output_stream=sys.stdout)
+		#tf.print("\n kl_loss:", kl_loss, output_stream=sys.stdout)
+		#tf.print("\n kl_loss_mean:", kl_loss_mean, output_stream=sys.stdout)
 		
 		# Total loss
 		#logger.info("Computing the total loss ...")
 		#vae_loss = K.mean(reco_loss + kl_loss)
 		vae_loss = self.rec_loss_weight*reco_loss + self.kl_loss_weight*kl_loss_mean
-		tf.print("\n vae_loss:", vae_loss, output_stream=sys.stdout)
+		#tf.print("\n vae_loss:", vae_loss, output_stream=sys.stdout)
 		
 		return vae_loss
 
