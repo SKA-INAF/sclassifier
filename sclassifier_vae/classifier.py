@@ -490,13 +490,13 @@ class VAEClassifier(object):
 		y_pred_flattened= K.flatten(y_pred)
 		#print("y_true shape=", K.int_shape(y_true_flattened))
 		#print("y_pred shape=", K.int_shape(y_pred_flattened))
-		tf.print("\n y_true shape:", K.int_shape(y_true_flattened), output_stream=sys.stdout)
-		tf.print("\n y_pred shape:", K.int_shape(y_pred_flattened), output_stream=sys.stdout)
+		tf.print("\n y_true:", y_true_flattened, output_stream=sys.stdout)
+		tf.print("\n y_pred:", y_pred_flattened, output_stream=sys.stdout)
 
 		if self.use_mse_loss:
-			reconstruction_loss = mse(K.flatten(y_true), K.flatten(y_pred))
+			reconstruction_loss = mse(y_true_flattened, y_pred_flattened)
 		else:
-			reconstruction_loss = binary_crossentropy(K.flatten(y_true), K.flatten(y_pred))
+			reconstruction_loss = binary_crossentropy(y_true_flattened, y_pred_flattened)
       
 		#print("reconstruction_loss=", reconstruction_loss)
 		tf.print("\n reconstruction_loss:", reconstruction_loss, output_stream=sys.stdout)
