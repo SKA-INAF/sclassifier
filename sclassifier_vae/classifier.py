@@ -460,7 +460,7 @@ class VAEClassifier(object):
 	###########################
 	##     LOSS DEFINITION
 	###########################	
-	@tf.function
+	#@tf.function
 	def reco_loss_metric(self, y_true, y_pred):
 		""" Reconstruction loss function definition """
     
