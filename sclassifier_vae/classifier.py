@@ -485,18 +485,29 @@ class VAEClassifier(object):
 
 		# - Compute reconstruction loss term
 		logger.info("Computing the reconstruction loss ...")
+
+		y_true_flattened= K.flatten(y_true)
+		y_pred_flattened= K.flatten(y_pred)
+		print("y_true shape=", K.int_shape(y_true_flattened))
+		print("y_pred shape=", K.int_shape(y_pred_flattened))
+		
+
 		if self.use_mse_loss:
 			reconstruction_loss = mse(K.flatten(y_true), K.flatten(y_pred))
 		else:
 			reconstruction_loss = binary_crossentropy(K.flatten(y_true), K.flatten(y_pred))
       
+		print("reconstruction_loss=", reconstruction_loss)
+
 		# - Compute KL loss term
 		logger.info("Computing the KL loss ...")
 		kl_loss= - 0.5 * K.sum(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
-		
+		print("kl_loss=", kl_loss)
+
 		# Total loss
 		logger.info("Computing the total loss ...")
 		vae_loss = K.mean(reconstruction_loss + kl_loss)
+		print("vae_loss=", vae_loss)
 
 		return vae_loss
 
