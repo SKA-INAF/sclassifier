@@ -333,7 +333,7 @@ class VAEClassifier(object):
 		self.vae = Model(inputs=self.inputs, outputs=self.outputs, name='vae')
 		
 		#===========================
-		#==   SET LOSS
+		#==   SET LOSS & METRICS
 		#===========================	
 		# - Set model loss = mse_loss or xent_loss + kl_loss
 		# Reconstruction loss
@@ -364,7 +364,7 @@ class VAEClassifier(object):
 		#self.vae.add_loss(vae_loss)
 		#self.vae.compile(optimizer=self.optimizer)
 		#self.vae.compile(optimizer=self.optimizer, loss=self.loss_v2(self.z_mean, self.z_log_var), experimental_run_tf_function=False)
-		self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
+		self.vae.compile(optimizer=self.optimizer, loss=self.loss, metrics=[reco_loss, kl_loss], experimental_run_tf_function=False)
 
 		# - Print and draw model
 		self.vae.summary()
@@ -487,6 +487,30 @@ class VAEClassifier(object):
 	##     LOSS DEFINITION
 	###########################
 	@tf.function
+	def reco_loss(self, y_true, y_pred):
+		""" Reconstruction loss function definition """
+		
+		y_true_shape= K.shape(y_true)
+		img_cube_size= y_true_shape(1)*y_true_shape(2)*y_true_shape(3)
+
+		if self.use_mse_loss:
+			reco_loss = mse(K.flatten(y_true), K.flatten(y_pred))
+		else:
+			reco_loss = binary_crossentropy(K.flatten(y_true), K.flatten(y_pred))
+      
+		return reco_loss*img_cube_size
+
+	@tf.function
+	def kl_loss(self, y_true, y_pred):
+		""" KL loss function definition """
+
+		kl_loss= - 0.5 * K.sum(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
+		kl_loss_mean= K.mean(kl_loss)
+
+		return kl_loss_mean
+
+
+	@tf.function
 	def loss(self, y_true, y_pred):
 		""" Loss function definition """
 
@@ -500,10 +524,13 @@ class VAEClassifier(object):
 		tf.print("\n y_pred max:", tf.math.reduce_max(y_pred), output_stream=sys.stdout)
 		
 		# - Compute flattened tensors
+		y_true_shape= K.shape(y_true)
+		img_cube_size= y_true_shape(1)*y_true_shape(2)*y_true_shape(3)
 		y_true_flattened= K.flatten(y_true)
 		y_pred_flattened= K.flatten(y_pred)
 		#y_pred_flattened_nonans = tf.where(tf.math.is_nan(y_pred_flattened_nonans), tf.ones_like(w) * 0, y_pred_flattened_nonans) 
 
+		tf.print("\n img_cube_size:", img_cube_size, output_stream=sys.stdout)
 		tf.print("\n flatten y_true:", y_true_flattened, output_stream=sys.stdout)
 		tf.print("\n flatten y_pred:", y_pred_flattened, output_stream=sys.stdout)
 		tf.print("\n flatten y_true_dim:", K.int_shape(y_true_flattened), output_stream=sys.stdout)
@@ -518,14 +545,13 @@ class VAEClassifier(object):
 		# - Compute reconstruction loss term
 		#logger.info("Computing the reconstruction loss ...")		
 		if self.use_mse_loss:
-			reconstruction_loss = mse(y_true_flattened, y_pred_flattened)
-			#reconstruction_loss = mse(y_true_flattened, y_pred_flattened_nonans)
+			reco_loss = mse(y_true_flattened, y_pred_flattened)
+			#reco_loss = mse(y_true_flattened, y_pred_flattened_nonans)
 		else:
-			reconstruction_loss = binary_crossentropy(y_true_flattened, y_pred_flattened)
-      #reconstruction_loss = binary_crossentropy(y_true_flattened, y_pred_flattened_nonans)
+			reco_loss = binary_crossentropy(y_true_flattened, y_pred_flattened)
+      #reco_loss = binary_crossentropy(y_true_flattened, y_pred_flattened_nonans)
       
-		#print("reconstruction_loss=", reconstruction_loss)
-		tf.print("\n reconstruction_loss:", reconstruction_loss, output_stream=sys.stdout)
+		tf.print("\n reco_loss:", reco_loss, output_stream=sys.stdout)
 		
 		# - Compute KL loss term
 		#logger.info("Computing the KL loss ...")
@@ -537,9 +563,8 @@ class VAEClassifier(object):
 		
 		# Total loss
 		#logger.info("Computing the total loss ...")
-		#vae_loss = K.mean(reconstruction_loss + kl_loss)
-		vae_loss = self.rec_loss_weight*reconstruction_loss + self.kl_loss_weight*kl_loss_mean
-		#print("vae_loss=", vae_loss)
+		#vae_loss = K.mean(reco_loss + kl_loss)
+		vae_loss = self.rec_loss_weight*reco_loss + self.kl_loss_weight*kl_loss_mean
 		tf.print("\n vae_loss:", vae_loss, output_stream=sys.stdout)
 		
 		return vae_loss
