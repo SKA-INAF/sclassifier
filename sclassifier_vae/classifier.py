@@ -725,7 +725,7 @@ class VAEClassifier(object):
 		loss_train= self.fitout.history['loss']
 		print(loss_train)
 
-		plt.plot(history.history['loss'])				
+		plt.plot(loss_train)				
 		plt.title('loss')
 		plt.ylabel('loss')
 		plt.xlabel('epochs')
