@@ -515,9 +515,11 @@ class VAEClassifier(object):
 		# - Compute reconstruction loss term
 		#logger.info("Computing the reconstruction loss ...")		
 		if self.use_mse_loss:
-			reconstruction_loss = mse(y_true_flattened, y_pred_flattened_nonans)
+			reconstruction_loss = mse(y_true_flattened, y_pred_flattened)
+			#reconstruction_loss = mse(y_true_flattened, y_pred_flattened_nonans)
 		else:
-			reconstruction_loss = binary_crossentropy(y_true_flattened, y_pred_flattened_nonans)
+			reconstruction_loss = binary_crossentropy(y_true_flattened, y_pred_flattened)
+      #reconstruction_loss = binary_crossentropy(y_true_flattened, y_pred_flattened_nonans)
       
 		#print("reconstruction_loss=", reconstruction_loss)
 		tf.print("\n reconstruction_loss:", reconstruction_loss, output_stream=sys.stdout)
