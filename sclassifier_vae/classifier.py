@@ -89,7 +89,9 @@ from tensorflow.python.framework.ops import disable_eager_execution
 disable_eager_execution()
 
 ## GRAPHICS MODULES
+import matplotlib
 import matplotlib.pyplot as plt
+matplotlib.use('Agg')
 
 ## PACKAGE MODULES
 from .utils import Utils
@@ -732,7 +734,7 @@ class VAEClassifier(object):
 		plt.xlim(left=0)
 		plt.ylim(bottom=0)
 		plt.legend(['train loss'], loc='upper right')
-		plt.show()
+		#plt.show()
 		plt.savefig('loss.png')				
 
 
