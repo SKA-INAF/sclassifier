@@ -307,11 +307,6 @@ class SourceData(object):
 			return -1
 
 		# - Check data cube integrity
-		has_bad_pixs= self.has_bad_pixel(data_resized, check_fract=False, thr=0)
-		if has_bad_pixs:
-			logger.warn("Resized data cube has bad pixels!")	
-			return -1
-
 		has_bad_pixs= self.has_bad_pixel(data_aug, check_fract=False, thr=0)
 		if has_bad_pixs:
 			logger.warn("Augmented data cube has bad pixels!")	
