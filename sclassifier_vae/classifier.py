@@ -410,7 +410,7 @@ class VAEClassifier(object):
 
 		# - Add dense layer?
 		if self.add_dense:
-			for layer_size in dense_layer_sizes:
+			for layer_size in self.dense_layer_sizes:
 				x = layers.Dense(layer_size, activation=self.dense_layer_activation)(x)
 
 		# - Output layers
