@@ -587,10 +587,11 @@ class VAEClassifier(object):
 		if self.use_mse_loss:
 			#reco_loss = mse(y_true_flattened, y_pred_flattened)
 			reco_loss = mse(y_true_flattened_safe, y_pred_flattened_safe)
-			reco_loss= K.mean(reco_loss)
 		else:
 			#reco_loss = binary_crossentropy(y_true_flattened, y_pred_flattened)
 			reco_loss = binary_crossentropy(y_true_flattened_safe, y_pred_flattened_safe)
+			
+		reco_loss= K.mean(reco_loss)
       
 		tf.print("\n reco_loss:", reco_loss, output_stream=sys.stdout)		
 		#reco_loss*= tf.cast(img_cube_size, tf.float32)
