@@ -65,6 +65,9 @@ def get_args():
 
 	parser.add_argument('--resize', dest='resize', action='store_true',help='Resize images')	
 	parser.set_defaults(resize=False)
+
+	parser.add_argument('--draw', dest='draw', action='store_true',help='Draw images')	
+	parser.set_defaults(draw=False)
 	
 
 	args = parser.parse_args()	
@@ -99,7 +102,7 @@ def main():
 	resize= args.resize
 	augment= args.augment
 	shuffle= args.shuffle
-
+	draw= args.draw
 
 	#===========================
 	#==   READ DATA
@@ -124,25 +127,35 @@ def main():
 		augment=augment
 	)	
 
+	img_counter= 0
+
 	while True:
 		try:
 			data, _= next(data_generator)
+			img_counter+= 1
 
 			print("data shape")
 			print(data.shape)
 
 			nchannels= data.shape[3]
 			
+			# - Check for NANs
+			has_naninf= np.any(~np.isfinite(data))
+			if has_naninf:
+				logger.error("Image %d has some nan/inf, check!" % img_counter)
+				break
+
 			# - Draw data
-			logger.info("Drawing data ...")
-			fig = plt.figure(figsize=(20, 10))
-			for i in range(nchannels):
-				#logger.info("Reading nchan %d ..." % i+1)
-				plt.subplot(1, nchannels, i+1)
-				plt.imshow(data[0,:,:,i], origin='lower')
+			if draw:
+				logger.info("Drawing data ...")
+				fig = plt.figure(figsize=(20, 10))
+				for i in range(nchannels):
+					#logger.info("Reading nchan %d ..." % i+1)
+					plt.subplot(1, nchannels, i+1)
+					plt.imshow(data[0,:,:,i], origin='lower')
 			
-			plt.tight_layout()
-			plt.show()
+				plt.tight_layout()
+				plt.show()
 
 		except (GeneratorExit, KeyboardInterrupt):
 			logger.info("Stop loop (keyboard interrupt) ...")
