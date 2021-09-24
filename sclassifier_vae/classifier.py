@@ -450,7 +450,7 @@ class VAEClassifier(object):
 
 			# - Add max pooling?
 			if self.add_max_pooling:
-				x = layers.UpSampling2D(pool_size=(self.pool_size,self.pool_size),interpolation='nearest')(x)
+				x = layers.UpSampling2D((self.pool_size,self.pool_size),interpolation='nearest')(x)
 
 			# - Add Leaky RELU?	
 			if self.add_leakyrelu:
