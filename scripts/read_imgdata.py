@@ -137,15 +137,15 @@ def main():
 			for i in range(nchannels):
 				logger.info("Reading nchan %d ..." % i+1)
 				plt.subplot(1, nchannels, i+1)
-				plt.imshow(data[0,:,:,i])
+				plt.imshow(data[0,:,:,i], origin='lower')
 			
 			plt.show()
 
 		except (GeneratorExit, KeyboardInterrupt):
-			logger.info("Generator or keyboard exception catched while generating data...")
+			logger.info("Stop loop (keyboard interrupt) ...")
 			break
 		except Exception as e:
-			logger.warn("Exception catched while generating data (err=%s) ..." % str(e))
+			logger.warn("Stop loop (exception catched %s) ..." % str(e))
 			break
 	
 	return 0
