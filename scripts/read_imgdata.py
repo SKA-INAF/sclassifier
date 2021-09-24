@@ -130,9 +130,14 @@ def main():
 			print("data shape")
 			print(data.shape)
 
+			nchannels= data[3]
+			
 			# - Draw data
-			# ...
-			# ...
+			for i in range(nchannels):
+				plt.subplot(1, nchannels, i+1)
+				plt.imshow(data[0,:,:,i])
+			
+			plt.show()
 
 		except (GeneratorExit, KeyboardInterrupt):
 			logger.info("Generator or keyboard exception catched while generating data...")
