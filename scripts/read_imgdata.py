@@ -29,6 +29,7 @@ from sclassifier_vae import __version__, __date__
 from sclassifier_vae import logger
 from sclassifier_vae.data_loader import DataLoader
 
+import matplotlib.pyplot as plt
 
 #### GET SCRIPT ARGS ####
 def str2bool(v):
@@ -135,10 +136,11 @@ def main():
 			# - Draw data
 			logger.info("Drawing data ...")
 			for i in range(nchannels):
-				logger.info("Reading nchan %d ..." % i+1)
+				#logger.info("Reading nchan %d ..." % i+1)
 				plt.subplot(1, nchannels, i+1)
 				plt.imshow(data[0,:,:,i], origin='lower')
 			
+			print("pto 2")
 			plt.show()
 
 		except (GeneratorExit, KeyboardInterrupt):
