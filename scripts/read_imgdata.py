@@ -116,8 +116,10 @@ def main():
 		logger.error("Failed to read input datalist!")
 		return 1
 	
-	source_labels= dl.source_labels
+	source_labels= dl.dl.snames
 	nsamples= len(source_labels)
+
+	logger.info("#%d samples to be read ..." % nsamples)
 
 
 	# - Read data	
