@@ -591,7 +591,7 @@ class VAEClassifier(object):
 		y_true_isempty= tf.equal(tf.size(y_true_flattened_masked),0)	
 		y_pred_isempty= tf.equal(tf.size(y_pred_flattened_masked),0)
 		are_empty_tensor= tf.logical_or(y_true_isempty,y_pred_isempty)
-		if tf.eagerly():
+		if tf.executing_eagerly():
 			are_empty= are_empty_tensor.numpy()
 		else:
 			are_empty= are_empty_tensor.eval()
