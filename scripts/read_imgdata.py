@@ -133,6 +133,7 @@ def main():
 			nchannels= data[3]
 			
 			# - Draw data
+			logger.info("Drawing data ...")
 			for i in range(nchannels):
 				logger.info("Reading nchan %d ..." % i+1)
 				plt.subplot(1, nchannels, i+1)
