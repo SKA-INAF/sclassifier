@@ -753,26 +753,7 @@ class VAEClassifier(object):
 			verbose=2
 		)
 
-		# - Get losses and plot
-		logger.info("Retrieving losses and plot ...")
-		loss_train= self.fitout.history['loss']
-		loss_val= self.fitout.history['val_loss']
-
-		print(loss_train)
 		
-		plt.plot(loss_train, color='b')
-		plt.plot(loss_val, color='r')		
-		plt.title('loss')
-		plt.ylabel('loss')
-		plt.xlabel('epochs')
-		plt.xlim(left=0)
-		plt.ylim(bottom=0)
-		plt.legend(['train loss'], loc='upper right')
-		#plt.show()
-		plt.savefig('losses.png')				
-
-
-
 		#===========================
 		#==   SAVE NN
 		#===========================
@@ -797,11 +778,32 @@ class VAEClassifier(object):
 		#================================
 		#==   SAVE TRAIN METRICS
 		#================================
-		logger.info("Saving train metrics (loss, ...) to file ...")
+		# - Get losses and plot
+		logger.info("Retrieving losses and plot ...")
+		loss_train= self.fitout.history['loss']
+		loss_val= self.fitout.history['val_loss']
 		N= len(loss_train)
 		epoch_ids= np.array(range(N))
 		epoch_ids+= 1
 		epoch_ids= epoch_ids.reshape(N,1)
+
+		print(loss_train)
+		
+		plt.plot(epoch_ids, loss_train, color='b')
+		plt.plot(epoch_ids, loss_val, color='r')		
+		plt.title('VAE loss')
+		plt.ylabel('loss')
+		plt.xlabel('epochs')
+		plt.xlim(left=0)
+		plt.ylim(bottom=0)
+		plt.legend(['train loss', 'val loss'], loc='upper right')
+		#plt.show()
+		plt.savefig('losses.png')				
+
+
+		# - Saving losses to file
+		logger.info("Saving train metrics (loss, ...) to file ...")
+		
 
 		metrics_data= np.concatenate(
 			(epoch_ids,np.array(loss_train).reshape(N,1), np.array(loss_val).reshape(N,1)),
