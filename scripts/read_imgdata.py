@@ -135,7 +135,7 @@ def main():
 			
 			# - Draw data
 			logger.info("Drawing data ...")
-			fig = plt.figure(figsize=(40, 20))
+			fig = plt.figure(figsize=(35, 15))
 			for i in range(nchannels):
 				#logger.info("Reading nchan %d ..." % i+1)
 				plt.subplot(1, nchannels, i+1)
