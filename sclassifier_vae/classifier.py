@@ -789,8 +789,8 @@ class VAEClassifier(object):
 
 		print(loss_train)
 		
-		plt.plot(epoch_ids, loss_train, color='b')
-		plt.plot(epoch_ids, loss_val, color='r')		
+		plt.plot(loss_train, color='b')
+		plt.plot(loss_val, color='r')		
 		plt.title('VAE loss')
 		plt.ylabel('loss')
 		plt.xlabel('epochs')
