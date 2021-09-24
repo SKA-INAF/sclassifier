@@ -134,6 +134,7 @@ def main():
 			
 			# - Draw data
 			for i in range(nchannels):
+				logger.info("Reading nchan %d ..." % i+1)
 				plt.subplot(1, nchannels, i+1)
 				plt.imshow(data[0,:,:,i])
 			
