@@ -134,8 +134,9 @@ def main():
 			data, _= next(data_generator)
 			img_counter+= 1
 
-			print("data shape")
-			print(data.shape)
+			logger.info("Reading image no. %d" % img_counter)
+			#print("data shape")
+			#print(data.shape)
 
 			nchannels= data.shape[3]
 			
