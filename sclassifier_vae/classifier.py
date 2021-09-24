@@ -574,15 +574,22 @@ class VAEClassifier(object):
 		#tf.print("\n flatten y_true max:", tf.math.reduce_max(y_true_flattened), output_stream=sys.stdout)
 		#tf.print("\n flatten y_pred min:", tf.math.reduce_min(y_pred_flattened), output_stream=sys.stdout)
 		#tf.print("\n flatten y_pred max:", tf.math.reduce_max(y_pred_flattened), output_stream=sys.stdout)
+
+		# - Extract sub tensorwith elements that are not NAN/inf
+		mask= tf.logical_and(tf.math.is_finite(y_true_flattened), tf.math.is_finite(y_pred_flattened))
+		indexes= tf.where(mask)		
+		y_true_flattened_safe= tf.gather(y_true_flattened, indexes)
+		y_pred_flattened_safe= tf.gather(y_pred_flattened, indexes)
 		
+
 		# - Compute reconstruction loss term
 		#logger.info("Computing the reconstruction loss ...")		
 		if self.use_mse_loss:
-			reco_loss = mse(y_true_flattened, y_pred_flattened)
-			#reco_loss = mse(y_true_flattened, y_pred_flattened_nonans)
+			#reco_loss = mse(y_true_flattened, y_pred_flattened)
+			reco_loss = mse(y_true_flattened_safe, y_pred_flattened_safe)
 		else:
-			reco_loss = binary_crossentropy(y_true_flattened, y_pred_flattened)
-      #reco_loss = binary_crossentropy(y_true_flattened, y_pred_flattened_nonans)
+			#reco_loss = binary_crossentropy(y_true_flattened, y_pred_flattened)
+      reco_loss = binary_crossentropy(y_true_flattened_safe, y_pred_flattened_safe)
       
 		tf.print("\n reco_loss:", reco_loss, output_stream=sys.stdout)		
 		#reco_loss*= tf.cast(img_cube_size, tf.float32)
