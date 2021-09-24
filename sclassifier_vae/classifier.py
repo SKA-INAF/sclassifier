@@ -439,6 +439,11 @@ class VAEClassifier(object):
 		latent_inputs = Input(shape=(self.latent_dim,), dtype='float', name='z_sampling')
 		x= latent_inputs
 
+		# - Add dense layers
+		if self.add_dense:
+			for layer_size in reversed(self.dense_layer_sizes):
+				x = layers.Dense(layer_size, activation=self.dense_layer_activation)(x)
+
 		# - Add dense layer and reshape
 		x = layers.Dense(np.prod(self.shape_before_flattening[1:]))(x)
 		x = layers.Reshape((self.shape_before_flattening[1], self.shape_before_flattening[2], self.shape_before_flattening[3]))(x)
