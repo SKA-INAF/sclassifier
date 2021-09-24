@@ -756,9 +756,12 @@ class VAEClassifier(object):
 		# - Get losses and plot
 		logger.info("Retrieving losses and plot ...")
 		loss_train= self.fitout.history['loss']
-		print(loss_train)
+		loss_val= self.fitout.history['val_loss']
 
-		plt.plot(loss_train)				
+		print(loss_train)
+		
+		plt.plot(loss_train, color='b')
+		plt.plot(loss_val, color='r')		
 		plt.title('loss')
 		plt.ylabel('loss')
 		plt.xlabel('epochs')
@@ -801,11 +804,11 @@ class VAEClassifier(object):
 		epoch_ids= epoch_ids.reshape(N,1)
 
 		metrics_data= np.concatenate(
-			(epoch_ids,np.array(loss_train).reshape(N,1)),
+			(epoch_ids,np.array(loss_train).reshape(N,1), np.array(loss_val).reshape(N,1)),
 			axis=1
 		)
 			
-		head= '# epoch loss'
+		head= '# epoch loss loss_val'
 		Utils.write_ascii(metrics_data,self.outfile_nnout_metrics,head)	
 
 		#================================
