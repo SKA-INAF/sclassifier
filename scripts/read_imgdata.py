@@ -160,8 +160,13 @@ def main():
 					logger.error("Image %d chan %d (name=%s) has all elements equal to %f, check!" % (img_counter, i+1, source_labels[img_counter-1],data_min))
 					break
 						
+				
+			# - Check correct norm
+			if normalize:
+				data_min= np.min(data[0,:,:,:])
+				data_max= np.max(data[0,:,:,:])
 				correct_norm= (data_min==0 and data_max==1)
-				if normalize and not correct_norm:
+				if not correct_norm:
 					logger.error("Image %d chan %d (name=%s) has invalid norm (%f,%f), check!" % (img_counter, i+1, source_labels[img_counter-1],data_min,data_max))
 					break
 		
