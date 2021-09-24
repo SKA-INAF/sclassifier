@@ -590,7 +590,11 @@ class VAEClassifier(object):
 		# - Check if vectors are not empty
 		y_true_isempty= tf.equal(tf.size(y_true_flattened_masked),0)	
 		y_pred_isempty= tf.equal(tf.size(y_pred_flattened_masked),0)
-		are_empty= tf.logical_or(y_true_isempty,y_pred_isempty).numpy()
+		are_empty_tensor= tf.logical_or(y_true_isempty,y_pred_isempty)
+		if tf.eagerly():
+			are_empty= are_empty_tensor.numpy()
+		else:
+			are_empty= are_empty_tensor.eval()
 
 		# - Compute reconstruction loss term
 		#logger.info("Computing the reconstruction loss ...")
