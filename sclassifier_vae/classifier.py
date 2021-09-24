@@ -165,11 +165,12 @@ class VAEClassifier(object):
 		self.leakyrelu_alpha= 0.2
 		self.add_batchnorm= True
 		self.activation_fcn_cnn= "relu"
-		self.nlayers_intermediate= 1
-		self.intermediate_layer_size_factor= 1
-		self.intermediate_dim= 512
-		self.intermediate_layer_activation= 'relu'
-		self.output_layer_activation= 'sigmoid'
+
+		self.add_dense= False
+		self.dense_layer_sizes= [16] 
+		self.dense_layer_activation= 'relu'
+		
+		self.decoder_output_layer_activation= 'sigmoid'
 		self.rec_loss_weight= 0.5
 		self.kl_loss_weight= 0.5
 		self.z_mean = None
@@ -181,9 +182,8 @@ class VAEClassifier(object):
 		self.nepochs= 10
 		
 		self.learning_rate= 1.e-4
-		#self.optimizer= 'adam' # 'rmsprop'
-		#self.optimizer= tf.keras.optimizers.RMSprop(learning_rate=self.learning_rate)	
-		self.optimizer= tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
+		self.optimizer_default= 'adam'
+		self.optimizer= 'adam' # 'rmsprop'
 		self.use_mse_loss= False
 
 		# - Draw options
@@ -213,11 +213,11 @@ class VAEClassifier(object):
 		
 
 		# - Output data
-		self.outfile_loss= 'nn_loss.png'
-		self.outfile_accuracy= 'nn_accuracy.png'
-		self.outfile_model= 'nn_model.png'
-		self.outfile_nnout_metrics= 'nnout_metrics.dat'
-		self.outfile_encoded_data= 'encoded_data.dat'
+		self.outfile_loss= 'losses.png'
+		self.outfile_accuracy= 'accuracy.png'
+		self.outfile_model= 'model.png'
+		self.outfile_nnout_metrics= 'metrics.dat'
+		self.outfile_encoded_data= 'latent_data.dat'
 
 	#####################################
 	##     SETTERS/GETTERS
@@ -227,34 +227,21 @@ class VAEClassifier(object):
 		self.nx= nx
 		self.ny= ny
 
-	def set_optimizer(self,opt):
+	def set_optimizer(self, opt, learning_rate=None):
 		""" Set optimizer """
-		self.optimizer= opt
 
-	def set_learning_rate(self,lr):
-		""" Set learning rate """
-		self.learning_rate= lr
-
-	def set_nepochs(self,w):
-		""" Set number of train epochs """
-		self.nepochs= w
-
-	def set_batch_size(self,bs):
-		""" Set batch size """
-		self.batch_size= bs
-
-	def set_intermediate_layer_size(self,n):
-		""" Set intermediate layer size """
-		self.intermediate_dim= n
-
-	def set_n_intermediate_layers(self,n):
-		""" Set number of intermediate layers """
-		self.nlayers_intermediate= n
-
-	def set_intermediate_layer_size_factor(self,f):
-		""" Set reduction factor to compute number of neurons in dense layers """
-		self.intermediate_layer_size_factor= f
-
+		if learning_rate is None or learning_rate<=0:
+			self.optimizer= opt
+		else:
+			if opt=="rmsprop":
+				self.optimizer= tf.keras.optimizers.RMSprop(learning_rate=self.learning_rate)
+			elif opt=="adam":	
+				self.optimizer= tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
+			else:
+				logger.warn("Unknown optimizer selected (%s), setting to the default (%s) ..." % (opt, self.optimizer_default))
+				self.optimizer= self.optimizer_default
+		
+	
 	#####################################
 	##     SET TRAIN DATA
 	#####################################
@@ -420,6 +407,11 @@ class VAEClassifier(object):
 		#self.input_data_dim= K.int_shape(x)
 		#print("Input data dim=", self.input_data_dim)
 
+		# - Add dense layer?
+		if self.add_dense:
+			for layer_size in dense_layer_sizes:
+				x = layers.Dense(layer_size, activation=self.dense_layer_activation)(x)
+
 		# - Output layers
 		self.z_mean = layers.Dense(self.latent_dim,name='z_mean')(x)
 		self.z_log_var = layers.Dense(self.latent_dim,name='z_log_var')(x)
@@ -434,7 +426,7 @@ class VAEClassifier(object):
 		
 		# - Print and plot model
 		self.encoder.summary()
-		plot_model(self.encoder, to_file='vae_mlp_encoder.png', show_shapes=True)
+		plot_model(self.encoder, to_file='vae_encoder.png', show_shapes=True)
 
 		return 0
 
@@ -473,7 +465,7 @@ class VAEClassifier(object):
 		# - Apply a single conv (or Conv tranpose??) layer to recover the original depth of the image
 		padding= "same"
 		#x = layers.Conv2D(self.nchannels, (3, 3), activation='sigmoid', padding=padding)(x)
-		x = layers.Conv2DTranspose(self.nchannels, (3, 3), activation='sigmoid', padding=padding)(x)
+		x = layers.Conv2DTranspose(self.nchannels, (3, 3), activation=self.decoder_output_layer_activation, padding=padding)(x)
 		outputs = x
 
 		# - Flatten layer
@@ -485,7 +477,7 @@ class VAEClassifier(object):
 
 		# - Print and draw model		
 		self.decoder.summary()
-		plot_model(self.decoder, to_file='vae_mlp_decoder.png', show_shapes=True)
+		plot_model(self.decoder, to_file='vae_decoder.png', show_shapes=True)
 
 		return 0
 
@@ -493,7 +485,7 @@ class VAEClassifier(object):
 	###########################
 	##     LOSS DEFINITION
 	###########################	
-	#@tf.function
+	@tf.function
 	def reco_loss_metric(self, y_true, y_pred):
 		""" Reconstruction loss function definition """
     
@@ -735,7 +727,7 @@ class VAEClassifier(object):
 		plt.ylim(bottom=0)
 		plt.legend(['train loss'], loc='upper right')
 		#plt.show()
-		plt.savefig('loss.png')				
+		plt.savefig('losses.png')				
 
 
 
@@ -781,7 +773,6 @@ class VAEClassifier(object):
 		#==   SAVE ENCODED DATA
 		#================================
 		logger.info("Saving encoded data to file ...")
-		#self.encoded_data, _, _= self.encoder.predict(self.inputs_train, batch_size=self.batch_size)
 		self.encoded_data, _, _= self.encoder.predict(
 			x=self.test_data_generator,	
 			steps=1,
