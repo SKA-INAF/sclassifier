@@ -554,7 +554,7 @@ class VAEClassifier(object):
 			reco_loss = binary_crossentropy(y_true, y_pred)
 			
 		reco_loss= K.mean(reco_loss)
-    return reco_loss
+		return reco_loss
   
 
 	@tf.function
