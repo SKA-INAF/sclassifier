@@ -26,6 +26,7 @@ from astropy.io import ascii
 
 ## ADDON ML MODULES
 from sklearn.model_selection import train_test_split
+import imgaug
 from imgaug import augmenters as iaa
 
 ## PACKAGE MODULES
