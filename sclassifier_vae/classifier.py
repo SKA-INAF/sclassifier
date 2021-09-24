@@ -581,6 +581,11 @@ class VAEClassifier(object):
 		y_true_flattened_safe= tf.gather(y_true_flattened, indexes)
 		y_pred_flattened_safe= tf.gather(y_pred_flattened, indexes)
 		
+		tf.print("\n y_true_flattened_safe min:", tf.math.reduce_min(y_true_flattened_safe), output_stream=sys.stdout)
+		tf.print("\n y_true_flattened_safe max:", tf.math.reduce_max(y_true_flattened_safe), output_stream=sys.stdout)
+		tf.print("\n y_pred_flattened_safe min:", tf.math.reduce_min(y_pred_flattened_safe), output_stream=sys.stdout)
+		tf.print("\n y_pred_flattened_safe max:", tf.math.reduce_max(y_pred_flattened_safe), output_stream=sys.stdout)
+
 
 		# - Compute reconstruction loss term
 		#logger.info("Computing the reconstruction loss ...")		
