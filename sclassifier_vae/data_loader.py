@@ -300,7 +300,8 @@ class SourceData(object):
 
 		try:
 			#data_mask_aug= augmenter(images=self.img_cube_mask)
-			data_mask_aug= augmenter_det.augment_image(self.img_cube_mask, hooks=imgaug.HooksImages(activator=activator))
+			#data_mask_aug= augmenter_det.augment_image(self.img_cube_mask, hooks=imgaug.HooksImages(activator=activator))
+			data_mask_aug= augmenter_det.augment_image(self.img_cube_mask)
 		except Exception as e:
 			logger.error("Failed to augment data mask (err=%s)!" % str(e))
 			return -1
