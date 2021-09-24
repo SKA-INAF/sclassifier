@@ -27,7 +27,7 @@ import collections
 ## MODULES
 from sclassifier_vae import __version__, __date__
 from sclassifier_vae import logger
-from sclassifier_vae.data_provider import DataProvider
+from sclassifier_vae.data_loader import DataLoader
 
 
 #### GET SCRIPT ARGS ####
@@ -47,27 +47,24 @@ def get_args():
 	parser = argparse.ArgumentParser(description="Parse args.")
 
 	# - Input options
-	parser.add_argument('-filelists','--filelists', dest='filelists', required=True, nargs='+', type=str, default=[], help='List of image filelists') 
-	parser.add_argument('-catalog_file','--catalog_file', dest='catalog_file', required=False, type=str, default='', help='Caesar source catalog ascii file') 
-
-	# - Data process options
-	parser.add_argument('--crop_img', dest='crop_img', action='store_true',help='Crop input images')	
-	parser.set_defaults(crop_img=False)	
-	parser.add_argument('-nx', '--nx', dest='nx', required=False, type=int, default=51, action='store',help='Image crop width in pixels (default=51)')
-	parser.add_argument('-ny', '--ny', dest='ny', required=False, type=int, default=51, action='store',help='Image crop height in pixels (default=51)')	
-
-	parser.add_argument('--normalize_img', dest='normalize_img', action='store_true',help='Normalize input images in range [0,1]')	
-	parser.set_defaults(normalize_inputs=False)
-	parser.add_argument('-normdatamin', '--normdatamin', dest='normdatamin', required=False, type=float, default=-0.0100, action='store',help='Normalization min used to scale data in [0,1] range (default=-100 mJy/beam)')	
-	parser.add_argument('-normdatamax', '--normdatamax', dest='normdatamax', required=False, type=float, default=10, action='store',help='Normalization max used to scale data in [0,1] range (default=10 Jy/beam)')
+	parser.add_argument('-datalist','--datalist', dest='datalist', required=True, type=str, help='Input data json filelist') 
 	
-	parser.add_argument('--normalize_img_to_first_chan', dest='normalize_img_to_first_chan', action='store_true',help='Normalize input images to first channel')	
-	parser.set_defaults(normalize_img_to_first_chan=False)
+	# - Data pre-processing options
+	parser.add_argument('-nx', '--nx', dest='nx', required=False, type=int, default=128, action='store',help='Image resize width in pixels (default=128)')
+	parser.add_argument('-ny', '--ny', dest='ny', required=False, type=int, default=128, action='store',help='Image resize height in pixels (default=128)')	
+	
+	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize input images in range [0,1]')	
+	parser.set_defaults(normalize=False)
+	
+	parser.add_argument('--augment', dest='augment', action='store_true',help='Augment images')	
+	parser.set_defaults(augment=False)
+	
+	parser.add_argument('--shuffle', dest='shuffle', action='store_true',help='Shuffle images')	
+	parser.set_defaults(shuffle=False)
 
-	parser.add_argument('--apply_weights', dest='apply_weights', action='store_true',help='Apply weights to input image channels')	
-	parser.set_defaults(apply_weights=False)	
-	parser.add_argument('-img_weights','--img_weights', dest='img_weights', required=False, nargs='+', type=float, default=[], help='List of image weights (must have same size of input filelists)') 
-
+	parser.add_argument('--resize', dest='resize', action='store_true',help='Resize images')	
+	parser.set_defaults(resize=False)
+	
 
 	args = parser.parse_args()	
 
@@ -92,55 +89,57 @@ def main():
 		return 1
 
 	# - Input filelist
-	filelists= args.filelists
-	catalog_file= args.catalog_file
-	print(filelists)
+	datalist= args.datalist
 
 	# - Data process options	
-	crop_img= args.crop_img
 	nx= args.nx
 	ny= args.ny
+	normalize= args.normalize
+	resize= args.resize
+	augment= args.augment
+	shuffle= args.shuffle
 
-	normalize_img= args.normalize_img
-	normdatamin= args.normdatamin
-	normdatamax= args.normdatamax
 
-	normalize_img_to_first_chan= args.normalize_img_to_first_chan
-	
-	apply_weights= args.apply_weights
-	img_weights= args.img_weights
-
-	#===========================
-	#==   CHECK ARGS
-	#===========================
-	if apply_weights and len(img_weights)!=len(filelists):
-		logger.error("Input image weights has size different from input filelists!")
-		return 1
-	
 	#===========================
 	#==   READ DATA
 	#===========================
-	# - Create data provider
-	dp= DataProvider(filelists=filelists)
+	# - Create data loader
+	dl= DataLoader(filename=datalist)
 
-	# - Set options
-	dp.set_catalog_filename(catalog_file)
-	dp.enable_inputs_normalization(normalize_img)
-	dp.set_input_data_norm_range(normdatamin,normdatamax)
-	dp.enable_inputs_normalization_to_first_channel(normalize_img_to_first_chan)
-	dp.enable_img_crop(crop_img)
-	dp.set_img_crop_size(nx,ny)
-	dp.enable_img_weights(apply_weights)
-	dp.set_img_weights(img_weights)
+	# - Read datalist	
+	logger.info("Reading datalist %s ..." % datalist)
+	if dl.read_datalist()<0:
+		logger.error("Failed to read input datalist!")
+		return 1
 
 
 	# - Read data	
-	logger.info("Running data provider to read image data ...")
-	status= dp.read_data()
-	if status<0:
-		logger.error("Failed to read input image data!")
-		return 1
-	
+	logger.info("Running data loader ...")
+	data_generator= dl.data_generator(
+		batch_size=1, 
+		shuffle=shuffle,
+		resize=resize, nx=nx, ny=ny, 	
+		normalize=normalize, 
+		augment=augment
+	)	
+
+	while True:
+		try:
+			data= next(data_generator)
+
+			print("data shape")
+			print(data_shape)
+
+			# - Draw data
+			# ...
+			# ...
+
+		except (GeneratorExit, KeyboardInterrupt):
+			logger.info("Generator or keyboard exception catched while generating data...")
+			break
+		except Exception as e:
+			logger.warn("Exception catched while generating data (err=%s) ..." % str(e))
+			break
 	
 	return 0
 
