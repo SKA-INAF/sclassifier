@@ -116,7 +116,7 @@ def main():
 		logger.error("Failed to read input datalist!")
 		return 1
 	
-	source_labels= dl.dl.snames
+	source_labels= dl.snames
 	nsamples= len(source_labels)
 
 	logger.info("#%d samples to be read ..." % nsamples)
@@ -150,6 +150,15 @@ def main():
 			if has_naninf:
 				logger.error("Image %d (name=%s) has some nan/inf, check!" % (img_counter, source_labels[img_counter-1]))
 				break
+
+			# - Check if channels have elements all equal
+			for i in range(nchannels):
+				data_min= np.min(data[0,:,:,i])
+				data_max= np.max(data[0,:,:,i])
+				same_values= (data_min==data_max)
+				if same_values:
+					logger.error("Image %d chan %d (name=%s) has all elements equal to %f, check!" % (img_counter, i+1, source_labels[img_counter-1],data_min))
+					break
 
 			# - Draw data
 			if draw:
