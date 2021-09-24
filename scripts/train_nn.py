@@ -75,6 +75,7 @@ def get_args():
 	
 	parser.add_argument('-dense_layer_sizes', '--dense_layer_sizes', dest='dense_layer_sizes', required=False, type=str, default='16', action='store',help='Dense layer sizes used (default=16)')
 	parser.add_argument('-dense_layer_activation', '--dense_layer_activation', dest='dense_layer_activation', required=False, type=str, default='relu', action='store',help='Dense layer activation used {relu,softmax} (default=relu)')
+	parser.add_argument('-decoder_output_layer_activation', '--decoder_output_layer_activation', dest='decoder_output_layer_activation', required=False, type=str, default='sigmoid', action='store',help='Output decoder layer activation used {sigmoid,softmax} (default=sigmoid)')
 
 	parser.add_argument('--mse_loss', dest='mse_loss', action='store_true',help='use MSE loss and not crossentropy as recontruction loss')	
 	parser.set_defaults(mse_loss=False)	
@@ -121,6 +122,7 @@ def main():
 	strides_cnn= [int(x.strip()) for x in args.strides_cnn.split(',')]
 	dense_layer_sizes= [int(x.strip()) for x in args.dense_layer_sizes.split(',')]
 	dense_layer_activation= args.dense_layer_activation
+	decoder_output_layer_activation= args.decoder_output_layer_activation
 	
 	print("nfilters_cnn")
 	print(nfilters_cnn)
