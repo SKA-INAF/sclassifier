@@ -545,7 +545,7 @@ class VAEClassifier(object):
 	#	return fn
 
 	@tf.function
-	def reco_loss(self, y_true, y_pred):
+	def reco_loss_fcn(self, y_true, y_pred):
 		""" Reco loss function definition """
 
 		if self.use_mse_loss:
@@ -612,8 +612,7 @@ class VAEClassifier(object):
 		# - Compute reconstruction loss term
 		#logger.info("Computing the reconstruction loss ...")
 		reco_loss_default= 1.e+99
-
-		reco_loss= tf.cond(are_empty, lambda: tf.constant(reco_loss_default), lambda: reco_loss(y_true_flattened_masked, y_pred_flattened_masked))
+		reco_loss= tf.cond(are_empty, lambda: tf.constant(reco_loss_default), lambda: reco_loss_fcn(y_true_flattened_masked, y_pred_flattened_masked))
 
 		#if self.use_mse_loss:
 		#	###reco_loss = mse(y_true_flattened, y_pred_flattened)
