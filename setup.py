@@ -28,8 +28,9 @@ PY_MINOR_VERSION=sys.version_info.minor
 print("PY VERSION: maj=%s, min=%s" % (PY_MAJOR_VERSION,PY_MINOR_VERSION))
 
 reqs= []
-reqs.append('numpy>=1.10')
-reqs.append('astropy>=2.0, <3')
+reqs.append('numpy>=1.18')
+#reqs.append('astropy>=2.0, <3')
+reqs.append('astropy>=2.0')
 
 
 if PY_MAJOR_VERSION<=2:
@@ -46,9 +47,9 @@ else:
 	reqs.append('pyparsing')
 	reqs.append('matplotlib')
 
-reqs.append('keras>=2.0')
-reqs.append('tensorflow>=1.13')
-
+#reqs.append('keras>=2.0')
+reqs.append('tensorflow>=2.3')
+reqs.append('imgaug')
 
 data_dir = 'data'
 
