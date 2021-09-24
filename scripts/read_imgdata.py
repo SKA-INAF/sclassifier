@@ -130,7 +130,7 @@ def main():
 			print("data shape")
 			print(data.shape)
 
-			nchannels= data[3]
+			nchannels= data.shape[3]
 			
 			# - Draw data
 			logger.info("Drawing data ...")
