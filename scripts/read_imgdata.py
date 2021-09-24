@@ -128,7 +128,7 @@ def main():
 			data= next(data_generator)
 
 			print("data shape")
-			print(data_shape)
+			print(data.shape)
 
 			# - Draw data
 			# ...
