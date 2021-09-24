@@ -810,7 +810,7 @@ class VAEClassifier(object):
 			axis=1
 		)
 			
-		head= '# epoch - loss'
+		head= '# epoch loss'
 		Utils.write_ascii(metrics_data,self.outfile_nnout_metrics,head)	
 
 		#================================
