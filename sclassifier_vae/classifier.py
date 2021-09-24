@@ -591,9 +591,9 @@ class VAEClassifier(object):
 			reco_loss = binary_crossentropy(y_true_flattened, y_pred_flattened)
       #reco_loss = binary_crossentropy(y_true_flattened, y_pred_flattened_nonans)
       
-		#tf.print("\n reco_loss:", reco_loss, output_stream=sys.stdout)		
+		tf.print("\n reco_loss:", reco_loss, output_stream=sys.stdout)		
 		reco_loss*= tf.cast(img_cube_size, tf.float32)
-		#tf.print("\n reco_loss (after mult):", reco_loss, output_stream=sys.stdout)
+		tf.print("\n reco_loss (after mult):", reco_loss, output_stream=sys.stdout)
 		
 
 		# - Compute KL loss term
@@ -602,7 +602,7 @@ class VAEClassifier(object):
 		kl_loss_mean= K.mean(kl_loss)
 		#print("kl_loss=", kl_loss)
 		#tf.print("\n kl_loss:", kl_loss, output_stream=sys.stdout)
-		#tf.print("\n kl_loss_mean:", kl_loss_mean, output_stream=sys.stdout)
+		tf.print("\n kl_loss_mean:", kl_loss_mean, output_stream=sys.stdout)
 		
 		# Total loss
 		#logger.info("Computing the total loss ...")
@@ -784,7 +784,7 @@ class VAEClassifier(object):
 		#self.encoded_data, _, _= self.encoder.predict(self.inputs_train, batch_size=self.batch_size)
 		self.encoded_data, _, _= self.encoder.predict(
 			x=self.test_data_generator,	
-			steps=steps_per_epoch,
+			steps=1,
     	verbose=2,
     	workers=self.nworkers,
     	use_multiprocessing=self.use_multiprocessing
