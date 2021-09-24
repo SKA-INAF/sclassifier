@@ -216,7 +216,7 @@ class VAEClassifier(object):
 		self.outfile_loss= 'losses.png'
 		self.outfile_accuracy= 'accuracy.png'
 		self.outfile_model= 'model.png'
-		self.outfile_nnout_metrics= 'metrics.dat'
+		self.outfile_nnout_metrics= 'losses.dat'
 		self.outfile_encoded_data= 'latent_data.dat'
 
 	#####################################
@@ -799,19 +799,19 @@ class VAEClassifier(object):
 		#================================
 		#==   SAVE TRAIN METRICS
 		#================================
-		#logger.info("Saving train metrics (loss, ...) to file ...")
-		#N= self.train_loss_vs_epoch.shape[1]
-		#epoch_ids= np.array(range(N))
-		#epoch_ids+= 1
-		#epoch_ids= epoch_ids.reshape(N,1)
+		logger.info("Saving train metrics (loss, ...) to file ...")
+		N= len(loss_train)
+		epoch_ids= np.array(range(N))
+		epoch_ids+= 1
+		epoch_ids= epoch_ids.reshape(N,1)
 
-		#metrics_data= np.concatenate(
-		#	(epoch_ids,self.train_loss_vs_epoch.reshape(N,1)),
-		#	axis=1
-		#)
+		metrics_data= np.concatenate(
+			(epoch_ids,np.array(loss_train).reshape(N,1)),
+			axis=1
+		)
 			
-		#head= '# epoch - loss'
-		#Utils.write_ascii(metrics_data,self.outfile_nnout_metrics,head)	
+		head= '# epoch - loss'
+		Utils.write_ascii(metrics_data,self.outfile_nnout_metrics,head)	
 
 		#================================
 		#==   SAVE ENCODED DATA
