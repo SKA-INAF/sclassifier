@@ -125,7 +125,7 @@ def main():
 
 	while True:
 		try:
-			data= next(data_generator)
+			data, _= next(data_generator)
 
 			print("data shape")
 			print(data.shape)
