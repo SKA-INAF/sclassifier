@@ -575,29 +575,37 @@ class VAEClassifier(object):
 		#tf.print("\n flatten y_pred min:", tf.math.reduce_min(y_pred_flattened), output_stream=sys.stdout)
 		#tf.print("\n flatten y_pred max:", tf.math.reduce_max(y_pred_flattened), output_stream=sys.stdout)
 
-		# - Extract sub tensorwith elements that are not NAN/inf
-		mask= tf.logical_and(tf.math.is_finite(y_true_flattened), tf.math.is_finite(y_pred_flattened))
+		# - Extract sub tensorwith elements that are not NAN/inf.
+		#   NB: Exclude also true elements that are =0 (i.e. masked in input data)
+		mask= tf.logical_and(tf.logical_and(tf.math.is_finite(y_true_flattened),~tf.math.equal(y_true_flattened,0)), tf.math.is_finite(y_pred_flattened))
 		indexes= tf.where(mask)		
-		y_true_flattened_safe= tf.gather(y_true_flattened, indexes)
-		y_pred_flattened_safe= tf.gather(y_pred_flattened, indexes)
+		y_true_flattened_masked= tf.gather(y_true_flattened, indexes)
+		y_pred_flattened_masked= tf.gather(y_pred_flattened, indexes)
 		
-		tf.print("\n y_true_flattened_safe min:", tf.math.reduce_min(y_true_flattened_safe), output_stream=sys.stdout)
-		tf.print("\n y_true_flattened_safe max:", tf.math.reduce_max(y_true_flattened_safe), output_stream=sys.stdout)
-		tf.print("\n y_pred_flattened_safe min:", tf.math.reduce_min(y_pred_flattened_safe), output_stream=sys.stdout)
-		tf.print("\n y_pred_flattened_safe max:", tf.math.reduce_max(y_pred_flattened_safe), output_stream=sys.stdout)
+		tf.print("\n y_true_flattened_masked min:", tf.math.reduce_min(y_true_flattened_masked), output_stream=sys.stdout)
+		tf.print("\n y_true_flattened_masked max:", tf.math.reduce_max(y_true_flattened_masked), output_stream=sys.stdout)
+		tf.print("\n y_pred_flattened_masked min:", tf.math.reduce_min(y_pred_flattened_masked), output_stream=sys.stdout)
+		tf.print("\n y_pred_flattened_masked max:", tf.math.reduce_max(y_pred_flattened_masked), output_stream=sys.stdout)
 
+		# - Check if vectors are not empty
+		y_true_isempty= tf.equal(tf.size(y_true_flattened_masked),0)	
+		y_pred_isempty= tf.equal(tf.size(y_pred_flattened_masked),0)
+		are_empty= y_true_isempty or y_pred_isempty
 
 		# - Compute reconstruction loss term
-		#logger.info("Computing the reconstruction loss ...")		
-		if self.use_mse_loss:
-			#reco_loss = mse(y_true_flattened, y_pred_flattened)
-			reco_loss = mse(y_true_flattened_safe, y_pred_flattened_safe)
-		else:
-			#reco_loss = binary_crossentropy(y_true_flattened, y_pred_flattened)
-			reco_loss = binary_crossentropy(y_true_flattened_safe, y_pred_flattened_safe)
+		#logger.info("Computing the reconstruction loss ...")
+		reco_loss= 1.e+99
+		if not are_empty:
+			if self.use_mse_loss:
+				#reco_loss = mse(y_true_flattened, y_pred_flattened)
+				reco_loss = mse(y_true_flattened_masked, y_pred_flattened_masked)
+			else:
+				#reco_loss = binary_crossentropy(y_true_flattened, y_pred_flattened)
+				reco_loss = binary_crossentropy(y_true_flattened_masked, y_pred_flattened_masked)
 			
-		reco_loss= K.mean(reco_loss)
+			reco_loss= K.mean(reco_loss)
       
+
 		if self.rec_loss_weight>0:
 			tf.print("\n reco_loss:", reco_loss, output_stream=sys.stdout)		
 		#reco_loss*= tf.cast(img_cube_size, tf.float32)
