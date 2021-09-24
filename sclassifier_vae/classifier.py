@@ -513,37 +513,49 @@ class VAEClassifier(object):
 		return kl_loss_mean
 
 		
-	@tf.function
-	def reco_loss(self, *args, **kwargs):
-		""" Reconstruction loss function definition """
+	#@tf.function
+	#def reco_loss(self, *args, **kwargs):
+	#	""" Reconstruction loss function definition """
     
-		def fn(y_true, y_pred):
-			y_true_shape= K.shape(y_true)
-			img_cube_size= y_true_shape[1]*y_true_shape[2]*y_true_shape[3]
+	#	def fn(y_true, y_pred):
+	#		y_true_shape= K.shape(y_true)
+	#		img_cube_size= y_true_shape[1]*y_true_shape[2]*y_true_shape[3]
 
-			if self.use_mse_loss:
-				reco_loss = mse(K.flatten(y_true), K.flatten(y_pred))
-			else:
-				reco_loss = binary_crossentropy(K.flatten(y_true), K.flatten(y_pred))
+	#		if self.use_mse_loss:
+	#			reco_loss = mse(K.flatten(y_true), K.flatten(y_pred))
+	#		else:
+	#			reco_loss = binary_crossentropy(K.flatten(y_true), K.flatten(y_pred))
       
-			return reco_loss*tf.cast(img_cube_size, tf.float32)
+	#		return reco_loss*tf.cast(img_cube_size, tf.float32)
 
-		fn.__name__ = 'reco_loss'
-		return fn
+	#	fn.__name__ = 'reco_loss'
+	#	return fn
 
 	
+	#@tf.function
+	#def kl_loss(self, *args, **kwargs):
+	#	""" KL loss function definition """
+	
+	#	def fn(y_true, y_pred):
+	#		kl_loss= - 0.5 * K.sum(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
+	#		kl_loss_mean= K.mean(kl_loss)
+	#		return kl_loss_mean
+
+	#	fn.__name__ = 'kl_loss'
+	#	return fn
+
 	@tf.function
-	def kl_loss(self, *args, **kwargs):
-		""" KL loss function definition """
-	
-		def fn(y_true, y_pred):
-			kl_loss= - 0.5 * K.sum(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
-			kl_loss_mean= K.mean(kl_loss)
-			return kl_loss_mean
+	def reco_loss(self, y_true, y_pred):
+		""" Reco loss function definition """
 
-		fn.__name__ = 'kl_loss'
-		return fn
-
+		if self.use_mse_loss:
+			reco_loss = mse(y_true, y_pred)
+		else:
+			reco_loss = binary_crossentropy(y_true, y_pred)
+			
+		reco_loss= K.mean(reco_loss)
+    return reco_loss
+  
 
 	@tf.function
 	def loss(self, y_true, y_pred):
@@ -590,24 +602,27 @@ class VAEClassifier(object):
 		# - Check if vectors are not empty
 		y_true_isempty= tf.equal(tf.size(y_true_flattened_masked),0)	
 		y_pred_isempty= tf.equal(tf.size(y_pred_flattened_masked),0)
-		are_empty_tensor= tf.logical_or(y_true_isempty,y_pred_isempty)
-		if tf.executing_eagerly():
-			are_empty= are_empty_tensor.numpy()
-		else:
-			are_empty= are_empty_tensor.eval()
+		are_empty= tf.logical_or(y_true_isempty, y_pred_isempty)
+		
+		#if tf.executing_eagerly():
+		#	are_empty= are_empty_tensor.numpy()
+		#else:
+		#	are_empty= are_empty_tensor.eval()
 
 		# - Compute reconstruction loss term
 		#logger.info("Computing the reconstruction loss ...")
-		reco_loss= 1.e+99
-		if not are_empty:
-			if self.use_mse_loss:
-				#reco_loss = mse(y_true_flattened, y_pred_flattened)
-				reco_loss = mse(y_true_flattened_masked, y_pred_flattened_masked)
-			else:
-				#reco_loss = binary_crossentropy(y_true_flattened, y_pred_flattened)
-				reco_loss = binary_crossentropy(y_true_flattened_masked, y_pred_flattened_masked)
+		reco_loss_default= 1.e+99
+
+		reco_loss= tf.cond(are_empty, lambda: tf.constant(reco_loss_default), lambda: reco_loss(y_true_flattened_masked, y_pred_flattened_masked))
+
+		#if self.use_mse_loss:
+		#	###reco_loss = mse(y_true_flattened, y_pred_flattened)
+		#	reco_loss = mse(y_true_flattened_masked, y_pred_flattened_masked)
+		#else:
+		#	###reco_loss = binary_crossentropy(y_true_flattened, y_pred_flattened)
+		#	reco_loss = binary_crossentropy(y_true_flattened_masked, y_pred_flattened_masked)
 			
-			reco_loss= K.mean(reco_loss)
+		#reco_loss= K.mean(reco_loss)
       
 
 		if self.rec_loss_weight>0:
