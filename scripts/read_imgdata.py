@@ -115,6 +115,9 @@ def main():
 	if dl.read_datalist()<0:
 		logger.error("Failed to read input datalist!")
 		return 1
+	
+	source_labels= dl.source_labels
+	nsamples= len(source_labels)
 
 
 	# - Read data	
@@ -143,7 +146,7 @@ def main():
 			# - Check for NANs
 			has_naninf= np.any(~np.isfinite(data))
 			if has_naninf:
-				logger.error("Image %d has some nan/inf, check!" % img_counter)
+				logger.error("Image %d (name=%s) has some nan/inf, check!" % (img_counter, source_labels[img_counter-1]))
 				break
 
 			# - Draw data
@@ -157,6 +160,11 @@ def main():
 			
 				plt.tight_layout()
 				plt.show()
+
+			# - Stop generator
+			if img_counter>=nsamples:
+				logger.info("Sample size (%d) reached, stop generation..." % nsamples)
+				break
 
 		except (GeneratorExit, KeyboardInterrupt):
 			logger.info("Stop loop (keyboard interrupt) ...")
