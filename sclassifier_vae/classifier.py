@@ -593,7 +593,8 @@ class VAEClassifier(object):
 			
 		reco_loss= K.mean(reco_loss)
       
-		tf.print("\n reco_loss:", reco_loss, output_stream=sys.stdout)		
+		if self.rec_loss_weight>0:
+			tf.print("\n reco_loss:", reco_loss, output_stream=sys.stdout)		
 		#reco_loss*= tf.cast(img_cube_size, tf.float32)
 		#tf.print("\n reco_loss (after mult):", reco_loss, output_stream=sys.stdout)
 		
@@ -604,7 +605,9 @@ class VAEClassifier(object):
 		kl_loss_mean= K.mean(kl_loss)
 		#print("kl_loss=", kl_loss)
 		#tf.print("\n kl_loss:", kl_loss, output_stream=sys.stdout)
-		tf.print("\n kl_loss_mean:", kl_loss_mean, output_stream=sys.stdout)
+
+		if self.kl_loss_weight>0:
+			tf.print("\n kl_loss_mean:", kl_loss_mean, output_stream=sys.stdout)
 		
 		# Total loss
 		#logger.info("Computing the total loss ...")
@@ -795,9 +798,11 @@ class VAEClassifier(object):
 		#print("encoded_data len=",len(self.encoded_data))
 		#print("encoded_data=",self.encoded_data)
 		print("encoded_data shape")
-		print(self.encoded_data.shape)
+		print(self.encoded_data.shape)	
+		print(self.encoded_data)
 		N= self.encoded_data.shape[0]
 		Nvar= self.encoded_data.shape[1]
+		
 		
 		# - Merge encoded data
 		obj_names= np.array(self.source_names).reshape(N,1)
@@ -905,7 +910,7 @@ class VAEClassifier(object):
 		#plt.colorbar()
 		plt.xlabel("z0")
 		plt.ylabel("z1")
-		plt.savefig('encoded_data.png')
+		plt.savefig('latent_data.png')
 		#plt.show()
 
 
