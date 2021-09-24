@@ -161,9 +161,9 @@ class VAEClassifier(object):
 		self.strides_cnn= [2,2,2]
 		self.add_max_pooling= False
 		self.pool_size= 2
-		self.add_leakyrelu= False
+		self.add_leakyrelu= True
 		self.leakyrelu_alpha= 0.2
-		self.add_batchnorm= False
+		self.add_batchnorm= True
 		self.activation_fcn_cnn= "relu"
 		self.nlayers_intermediate= 1
 		self.intermediate_layer_size_factor= 1
