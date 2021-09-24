@@ -135,12 +135,13 @@ def main():
 			
 			# - Draw data
 			logger.info("Drawing data ...")
+			fig = plt.figure(figsize=(40, 20))
 			for i in range(nchannels):
 				#logger.info("Reading nchan %d ..." % i+1)
 				plt.subplot(1, nchannels, i+1)
 				plt.imshow(data[0,:,:,i], origin='lower')
 			
-			print("pto 2")
+			plt.tight_layout()
 			plt.show()
 
 		except (GeneratorExit, KeyboardInterrupt):
