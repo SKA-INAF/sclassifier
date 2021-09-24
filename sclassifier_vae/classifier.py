@@ -44,7 +44,7 @@ except Exception as e:
 	logger.warn("Failed to import BatchNormalization (err=%s), trying in another way ..." % str(e))
 	from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Conv2D
-from tensorflow.keras.layers import MaxPooling2D
+from tensorflow.keras.layers import MaxPooling2D, UpSampling2D
 from tensorflow.keras.layers import Activation
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import Lambda
@@ -450,9 +450,7 @@ class VAEClassifier(object):
 
 			# - Add max pooling?
 			if self.add_max_pooling:
-				padding= "valid"
-				#x = layers.MaxPooling2D(pool_size=(self.pool_size,self.pool_size),strides=None,padding=padding)(x)
-				x = layers.UpSampling2D(pool_size=(self.pool_size,self.pool_size),interpolation='nearest',padding=padding)(x)
+				x = layers.UpSampling2D(pool_size=(self.pool_size,self.pool_size),interpolation='nearest')(x)
 
 			# - Add Leaky RELU?	
 			if self.add_leakyrelu:
