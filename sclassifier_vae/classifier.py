@@ -144,6 +144,7 @@ class VAEClassifier(object):
 		self.input_data_dim= 0
 		self.encoded_data= None
 		self.train_data_generator= None
+		self.crossval_data_generator= None
 		self.test_data_generator= None
 		self.augmentation= False	
 		self.validation_steps= 10
@@ -264,6 +265,16 @@ class VAEClassifier(object):
 			augment=self.augmentation
 		)	
 
+		# - Create cross validation data generator
+		self.crossval_data_generator= self.dl.data_generator(
+			batch_size=self.batch_size, 
+			shuffle=True,
+			resize=True, nx=self.nx, ny=self.ny, 
+			normalize=True, 
+			augment=self.augmentation
+		)	
+
+		# - Create test data generator
 		self.test_data_generator= self.dl.data_generator(
 			batch_size=self.nsamples_train, 
 			shuffle=False,
@@ -735,33 +746,12 @@ class VAEClassifier(object):
 			x=self.train_data_generator,
 			epochs=self.nepochs,
 			steps_per_epoch=steps_per_epoch,
-			#validation_data=self.train_data_generator,
-			#validation_steps=self.validation_steps,
+			validation_data=self.crossval_data_generator,
+			validation_steps=self.validation_steps,
 			use_multiprocessing=self.use_multiprocessing,
 			workers=self.nworkers,
 			verbose=2
 		)
-
-		#for epoch in range(self.nepochs):
-		#	logger.info("== EPOCH %d ==" % epoch)
-		#	self.fitout= self.vae.fit(
-		#		x=self.train_data_generator,
-		#		epochs=1,
-		#		steps_per_epoch=steps_per_epoch,
-		#		###validation_data=self.train_data_generator,
-		#		###validation_steps=self.validation_steps,
-		#		use_multiprocessing=self.use_multiprocessing,
-		#		workers=self.nworkers,
-		#		verbose=2
-		#	)
-
-		#	loss_train= self.fitout.history['loss'][0]
-		#	self.train_loss_vs_epoch[0,epoch]= loss_train
-		#	if epoch>=1:
-		#		deltaLoss_train= (loss_train/self.train_loss_vs_epoch[0,epoch-1]-1)*100.
-
-		#	logger.info("EPOCH %d: loss(train)=%s (dl=%s)" % (epoch,loss_train,deltaLoss_train))
-				
 
 		# - Get losses and plot
 		logger.info("Retrieving losses and plot ...")
