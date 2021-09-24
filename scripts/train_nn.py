@@ -52,7 +52,9 @@ def get_args():
 	# - Data pre-processing options
 	parser.add_argument('-nx', '--nx', dest='nx', required=False, type=int, default=128, action='store',help='Image resize width in pixels (default=128)')
 	parser.add_argument('-ny', '--ny', dest='ny', required=False, type=int, default=128, action='store',help='Image resize height in pixels (default=128)')	
-	
+	parser.add_argument('--augment', dest='augment', action='store_true',help='Augment images')	
+	parser.set_defaults(augment=False)
+
 	# - Network training options
 	parser.add_argument('-nepochs', '--nepochs', dest='nepochs', required=False, type=int, default=100, action='store',help='Number of epochs used in network training (default=100)')	
 	parser.add_argument('-optimizer', '--optimizer', dest='optimizer', required=False, type=str, default='rmsprop', action='store',help='Optimizer used (default=rmsprop)')
@@ -108,6 +110,7 @@ def main():
 	# - Data process options	
 	nx= args.nx
 	ny= args.ny
+	augment= args.augment
 
 	# - NN architecture
 	add_maxpooling_layer= args.add_maxpooling_layer
@@ -159,6 +162,7 @@ def main():
 	nn= VAEClassifier(dl)
 
 	nn.set_image_size(nx, ny)
+	nn.augmentation= augment
 	nn.batch_size= batch_size
 	nn.nepochs= nepochs
 	nn.set_optimizer(optimizer, learning_rate)
