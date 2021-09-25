@@ -272,7 +272,7 @@ class UMAPClassifier(object):
 			if nids!=self.nsamples:
 				logger.error("Given class ids have size (%d) different than feature data (%d)!" % (nids,self.nsamples))
 				return -1
-			self.data_classids= ids
+			self.data_classids= class_ids
 
 			for classid in self.data_classids:
 				label= self.classid_label_map[classid]
