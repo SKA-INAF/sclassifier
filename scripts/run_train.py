@@ -231,7 +231,7 @@ def main():
 		umap_class.set_min_dist(mindist_umap)
 		umap_class.set_n_neighbors(nneighbors_umap)
 
-		if umap_class.run_train(vae_data, labels=classids, snames=snames)<0:
+		if umap_class.run_train(vae_data, class_ids=classids, snames=snames)<0:
 			logger.error("UMAP training failed!")
 			return 1
 	
