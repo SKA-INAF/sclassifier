@@ -583,7 +583,7 @@ class UMAPClassifier(object):
 
 		
 		snames= np.array(self.source_names).reshape(N,1)
-		objids= np.array(self.data_ids).reshape(N,1)
+		objids= np.array(self.data_classids).reshape(N,1)
 			
 		# - Save unsupervised encoded data
 		enc_data= np.concatenate(
@@ -619,7 +619,7 @@ class UMAPClassifier(object):
 			print("Pre-classified encoded data N=",N)
 
 			snames_preclass= np.array(self.source_names_preclassified).reshape(N,1)
-			objids_preclass= np.array(self.data_preclassified_labels).reshape(N,1)
+			objids_preclass= np.array(self.data_preclassified_classids).reshape(N,1)
 			
 			enc_data= np.concatenate(
 				(snames_preclass, self.encoded_data_preclassified, objids_preclass),
