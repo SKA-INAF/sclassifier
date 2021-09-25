@@ -215,9 +215,9 @@ def main():
 	if run_umap:
 		# - Retrieve VAE encoded data
 		logger.info("Retrieve latent data from VAE ...")
-		snames= vae.source_names
-		classids= vae.source_ids
-		vae_data= vae.encoded_data
+		snames= vae_class.source_names
+		classids= vae_class.source_ids
+		vae_data= vae_class.encoded_data
 
 		# - Run UMAP	
 		logger.info("Running UMAP classifier training on VAE latent data ...")
