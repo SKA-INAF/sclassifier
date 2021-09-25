@@ -59,7 +59,9 @@ class UMAPClassifier(object):
 		self.data= None
 		self.data_preclassified= None
 		self.data_preclassified_labels= None
+		self.data_preclassified_classids= None
 		self.data_labels= []
+		self.data_classids= []
 		self.source_names= []
 		self.source_names_preclassified= []
 		
@@ -91,6 +93,18 @@ class UMAPClassifier(object):
 		self.local_connectivity= 1.0 # default=1
 		self.nepochs= None # default=None
 		self.random_seed= 42
+
+		self.classid_label_map= {
+			0: "UNKNOWN",
+			-1: "MIXED_TYPE",
+			1: "STAR",
+			2: "GALAXY",
+			3: "PN",
+			6: "HII",
+			23: "PULSAR",
+			24: "YSO",			
+			6000: "QSO",
+		}
 
 		# - Draw options
 		self.marker_mapping= {
@@ -156,19 +170,23 @@ class UMAPClassifier(object):
 		# - Set preclassified data
 		row_list= []
 		label_list= []
+		classid_list= []
 
 		for i in range(self.nsamples):
 			source_name= self.source_names[i]
-			obj_id= self.data_labels[i]
+			obj_id= self.data_classids[i]
+			label= self.data_labels[i]
 				
 			if obj_id!=0 and obj_id!=-1:
 				row_list.append(i)
-				label_list.append(obj_id)	
+				classid_list.append(obj_id)	
+				label_list.append(label)
 				self.source_names_preclassified.append(source_name)				
 
 		if row_list:	
 			self.data_preclassified= self.data[row_list,:]
 			self.data_preclassified_labels= np.array(label_list)
+			self.data_preclassified_classids= np.array(classid_list)
 
 		
 		if self.data_preclassified is not None:
@@ -199,12 +217,18 @@ class UMAPClassifier(object):
 		# - Set data vectors
 		rowIndex= 0
 		self.data_labels= []
+		self.data_classids= []
 		self.source_names= []
 		featdata= []
 
 		for data in table:
-			self.source_names.append(data[0])
-			self.data_labels.append(data[ncols-1])
+			sname= data[0]
+			classid= data[ncols-1]
+			label= self.classid_label_map[classid]
+
+			self.source_names.append(sname)
+			self.data_labels.append(label)
+			self.data_classids.append(classid)
 			featdata_curr= []
 			for k in range(nfeat):
 				featdata_curr.append(data[k+1])
@@ -228,7 +252,7 @@ class UMAPClassifier(object):
 	#####################################
 	##     SET DATA FROM VECTOR
 	#####################################
-	def set_data(self, featdata, labels=[], snames=[]):
+	def set_data(self, featdata, class_ids=[], snames=[]):
 		""" Set data from input array. Optionally give labels & obj names """
 
 		# - Set feature data
@@ -242,15 +266,22 @@ class UMAPClassifier(object):
 		self.nsamples= data_shape[0]
 		self.nfeatures= data_shape[1]
 
-		# - Set class ids
-		if labels:
-			nlabels= len(labels)
-			if nlabels!=self.nsamples:
-				logger.error("Given labels have size (%d) different than feature data (%d)!" % (nlabels,self.nsamples))
+		# - Set class ids & labels
+		if class_ids:
+			nids= len(class_ids)
+			if nids!=self.nsamples:
+				logger.error("Given class ids have size (%d) different than feature data (%d)!" % (nids,self.nsamples))
 				return -1
-			self.data_labels= labels
+			self.data_classids= ids
+
+			for classid in self.data_classids:
+				label= self.classid_label_map[classid]
+				self.data_labels.append(label)
+
 		else:
-			self.data_labels= [0]*self.nsamples # Init to unclassified
+			self.data_classids= [0]*self.nsamples # Init to unknown type
+			self.data_labels= ["UNKNOWN"]**self.nsamples
+		
 		
 		# - Set obj names
 		if snames:
@@ -334,7 +365,7 @@ class UMAPClassifier(object):
 		return 0
 
 
-	def run_predict(self, data, labels=[], snames=[], modelfile=None):
+	def run_predict(self, data, class_ids=[], snames=[], modelfile=None):
 		""" Run precit using input dataset """
 
 		#================================
@@ -345,7 +376,7 @@ class UMAPClassifier(object):
 			logger.error("None input data specified!")
 			return -1
 
-		if self.set_data(data, labels, snames)<0:
+		if self.set_data(data, class_ids, snames)<0:
 			logger.error("Failed to read datafile %s!" % datafile)
 			return -1
 
@@ -403,7 +434,7 @@ class UMAPClassifier(object):
 		print("Unsupervised encoded data N=",N)
 
 		snames= np.array(self.source_names).reshape(N,1)
-		objids= np.array(self.data_labels).reshape(N,1)
+		objids= np.array(self.data_ids).reshape(N,1)
 			
 		# - Save unsupervised encoded data
 		enc_data= np.concatenate(
@@ -460,7 +491,7 @@ class UMAPClassifier(object):
 		return 0
 
 
-	def run_train(self, data, labels=[], snames=[], modelfile=None):
+	def run_train(self, data, class_ids=[], snames=[], modelfile=None):
 		""" Run train using input dataset """
 
 		#================================
@@ -471,7 +502,7 @@ class UMAPClassifier(object):
 			logger.error("None input data specified!")
 			return -1
 
-		if self.set_data(data, labels, snames)<0:
+		if self.set_data(data, class_ids, snames)<0:
 			logger.error("Failed to read datafile %s!" % datafile)
 			return -1
 
@@ -552,7 +583,7 @@ class UMAPClassifier(object):
 
 		
 		snames= np.array(self.source_names).reshape(N,1)
-		objids= np.array(self.data_labels).reshape(N,1)
+		objids= np.array(self.data_ids).reshape(N,1)
 			
 		# - Save unsupervised encoded data
 		enc_data= np.concatenate(
