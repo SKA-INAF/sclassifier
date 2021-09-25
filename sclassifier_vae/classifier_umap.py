@@ -31,6 +31,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use('Agg')
 
+## SCLASSIFIER MODULES
+from .utils import Utils
+
 ##############################
 ##     GLOBAL VARS
 ##############################
