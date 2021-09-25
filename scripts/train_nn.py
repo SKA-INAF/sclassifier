@@ -56,6 +56,7 @@ def get_args():
 	parser.set_defaults(augment=False)
 
 	# - Network training options
+	parser.add_argument('-latentdim', '--latentdim', dest='latentdim', required=False, type=int, default=2, action='store',help='Dimension of latent vector (default=2)')	
 	parser.add_argument('-nepochs', '--nepochs', dest='nepochs', required=False, type=int, default=100, action='store',help='Number of epochs used in network training (default=100)')	
 	parser.add_argument('-optimizer', '--optimizer', dest='optimizer', required=False, type=str, default='rmsprop', action='store',help='Optimizer used (default=rmsprop)')
 	parser.add_argument('-learning_rate', '--learning_rate', dest='learning_rate', required=False, type=float, default=None, action='store',help='Learning rate. If None, use default for the selected optimizer (default=None)')
@@ -82,6 +83,17 @@ def get_args():
 	parser.add_argument('-rec_loss_weight', '--rec_loss_weight', dest='rec_loss_weight', required=False, type=float, default=0.5, action='store',help='Reconstruction loss weight (default=0.5)')
 	parser.add_argument('-kl_loss_weight', '--kl_loss_weight', dest='kl_loss_weight', required=False, type=float, default=0.5, action='store',help='KL loss weight (default=0.5)')
 	
+	# - UMAP classifier options
+	parser.add_argument('--run_umap', dest='run_umap', action='store_true',help='Run UMAP of VAE latent vector')	
+	parser.set_defaults(run_umap=False)	
+	parser.add_argument('-latentdim_umap', '--latentdim_umap', dest='latentdim_umap', required=False, type=int, default=2, action='store',help='Encoded data dim in UMAP (default=2)')
+	parser.add_argument('-mindist_umap', '--mindist_umap', dest='mindist_umap', required=False, type=float, default=0.1, action='store',help='Min dist UMAP par (default=0.1)')
+	parser.add_argument('-nneighbors_umap', '--nneighbors_umap', dest='nneighbors_umap', required=False, type=int, default=15, action='store',help='N neighbors UMAP par (default=15)')
+	parser.add_argument('-outfile_umap_unsupervised', '--outfile_umap_unsupervised', dest='outfile_umap_unsupervised', required=False, type=str, default='latent_data_umap_unsupervised.dat', action='store',help='Name of UMAP encoded data output file')
+	parser.add_argument('-outfile_umap_supervised', '--outfile_umap_supervised', dest='outfile_umap_supervised', required=False, type=str, default='latent_data_umap_supervised.dat', action='store',help='Name of UMAP output file with encoded data produced using supervised method')
+	parser.add_argument('-outfile_umap_preclassified', '--outfile_umap_preclassified', dest='outfile_umap_preclassified', required=False, type=str, default='latent_data_umap_preclass.dat', action='store',help='Name of UMAP output file with encoded data produced from pre-classified data')
+
+
 	args = parser.parse_args()	
 
 	return args
@@ -135,6 +147,7 @@ def main():
 
 	
 	# - Train options
+	latentdim= args.latentdim
 	optimizer= args.optimizer
 	learning_rate= args.learning_rate
 	batch_size= args.batch_size
@@ -143,7 +156,15 @@ def main():
 	rec_loss_weight= args.rec_loss_weight
 	kl_loss_weight= args.kl_loss_weight
 
-
+	# - UMAP options
+	run_umap= args.run_umap
+	latentdim_umap= args.latentdim_umap
+	mindist_umap= args.mindist_umap
+	nneighbors_umap= args.nneighbors_umap
+	outfile_umap_unsupervised= args.outfile_umap_unsupervised
+	outfile_umap_supervised= args.outfile_umap_supervised
+	outfile_umap_preclassified= args.outfile_umap_preclassified
+		
 	#===========================
 	#==   READ DATALIST
 	#===========================
@@ -158,34 +179,61 @@ def main():
 	
 
 	#===========================
-	#==   TRAIN NN
+	#==   TRAIN VAE
 	#===========================
 	logger.info("Running VAE classifier training ...")
-	nn= VAEClassifier(dl)
+	vae_class= VAEClassifier(dl)
 
-	nn.set_image_size(nx, ny)
-	nn.augmentation= augment
-	nn.batch_size= batch_size
-	nn.nepochs= nepochs
-	nn.set_optimizer(optimizer, learning_rate)
+	vae_class.latent_dim= latentdim
+	vae_class.set_image_size(nx, ny)
+	vae_class.augmentation= augment
+	vae_class.batch_size= batch_size
+	vae_class.nepochs= nepochs
+	vae_class.set_optimizer(optimizer, learning_rate)
 	
-	nn.add_max_pooling= add_maxpooling_layer
-	nn.add_batchnorm= add_batchnorm_layer
-	nn.add_dense= add_dense_layer
-	nn.nfilters_cnn= nfilters_cnn
-	nn.kernsizes_cnn= kernsizes_cnn
-	nn.strides_cnn= strides_cnn
-	nn.dense_layer_sizes= dense_layer_sizes
-	nn.dense_layer_activation= dense_layer_activation
+	vae_class.add_max_pooling= add_maxpooling_layer
+	vae_class.add_batchnorm= add_batchnorm_layer
+	vae_class.add_dense= add_dense_layer
+	vae_class.nfilters_cnn= nfilters_cnn
+	vae_class.kernsizes_cnn= kernsizes_cnn
+	vae_class.strides_cnn= strides_cnn
+	vae_class.dense_layer_sizes= dense_layer_sizes
+	vae_class.dense_layer_activation= dense_layer_activation
 
-	nn.use_mse_loss= mse_loss
-	nn.rec_loss_weight= rec_loss_weight
-	nn.kl_loss_weight= kl_loss_weight
+	vae_class.use_mse_loss= mse_loss
+	vae_class.rec_loss_weight= rec_loss_weight
+	vae_class.kl_loss_weight= kl_loss_weight
 
-	if nn.train_model()<0:
-		logger.error("NN training failed!")
+	if vae_class.train_model()<0:
+		logger.error("VAE training failed!")
 		return 1
 
+
+	#===========================
+	#==   TRAIN UMAP
+	#===========================
+	if run_umap:
+		# - Retrieve VAE encoded data
+		logger.info("Retrieve latent data from VAE ...")
+		snames= vae.source_names
+		classids= vae.source_ids
+		vae_data= vae.encoded_data
+
+		# - Run UMAP	
+		logger.info("Running UMAP classifier training on VAE latent data ...")
+		umap_class= UMAPClassifier()
+
+		umap_class.set_encoded_data_unsupervised_outfile(outfile_umap_unsupervised)
+		umap_class.set_encoded_data_supervised_outfile(outfile_umap_supervised)
+		umap_class.set_encoded_data_preclassified_outfile(outfile_umap_preclassified)
+		umap_class.set_encoded_data_dim(latentdim_umap)
+		umap_class.set_min_dist(mindist_umap)
+		umap_class.set_n_neighbors(nneighbors_umap)
+
+		if umap_class.run_train(vae_data, labels=classids, snames=snames)<0:
+			logger.error("UMAP training failed!")
+			return 1
+	
 
 	return 0
 
