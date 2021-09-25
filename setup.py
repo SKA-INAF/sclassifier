@@ -58,11 +58,11 @@ setup(
 	version=get_version(),
 	author="Simone Riggi",
 	author_email="simone.riggi@gmail.com",
-	description="Source finder unsupervised classification using variational autoencoders (VAE)",
+	description="Unsupervised source classification using variational autoencoders (VAE)",
 	license = "GPL3",
 	url="https://github.com/SKA-INAF/sclassifier-vae",
 	long_description=read('README.md'),
 	packages=['sclassifier_vae'],
 	install_requires=reqs,
-	scripts=['scripts/read_imgdata.py','scripts/train_nn.py'],
+	scripts=['scripts/check_data.py','scripts/run_train.py'],
 )
