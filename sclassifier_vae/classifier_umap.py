@@ -362,6 +362,12 @@ class UMAPClassifier(object):
 			logger.error("Predict failed!")
 			return -1
 
+		#================================
+		#==   PLOT
+		#================================
+		logger.info("Plotting results ...")
+		self.plot()
+
 		return 0
 
 
@@ -487,6 +493,12 @@ class UMAPClassifier(object):
 			logger.error("Failed to train!")
 			return -1
 
+		#================================
+		#==   PLOT
+		#================================
+		logger.info("Plotting results ...")
+		self.plot()
+
 		return 0
 
 
@@ -586,4 +598,37 @@ class UMAPClassifier(object):
 			Utils.write_ascii(enc_data, self.outfile_encoded_data_preclassified, head)	
 
 		return 0
+
+
+	def plot(self):
+		""" Plot results """
+
+		#================================
+		#==   PLOT ENCODED DATA
+		#================================
+		# - Display a 2D plot of the encoded data in the latent space
+		logger.info("Plot a 2D plot of the UMAP encoded data in the latent space ...")
+		plt.figure(figsize=(12, 10))
+
+		N= self.encoded_data_unsupervised.shape[0]
+		print("N=%d" % N)
+		for i in range(N):
+			source_name= self.source_names[i]
+			source_label= self.data_labels[i]
+			marker= 'o'
+			color= 'k'
+			obj_id= 0
+			has_label= source_label in self.marker_mapping
+			if has_label:
+				marker= self.marker_mapping[source_label]
+				color= self.marker_color_mapping[source_label]
+
+			plt.scatter(self.encoded_data_unsupervised[i,0], self.encoded_data_unsupervised[i,1], color=color, marker=marker)
+
+		#plt.scatter(self.encoded_data[:, 0], self.encoded_data[:, 1])
+		#plt.colorbar()
+		plt.xlabel("z0")
+		plt.ylabel("z1")
+		plt.savefig('latent_data.png')
+		#plt.show()
 
