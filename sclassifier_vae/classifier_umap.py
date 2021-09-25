@@ -629,6 +629,6 @@ class UMAPClassifier(object):
 		#plt.colorbar()
 		plt.xlabel("z0")
 		plt.ylabel("z1")
-		plt.savefig('latent_data.png')
+		plt.savefig('latent_data_umap.png')
 		#plt.show()
 
