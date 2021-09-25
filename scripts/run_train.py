@@ -29,6 +29,7 @@ from sclassifier_vae import __version__, __date__
 from sclassifier_vae import logger
 from sclassifier_vae.data_loader import DataLoader
 from sclassifier_vae.classifier import VAEClassifier
+from sclassifier_vae.classifier_umap import UMAPClassifier
 
 #### GET SCRIPT ARGS ####
 def str2bool(v):
