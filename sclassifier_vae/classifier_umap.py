@@ -286,8 +286,8 @@ class UMAPClassifier(object):
 		# - Set obj names
 		if snames:
 			n= len(snames)	
-			if nlabels!=self.nsamples:
-				logger.error("Given labels have size (%d) different than feature data (%d)!" % (nlabels,self.nsamples))
+			if n!=self.nsamples:
+				logger.error("Given source names have size (%d) different than feature data (%d)!" % (n,self.nsamples))
 				return -1
 			self.source_names= snames
 		else:
