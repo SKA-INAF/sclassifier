@@ -50,6 +50,7 @@ else:
 #reqs.append('keras>=2.0')
 reqs.append('tensorflow>=2.3')
 reqs.append('imgaug')
+reqs.append('umap-learn')
 
 data_dir = 'data'
 
