@@ -453,7 +453,8 @@ class VAEClassifier(object):
 		if self.use_vae:
 			latent_inputs = Input(shape=(self.latent_dim,), dtype='float', name='z_sampling')
 		else:
-			latent_inputs = Input(shape=self.latent_dim, dtype='float', name='decoder_input')
+			decoder_input_shape = (None, self.latent_dim)
+			latent_inputs = Input(shape=decoder_input_shape[1:], dtype='float', name='decoder_input')
 			
 		x= latent_inputs
 
