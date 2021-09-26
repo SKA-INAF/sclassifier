@@ -152,7 +152,7 @@ class VAEClassifier(object):
 		self.nworkers= 1
 		
 		# - NN architecture
-		self.use_vae= True # create variational autoencoder, otherwise standard autoencoder
+		self.use_vae= False # create variational autoencoder, otherwise standard autoencoder
 		self.fitout= None		
 		self.vae= None
 		self.encoder= None
