@@ -833,13 +833,22 @@ class VAEClassifier(object):
 		#==   SAVE ENCODED DATA
 		#================================
 		logger.info("Saving encoded data to file ...")
-		self.encoded_data, _, _= self.encoder.predict(
-			x=self.test_data_generator,	
-			steps=1,
-    	verbose=2,
-    	workers=self.nworkers,
-    	use_multiprocessing=self.use_multiprocessing
-		)
+		if self.use_vae:
+			self.encoded_data, _, _= self.encoder.predict(
+				x=self.test_data_generator,	
+				steps=1,
+    		verbose=2,
+    		workers=self.nworkers,
+    		use_multiprocessing=self.use_multiprocessing
+			)
+		else:
+			self.encoded_data= self.encoder.predict(
+				x=self.test_data_generator,	
+				steps=1,
+    		verbose=2,
+    		workers=self.nworkers,
+    		use_multiprocessing=self.use_multiprocessing
+			)
 
 		#print("encoded_data type=",type(self.encoded_data))
 		#print("encoded_data len=",len(self.encoded_data))
