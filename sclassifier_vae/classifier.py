@@ -436,7 +436,7 @@ class VAEClassifier(object):
 			self.encoder = Model(self.inputs, [self.z_mean, self.z_log_var, self.z], name='encoder')
 			#self.encoder = Model(self.inputs, encoder_output, name='encoder')
 		else:
-			self.z_mean = layers.Dense(self.latent_dim, name='z_mean')(x)
+			self.z_mean = layers.Dense(self.latent_dim, name='encoder_output')(x)
 			self.encoder = Model(self.inputs, self.z_mean, name='encoder')
 		
 		# - Print and plot model
@@ -449,8 +449,12 @@ class VAEClassifier(object):
 	def __build_parametrized_decoder(self):
 		""" Build decoder parametrized network """
 
-		# - Input layer (equal to encoder output)
-		latent_inputs = Input(shape=(self.latent_dim,), dtype='float', name='z_sampling')
+		# - Input layer (equal to encoder output)	
+		if self.use_vae:
+			latent_inputs = Input(shape=(self.latent_dim,), dtype='float', name='z_sampling')
+		else:
+			latent_inputs = Input(shape=(self.latent_dim,), dtype='float', name='decoder_input')
+			
 		x= latent_inputs
 
 		# - Add dense layers
