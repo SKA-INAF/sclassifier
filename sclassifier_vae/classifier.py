@@ -335,7 +335,7 @@ class VAEClassifier(object):
 		#==   CREATE VAE MODEL
 		#===========================	
 		# - Build model
-		logger.info("Creating VAE model ...")
+		logger.info("Creating autoencoder model ...")
 
 		#vae_encoder_output = self.encoder(self.inputs)
 		#print("vae_encoder_output shape")
@@ -345,8 +345,11 @@ class VAEClassifier(object):
 		#print("vae_decoder_output shape")
 		#print(K.int_shape(vae_decoder_output))
 
-		#self.outputs= self.decoder(self.encoder(self.inputs))
-		self.outputs= self.decoder(self.encoder(self.inputs)[2]) ## TEST
+		if self.use_vae:
+			self.outputs= self.decoder(self.encoder(self.inputs)[2])
+		else:
+			self.outputs= self.decoder(self.encoder(self.inputs))
+
 		print("inputs shape")
 		print(K.int_shape(self.inputs))
 		print("outputs shape")
@@ -441,7 +444,7 @@ class VAEClassifier(object):
 		
 		# - Print and plot model
 		self.encoder.summary()
-		plot_model(self.encoder, to_file='vae_encoder.png', show_shapes=True)
+		plot_model(self.encoder, to_file='encoder.png', show_shapes=True)
 
 		return 0
 
@@ -453,8 +456,9 @@ class VAEClassifier(object):
 		if self.use_vae:
 			latent_inputs = Input(shape=(self.latent_dim,), dtype='float', name='z_sampling')
 		else:
-			decoder_input_shape = (None, self.latent_dim)
-			latent_inputs = Input(shape=decoder_input_shape[1:], dtype='float', name='decoder_input')
+			#decoder_input_shape = (None, self.latent_dim)
+			#latent_inputs = Input(shape=decoder_input_shape[1:], dtype='float', name='decoder_input')
+			latent_inputs = Input(shape=(self.latent_dim,), dtype='float', name='decoder_input')
 			
 		x= latent_inputs
 
@@ -501,7 +505,7 @@ class VAEClassifier(object):
 
 		# - Print and draw model		
 		self.decoder.summary()
-		plot_model(self.decoder, to_file='vae_decoder.png', show_shapes=True)
+		plot_model(self.decoder, to_file='decoder.png', show_shapes=True)
 
 		return 0
 
