@@ -152,7 +152,7 @@ class VAEClassifier(object):
 		self.nworkers= 1
 		
 		# - NN architecture
-		self.use_shallow_network= False
+		self.use_vae= True # create variational autoencoder, otherwise standard autoencoder
 		self.fitout= None		
 		self.vae= None
 		self.encoder= None
@@ -425,16 +425,19 @@ class VAEClassifier(object):
 				x = layers.Dense(layer_size, activation=self.dense_layer_activation)(x)
 
 		# - Output layers
-		self.z_mean = layers.Dense(self.latent_dim,name='z_mean')(x)
-		self.z_log_var = layers.Dense(self.latent_dim,name='z_log_var')(x)
-		self.z = Lambda(self.__sampling, output_shape=(self.latent_dim,), name='z')([self.z_mean, self.z_log_var])
-		#self.z = Sampling()([self.z_mean, self.z_log_var])
-		encoder_output= Lambda(self.__sampling, name="z")([self.z_mean, self.z_log_var])
+		if self.use_vae:
+			self.z_mean = layers.Dense(self.latent_dim,name='z_mean')(x)
+			self.z_log_var = layers.Dense(self.latent_dim,name='z_log_var')(x)
+			self.z = Lambda(self.__sampling, output_shape=(self.latent_dim,), name='z')([self.z_mean, self.z_log_var])
+			#self.z = Sampling()([self.z_mean, self.z_log_var])
+			encoder_output= Lambda(self.__sampling, name="z")([self.z_mean, self.z_log_var])
 
-		# - Instantiate encoder model
-		self.encoder = Model(self.inputs, [self.z_mean, self.z_log_var, self.z], name='encoder')
-		#self.encoder = Model(self.inputs, encoder_output, name='encoder')
-		
+			# - Instantiate encoder model
+			self.encoder = Model(self.inputs, [self.z_mean, self.z_log_var, self.z], name='encoder')
+			#self.encoder = Model(self.inputs, encoder_output, name='encoder')
+		else:
+			self.z_mean = layers.Dense(self.latent_dim, name='z_mean')(x)
+			self.encoder = Model(self.inputs, self.z_mean, name='encoder')
 		
 		# - Print and plot model
 		self.encoder.summary()
@@ -477,7 +480,6 @@ class VAEClassifier(object):
 			if self.add_max_pooling:
 				x = layers.UpSampling2D((self.pool_size,self.pool_size),interpolation='nearest')(x)
 
-			
 
 		# - Apply a single conv (or Conv tranpose??) layer to recover the original depth of the image
 		padding= "same"
@@ -610,10 +612,10 @@ class VAEClassifier(object):
 		y_true_flattened_masked= tf.gather(y_true_flattened, indexes)
 		y_pred_flattened_masked= tf.gather(y_pred_flattened, indexes)
 		
-		tf.print("\n y_true_flattened_masked min:", tf.math.reduce_min(y_true_flattened_masked), output_stream=sys.stdout)
-		tf.print("\n y_true_flattened_masked max:", tf.math.reduce_max(y_true_flattened_masked), output_stream=sys.stdout)
-		tf.print("\n y_pred_flattened_masked min:", tf.math.reduce_min(y_pred_flattened_masked), output_stream=sys.stdout)
-		tf.print("\n y_pred_flattened_masked max:", tf.math.reduce_max(y_pred_flattened_masked), output_stream=sys.stdout)
+		#tf.print("\n y_true_flattened_masked min:", tf.math.reduce_min(y_true_flattened_masked), output_stream=sys.stdout)
+		#tf.print("\n y_true_flattened_masked max:", tf.math.reduce_max(y_true_flattened_masked), output_stream=sys.stdout)
+		#tf.print("\n y_pred_flattened_masked min:", tf.math.reduce_min(y_pred_flattened_masked), output_stream=sys.stdout)
+		#tf.print("\n y_pred_flattened_masked max:", tf.math.reduce_max(y_pred_flattened_masked), output_stream=sys.stdout)
 
 		# - Check if vectors are not empty
 		y_true_isempty= tf.equal(tf.size(y_true_flattened_masked),0)	
@@ -648,20 +650,25 @@ class VAEClassifier(object):
 
 		# - Compute KL loss term
 		#logger.info("Computing the KL loss ...")
-		kl_loss= - 0.5 * K.sum(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
-		kl_loss_mean= K.mean(kl_loss)
-		#print("kl_loss=", kl_loss)
-		#tf.print("\n kl_loss:", kl_loss, output_stream=sys.stdout)
+		kl_loss= 0
+		if self.use_vae:
+			kl_loss= - 0.5 * K.sum(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
+			kl_loss_mean= K.mean(kl_loss)
+			#print("kl_loss=", kl_loss)
+			#tf.print("\n kl_loss:", kl_loss, output_stream=sys.stdout)
 
-		if self.kl_loss_weight>0:
-			tf.print("\n kl_loss_mean:", kl_loss_mean, output_stream=sys.stdout)
+			if self.kl_loss_weight>0:
+				tf.print("\n kl_loss_mean:", kl_loss_mean, output_stream=sys.stdout)
 		
 		# Total loss
 		#logger.info("Computing the total loss ...")
-		#vae_loss = K.mean(reco_loss + kl_loss)
-		vae_loss = self.rec_loss_weight*reco_loss + self.kl_loss_weight*kl_loss_mean
-		#tf.print("\n vae_loss:", vae_loss, output_stream=sys.stdout)
-		
+		if self.use_vae:
+			#vae_loss = K.mean(reco_loss + kl_loss)
+			vae_loss = self.rec_loss_weight*reco_loss + self.kl_loss_weight*kl_loss_mean
+			#tf.print("\n vae_loss:", vae_loss, output_stream=sys.stdout)
+		else:
+			vae_loss= reco_loss
+
 		return vae_loss
 
 

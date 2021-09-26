@@ -64,6 +64,8 @@ def get_args():
 	parser.add_argument('-batch_size', '--batch_size', dest='batch_size', required=False, type=int, default=32, action='store',help='Batch size used in training (default=32)')
 	
 	# - Network architecture options
+	parser.add_argument('--use_vae', dest='use_vae', action='store_true',help='Use variational autoencoders')	
+	parser.set_defaults(use_vae=False)
 	parser.add_argument('--add_maxpooling_layer', dest='add_maxpooling_layer', action='store_true',help='Add max pooling layer after conv layers ')	
 	parser.set_defaults(add_maxpooling_layer=False)	
 	parser.add_argument('--add_batchnorm_layer', dest='add_batchnorm_layer', action='store_true',help='Add batch normalization layer after conv layers ')	
@@ -127,6 +129,7 @@ def main():
 	augment= args.augment
 
 	# - NN architecture
+	use_vae= args.use_vae
 	add_maxpooling_layer= args.add_maxpooling_layer
 	add_batchnorm_layer= args.add_batchnorm_layer
 	add_dense_layer= args.add_dense_layer	
@@ -185,6 +188,7 @@ def main():
 	logger.info("Running VAE classifier training ...")
 	vae_class= VAEClassifier(dl)
 
+	vae_class.use_vae= use_vae
 	vae_class.latent_dim= latentdim
 	vae_class.set_image_size(nx, ny)
 	vae_class.augmentation= augment
