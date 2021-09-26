@@ -923,6 +923,8 @@ class VAEClassifier(object):
 		plt.figure(figsize=(12, 10))
 
 		N= self.encoded_data.shape[0]
+		scatplots= ()
+		legend_labels= ()
 		print("N=%d" % N)
 		for i in range(N):
 			source_name= self.source_names[i]
@@ -934,14 +936,23 @@ class VAEClassifier(object):
 			if has_label:
 				marker= self.marker_mapping[source_label]
 				color= self.marker_color_mapping[source_label]
+	
+			scatplot= plt.scatter(self.encoded_data[i,0], self.encoded_data[i,1], color=color, marker=marker)
+			
+			# - Search if label was already encountered before
+			try:
+				legend_labels.index(source_label)
+				label_found= True
+			except:
+				label_found= False
+				
+			if not label_found:
+				legend_labels+= (source_label,)
+				scatplots+= (scatplot,)
 
-			plt.scatter(self.encoded_data[i,0], self.encoded_data[i,1], color=color, marker=marker)
-
-		#plt.scatter(self.encoded_data[:, 0], self.encoded_data[:, 1])
-		#plt.colorbar()
+		plt.legend(scatplots,legend_labels, scatterpoints=1, loc='lower left', ncol=3, fontsize=8)
 		plt.xlabel("z0")
 		plt.ylabel("z1")
 		plt.savefig('latent_data.png')
-		#plt.show()
-
+		
 
