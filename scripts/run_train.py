@@ -7,8 +7,8 @@ from __future__ import print_function
 ##################################################
 from numpy.random import seed
 seed(1)
-from tensorflow import set_random_seed
-set_random_seed(2)
+import tensorflow
+tensorflow.random.set_seed(2)
 
 ##################################################
 ###          MODULE IMPORT
