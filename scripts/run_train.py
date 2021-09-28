@@ -3,12 +3,12 @@
 from __future__ import print_function
 
 ##################################################
-###    SET SEED FOR REPRODUCIBILITY
+###    SET SEED FOR REPRODUCIBILITY (DEBUG)
 ##################################################
-from numpy.random import seed
-seed(1)
-import tensorflow
-tensorflow.random.set_seed(2)
+#from numpy.random import seed
+#seed(1)
+#import tensorflow
+#tensorflow.random.set_seed(2)
 
 ##################################################
 ###          MODULE IMPORT
