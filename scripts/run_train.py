@@ -62,7 +62,9 @@ def get_args():
 	parser.add_argument('-optimizer', '--optimizer', dest='optimizer', required=False, type=str, default='rmsprop', action='store',help='Optimizer used (default=rmsprop)')
 	parser.add_argument('-learning_rate', '--learning_rate', dest='learning_rate', required=False, type=float, default=None, action='store',help='Learning rate. If None, use default for the selected optimizer (default=None)')
 	parser.add_argument('-batch_size', '--batch_size', dest='batch_size', required=False, type=int, default=32, action='store',help='Batch size used in training (default=32)')
-	
+	parser.add_argument('-weight_seed', '--weight_seed', dest='weight_seed', required=False, type=int, default=None, action='store',help='Weight seed to set reproducible training (default=None)')	
+		
+
 	# - Network architecture options
 	parser.add_argument('--use_vae', dest='use_vae', action='store_true',help='Use variational autoencoders')	
 	parser.set_defaults(use_vae=False)
@@ -159,6 +161,7 @@ def main():
 	mse_loss= args.mse_loss
 	rec_loss_weight= args.rec_loss_weight
 	kl_loss_weight= args.kl_loss_weight
+	weight_seed= args.weight_seed
 
 	# - UMAP options
 	run_umap= args.run_umap
@@ -208,6 +211,7 @@ def main():
 	vae_class.use_mse_loss= mse_loss
 	vae_class.rec_loss_weight= rec_loss_weight
 	vae_class.kl_loss_weight= kl_loss_weight
+	vae_class.weight_seed= weight_seed
 
 	if vae_class.train_model()<0:
 		logger.error("VAE training failed!")
