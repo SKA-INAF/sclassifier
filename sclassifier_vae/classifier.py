@@ -248,6 +248,8 @@ class VAEClassifier(object):
 	def set_reproducible_model(self):
 		""" Set model in reproducible mode """
 
+		logger.info("Set reproducible model ...")
+
 		# - Fix numpy and tensorflow seeds
 		#np.random.seed(1)
 		#tf.set_random_seed(2)
