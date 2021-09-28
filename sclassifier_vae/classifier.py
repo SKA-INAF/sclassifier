@@ -188,6 +188,7 @@ class VAEClassifier(object):
 		self.use_mse_loss= False
 
 		self.weight_init_seed= None
+		self.shuffle_train_data= True
 		
 		# - Draw options
 		self.marker_mapping= {
@@ -244,6 +245,20 @@ class VAEClassifier(object):
 				logger.warn("Unknown optimizer selected (%s), setting to the default (%s) ..." % (opt, self.optimizer_default))
 				self.optimizer= self.optimizer_default
 		
+	def set_reproducible_model(self):
+		""" Set model in reproducible mode """
+
+		# - Fix numpy and tensorflow seeds
+		#np.random.seed(1)
+		#tf.set_random_seed(2)
+		
+		# - Do not shuffle data during training
+		self.shuffle_train_data= False
+
+		# - Initialize weight to same array
+		if self.weight_init_seed is None:
+			self.weight_init_seed= 1
+		
 	
 	#####################################
 	##     SET TRAIN DATA
@@ -261,7 +276,7 @@ class VAEClassifier(object):
 		# - Create train data generator
 		self.train_data_generator= self.dl.data_generator(
 			batch_size=self.batch_size, 
-			shuffle=True,
+			shuffle=self.shuffle_train_data,
 			resize=True, nx=self.nx, ny=self.ny, 
 			normalize=True, 
 			augment=self.augmentation
@@ -270,7 +285,7 @@ class VAEClassifier(object):
 		# - Create cross validation data generator
 		self.crossval_data_generator= self.dl.data_generator(
 			batch_size=self.batch_size, 
-			shuffle=True,
+			shuffle=self.shuffle_train_data,
 			resize=True, nx=self.nx, ny=self.ny, 
 			normalize=True, 
 			augment=self.augmentation

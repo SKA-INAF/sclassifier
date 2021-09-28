@@ -62,7 +62,10 @@ def get_args():
 	parser.add_argument('-optimizer', '--optimizer', dest='optimizer', required=False, type=str, default='rmsprop', action='store',help='Optimizer used (default=rmsprop)')
 	parser.add_argument('-learning_rate', '--learning_rate', dest='learning_rate', required=False, type=float, default=None, action='store',help='Learning rate. If None, use default for the selected optimizer (default=None)')
 	parser.add_argument('-batch_size', '--batch_size', dest='batch_size', required=False, type=int, default=32, action='store',help='Batch size used in training (default=32)')
-	parser.add_argument('-weight_seed', '--weight_seed', dest='weight_seed', required=False, type=int, default=None, action='store',help='Weight seed to set reproducible training (default=None)')	
+	parser.add_argument('-weight_seed', '--weight_seed', dest='weight_seed', required=False, type=int, default=None, action='store',help='Weight seed to set reproducible training (default=None)')
+	parser.add_argument('--reproducible', dest='reproducible', action='store_true',help='Fix seed and make model reproducible from run to run')	
+	parser.set_defaults(reproducible=False)
+
 		
 
 	# - Network architecture options
@@ -162,6 +165,7 @@ def main():
 	rec_loss_weight= args.rec_loss_weight
 	kl_loss_weight= args.kl_loss_weight
 	weight_seed= args.weight_seed
+	reproducible= args.reproducible
 
 	# - UMAP options
 	run_umap= args.run_umap
@@ -198,6 +202,8 @@ def main():
 	vae_class.batch_size= batch_size
 	vae_class.nepochs= nepochs
 	vae_class.set_optimizer(optimizer, learning_rate)
+	if reproducible:
+		vae_class.set_reproducible_model()
 	
 	vae_class.add_max_pooling= add_maxpooling_layer
 	vae_class.add_batchnorm= add_batchnorm_layer
