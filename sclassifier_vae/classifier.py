@@ -132,7 +132,7 @@ class VAEClassifier(object):
 		self.dl= data_loader
 
 		# - Train data	
-		self.nsamples_train= 0
+		self.nsamples= 0
 		self.nx= 128 
 		self.ny= 128
 		self.nchannels= 0
@@ -273,7 +273,7 @@ class VAEClassifier(object):
 		self.source_labels= self.dl.labels
 		self.source_ids= self.dl.classids
 		self.source_names= self.dl.snames
-		self.nsamples_train= len(self.source_labels)
+		self.nsamples= len(self.source_labels)
 
 		# - Create train data generator
 		self.train_data_generator= self.dl.data_generator(
@@ -295,7 +295,7 @@ class VAEClassifier(object):
 
 		# - Create test data generator
 		self.test_data_generator= self.dl.data_generator(
-			batch_size=self.nsamples_train, 
+			batch_size=self.nsamples, 
 			shuffle=False,
 			resize=True, nx=self.nx, ny=self.ny, 
 			normalize=True, 
@@ -778,12 +778,12 @@ class VAEClassifier(object):
 		self.train_loss_vs_epoch= np.zeros((1,self.nepochs))	
 		deltaLoss_train= 0
 
-		steps_per_epoch= self.nsamples_train // self.batch_size
+		steps_per_epoch= self.nsamples // self.batch_size
 
 		#===========================
 		#==   TRAIN VAE
 		#===========================
-		logger.info("Start VAE training (dataset_size=%d, batch_size=%d, steps_per_epoch=%d) ..." % (self.nsamples_train, self.batch_size, steps_per_epoch))
+		logger.info("Start VAE training (dataset_size=%d, batch_size=%d, steps_per_epoch=%d) ..." % (self.nsamples, self.batch_size, steps_per_epoch))
 
 		self.fitout= self.vae.fit(
 			x=self.train_data_generator,
@@ -813,7 +813,7 @@ class VAEClassifier(object):
 		logger.info("Saving full NN model ...")
 		self.vae.save('model.h5')
 
-		# - Save the networkarchitecture diagram
+		# - Save the network architecture diagram
 		logger.info("Saving network model architecture to file ...")
 		plot_model(self.vae, to_file=self.outfile_model)
 
@@ -906,7 +906,7 @@ class VAEClassifier(object):
 
 
 	#####################################
-	##     RUN NN TRAIN
+	##     RUN TRAIN
 	#####################################
 	def train_model(self):
 		""" Run network training """
@@ -946,6 +946,97 @@ class VAEClassifier(object):
 
 		return 0
 
+
+	#####################################
+	##     RUN PREDICT
+	#####################################
+	def predict_model(self, modelfile):
+		""" Run model prediction """
+
+		#===========================
+		#==   SET DATA
+		#===========================	
+		logger.info("Setting input data from data loader ...")
+		status= self.__set_data()
+		if status<0:
+			logger.error("Input data set failed!")
+			return -1
+
+		#===========================
+		#==   LOAD MODEL
+		#===========================
+		#- Create the network architecture and weights from file
+		logger.info("Loading model architecture and weights from file %s ..." % (modelfile))
+		if self.__load_model(modelfile)<0:
+			logger.warn("Failed to load model!")
+			return -1
+
+		if self.vae is None:
+			logger.error("Loaded model is None!")
+			return -1
+
+		# - Save the network architecture diagram
+		logger.info("Saving network model architecture to file ...")
+		plot_model(self.vae, to_file=self.outfile_model)
+		
+		# - Save the network architecture diagram
+		logger.info("Saving network model architecture to file ...")
+		plot_model(self.vae, to_file=self.outfile_model)
+
+		#===========================
+		#==   PREDICT
+		#===========================
+		predout= self.encoder.predict(
+			x=self.test_data_generator,	
+			steps=1,
+    	verbose=2,
+    	workers=self.nworkers,
+    	use_multiprocessing=self.use_multiprocessing
+		)
+
+		if type(predout)==tuple and len(predout)>0:
+			self.encoded_data= predout[0]
+		else:
+			self.encoded_data= predout
+
+		print("encoded_data shape")
+		print(self.encoded_data.shape)	
+		print(self.encoded_data)
+		N= self.encoded_data.shape[0]
+		Nvar= self.encoded_data.shape[1]
+		
+		
+		# - Merge encoded data
+		obj_names= np.array(self.source_names).reshape(N,1)
+		obj_ids= np.array(self.source_ids).reshape(N,1)
+		enc_data= np.concatenate(
+			(obj_names, self.encoded_data, obj_ids),
+			axis=1
+		)
+
+		# - Save latent data to file
+		logger.info("Saving predicted latent data to file %s ..." % (self.outfile_encoded_data))
+		znames_counter= list(range(1, Nvar+1))
+		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
+		head= '{} {} {}'.format("# sname", znames, "id")
+		Utils.write_ascii(enc_data, self.outfile_encoded_data, head)	
+
+
+		return 0
+
+	#####################################
+	##     LOAD MODEL
+	#####################################
+	def __load_model(self, modelfile):
+		""" Load model and weights from input h5 file """
+
+		try:
+			self.vae= load_model(modelfile)
+		except Exception as e:
+			logger.warn("Failed to load model from file %s (err=%s)!" % (modelfile, str(e)))
+			return -1
+
+		return 0
 
 	#####################################
 	##     PLOT RESULTS

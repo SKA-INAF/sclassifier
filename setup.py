@@ -65,5 +65,5 @@ setup(
 	long_description=read('README.md'),
 	packages=['sclassifier_vae'],
 	install_requires=reqs,
-	scripts=['scripts/check_data.py','scripts/run_train.py'],
+	scripts=['scripts/check_data.py','scripts/run_train.py','scripts/run_predict.py'],
 )
