@@ -51,6 +51,8 @@ else:
 reqs.append('tensorflow>=2.3')
 reqs.append('imgaug')
 reqs.append('umap-learn')
+reqs.append('hdbscan')
+reqs.append('seaborn')
 
 data_dir = 'data'
 
