@@ -335,7 +335,7 @@ class UMAPClassifier(object):
 	##     PREDICT
 	#####################################
 	def run_predict(self, datafile, modelfile):
-		""" Run precit using input dataset """
+		""" Run predict using input dataset """
 
 		#================================
 		#==   LOAD DATA
@@ -353,7 +353,11 @@ class UMAPClassifier(object):
 		#==   LOAD MODEL
 		#================================
 		logger.info("Loading the UMAP reducer from file %s ..." % modelfile)
-		self.reducer= pickle.load((open(modelfile, 'rb')))
+		try:
+			self.reducer= pickle.load((open(modelfile, 'rb')))
+		except Exception as e:
+			logger.error("Failed to load model from file %s!" % (modelfile))
+			return -1
 
 		#================================
 		#==   PREDICT
@@ -365,8 +369,8 @@ class UMAPClassifier(object):
 		return 0
 
 
-	def run_predict(self, data, class_ids=[], snames=[], modelfile=None):
-		""" Run precit using input dataset """
+	def run_predict(self, data, class_ids=[], snames=[], modelfile=''):
+		""" Run predict using input dataset """
 
 		#================================
 		#==   LOAD DATA
@@ -384,7 +388,11 @@ class UMAPClassifier(object):
 		#==   LOAD MODEL
 		#================================
 		logger.info("Loading the UMAP reducer from file %s ..." % modelfile)
-		self.reducer= pickle.load((open(modelfile, 'rb')))
+		try:
+			self.reducer= pickle.load((open(modelfile, 'rb')))
+		except Exception as e:
+			logger.error("Failed to load model from file %s!" % (modelfile))
+			return -1
 
 		#================================
 		#==   PREDICT
@@ -455,7 +463,7 @@ class UMAPClassifier(object):
 	#####################################
 	##     TRAIN
 	#####################################
-	def run_train(self, datafile, modelfile=None):
+	def run_train(self, datafile, modelfile=''):
 		""" Run train using input dataset """
 
 		#================================
@@ -473,9 +481,13 @@ class UMAPClassifier(object):
 		#================================
 		#==   LOAD MODEL
 		#================================
-		if modelfile is not None:
+		if modelfile!="":
 			logger.info("Loading the UMAP reducer from file %s ..." % modelfile)
-			self.reducer= pickle.load((open(modelfile, 'rb')))
+			try:
+				self.reducer= pickle.load((open(modelfile, 'rb')))
+			except Exception as e:
+				logger.error("Failed to load model from file %s!" % (modelfile))
+				return -1
 
 		else:
 			logger.info("Creating the UMAP reducer ...")
@@ -491,7 +503,7 @@ class UMAPClassifier(object):
 		return 0
 
 
-	def run_train(self, data, class_ids=[], snames=[], modelfile=None):
+	def run_train(self, data, class_ids=[], snames=[], modelfile=''):
 		""" Run train using input dataset """
 
 		#================================
@@ -511,7 +523,11 @@ class UMAPClassifier(object):
 		#================================
 		if modelfile is not None:
 			logger.info("Loading the UMAP reducer from file %s ..." % modelfile)
-			self.reducer= pickle.load((open(modelfile, 'rb')))
+			try:
+				self.reducer= pickle.load((open(modelfile, 'rb')))
+			except Exception as e:
+				logger.error("Failed to load model from file %s!" % (modelfile))
+				return -1
 
 		else:
 			logger.info("Creating the UMAP reducer ...")
