@@ -32,6 +32,9 @@ import getopt
 import argparse
 import collections
 
+## CLUSTERING
+import hdbscan
+
 ## MODULES
 from sclassifier_vae import __version__, __date__
 from sclassifier_vae import logger
@@ -66,11 +69,20 @@ def get_args():
 	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=True, type=str, action='store',help='Autoencoder model filename (.h5)')
 
 	# - UMAP classifier options
-	parser.add_argument('--run_umap', dest='run_umap', action='store_true',help='Run UMAP of VAE latent vector')	
+	parser.add_argument('--run_umap', dest='run_umap', action='store_true',help='Run UMAP on autoencoder latent vector')	
 	parser.set_defaults(run_umap=False)
 	parser.add_argument('-modelfile_umap', '--modelfile_umap', dest='modelfile_umap', required=True, type=str, action='store',help='UMAP model filename (.h5)')
 	parser.add_argument('-outfile_umap_unsupervised', '--outfile_umap_unsupervised', dest='outfile_umap_unsupervised', required=False, type=str, default='latent_data_umap_unsupervised.dat', action='store',help='Name of UMAP encoded data output file')
-	
+
+	# - Clustering options
+	parser.add_argument('--run_clustering', dest='run_clustering', action='store_true',help='Run clustering on autoencoder latent vector')	
+	parser.set_defaults(run_clustering=False)
+	parser.add_argument('-min_cluster_size', '--min_cluster_size', dest='min_cluster_size', required=False, type=int, default=5, action='store',help='Minimum cluster size for HDBSCAN clustering (default=5)')
+	parser.add_argument('-min_samples', '--min_samples', dest='min_samples', required=False, type=int, default=None, action='store',help='Minimum cluster sample parameter for HDBSCAN clustering. Typically equal to min_cluster_size (default=None')	
+	parser.add_argument('-modelfile_clust', '--modelfile_clust', dest='modelfile_clust', required=True, type=str, action='store',help='Clustering model filename (.h5)')
+	parser.add_argument('--predict_clust', dest='predict_clust', action='store_true',help='Only predict clustering according to current clustering model (default=false)')	
+	parser.set_defaults(predict_clust=False)
+
 	args = parser.parse_args()	
 
 	return args
@@ -109,6 +121,13 @@ def main():
   modelfile_umap= args.modelfile_umap
 	outfile_umap_unsupervised= args.outfile_umap_unsupervised
 		
+	# - Clustering options
+	run_clustering= args.run_clustering
+	min_cluster_size= args.min_cluster_size
+	min_samples= args.min_samples	
+	modelfile_clust= args.modelfile_clust
+	predict_clust= args.predict_clust
+
 	#===========================
 	#==   READ DATALIST
 	#===========================
@@ -121,7 +140,6 @@ def main():
 		logger.error("Failed to read input datalist!")
 		return 1
 	
-
 	#===============================
 	#==   RUN AUTOENCODER PREDICT
 	#===============================
@@ -139,20 +157,45 @@ def main():
 	#===========================
 	if run_umap:
 		# - Retrieve VAE encoded data
-		logger.info("Retrieve latent data from VAE ...")
+		logger.info("Retrieve latent data from autoencoder ...")
 		snames= vae_class.source_names
 		classids= vae_class.source_ids
 		vae_data= vae_class.encoded_data
 
 		# - Run UMAP
-		logger.info("Running UMAP classifier prediction on VAE latent data ...")
+		logger.info("Running UMAP classifier prediction on autoencoder latent data ...")
 		umap_class= UMAPClassifier()
 		umap_class.set_encoded_data_unsupervised_outfile(outfile_umap_unsupervised)
 		
 		if umap_class.run_predict(vae_data, class_ids=classids, snames=snames, modelfile=modelfile_umap)<0:
 			logger.error("UMAP prediction failed!")
 			return 1
+
+	#==============================
+	#==   RUN CLUSTERING
+	#==============================
+	if run_clustering:
+		# - Retrieve VAE encoded data
+		logger.info("Retrieve latent data from VAE ...")
+		snames= vae_class.source_names
+		classids= vae_class.source_ids
+		vae_data= vae_class.encoded_data
+
+		# - Run HDBSCAN clustering
+		logger.info("Running HDBSCAN classifier prediction on autoencoder latent data ...")
+		clust_class= Clusterer()
+		clust_class.min_cluster_size= min_cluster_size
+		clust_class.min_samples= min_samples
 	
+		status= 0
+		if predict_clust:
+			if clust_class.run_predict(vae_data, class_ids=classids, snames=snames, modelfile=modelfile_clust)<0:
+				logger.error("Clustering predict failed!")
+				return 1
+		else:
+			if clust_class.run_clustering(vae_data, class_ids=classids, snames=snames, modelfile=modelfile_clust)<0:
+				logger.error("Clustering run failed!")
+				return 1
 
 	return 0
 
