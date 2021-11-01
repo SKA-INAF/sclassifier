@@ -38,6 +38,7 @@ from sclassifier_vae import logger
 from sclassifier_vae.data_loader import DataLoader
 from sclassifier_vae.classifier import VAEClassifier
 from sclassifier_vae.classifier_umap import UMAPClassifier
+from sclassifier_vae.clustering import Clusterer
 
 #### GET SCRIPT ARGS ####
 def str2bool(v):
