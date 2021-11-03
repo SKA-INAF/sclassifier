@@ -35,6 +35,7 @@ import collections
 ## MODULES
 from sclassifier_vae import __version__, __date__
 from sclassifier_vae import logger
+from sclassifier_vae.utils import Utils
 from sclassifier_vae.data_loader import DataLoader
 from sclassifier_vae.classifier import VAEClassifier
 from sclassifier_vae.classifier_umap import UMAPClassifier
@@ -62,7 +63,7 @@ def get_args():
 	# - Clustering options
 	parser.add_argument('-min_cluster_size', '--min_cluster_size', dest='min_cluster_size', required=False, type=int, default=5, action='store',help='Minimum cluster size for HDBSCAN clustering (default=5)')
 	parser.add_argument('-min_samples', '--min_samples', dest='min_samples', required=False, type=int, default=None, action='store',help='Minimum cluster sample parameter for HDBSCAN clustering. Typically equal to min_cluster_size (default=None')	
-	parser.add_argument('-modelfile_clust', '--modelfile_clust', dest='modelfile_clust', required=True, type=str, action='store',help='Clustering model filename (.h5)')
+	parser.add_argument('-modelfile_clust', '--modelfile_clust', dest='modelfile_clust', required=False, type=str, action='store',help='Clustering model filename (.h5)')
 	parser.add_argument('--predict_clust', dest='predict_clust', action='store_true',help='Only predict clustering according to current clustering model (default=false)')	
 	parser.set_defaults(predict_clust=False)
 
@@ -120,11 +121,11 @@ def main():
 	
 	status= 0
 	if predict_clust:
-		if clust_class.run_predict(vae_data, class_ids=classids, snames=snames, modelfile=modelfile_clust)<0:
+		if clust_class.run_predict(data, class_ids=classids, snames=snames, modelfile=modelfile_clust)<0:
 			logger.error("Clustering predict failed!")
 			return 1
 	else:
-		if clust_class.run_clustering(vae_data, class_ids=classids, snames=snames, modelfile=modelfile_clust)<0:
+		if clust_class.run_clustering(data, class_ids=classids, snames=snames, modelfile=modelfile_clust)<0:
 			logger.error("Clustering run failed!")
 			return 1
 
