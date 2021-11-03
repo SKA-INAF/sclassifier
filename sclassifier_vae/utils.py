@@ -123,6 +123,30 @@ class Utils(object):
 		return table
 
 	@classmethod
+	def read_feature_data(cls, filename):
+		""" Read data table. Format: sname data classid """	
+
+		# - Read table
+		row_start= 0
+		table= ascii.read(filename, data_start=row_start)
+		colnames= table.colnames
+		print(colnames)
+
+		ndim= len(colnames)
+		nvars= ndim-2
+		if nvars<=0:
+			logger.error("Too few cols present in file (ndim=%d)!" % (ndim))
+			return ()
+
+		# - Read data columns
+		snames= table[colnames[0]].data.tolist()
+		classids= table[colnames[ndim-1]].data.tolist()
+		x= np.lib.recfunctions.structured_to_unstructured(table.as_array())
+		data= x[:,1:1+nvars].astype(np.float32)
+
+		return (data, snames, classids)
+
+	@classmethod
 	def write_fits(cls,data,filename):
 		""" Read data to FITS image """
 

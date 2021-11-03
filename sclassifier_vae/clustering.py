@@ -440,7 +440,7 @@ class Clusterer(object):
 		print("Cluster data N=",N)
 
 		snames= np.array(self.source_names).reshape(N,1)
-		objids= np.array(self.data_ids).reshape(N,1)	
+		objids= np.array(self.data_classids).reshape(N,1)	
 		clustered_data= np.concatenate(
 			(snames, objids, self.labels, self.probs),
 			axis=1
@@ -563,7 +563,11 @@ class Clusterer(object):
 	
 		# - Retrieve prediction data from current model
 		logger.info("Retrieving prediction data from current model (if any) ...")
-		self.prediction_data= self.clusterer.prediction_data_
+		try:
+			self.prediction_data= self.clusterer.prediction_data_
+		except Exception as e:
+			self.prediction_data= None
+
 		data_hist= None
 		snames_hist= None
 		classids_hist= None
@@ -599,7 +603,7 @@ class Clusterer(object):
 		#================================
 		# - Set data to be clustered
 		data_all= self.data
-		data_ids_all= self.data_ids	
+		data_ids_all= self.data_classids	
 		data_labels_all= self.data_labels
 		source_names_all= self.source_names
 		if self.add_prediction_data:	

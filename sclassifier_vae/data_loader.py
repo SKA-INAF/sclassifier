@@ -22,7 +22,7 @@ from collections import Counter
 import json
 
 ## ASTROPY MODULES 
-from astropy.io import ascii 
+from astropy.io import ascii
 
 ## ADDON ML MODULES
 from sklearn.model_selection import train_test_split
@@ -360,8 +360,7 @@ class DataLoader(object):
 			],
 			random_order=True
 		)
-		
-	
+
 	#############################
 	##     READ INPUT DATA
 	#############################
