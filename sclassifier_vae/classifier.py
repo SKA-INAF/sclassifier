@@ -1069,12 +1069,14 @@ class VAEClassifier(object):
 		#===========================
 		#==   RECONSTRUCT IMAGES
 		#===========================
+		#self.nsamples
+
 		img_counter= 0
-		try:
-			for item in self.test_data_generator:
-				print("type(item)")
-				print(type(item))
-				data= item[0]
+
+		while True:
+			try:
+				data, _= next(self.test_data_generator)
+				img_counter+= 1
 
 				print("type(data)")
 				print(type(data))
@@ -1119,10 +1121,17 @@ class VAEClassifier(object):
 				#	# ...	
 				#	# ...
 
-				img_counter+= 1
+				# - Stop generator
+				if img_counter>=self.nsamples:
+					logger.info("Sample size (%d) reached, stop generation..." % self.nsamples)
+					break
 
-		except Exception as e:
-			logger.warn("Generator throwes exception %s, stop loop." % (str(e)))				
+			except (GeneratorExit, KeyboardInterrupt):
+				logger.info("Stop loop (keyboard interrupt) ...")
+				break
+			except Exception as e:
+				logger.warn("Stop loop (exception catched %s) ..." % str(e))
+				break
 
 		# - Save reco metrics
 		# ...
