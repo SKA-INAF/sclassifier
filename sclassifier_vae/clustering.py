@@ -640,8 +640,21 @@ class Clusterer(object):
 		objids= np.array(data_ids_all).reshape(N,1)
 		objlabels= np.array(data_labels_all).reshape(N,1)
 
+		print("snames shape")
+		print(snames.shape)
+		print("objids shape")
+		print(objids.shape)
+		print("objlabels shape")
+		print(objlabels.shape)
+		print("self.labels shape")
+		print(self.labels.shape)
+		print("self.probs shape")
+		print(self.probs.shape)
+		print("self.outlier_scores")
+		print(self.outlier_scores.shape)
+
 		clustered_data= np.concatenate(
-			(snames, objids, objlabels, self.labels, self.probs, self.outlier_scores),
+			(snames, objids, objlabels, self.labels.reshape(N,1), self.probs.reshape(N,1), self.outlier_scores.reshape(N,1)),
 			axis=1
 		)
 
@@ -683,18 +696,22 @@ class Clusterer(object):
 	def __plot(self, clusterer, data, snames, class_labels, outfile):
 		""" Plot clusters """
 
-		# - Set cluster colors
-		palette = sns.color_palette('deep', 8)
-		cluster_colors = [palette[x] if x >= 0 else (0.5, 0.5, 0.5) for x in clusterer.labels_]
-		cluster_member_colors = [sns.desaturate(x, p) for x, p in zip(cluster_colors, clusterer.probabilities_)]
-		
 		# - Set variable names
 		data_shape= data.shape
 		ndim= data_shape[1]
 		N= data_shape[0]
 		varnames_counter= list(range(1,ndim+1))
 		varnames= '{}{}'.format('z',' z'.join(str(item) for item in varnames_counter))
+		nclusters= clusterer.labels_.max()
+		print("len(clusterer.labels_)")
+		print(len(clusterer.labels_))
+		print(clusterer.labels_)
 
+		# - Set cluster colors
+		palette = sns.color_palette('deep', nclusters+1)
+		cluster_colors = [palette[x] if x >= 0 else (0.5, 0.5, 0.5) for x in clusterer.labels_]
+		cluster_member_colors = [sns.desaturate(x, p) for x, p in zip(cluster_colors, clusterer.probabilities_)]
+		
 		# - Pair-wise Scatter Plots
 		###cols = ['density', 'residual sugar', 'total sulfur dioxide', 'fixed acidity']
 		###pp = sns.pairplot(wines[cols], size=1.8, aspect=1.8, plot_kws=dict(edgecolor="k", linewidth=0.5), diag_kind="kde", diag_kws=dict(shade=True))
@@ -735,23 +752,24 @@ class Clusterer(object):
 	def __plot_predict(self, clusterer, data_test, labels_test, snames_test, class_labels_test, prediction_data, prediction_extra_data, outfile):
 		""" Plot clusters """
 
-		# - Retrieve prediction data
-		data= prediction_data.data
-		snames= prediction_extra_data.snames
-		class_labels= prediction_extra_data.class_labels
-
-		# - Set cluster colors
-		palette = sns.color_palette('deep', 8)
-		cluster_colors = [palette[x] if x >= 0 else (0.5, 0.5, 0.5) for x in clusterer.labels_]
-		cluster_member_colors = [sns.desaturate(x, p) for x, p in zip(cluster_colors, clusterer.probabilities_)]
-		
 		# - Set variable names
 		data_shape= data.shape
 		ndim= data_shape[1]
 		N= data_shape[0]
 		varnames_counter= list(range(1,ndim+1))
 		varnames= '{}{}'.format('z',' z'.join(str(item) for item in varnames_counter))
+		nclusters= clusterer.labels_.max()
 
+		# - Retrieve prediction data
+		data= prediction_data.data
+		snames= prediction_extra_data.snames
+		class_labels= prediction_extra_data.class_labels
+
+		# - Set cluster colors
+		palette = sns.color_palette('deep', nclusters+1)
+		cluster_colors = [palette[x] if x >= 0 else (0.5, 0.5, 0.5) for x in clusterer.labels_]
+		cluster_member_colors = [sns.desaturate(x, p) for x, p in zip(cluster_colors, clusterer.probabilities_)]
+				
 		# - Display a 2D plot of clustered data
 		logger.info("Plot a 2D plot of the clustered data ...")
 		plt.figure(figsize=(12, 10))

@@ -1021,7 +1021,99 @@ class VAEClassifier(object):
 		head= '{} {} {}'.format("# sname", znames, "id")
 		Utils.write_ascii(enc_data, self.outfile_encoded_data, head)	
 
+		return 0
 
+	
+	#####################################
+	##     RECONSTRUCT DATA
+	#####################################
+	def reconstruct_data(self, modelfile, save_imgs=False):
+		""" Reconstruct data """
+
+		#===========================
+		#==   SET DATA
+		#===========================	
+		logger.info("Setting input data from data loader ...")
+		status= self.__set_data()
+		if status<0:
+			logger.error("Input data set failed!")
+			return -1
+
+		#===========================
+		#==   LOAD MODEL
+		#===========================
+		#- Create the network architecture and weights from file
+		logger.info("Loading model architecture and weights from file %s ..." % (modelfile))
+		if self.__load_model(modelfile)<0:
+			logger.warn("Failed to load model!")
+			return -1
+
+		if self.vae is None:
+			logger.error("Loaded model is None!")
+			return -1
+
+		#===========================
+		#==   RECONSTRUCT IMAGES
+		#===========================
+		img_counter= 0
+		try:
+			for item in self.test_data_generator:
+				print("type(item)")
+				print(type(item))
+				data= item[0]
+
+				print("type(data)")
+				print(type(data))
+				print("data shape")
+				print(data.shape)	
+
+				# - Get latent data for this output
+				predout= self.encoder.predict(
+					x= data,	
+					steps=1,
+    			verbose=2,
+    			workers=self.nworkers,
+    			use_multiprocessing=self.use_multiprocessing
+				)
+
+				if type(predout)==tuple and len(predout)>0:
+					encoded_data= predout[0]
+				else:
+					encoded_data= predout
+
+				print("encoded_data shape")
+				print(encoded_data.shape)	
+				print(encoded_data)
+				N= encoded_data.shape[0]
+				Nvar= encoded_data.shape[1]
+		
+				# - Compute reconstructed image
+				logger.info("Reconstructing image sample no. %d ..." % (img_counter))
+				decoded_imgs = self.decoder.predict(predout)
+				#decoded_imgs = self.decoder.predict(self.encoded_data)
+				print("type(decoded_imgs)")
+				print(type(decoded_imgs))
+				print("decoded_imgs.shape")
+				print(decoded_imgs.shape)
+
+				# - Compute some metrics
+				# ...
+				# ...
+
+				# - Save input & reco images
+				if save_imgs:
+					# ...	
+					# ...
+
+				img_counter+= 1
+
+		except Exception as e:
+			logger.warn("Generator throwes exception %s, stop loop." % (str(e)))				
+
+		# - Save reco metrics
+		# ...
+		# ...
+		
 		return 0
 
 	#####################################

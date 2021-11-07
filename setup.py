@@ -48,11 +48,21 @@ else:
 	reqs.append('matplotlib')
 
 #reqs.append('keras>=2.0')
-reqs.append('tensorflow>=2.3')
-reqs.append('imgaug')
+
+#reqs.append('six<1.16')
+reqs.append('six==1.15.0')
+reqs.append('numpy==1.19.5')
+
+#reqs.append('tensorflow>=2.3')
+reqs.append('tensorflow==2.6.0')
+
+#reqs.append('imgaug')
+reqs.append('imgaug>=0.4.0')
+
 reqs.append('umap-learn')
 reqs.append('hdbscan')
 reqs.append('seaborn')
+
 
 data_dir = 'data'
 
@@ -67,5 +77,5 @@ setup(
 	long_description=read('README.md'),
 	packages=['sclassifier_vae'],
 	install_requires=reqs,
-	scripts=['scripts/check_data.py','scripts/run_train.py','scripts/run_predict.py','scripts/run_clustering.py'],
+	scripts=['scripts/check_data.py','scripts/run_train.py','scripts/run_predict.py','scripts/run_clustering.py','scripts/reconstruct_data.py'],
 )
