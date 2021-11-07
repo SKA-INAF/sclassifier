@@ -1151,11 +1151,11 @@ class VAEClassifier(object):
 
 		# - Load model
 		try:
-			self.vae = model_from_json(open(modelfile).read())
+			self.vae = model_from_json(open(modelfile_json).read())
 			self.vae.load_weights(weightfile)
 
 		except Exception as e:
-			logger.warn("Failed to load model from file %s (err=%s)!" % (modelfile, str(e)))
+			logger.warn("Failed to load model from file %s (err=%s)!" % (modelfile_json, str(e)))
 			return -1
 
 		# - Build encoder & decoder
@@ -1169,11 +1169,11 @@ class VAEClassifier(object):
 		""" Load encoder model and weights from input h5 file """
 
 		try:
-			self.encoder = model_from_json(open(modelfile).read())
+			self.encoder = model_from_json(open(modelfile_json).read())
 			self.encoder.load_weights(weightfile)
 
 		except Exception as e:
-			logger.warn("Failed to load encoder model from file %s (err=%s)!" % (modelfile, str(e)))
+			logger.warn("Failed to load encoder model from file %s (err=%s)!" % (modelfile_json, str(e)))
 			return -1
 
 		return 0
@@ -1182,11 +1182,11 @@ class VAEClassifier(object):
 		""" Load decoder model and weights from input h5 file """
 
 		try:
-			self.decoder = model_from_json(open(modelfile).read())
+			self.decoder = model_from_json(open(modelfile_json).read())
 			self.decoder.load_weights(weightfile)
 
 		except Exception as e:
-			logger.warn("Failed to load decoder model from file %s (err=%s)!" % (modelfile, str(e)))
+			logger.warn("Failed to load decoder model from file %s (err=%s)!" % (modelfile_json, str(e)))
 			return -1
 
 		return 0
