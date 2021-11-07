@@ -804,15 +804,25 @@ class VAEClassifier(object):
 		#- Save the model weights
 		logger.info("Saving NN weights ...")
 		self.vae.save_weights('model_weights.h5')
+		self.encoder.save_weights('encoder_weights.h5')
+		self.decoder.save_weights('decoder_weights.h5')
 
 		# -Save the model architecture in json format
 		logger.info("Saving NN architecture in json format ...")
 		with open('model_architecture.json', 'w') as f:
 			f.write(self.vae.to_json())
+
+		with open('encoder_architecture.json', 'w') as f:
+			f.write(self.encoder.to_json())
+
+		with open('decoder_architecture.json', 'w') as f:
+			f.write(self.decoder.to_json())
 		
 		#- Save the model
 		logger.info("Saving full NN model ...")
 		self.vae.save('model.h5')
+		self.encoder.save('encoder.h5')
+		self.decoder.save('decoder.h5')
 
 		# - Save the network architecture diagram
 		logger.info("Saving network model architecture to file ...")
@@ -951,7 +961,7 @@ class VAEClassifier(object):
 	#####################################
 	##     RUN PREDICT
 	#####################################
-	def predict_model(self, modelfile):
+	def predict_model(self, encoder_model, encoder_weights):
 		""" Run model prediction """
 
 		#===========================
@@ -967,22 +977,14 @@ class VAEClassifier(object):
 		#==   LOAD MODEL
 		#===========================
 		#- Create the network architecture and weights from file
-		logger.info("Loading model architecture and weights from file %s ..." % (modelfile))
-		if self.__load_model(modelfile)<0:
-			logger.warn("Failed to load model!")
+		logger.info("Loading encoder model architecture and weights from files %s %s ..." % (encoder_model, encoder_weights))
+		if self.__load_encoder(encoder_model, encoder_weights)<0:
+			logger.warn("Failed to load encoder model!")
 			return -1
 
-		if self.vae is None:
+		if self.encoder is None:
 			logger.error("Loaded model is None!")
 			return -1
-
-		# - Save the network architecture diagram
-		logger.info("Saving network model architecture to file ...")
-		plot_model(self.vae, to_file=self.outfile_model)
-		
-		# - Save the network architecture diagram
-		logger.info("Saving network model architecture to file ...")
-		plot_model(self.vae, to_file=self.outfile_model)
 
 		#===========================
 		#==   PREDICT
@@ -1028,7 +1030,7 @@ class VAEClassifier(object):
 	#####################################
 	##     RECONSTRUCT DATA
 	#####################################
-	def reconstruct_data(self, modelfile, save_imgs=False):
+	def reconstruct_data(self, encoder_model, encoder_weights, decoder_model, decoder_weights, save_imgs=False):
 		""" Reconstruct data """
 
 		#===========================
@@ -1041,17 +1043,28 @@ class VAEClassifier(object):
 			return -1
 
 		#===========================
-		#==   LOAD MODEL
+		#==   LOAD MODELS
 		#===========================
-		#- Create the network architecture and weights from file
-		logger.info("Loading model architecture and weights from file %s ..." % (modelfile))
-		if self.__load_model(modelfile)<0:
-			logger.warn("Failed to load model!")
+		#- Load encoder
+		logger.info("Loading encoder model architecture and weights from files %s, %s ..." % (encoder_model, encoder_weights))
+		if self.__load_encoder(encoder_model, encoder_weights)<0:
+			logger.warn("Failed to load encoder model!")
 			return -1
 
-		if self.vae is None:
-			logger.error("Loaded model is None!")
+		if self.encoder is None:
+			logger.error("Loaded encoder model is None!")
 			return -1
+
+		#- Load decoder
+		logger.info("Loading decoder model architecture and weights from files %s, %s ..." % (decoder_model, decoder_weights))
+		if self.__load_decoder(decoder_model, decoder_weights)<0:
+			logger.warn("Failed to load decoder model!")
+			return -1
+
+		if self.decoder is None:
+			logger.error("Loaded decoder model is None!")
+			return -1
+		
 
 		#===========================
 		#==   RECONSTRUCT IMAGES
@@ -1124,12 +1137,56 @@ class VAEClassifier(object):
 		""" Load model and weights from input h5 file """
 
 		try:
-			#self.vae= load_model(modelfile)
+			self.vae= load_model(modelfile)
+		
+		except Exception as e:
+			logger.warn("Failed to load model from file %s (err=%s)!" % (modelfile, str(e)))
+			return -1
+
+		return 0
+
+
+	def __load_model(self, modelfile_json, weightfile):
+		""" Load model and weights from input h5 file """
+
+		# - Load model
+		try:
 			self.vae = model_from_json(open(modelfile).read())
-			self.vae.load_weights(os.path.join(os.path.dirname(modelfile), 'model_weights.h5'))
+			self.vae.load_weights(weightfile)
 
 		except Exception as e:
 			logger.warn("Failed to load model from file %s (err=%s)!" % (modelfile, str(e)))
+			return -1
+
+		# - Build encoder & decoder
+		#encoder = Model(autoencoder.input, autoencoder.layers[-2].output)
+		#decoder_input = Input(shape=(encoding_dim,))
+		#decoder = Model(decoder_input, autoencoder.layers[-1](decoder_input))
+
+		return 0
+
+	def __load_encoder(self, modelfile_json, weightfile):
+		""" Load encoder model and weights from input h5 file """
+
+		try:
+			self.encoder = model_from_json(open(modelfile).read())
+			self.encoder.load_weights(weightfile)
+
+		except Exception as e:
+			logger.warn("Failed to load encoder model from file %s (err=%s)!" % (modelfile, str(e)))
+			return -1
+
+		return 0
+
+	def __load_decoder(self, modelfile_json, weightfile):
+		""" Load decoder model and weights from input h5 file """
+
+		try:
+			self.decoder = model_from_json(open(modelfile).read())
+			self.decoder.load_weights(weightfile)
+
+		except Exception as e:
+			logger.warn("Failed to load decoder model from file %s (err=%s)!" % (modelfile, str(e)))
 			return -1
 
 		return 0

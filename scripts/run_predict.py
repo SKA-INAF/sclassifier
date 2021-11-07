@@ -64,7 +64,9 @@ def get_args():
 	parser.add_argument('-ny', '--ny', dest='ny', required=False, type=int, default=128, action='store',help='Image resize height in pixels (default=128)')	
 
 	# - Autoencoder model options
-	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=True, type=str, action='store',help='Autoencoder model filename (.h5)')
+	parser.add_argument('-modelfile_encoder', '--modelfile_encoder', dest='modelfile_encoder', required=True, type=str, action='store',help='Encoder model architecture filename (.json)')
+	parser.add_argument('-weightfile_encoder', '--weightfile_encoder', dest='weightfile_encoder', required=True, type=str, action='store',help='Encoder model weights filename (.h5)')
+	
 
 	# - UMAP classifier options
 	parser.add_argument('--run_umap', dest='run_umap', action='store_true',help='Run UMAP on autoencoder latent vector')	
@@ -112,7 +114,8 @@ def main():
 	ny= args.ny
 	
 	# - Autoencoder options
-	modelfile= args.modelfile
+	modelfile_encoder= args.modelfile_encoder
+	weightfile_encoder= args.weightfile_encoder
 	
 	# - UMAP options
 	run_umap= args.run_umap
@@ -145,7 +148,7 @@ def main():
 	vae_class= VAEClassifier(dl)
 	vae_class.set_image_size(nx, ny)
 	
-	if vae_class.predict_model(modelfile)<0:
+	if vae_class.predict_model(modelfile_encoder, weightfile_encoder)<0:
 		logger.error("VAE predict failed!")
 		return 1
 

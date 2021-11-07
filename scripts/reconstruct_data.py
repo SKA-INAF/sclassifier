@@ -62,7 +62,10 @@ def get_args():
 	parser.add_argument('-ny', '--ny', dest='ny', required=False, type=int, default=128, action='store',help='Image resize height in pixels (default=128)')	
 
 	# - Autoencoder model options
-	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=True, type=str, action='store',help='Autoencoder model filename (.h5)')
+	parser.add_argument('-modelfile_encoder', '--modelfile_encoder', dest='modelfile_encoder', required=True, type=str, action='store',help='Encoder model architecture filename (.json)')
+	parser.add_argument('-weightfile_encoder', '--weightfile_encoder', dest='weightfile_encoder', required=True, type=str, action='store',help='Encoder model weights filename (.h5)')
+	parser.add_argument('-modelfile_decoder', '--modelfile_decoder', dest='modelfile_decoder', required=True, type=str, action='store',help='Decoder model architecture filename (.json)')
+	parser.add_argument('-weightfile_decoder', '--weightfile_decoder', dest='weightfile_decoder', required=True, type=str, action='store',help='Decoder model weights filename (.h5)')
 
 	args = parser.parse_args()	
 
@@ -95,7 +98,10 @@ def main():
 	ny= args.ny
 	
 	# - Autoencoder options
-	modelfile= args.modelfile
+	modelfile_encoder= args.modelfile_encoder
+	modelfile_decoder= args.modelfile_decoder
+	weightfile_encoder= args.weightfile_encoder
+	weightfile_decoder= args.weightfile_decoder
 
 	#===========================
 	#==   READ DATALIST
@@ -116,12 +122,10 @@ def main():
 	vae_class= VAEClassifier(dl)
 	vae_class.set_image_size(nx, ny)
 	
-	if vae_class.reconstruct_data(modelfile)<0:
+	if vae_class.reconstruct_data(modelfile_encoder, weightfile_encoder, modelfile_decoder, weightfile_decoder)<0:
 		logger.error("Autoencoder reconstruction failed!")
 		return 1
 
-
-	
 	return 0
 
 ###################
