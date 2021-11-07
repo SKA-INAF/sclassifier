@@ -147,6 +147,7 @@ class VAEClassifier(object):
 		self.train_data_generator= None
 		self.crossval_data_generator= None
 		self.test_data_generator= None
+		self.data_generator= None
 		self.augmentation= False	
 		self.validation_steps= 10
 		self.use_multiprocessing= True
@@ -301,7 +302,16 @@ class VAEClassifier(object):
 			resize=True, nx=self.nx, ny=self.ny, 
 			normalize=True, 
 			augment=False
-		)	
+		)
+
+		# - Create standard generator (for reconstruction)
+		self.data_generator= self.dl.data_generator(
+			batch_size=1, 
+			shuffle=False,
+			resize=True, nx=self.nx, ny=self.ny, 
+			normalize=True, 
+			augment=False
+		)
 		
 		return 0
 
@@ -1075,7 +1085,7 @@ class VAEClassifier(object):
 
 		while True:
 			try:
-				data, _= next(self.test_data_generator)
+				data, _= next(self.data_generator)
 				img_counter+= 1
 
 				print("type(data)")

@@ -114,7 +114,8 @@ def main():
 	if dl.read_datalist()<0:
 		logger.error("Failed to read input datalist!")
 		return 1
-	
+
+
 	#===============================
 	#==   RUN AUTOENCODER RECO
 	#===============================
