@@ -38,6 +38,7 @@ except:
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model
 from tensorflow.keras.models import load_model
+from tensorflow.keras.models import model_from_json
 try:
 	from tensorflow.keras.layers.normalization import BatchNormalization
 except Exception as e:
