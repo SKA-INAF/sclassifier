@@ -1123,7 +1123,10 @@ class VAEClassifier(object):
 		""" Load model and weights from input h5 file """
 
 		try:
-			self.vae= load_model(modelfile)
+			#self.vae= load_model(modelfile)
+			self.vae = model_from_json(open(modelfile).read())
+			self.vae.load_weights(os.path.join(os.path.dirname(modelfile), 'model_weights.h5'))
+
 		except Exception as e:
 			logger.warn("Failed to load model from file %s (err=%s)!" % (modelfile, str(e)))
 			return -1
