@@ -1096,7 +1096,8 @@ class VAEClassifier(object):
 				# - Get latent data for this output
 				predout= self.encoder.predict(
 					x= data,	
-					steps=1,
+					#steps=1,
+					batch_size=1,
     			verbose=2,
     			workers=self.nworkers,
     			use_multiprocessing=self.use_multiprocessing
