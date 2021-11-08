@@ -1173,7 +1173,7 @@ class VAEClassifier(object):
 
 					ssim_2d[cond]= 0
 					if not np.isfinite(ssim_mean_mask):
-						logger.warn("Image no. %s (chan=%d): ssim_mean_mask is nan/inf!" % (img_counter, j+1))
+						logger.warn("Image no. %d (chan=%d): ssim_mean_mask is nan/inf!" % (img_counter, j+1))
 						ssim_mean_mask= -999
 
 					# - Append images
