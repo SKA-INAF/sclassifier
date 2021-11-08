@@ -1226,7 +1226,8 @@ class VAEClassifier(object):
 		)
 
 		logger.info("Saving reco metrics data to file %s ..." % (outfile_metrics))
-		head= '{} {} {}'.format("# sname", metric_names, "id")
+		metric_names_str= ' '.join(str(item) for item in metric_names)
+		head= '{} {} {}'.format("# sname", metric_names_str, "id")
 		Utils.write_ascii(out_data, outfile_metrics, head)	
 
 
