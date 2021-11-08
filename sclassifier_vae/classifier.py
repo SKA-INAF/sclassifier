@@ -1124,7 +1124,7 @@ class VAEClassifier(object):
 				#Nvar= encoded_data.shape[1]
 		
 				# - Compute reconstructed image
-				logger.info("Reconstructing image sample no. %d (name=%s, id=%d) ..." % (img_counter, sname, classid))
+				logger.info("Reconstructing image sample no. %d (name=%s, id=%s) ..." % (img_counter, str(sname), str(classid)))
 				decoded_imgs = self.decoder.predict(predout)
 				###decoded_imgs = self.decoder.predict(self.encoded_data)
 				#print("type(decoded_imgs)")
