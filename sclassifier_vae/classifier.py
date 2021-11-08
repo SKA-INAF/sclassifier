@@ -1175,14 +1175,16 @@ class VAEClassifier(object):
 					ssim_max_mask= np.nanmax(ssim_1d)
 					ssim_std_mask= np.nanstd(ssim_1d)
 
-					ssim_2d[cond]= 0
-
-					#print("pto 3")
+					
 					if not np.isfinite(ssim_mean_mask):
 						logger.warn("Image no. %d (chan=%d): ssim_mean_mask is nan/inf!" % (img_counter, j+1))
 						ssim_mean_mask= -999
 
+	
 					# - Append images
+					recdata_img[cond]= 0
+					ssim_2d[cond]= 0
+					
 					img_list.append([])		
 					img_list[j].append(inputdata_img)
 					img_list[j].append(recdata_img)
@@ -1215,6 +1217,7 @@ class VAEClassifier(object):
 							index= j + i*ncols + 1
 							plt.subplot(nrows, ncols, index)
 							plt.imshow(img_list[i][j], origin='lower')
+							plt.colorbar()
 							
 					plt.savefig(outfile_plot)
 					#plt.tight_layout()
