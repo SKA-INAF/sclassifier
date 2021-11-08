@@ -1182,8 +1182,8 @@ class VAEClassifier(object):
 
 	
 					# - Append images
-					recdata_img[cond]= 0
-					ssim_2d[cond]= 0
+					recdata_img[~cond]= 0
+					ssim_2d[~cond]= 0
 					
 					img_list.append([])		
 					img_list[j].append(inputdata_img)
