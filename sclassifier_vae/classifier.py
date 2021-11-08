@@ -89,6 +89,10 @@ from tensorflow.keras.losses import mse, binary_crossentropy
 from tensorflow.python.framework.ops import disable_eager_execution
 disable_eager_execution()
 
+## SCIKIT MODULES
+from skimage.metrics import mean_squared_error
+from skimage.metrics import structural_similarity
+
 ## GRAPHICS MODULES
 import matplotlib
 import matplotlib.pyplot as plt
@@ -1040,7 +1044,7 @@ class VAEClassifier(object):
 	#####################################
 	##     RECONSTRUCT DATA
 	#####################################
-	def reconstruct_data(self, encoder_model, encoder_weights, decoder_model, decoder_weights, save_imgs=False):
+	def reconstruct_data(self, encoder_model, encoder_weights, decoder_model, decoder_weights, winsize=3, outfile_metrics="reco_metrics.dat", save_imgs=False):
 		""" Reconstruct data """
 
 		#===========================
@@ -1079,10 +1083,9 @@ class VAEClassifier(object):
 		#===========================
 		#==   RECONSTRUCT IMAGES
 		#===========================
-		#self.nsamples
-
 		img_counter= 0
-
+		reco_metrics= []
+		
 		while True:
 			try:
 				data, _= next(self.data_generator)
@@ -1091,7 +1094,8 @@ class VAEClassifier(object):
 				print("type(data)")
 				print(type(data))
 				print("data shape")
-				print(data.shape)	
+				print(data.shape)
+				nchans= data.shape[2]
 
 				# - Get latent data for this output
 				predout= self.encoder.predict(
@@ -1123,10 +1127,49 @@ class VAEClassifier(object):
 				print("decoded_imgs.shape")
 				print(decoded_imgs.shape)
 
-				# - Compute some metrics
-				# ...
-				# ...
+				# - Compute metrics
+				metric_list= []
+				ssim_2d_list= []
+				metric_names= []
 
+				for j in range(nchans):
+					inputdata_img= data[:,:,j]
+					recdata_img= decoded_imgs[:,:,j]
+					
+					cond= np.logical_and(inputdata_img!=0, np.isfinite(inputdata_img))
+
+					inputdata_1d= inputdata_imgs[cond]
+					recdata_1d= recdata_imgs[cond]
+
+					mse= mean_squared_error(inputdata_1d, recdata_1d)
+					
+					ssim_mean, ssim_2d= structural_similarity(input_img, rec_img, full=True, win_size=winsize)
+					ssim_1d= ssim_2d[cond]
+					ssim_mean_mask= np.nanmean(ssim_1d)
+					ssim_min_mask= np.nanmin(ssim_1d)
+					ssim_max_mask= np.nanmax(ssim_1d)
+					ssim_std_mask= np.nanstd(ssim_1d)
+
+					ssim_2d[cond]= 0
+					if not np.isfinite(ssim_mean_mask):
+						logger.warn("Image no. %s (chan=%d): ssim_mean_mask is nan/inf!" % (img_counter, j+1))
+						ssim_mean_mask= -999
+		
+					ssim_2d_list.append(ssim_2d)
+					metric_list.append(mse)
+					metric_list.append(ssim_mean_mask)
+					metric_list.append(ssim_min_mask)
+					metric_list.append(ssim_max_mask)
+					metric_list.append(ssim_std_mask)
+	
+					metric_names.append("mse_ch" + str(j+1))
+					metric_names.append("ssim_mean_ch" + str(j+1))
+					metric_names.append("ssim_min_ch" + str(j+1))
+					metric_names.append("ssim_max_ch" + str(j+1))
+					metric_names.append("ssim_std_ch" + str(j+1))
+					
+				reco_metrics.append(metric_list)
+				
 				# - Save input & reco images
 				#if save_imgs:
 				#	# ...	
@@ -1145,8 +1188,25 @@ class VAEClassifier(object):
 				break
 
 		# - Save reco metrics
-		# ...
-		# ...
+		logger.info("Setting metric out data ...")
+		obj_names= np.array(self.source_names).reshape(N,1)
+		obj_ids= np.array(self.source_ids).reshape(N,1)
+		
+		if not reco_metrics:
+			logger.error("Empty reco metrics, check logs!")
+			return -1
+		nmetrics= len(reco_metrics[0])
+		obj_metrics= np.array(reco_metrics).reshape(N, nmetrics)
+
+		out_data= np.concatenate(
+			(obj_names, obj_metrics, obj_ids),
+			axis=1
+		)
+
+		logger.info("Saving reco metrics data to file %s ..." % (outfile_metrics))
+		head= '{} {} {}'.format("# sname", metric_names, "id")
+		Utils.write_ascii(out_data, outfile_metrics, head)	
+
 		
 		return 0
 
