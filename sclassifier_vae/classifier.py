@@ -1088,50 +1088,53 @@ class VAEClassifier(object):
 		
 		while True:
 			try:
+				sname= self.source_names[img_counter]
+				classid= self.source_ids[img_counter]
+
 				data, _= next(self.data_generator)
 				img_counter+= 1
 
-				print("type(data)")
-				print(type(data))
-				print("data shape")
-				print(data.shape)
 				nchans= data.shape[3]
-				print("nchans")
-				print(nchans)
+	
+				#print("type(data)")
+				#print(type(data))
+				#print("data shape")
+				#print(data.shape)				
+				#print("nchans")
+				#print(nchans)
 
 				# - Get latent data for this output
 				predout= self.encoder.predict(
 					x= data,	
-					#steps=1,
 					batch_size=1,
     			verbose=2,
     			workers=self.nworkers,
     			use_multiprocessing=self.use_multiprocessing
 				)
 
-				if type(predout)==tuple and len(predout)>0:
-					encoded_data= predout[0]
-				else:
-					encoded_data= predout
+				#if type(predout)==tuple and len(predout)>0:
+				#	encoded_data= predout[0]
+				#else:
+				#	encoded_data= predout
 
-				print("encoded_data shape")
-				print(encoded_data.shape)	
-				print(encoded_data)
-				N= encoded_data.shape[0]
-				Nvar= encoded_data.shape[1]
+				#print("encoded_data shape")
+				#print(encoded_data.shape)	
+				#print(encoded_data)
+				#N= encoded_data.shape[0]
+				#Nvar= encoded_data.shape[1]
 		
 				# - Compute reconstructed image
-				logger.info("Reconstructing image sample no. %d ..." % (img_counter))
+				logger.info("Reconstructing image sample no. %d (name=%s, id=%d) ..." % (img_counter, sname, classid))
 				decoded_imgs = self.decoder.predict(predout)
-				#decoded_imgs = self.decoder.predict(self.encoded_data)
-				print("type(decoded_imgs)")
-				print(type(decoded_imgs))
-				print("decoded_imgs.shape")
-				print(decoded_imgs.shape)
+				###decoded_imgs = self.decoder.predict(self.encoded_data)
+				#print("type(decoded_imgs)")
+				#print(type(decoded_imgs))
+				#print("decoded_imgs.shape")
+				#print(decoded_imgs.shape)
 
 				# - Compute metrics
 				metric_list= []
-				ssim_2d_list= []
+				img_list= []
 				metric_names= []
 
 				for j in range(nchans):
@@ -1143,22 +1146,24 @@ class VAEClassifier(object):
 					inputdata_1d= inputdata_img[cond]
 					recdata_1d= recdata_img[cond]
 
-					print("inputdata_img.shape")
-					print(inputdata_img.shape)
-					print("recdata_img.shape")
-					print(recdata_img.shape)
-					print("inputdata_1d shape")
-					print(inputdata_1d.shape)
-					print("recdata_1d shape")
-					print(recdata_1d.shape)
-					print("winsize")
-					print(winsize)
+					#print("inputdata_img.shape")
+					#print(inputdata_img.shape)
+					#print("recdata_img.shape")
+					#print(recdata_img.shape)
+					#print("inputdata_1d shape")
+					#print(inputdata_1d.shape)
+					#print("recdata_1d shape")
+					#print(recdata_1d.shape)
+					#print("winsize")
+					#print(winsize)
 
+					# - Compute MSE
 					mse= mean_squared_error(inputdata_1d, recdata_1d)
 					
-					print("mse")
-					print(mse)
+					#print("mse")
+					#print(mse)
 
+					# - Compute similarity index
 					ssim_mean, ssim_2d= structural_similarity(inputdata_img, recdata_img, full=True, win_size=winsize)
 					ssim_1d= ssim_2d[cond]
 					ssim_mean_mask= np.nanmean(ssim_1d)
@@ -1170,8 +1175,14 @@ class VAEClassifier(object):
 					if not np.isfinite(ssim_mean_mask):
 						logger.warn("Image no. %s (chan=%d): ssim_mean_mask is nan/inf!" % (img_counter, j+1))
 						ssim_mean_mask= -999
-		
-					ssim_2d_list.append(ssim_2d)
+
+					# - Append images
+					img_list.append([])		
+					img_list[j].append(inputdata_img)
+					img_list[j].append(recdata_img)
+					img_list[j].append(ssim_2d)
+
+					# - Append metrics
 					metric_list.append(mse)
 					metric_list.append(ssim_mean_mask)
 					metric_list.append(ssim_min_mask)
@@ -1187,10 +1198,21 @@ class VAEClassifier(object):
 				reco_metrics.append(metric_list)
 				
 				# - Save input & reco images
-				#if save_imgs:
-				#	# ...	
-				#	# ...
-
+				if save_imgs:
+					outfile_plot= sname + '_id' + classid + '.png' 
+					fig = plt.figure(figsize=(20, 10))
+					nrows= len(img_list)
+					for i in range(nrows):
+						ncols= len(img_list[i])
+						for j in range(ncols):
+							index= j + i*ncols + 1
+							plt.subplot(nrows, ncols, index)
+							plt.imshow(img_list[i][j], origin='lower')
+							
+					plt.savefig(outfile_plot)
+					#plt.tight_layout()
+					#plt.show()
+					
 				# - Stop generator
 				if img_counter>=self.nsamples:
 					logger.info("Sample size (%d) reached, stop generation..." % self.nsamples)

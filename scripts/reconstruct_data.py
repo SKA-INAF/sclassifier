@@ -67,6 +67,11 @@ def get_args():
 	parser.add_argument('-modelfile_decoder', '--modelfile_decoder', dest='modelfile_decoder', required=True, type=str, action='store',help='Decoder model architecture filename (.json)')
 	parser.add_argument('-weightfile_decoder', '--weightfile_decoder', dest='weightfile_decoder', required=True, type=str, action='store',help='Decoder model weights filename (.h5)')
 
+	# - Reco metrics & plot options
+	parser.add_argument('-winsize', '--winsize', dest='winsize', required=False, type=int, default=3, action='store',help='Window size (odd) in pixels used to compute similarity index map (default=3)')	
+	parser.add_argument('--save_plots', dest='save_plots', action='store_true',help='Save reco plots')	
+	parser.set_defaults(save_plots=False)
+
 	args = parser.parse_args()	
 
 	return args
@@ -103,6 +108,10 @@ def main():
 	weightfile_encoder= args.weightfile_encoder
 	weightfile_decoder= args.weightfile_decoder
 
+	# - Reco metrics & plot options
+	winsize= args.winsize
+	save_plots= args.save_plots
+
 	#===========================
 	#==   READ DATALIST
 	#===========================
@@ -123,7 +132,14 @@ def main():
 	vae_class= VAEClassifier(dl)
 	vae_class.set_image_size(nx, ny)
 	
-	if vae_class.reconstruct_data(modelfile_encoder, weightfile_encoder, modelfile_decoder, weightfile_decoder)<0:
+	status= vae_class.reconstruct_data(
+		modelfile_encoder, weightfile_encoder, 
+		modelfile_decoder, weightfile_decoder,
+		winsize= winsize,
+		save_imgs= save_plots
+	)
+
+	if status<0:		
 		logger.error("Autoencoder reconstruction failed!")
 		return 1
 
