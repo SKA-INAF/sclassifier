@@ -1138,12 +1138,12 @@ class VAEClassifier(object):
 					
 					cond= np.logical_and(inputdata_img!=0, np.isfinite(inputdata_img))
 
-					inputdata_1d= inputdata_imgs[cond]
-					recdata_1d= recdata_imgs[cond]
+					inputdata_1d= inputdata_img[cond]
+					recdata_1d= recdata_img[cond]
 
 					mse= mean_squared_error(inputdata_1d, recdata_1d)
 					
-					ssim_mean, ssim_2d= structural_similarity(input_img, rec_img, full=True, win_size=winsize)
+					ssim_mean, ssim_2d= structural_similarity(inputdata_img, recdata_img, full=True, win_size=winsize)
 					ssim_1d= ssim_2d[cond]
 					ssim_mean_mask= np.nanmean(ssim_1d)
 					ssim_min_mask= np.nanmin(ssim_1d)
@@ -1187,6 +1187,12 @@ class VAEClassifier(object):
 				logger.warn("Stop loop (exception catched %s) ..." % str(e))
 				break
 
+		# - Check if read nsamples data
+		N= len(reco_metrics)
+		if N!=self.nsamples:
+			logger.warn("Failed or stop data read (N=%d!=%d), stop." % (N, self.nsamples))
+			return -1
+
 		# - Save reco metrics
 		logger.info("Setting metric out data ...")
 		obj_names= np.array(self.source_names).reshape(N,1)
@@ -1207,7 +1213,7 @@ class VAEClassifier(object):
 		head= '{} {} {}'.format("# sname", metric_names, "id")
 		Utils.write_ascii(out_data, outfile_metrics, head)	
 
-		
+
 		return 0
 
 	#####################################
