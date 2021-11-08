@@ -1144,13 +1144,15 @@ class VAEClassifier(object):
 					recdata_1d= recdata_img[cond]
 
 					print("inputdata_img.shape")
-					print(inputdata_img)
+					print(inputdata_img.shape)
 					print("recdata_img.shape")
-					print(recdata_img)
+					print(recdata_img.shape)
 					print("inputdata_1d shape")
 					print(inputdata_1d.shape)
 					print("recdata_1d shape")
 					print(recdata_1d.shape)
+					print("winsize")
+					print(winsize)
 
 					mse= mean_squared_error(inputdata_1d, recdata_1d)
 					
