@@ -1143,6 +1143,10 @@ class VAEClassifier(object):
 					inputdata_1d= inputdata_img[cond]
 					recdata_1d= recdata_img[cond]
 
+					print("inputdata_img.shape")
+					print(inputdata_img)
+					print("recdata_img.shape")
+					print(recdata_img)
 					print("inputdata_1d shape")
 					print(inputdata_1d.shape)
 					print("recdata_1d shape")
