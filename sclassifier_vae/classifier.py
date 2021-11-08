@@ -1095,7 +1095,9 @@ class VAEClassifier(object):
 				print(type(data))
 				print("data shape")
 				print(data.shape)
-				nchans= data.shape[2]
+				nchans= data.shape[3]
+				print("nchans")
+				print(nchans)
 
 				# - Get latent data for this output
 				predout= self.encoder.predict(
@@ -1133,8 +1135,8 @@ class VAEClassifier(object):
 				metric_names= []
 
 				for j in range(nchans):
-					inputdata_img= data[:,:,j]
-					recdata_img= decoded_imgs[:,:,j]
+					inputdata_img= data[:,:,:,j]
+					recdata_img= decoded_imgs[:,:,:,j]
 					
 					cond= np.logical_and(inputdata_img!=0, np.isfinite(inputdata_img))
 
