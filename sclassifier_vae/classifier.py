@@ -1135,8 +1135,8 @@ class VAEClassifier(object):
 				metric_names= []
 
 				for j in range(nchans):
-					inputdata_img= data[:,:,:,j]
-					recdata_img= decoded_imgs[:,:,:,j]
+					inputdata_img= data[0,:,:,j]
+					recdata_img= decoded_imgs[0,:,:,j]
 					
 					cond= np.logical_and(inputdata_img!=0, np.isfinite(inputdata_img))
 
