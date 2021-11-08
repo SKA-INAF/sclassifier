@@ -1141,8 +1141,16 @@ class VAEClassifier(object):
 					inputdata_1d= inputdata_img[cond]
 					recdata_1d= recdata_img[cond]
 
+					print("inputdata_1d shape")
+					print(inputdata_1d.shape)
+					print("recdata_1d shape")
+					print(recdata_1d.shape)
+
 					mse= mean_squared_error(inputdata_1d, recdata_1d)
 					
+					print("mse")
+					print(mse)
+
 					ssim_mean, ssim_2d= structural_similarity(inputdata_img, recdata_img, full=True, win_size=winsize)
 					ssim_1d= ssim_2d[cond]
 					ssim_mean_mask= np.nanmean(ssim_1d)
