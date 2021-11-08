@@ -1124,7 +1124,7 @@ class VAEClassifier(object):
 				#Nvar= encoded_data.shape[1]
 		
 				# - Compute reconstructed image
-				logger.info("Reconstructing image sample no. %d (name=%s, id=%s) ..." % (img_counter, str(sname), str(classid)))
+				logger.info("Reconstructing image sample no. %d (name=%s, id=%d) ..." % (img_counter, sname, classid))
 				decoded_imgs = self.decoder.predict(predout)
 				###decoded_imgs = self.decoder.predict(self.encoded_data)
 				#print("type(decoded_imgs)")
@@ -1137,6 +1137,8 @@ class VAEClassifier(object):
 				img_list= []
 				metric_names= []
 
+				#print("pto 1")
+
 				for j in range(nchans):
 					inputdata_img= data[0,:,:,j]
 					recdata_img= decoded_imgs[0,:,:,j]
@@ -1145,6 +1147,8 @@ class VAEClassifier(object):
 
 					inputdata_1d= inputdata_img[cond]
 					recdata_1d= recdata_img[cond]
+			
+					#print("pto 2")
 
 					#print("inputdata_img.shape")
 					#print(inputdata_img.shape)
@@ -1172,6 +1176,8 @@ class VAEClassifier(object):
 					ssim_std_mask= np.nanstd(ssim_1d)
 
 					ssim_2d[cond]= 0
+
+					#print("pto 3")
 					if not np.isfinite(ssim_mean_mask):
 						logger.warn("Image no. %d (chan=%d): ssim_mean_mask is nan/inf!" % (img_counter, j+1))
 						ssim_mean_mask= -999
@@ -1199,7 +1205,7 @@ class VAEClassifier(object):
 				
 				# - Save input & reco images
 				if save_imgs:
-					outfile_plot= sname + '_id' + classid + '.png' 
+					outfile_plot= sname + '_id' + str(classid) + '.png' 
 					logger.info("Saving reco plot to file %s ..." % (outfile_plot))
 					fig = plt.figure(figsize=(20, 10))
 					nrows= len(img_list)
