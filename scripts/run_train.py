@@ -115,7 +115,7 @@ def get_args():
 	parser.set_defaults(run_clustering=False)
 	parser.add_argument('-min_cluster_size', '--min_cluster_size', dest='min_cluster_size', required=False, type=int, default=5, action='store',help='Minimum cluster size for HDBSCAN clustering (default=5)')
 	parser.add_argument('-min_samples', '--min_samples', dest='min_samples', required=False, type=int, default=None, action='store',help='Minimum cluster sample parameter for HDBSCAN clustering. Typically equal to min_cluster_size (default=None')	
-	parser.add_argument('-modelfile_clust', '--modelfile_clust', dest='modelfile_clust', required=True, type=str, action='store',help='Clustering model filename (.h5)')
+	parser.add_argument('-modelfile_clust', '--modelfile_clust', dest='modelfile_clust', required=False, type=str, action='store',help='Clustering model filename (.h5)')
 	parser.add_argument('--predict_clust', dest='predict_clust', action='store_true',help='Only predict clustering according to current clustering model (default=false)')	
 	parser.set_defaults(predict_clust=False)
 
