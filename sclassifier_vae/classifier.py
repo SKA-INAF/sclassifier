@@ -1200,6 +1200,7 @@ class VAEClassifier(object):
 				# - Save input & reco images
 				if save_imgs:
 					outfile_plot= sname + '_id' + classid + '.png' 
+					logger.info("Saving reco plot to file %s ..." % (outfile_plot))
 					fig = plt.figure(figsize=(20, 10))
 					nrows= len(img_list)
 					for i in range(nrows):
