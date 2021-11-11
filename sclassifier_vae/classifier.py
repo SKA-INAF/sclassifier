@@ -195,6 +195,7 @@ class VAEClassifier(object):
 
 		self.weight_init_seed= None
 		self.shuffle_train_data= True
+		self.augment_scale_factor= 1
 		
 		# - Draw options
 		self.marker_mapping= {
@@ -793,7 +794,10 @@ class VAEClassifier(object):
 		self.train_loss_vs_epoch= np.zeros((1,self.nepochs))	
 		deltaLoss_train= 0
 
-		steps_per_epoch= self.nsamples // self.batch_size
+		scale= 1
+		if self.augmentation:
+			scale= self.augment_scale_factor
+		steps_per_epoch= scale*self.nsamples // self.batch_size
 
 		#===========================
 		#==   TRAIN VAE
