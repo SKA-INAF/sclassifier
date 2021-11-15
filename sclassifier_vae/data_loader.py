@@ -379,7 +379,8 @@ class DataLoader(object):
 		# - Check number of channels per image
 		nchannels_set= set([len(item["filepaths"]) for item in self.datalist["data"]])
 		if len(nchannels_set)!=1:
-			logger.warn("Number of channels in each object instance is different!")
+			logger.warn("Number of channels in each object instance is different (len(nchannels_set)=%d!=1)!" % (len(nchannels_set)))
+			print(nchannels_set)
 			return -1
 		
 		self.nchannels= list(nchannels_set)[0]
