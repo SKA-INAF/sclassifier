@@ -655,12 +655,15 @@ class VAEClassifier(object):
 		tf.print("\n y_pred_dim:", K.shape(y_pred), output_stream=sys.stdout)
 		#imgcube_true= tf.compat.v1.Session().run(y_true)
 		#imgcube_pred= tf.compat.v1.Session().run(y_pred)
-		imgcube_true= tf.make_ndarray(tf.make_tensor_proto(y_true))
-		imgcube_pred= tf.make_ndarray(tf.make_tensor_proto(y_pred))
+		a= tf.make_tensor_proto(y_true)
+		b= tf.make_tensor_proto(y_pred)
 
-		logger.info("Print numpy array shape ...")	
-		print(imgcube_true.shape)
-		print(imgcube_pred.shape)
+		#imgcube_true= tf.make_ndarray(tf.make_tensor_proto(y_true))
+		#imgcube_pred= tf.make_ndarray(tf.make_tensor_proto(y_pred))
+
+		#logger.info("Print numpy array shape ...")	
+		#print(imgcube_true.shape)
+		#print(imgcube_pred.shape)
 
 		# - Print and fix numerical issues
 		#logger.info("Print tensors and fix numerical issues before computing loss ...")		
