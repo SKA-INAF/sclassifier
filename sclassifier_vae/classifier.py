@@ -689,7 +689,7 @@ class VAEClassifier(object):
 		logger.info("ssim_mean_sample=%f, dssim=%f" % (ssim_mean_sample, dssim))	
 		tf.print("\n loss:", loss, output_stream=sys.stdout)
 
-		return dssim_loss
+		return loss
 
 
 	#@tf.function
