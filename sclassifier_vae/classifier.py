@@ -408,7 +408,8 @@ class VAEClassifier(object):
 		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.reco_loss_metric])
 		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.reco_loss_metric], experimental_run_tf_function=False)
 		###self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False) ### WORKING
-		self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True)
+		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True)
+		self.vae.compile(optimizer=self.optimizer, loss=self.loss_ssim, run_eagerly=True)
 
 
 		# - Print and draw model
@@ -637,14 +638,55 @@ class VAEClassifier(object):
 		logger.info("Print tensors shape ...")		
 		tf.print("\n y_true_dim:", K.shape(y_true), output_stream=sys.stdout)
 		tf.print("\n y_pred_dim:", K.shape(y_pred), output_stream=sys.stdout)
-		imgcube_true= tf.compat.v1.Session().run(y_true)
-		imgcube_pred= tf.compat.v1.Session().run(y_pred)
+		imgcube_true= y_true.numpy()
+		imgcube_pred= y_pred.numpy()
 
 		logger.info("Print numpy array shape ...")	
 		print(imgcube_true.shape)
 		print(imgcube_pred.shape)
 
-		return 0
+		# - Loop over images and compute SSIM
+		nsamples= imgcube_true.shape[0]
+		nchans= imgcube_true.shape[3]
+		winsize= 3
+		ssim_mean_sample= 0		
+
+		for i in range(nsamples):
+
+			ssim_mean_allch= 0
+
+			for j in range(nchans):
+				# - Compute SSIM
+				inputdata_img= imgcube_true[i,:,:,j]
+				recdata_img= imgcube_pred[i,:,:,j]
+				ssim_mean, ssim_2d= structural_similarity(inputdata_img, recdata_img, full=True, win_size=winsize)
+					
+				# - Compute SSIM mean excluding masked pixels
+				cond= np.logical_and(inputdata_img!=0, np.isfinite(inputdata_img))
+				inputdata_1d= inputdata_img[cond]
+				recdata_1d= recdata_img[cond]
+			
+				ssim_1d= ssim_2d[cond]
+				ssim_mean_mask= np.nanmean(ssim_1d)
+				ssim_min_mask= np.nanmin(ssim_1d)
+				ssim_max_mask= np.nanmax(ssim_1d)
+				ssim_std_mask= np.nanstd(ssim_1d)
+
+				if not np.isfinite(ssim_mean_mask):
+					logger.warn("Image no. %d (chan=%d): ssim_mean_mask is nan/inf, set it to -1" % (i+1, j+1))
+					ssim_mean_mask= -1
+
+				ssim_mean_allch+= ssim_mean_mask
+
+			# - Compute SSIM mean averaged over all channels
+			ssim_mean_allch/= float(nchans)
+			ssim_mean_sample+= ssim_mean_allch
+			
+		# - Compute SSIM mean averaged over all batch samples and DSSIM=
+		ssim_mean_sample/= float(nsamples)
+		dssim_loss= 0.5*(1.0-ssim_mean_sample)
+	
+		return dssim_loss
 
 
 	#@tf.function
