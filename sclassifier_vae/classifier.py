@@ -407,7 +407,9 @@ class VAEClassifier(object):
 		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.reco_loss_metric, self.kl_loss_metric], experimental_run_tf_function=False)
 		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.reco_loss_metric])
 		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.reco_loss_metric], experimental_run_tf_function=False)
-		self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
+		###self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False) ### WORKING
+		self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True)
+
 
 		# - Print and draw model
 		self.vae.summary()
@@ -655,8 +657,10 @@ class VAEClassifier(object):
 		tf.print("\n y_pred_dim:", K.shape(y_pred), output_stream=sys.stdout)
 		#imgcube_true= tf.compat.v1.Session().run(y_true)
 		#imgcube_pred= tf.compat.v1.Session().run(y_pred)
-		a= tf.make_tensor_proto(y_true)
-		b= tf.make_tensor_proto(y_pred)
+		#a= tf.make_tensor_proto(y_true)
+		#b= tf.make_tensor_proto(y_pred)
+		imgcube_true= y_true.numpy()
+		imgcube_pred= y_pred.numpy()
 
 		#imgcube_true= tf.make_ndarray(tf.make_tensor_proto(y_true))
 		#imgcube_pred= tf.make_ndarray(tf.make_tensor_proto(y_pred))
