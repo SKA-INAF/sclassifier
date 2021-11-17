@@ -634,69 +634,72 @@ class VAEClassifier(object):
 	def loss_ssim(self, y_true, y_pred):
 		""" SSIM Loss function definition """
 
-		l = tf.py_function(func=self.compute_ssim_loss, inp=[y_true, y_pred], Tout=tf.float32)
+		
+		def compute_ssim_loss(self, y_true, y_pred):
+			""" SSIM Loss function definition """
+
+			# - Convert input tensors to numpy
+			logger.info("Print tensors shape ...")		
+			tf.print("\n y_true_dim:", K.shape(y_true), output_stream=sys.stdout)
+			tf.print("\n y_pred_dim:", K.shape(y_pred), output_stream=sys.stdout)
+			imgcube_true= y_true.numpy()
+			imgcube_pred= y_pred.numpy()
+
+			logger.info("Print numpy array shape ...")	
+			print(imgcube_true.shape)
+			print(imgcube_pred.shape)
+
+			# - Loop over images and compute SSIM
+			nsamples= imgcube_true.shape[0]
+			nchans= imgcube_true.shape[3]
+			winsize= 3
+			ssim_mean_sample= 0		
+
+			for i in range(nsamples):
+	
+				ssim_mean_allch= 0
+
+				for j in range(nchans):
+					# - Compute SSIM
+					inputdata_img= imgcube_true[i,:,:,j]
+					recdata_img= imgcube_pred[i,:,:,j]
+					ssim_mean, ssim_2d= structural_similarity(inputdata_img, recdata_img, full=True, win_size=winsize)
+					
+					logger.info("Image no. %d (chan=%d): ssim_mean=%f" % (i+1, j+1, ssim_mean))
+
+					# - Compute SSIM mean excluding masked pixels
+					cond= np.logical_and(inputdata_img!=0, np.isfinite(inputdata_img))
+					inputdata_1d= inputdata_img[cond]
+					recdata_1d= recdata_img[cond]
+			
+					ssim_1d= ssim_2d[cond]
+					ssim_mean_mask= np.nanmean(ssim_1d)
+					logger.info("Image no. %d (chan=%d): ssim_mean_mask=%f" % (i+1, j+1, ssim_mean_mask))
+
+					if not np.isfinite(ssim_mean_mask):
+						logger.warn("Image no. %d (chan=%d): ssim_mean_mask is nan/inf, set it to -1" % (i+1, j+1))
+						ssim_mean_mask= -1
+
+					ssim_mean_allch+= ssim_mean_mask
+
+				# - Compute SSIM mean averaged over all channels
+				ssim_mean_allch/= float(nchans)
+				ssim_mean_sample+= ssim_mean_allch
+			
+			# - Compute SSIM mean averaged over all batch samples and DSSIM
+			ssim_mean_sample/= float(nsamples)
+			dssim= 0.5*(1.0-ssim_mean_sample)
+			loss= tf.convert_to_tensor(dssim, dtype=tf.float32)
+			logger.info("ssim_mean_sample=%f, dssim=%f" % (ssim_mean_sample, dssim))	
+			tf.print("\n loss:", loss, output_stream=sys.stdout)
+
+			return loss
+
+		# - Call helper function
+		l = tf.py_function(func=compute_ssim_loss, inp=[y_true, y_pred], Tout=tf.float32)
 		
 		return l
 
-	def compute_ssim_loss(self, y_true, y_pred):
-		""" SSIM Loss function definition """
-
-		# - Convert input tensors to numpy
-		logger.info("Print tensors shape ...")		
-		tf.print("\n y_true_dim:", K.shape(y_true), output_stream=sys.stdout)
-		tf.print("\n y_pred_dim:", K.shape(y_pred), output_stream=sys.stdout)
-		imgcube_true= y_true.numpy()
-		imgcube_pred= y_pred.numpy()
-
-		logger.info("Print numpy array shape ...")	
-		print(imgcube_true.shape)
-		print(imgcube_pred.shape)
-
-		# - Loop over images and compute SSIM
-		nsamples= imgcube_true.shape[0]
-		nchans= imgcube_true.shape[3]
-		winsize= 3
-		ssim_mean_sample= 0		
-
-		for i in range(nsamples):
-
-			ssim_mean_allch= 0
-
-			for j in range(nchans):
-				# - Compute SSIM
-				inputdata_img= imgcube_true[i,:,:,j]
-				recdata_img= imgcube_pred[i,:,:,j]
-				ssim_mean, ssim_2d= structural_similarity(inputdata_img, recdata_img, full=True, win_size=winsize)
-					
-				logger.info("Image no. %d (chan=%d): ssim_mean=%f" % (i+1, j+1, ssim_mean))
-
-				# - Compute SSIM mean excluding masked pixels
-				cond= np.logical_and(inputdata_img!=0, np.isfinite(inputdata_img))
-				inputdata_1d= inputdata_img[cond]
-				recdata_1d= recdata_img[cond]
-			
-				ssim_1d= ssim_2d[cond]
-				ssim_mean_mask= np.nanmean(ssim_1d)
-				logger.info("Image no. %d (chan=%d): ssim_mean_mask=%f" % (i+1, j+1, ssim_mean_mask))
-
-				if not np.isfinite(ssim_mean_mask):
-					logger.warn("Image no. %d (chan=%d): ssim_mean_mask is nan/inf, set it to -1" % (i+1, j+1))
-					ssim_mean_mask= -1
-
-				ssim_mean_allch+= ssim_mean_mask
-
-			# - Compute SSIM mean averaged over all channels
-			ssim_mean_allch/= float(nchans)
-			ssim_mean_sample+= ssim_mean_allch
-			
-		# - Compute SSIM mean averaged over all batch samples and DSSIM
-		ssim_mean_sample/= float(nsamples)
-		dssim= 0.5*(1.0-ssim_mean_sample)
-		loss= tf.convert_to_tensor(dssim, dtype=tf.float32)
-		logger.info("ssim_mean_sample=%f, dssim=%f" % (ssim_mean_sample, dssim))	
-		tf.print("\n loss:", loss, output_stream=sys.stdout)
-
-		return loss
 
 
 	#@tf.function
