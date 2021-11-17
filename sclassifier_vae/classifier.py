@@ -1179,12 +1179,10 @@ class VAEClassifier(object):
 					ssim_max_mask= np.nanmax(ssim_1d)
 					ssim_std_mask= np.nanstd(ssim_1d)
 
-					
 					if not np.isfinite(ssim_mean_mask):
 						logger.warn("Image no. %d (chan=%d): ssim_mean_mask is nan/inf!" % (img_counter, j+1))
 						ssim_mean_mask= -999
 
-	
 					# - Append images
 					recdata_img[~cond]= 0
 					ssim_2d[~cond]= 0
@@ -1211,7 +1209,7 @@ class VAEClassifier(object):
 				
 				# - Save input & reco images
 				if save_imgs:
-					outfile_plot= sname + '_id' + str(classid) + '.png' 
+					outfile_plot= sname + '_id' + str(classid) + '.png'		
 					logger.info("Saving reco plot to file %s ..." % (outfile_plot))
 					fig = plt.figure(figsize=(20, 10))
 					nrows= len(img_list)
@@ -1222,7 +1220,10 @@ class VAEClassifier(object):
 							plt.subplot(nrows, ncols, index)
 							plt.imshow(img_list[i][j], origin='lower')
 							plt.colorbar()
-							
+
+							outfile_fits= sname + '_id' + str(classid) + '_ch' + str(i+1) + '_plot' + str(j+1) + '.fits'
+							Utils.write_fits(img_list[i][j], outfile_fits)
+					
 					plt.savefig(outfile_plot)
 					#plt.tight_layout()
 					#plt.show()
