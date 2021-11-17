@@ -649,10 +649,16 @@ class VAEClassifier(object):
 	def loss(self, y_true, y_pred):
 		""" Loss function definition """
 
-		# - Test SSIM
-		logger.info("Printing SSIM ...")
-		ssim= self.loss_ssim(y_true, y_pred)
-		logger.info("ssim loss=%f" % (ssim))
+		# - Test TF to NUMPY
+		logger.info("Print tensors shape ...")		
+		tf.print("\n y_true_dim:", K.shape(y_true), output_stream=sys.stdout)
+		tf.print("\n y_pred_dim:", K.shape(y_pred), output_stream=sys.stdout)
+		imgcube_true= tf.compat.v1.Session().run(y_true)
+		imgcube_pred= tf.compat.v1.Session().run(y_pred)
+
+		logger.info("Print numpy array shape ...")	
+		print(imgcube_true.shape)
+		print(imgcube_pred.shape)
 
 		# - Print and fix numerical issues
 		#logger.info("Print tensors and fix numerical issues before computing loss ...")		
