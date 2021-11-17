@@ -682,10 +682,11 @@ class VAEClassifier(object):
 			ssim_mean_allch/= float(nchans)
 			ssim_mean_sample+= ssim_mean_allch
 			
-		# - Compute SSIM mean averaged over all batch samples and DSSIM=
+		# - Compute SSIM mean averaged over all batch samples and DSSIM
 		ssim_mean_sample/= float(nsamples)
 		dssim_loss= 0.5*(1.0-ssim_mean_sample)
-	
+		logger.info("ssim_mean_sample=%f, dssim_loss=%f" % (ssim_mean_sample, dssim_loss))	
+
 		return dssim_loss
 
 
