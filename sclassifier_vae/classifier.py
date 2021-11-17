@@ -645,7 +645,7 @@ class VAEClassifier(object):
 		return 0
 
 
-	@tf.function
+	#@tf.function
 	def loss(self, y_true, y_pred):
 		""" Loss function definition """
 
