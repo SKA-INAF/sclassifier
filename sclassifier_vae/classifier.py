@@ -629,7 +629,7 @@ class VAEClassifier(object):
 		return reco_loss
   
 
-	@tf.function
+	#@tf.function
 	def loss_ssim(self, y_true, y_pred):
 		""" SSIM Loss function definition """
 
@@ -657,17 +657,14 @@ class VAEClassifier(object):
 		tf.print("\n y_pred_dim:", K.shape(y_pred), output_stream=sys.stdout)
 		#imgcube_true= tf.compat.v1.Session().run(y_true)
 		#imgcube_pred= tf.compat.v1.Session().run(y_pred)
-		#a= tf.make_tensor_proto(y_true)
-		#b= tf.make_tensor_proto(y_pred)
-		imgcube_true= y_true.numpy()
-		imgcube_pred= y_pred.numpy()
-
 		#imgcube_true= tf.make_ndarray(tf.make_tensor_proto(y_true))
 		#imgcube_pred= tf.make_ndarray(tf.make_tensor_proto(y_pred))
-
-		#logger.info("Print numpy array shape ...")	
-		#print(imgcube_true.shape)
-		#print(imgcube_pred.shape)
+		imgcube_true= y_true.numpy()
+		imgcube_pred= y_pred.numpy()
+		
+		logger.info("Print numpy array shape ...")	
+		print(imgcube_true.shape)
+		print(imgcube_pred.shape)
 
 		# - Print and fix numerical issues
 		#logger.info("Print tensors and fix numerical issues before computing loss ...")		
