@@ -635,7 +635,7 @@ class VAEClassifier(object):
 		""" SSIM Loss function definition """
 
 		
-		def compute_ssim_loss(self, y_true, y_pred):
+		def compute_ssim_loss(y_true, y_pred):
 			""" SSIM Loss function definition """
 
 			# - Convert input tensors to numpy
