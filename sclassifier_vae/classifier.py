@@ -684,8 +684,10 @@ class VAEClassifier(object):
 			
 		# - Compute SSIM mean averaged over all batch samples and DSSIM
 		ssim_mean_sample/= float(nsamples)
-		dssim_loss= 0.5*(1.0-ssim_mean_sample)
-		logger.info("ssim_mean_sample=%f, dssim_loss=%f" % (ssim_mean_sample, dssim_loss))	
+		dssim= 0.5*(1.0-ssim_mean_sample)
+		loss= tf.convert_to_tensor(dssim, dtype=tf.float32)
+		logger.info("ssim_mean_sample=%f, dssim=%f" % (ssim_mean_sample, dssim))	
+		tf.print("\n loss:", loss, output_stream=sys.stdout)
 
 		return dssim_loss
 
