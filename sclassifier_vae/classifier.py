@@ -642,6 +642,11 @@ class VAEClassifier(object):
 			logger.info("Print tensors shape ...")		
 			tf.print("\n y_true_dim:", K.shape(y_true), output_stream=sys.stdout)
 			tf.print("\n y_pred_dim:", K.shape(y_pred), output_stream=sys.stdout)
+
+			data_shape= K.shape(y_true)
+			nsamples= data_shape[0]
+			nchans= data_shape[3]
+
 			#imgcube_true= y_true.numpy()
 			#imgcube_pred= y_pred.numpy()
 			imgcube_true= y_true
@@ -652,8 +657,8 @@ class VAEClassifier(object):
 			#print(imgcube_pred.shape)
 
 			# - Loop over images and compute SSIM
-			nsamples= imgcube_true.shape[0]
-			nchans= imgcube_true.shape[3]
+			#nsamples= imgcube_true.shape[0]
+			#nchans= imgcube_true.shape[3]
 			winsize= 3
 			ssim_mean_sample= 0		
 
