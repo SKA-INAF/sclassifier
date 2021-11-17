@@ -86,8 +86,8 @@ from tensorflow.keras.losses import mse, binary_crossentropy
 #from keras.losses import mse, binary_crossentropy
 
 
-from tensorflow.python.framework.ops import disable_eager_execution
-disable_eager_execution()
+#from tensorflow.python.framework.ops import disable_eager_execution
+#disable_eager_execution()
 
 ## SCIKIT MODULES
 from skimage.metrics import mean_squared_error
