@@ -634,6 +634,13 @@ class VAEClassifier(object):
 	def loss_ssim(self, y_true, y_pred):
 		""" SSIM Loss function definition """
 
+		l = tf.py_function(func=self.compute_ssim_loss, inp=[y_true, y_pred], Tout=tf.float32)
+		
+		return l
+
+	def compute_ssim_loss(self, y_true, y_pred):
+		""" SSIM Loss function definition """
+
 		# - Convert input tensors to numpy
 		logger.info("Print tensors shape ...")		
 		tf.print("\n y_true_dim:", K.shape(y_true), output_stream=sys.stdout)
