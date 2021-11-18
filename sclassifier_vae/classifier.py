@@ -121,7 +121,7 @@ def ssim_batchavg(img1, img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01
 
 		# Compute mean over batch size
 		ssim_tensor= tf.stack(ssim_list)
-		ssim_batch_mean= tk.reduce_mean(ssim_tensor)
+		ssim_batch_mean= tf.reduce_mean(ssim_tensor)
 
 		return ssim_batch_mean
 
