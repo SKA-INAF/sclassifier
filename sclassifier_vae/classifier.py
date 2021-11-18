@@ -129,6 +129,7 @@ def ssim_batchavg(img1, img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01
 		ssim_tensor= tf.stack(ssim_list)
 		ssim_batch_mean= tf.reduce_mean(ssim_tensor)
 		##ssim_batch_mean= 1
+		ssim_batch_mean= tf.cast(ssim_batch_mean, tf.float32)
 
 		return ssim_batch_mean
 
@@ -700,6 +701,7 @@ class VAEClassifier(object):
 
 		kl_loss= - 0.5 * K.sum(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
 		kl_loss_mean= K.mean(kl_loss)
+		kl_loss_mean= tf.cast(kl_loss_mean, tf.float32)
 		return kl_loss_mean
 
 
@@ -729,6 +731,7 @@ class VAEClassifier(object):
 		reco_loss_default= 1.e+99
 		reco_loss= tf.cond(are_empty, lambda: tf.constant(reco_loss_default), lambda: self.mse_loss_fcn(y_true_flattened_masked, y_pred_flattened_masked))
 		#reco_loss*= tf.cast(img_cube_size, tf.float32)
+		reco_loss= tf.cast(reco_loss, tf.float32)
 
 		return reco_loss
 
