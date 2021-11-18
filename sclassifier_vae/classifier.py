@@ -114,7 +114,7 @@ def ssim_batchavg(img1, img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01
 		# Compute ssim for all batch and store in list		
 		data_shape= tf.shape(img1)
 		tf.print("data_shape:", data_shape, output_stream=sys.stdout)
-		nsamples= int(data_shape[0])
+		nsamples= data_shape[0].numpy()
 		tf.print("type(nsamples):", type(nsamples), output_stream=sys.stdout)
 		tf.print("nsamples:", nsamples, output_stream=sys.stdout)
 		ssim_list= []
