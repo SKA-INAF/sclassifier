@@ -767,7 +767,7 @@ class VAEClassifier(object):
 		tf.print("tot_loss: ", tot_loss, output_stream=sys.stdout)
 		tf.print("mse_loss: ", mse_loss, output_stream=sys.stdout)
 		tf.print("ssim_loss: ", ssim_loss, output_stream=sys.stdout)
-		tf.print("kl_loss: ", kl_loss, output_stream=sys.stdout)
+		#tf.print("kl_loss: ", kl_loss, output_stream=sys.stdout)
 		tot_loss= tf.cast(tot_loss, tf.float32)
 
 		return tot_loss
