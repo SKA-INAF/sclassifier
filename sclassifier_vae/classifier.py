@@ -115,7 +115,8 @@ def ssim_batchavg(img1, img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01
 		data_shape= tf.shape(img1)
 		tf.print("data_shape:", data_shape, output_stream=sys.stdout)
 		nsamples= data_shape[0]
-		print(nsamples)
+		tf.print("type(nsamples):", type(nsamples), output_stream=sys.stdout)
+		tf.print("nsamples:", nsamples, output_stream=sys.stdout)
 		ssim_list= []
 		#for i in range(nsamples):
 		#	ssim_curr= ssim_chanavg(img1[i,:,:,:], img2[i,:,:,:], max_val, filter_size, filter_sigma, k1, k2)
