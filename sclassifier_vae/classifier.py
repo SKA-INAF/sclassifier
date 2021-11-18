@@ -738,22 +738,25 @@ class VAEClassifier(object):
 		""" Loss function definition """
 
 		# - Compute MSE reconstruction loss term
-		mse_loss= 0
+		mse_loss= 0.
 		if self.use_mse_loss and self.mse_loss_weight>0:
 			logger.info("Computing the MSE reconstruction loss ...")	
 			mse_loss= self.mse_loss_weight*self.mse_reco_loss_fcn(y_true, y_pred)
+		mse_loss= tf.cast(mse_loss, tf.float32)
 	
 		# - Compute SSIM reconstruction loss term
-		ssim_loss= 0
+		ssim_loss= 0.
 		if self.use_ssim_loss and self.ssim_loss_weight>0:
 			logger.info("Computing the SSIM reconstruction loss ...")	
 			ssim_loss= self.ssim_loss_weight*self.ssim_loss_fcn(y_true, y_pred)
+		ssim_loss= tf.cast(ssim_loss, tf.float32)
 	
 		# - Compute KL loss term (ONLY FOR VAE)
-		kl_loss= 0
+		kl_loss= 0.
 		if self.use_vae and self.use_kl_loss and self.kl_loss_weight>0:
 			logger.info("Computing the KL loss ...")
 			kl_loss= self.kl_loss_weight*self.kl_loss_fcn()
+		kl_loss= tf.cast(kl_loss, tf.float32)
 
 		# - Compute the total loss
 		tot_loss= mse_loss + ssim_loss + kl_loss
