@@ -114,7 +114,8 @@ def ssim_batchavg(img1, img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01
 		# Compute ssim for all batch and store in list		
 		data_shape= tf.shape(img1)
 		tf.print("data_shape:", data_shape, output_stream=sys.stdout)
-		nsamples= data_shape[0]
+		data_shape_list= img1.get_shape().as_list()
+		nsamples= data_shape_list[0]
 		#nsamples= 5
 		#nsamples= nsamples.numpy()
 		tf.print("type(nsamples):", type(nsamples), output_stream=sys.stdout)
@@ -682,8 +683,8 @@ class VAEClassifier(object):
 		filter_sigma= 1.5
 		k1= 0.01
 		k2= 0.03
-		#ssim_mean_sample= ssim_batchavg(y_true, y_pred, max_val=max_val, filter_size=winsize, filter_sigma=filter_sigma, k1=k1, k2=k2)
-		ssim_mean_sample= tf.py_function(func=ssim_batchavg, inp=[y_true, y_pred, max_val, winsize, filter_sigma, k1, k2], Tout=tf.float32)
+		ssim_mean_sample= ssim_batchavg(y_true, y_pred, max_val=max_val, filter_size=winsize, filter_sigma=filter_sigma, k1=k1, k2=k2)
+		#ssim_mean_sample= tf.py_function(func=ssim_batchavg, inp=[y_true, y_pred, max_val, winsize, filter_sigma, k1, k2], Tout=tf.float32)
 		
 		# - Compute ssim loss
 		dssim= 0.5*(1.0-ssim_mean_sample)
