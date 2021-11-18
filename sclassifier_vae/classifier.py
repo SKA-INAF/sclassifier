@@ -752,7 +752,7 @@ class VAEClassifier(object):
 
 		# - Compute the total loss
 		tot_loss= mse_loss + ssim_loss + kl_loss
-		logger.info("tot_loss=%f: mse=%f, ssim_loss=%f, kl_loss=%f" % (tot_loss, mse_loss, ssim_loss, kl_loss))
+		#logger.info("tot_loss=%f: mse=%f, ssim_loss=%f, kl_loss=%f" % (tot_loss, mse_loss, ssim_loss, kl_loss))
 		tf.print("tot_loss: ", tot_loss, output_stream=sys.stdout)
 		tf.print("mse_loss: ", mse_loss, output_stream=sys.stdout)
 		tf.print("ssim_loss: ", ssim_loss, output_stream=sys.stdout)
