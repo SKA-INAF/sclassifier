@@ -742,7 +742,7 @@ class VAEClassifier(object):
 	def loss(self, y_true, y_pred):
 		""" Loss function definition """
 
-		data_shape_int= K.int_shape(img1)
+		data_shape_int= K.int_shape(y_true)
 		tf.print("data_shape_int: ", data_shape_int, output_stream=sys.stdout)
 
 		# - Compute MSE reconstruction loss term
