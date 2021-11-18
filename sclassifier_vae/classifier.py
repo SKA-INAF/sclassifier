@@ -676,7 +676,7 @@ class VAEClassifier(object):
 	
 		# - Compute ssim index averaged over channels and batch samples
 		winsize= self.ssim_win_size
-		max_val= 1
+		max_val= 1.0
 		filter_sigma= 1.5
 		k1= 0.01
 		k2= 0.03
