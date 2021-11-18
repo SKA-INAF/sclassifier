@@ -96,10 +96,22 @@ def get_args():
 	parser.add_argument('-dense_layer_activation', '--dense_layer_activation', dest='dense_layer_activation', required=False, type=str, default='relu', action='store',help='Dense layer activation used {relu,softmax} (default=relu)')
 	parser.add_argument('-decoder_output_layer_activation', '--decoder_output_layer_activation', dest='decoder_output_layer_activation', required=False, type=str, default='sigmoid', action='store',help='Output decoder layer activation used {sigmoid,softmax} (default=sigmoid)')
 
-	parser.add_argument('--mse_loss', dest='mse_loss', action='store_true',help='use MSE loss and not crossentropy as recontruction loss')	
-	parser.set_defaults(mse_loss=False)	
-	parser.add_argument('-rec_loss_weight', '--rec_loss_weight', dest='rec_loss_weight', required=False, type=float, default=0.5, action='store',help='Reconstruction loss weight (default=0.5)')
-	parser.add_argument('-kl_loss_weight', '--kl_loss_weight', dest='kl_loss_weight', required=False, type=float, default=0.5, action='store',help='KL loss weight (default=0.5)')
+	parser.add_argument('--mse_loss', dest='mse_loss', action='store_true',help='Compute and include MSE reco loss in total loss')
+	parser.add_argument('--no-mse_loss', dest='mse_loss', action='store_false',help='Skip MSE calculation and exclude MSE reco loss from total loss')
+	parser.set_defaults(mse_loss=True)
+	
+	parser.add_argument('--ssim_loss', dest='ssim_loss', action='store_true',help='Compute and include SSIM reco loss in total loss')
+	parser.add_argument('--no-ssim_loss', dest='ssim_loss', action='store_false',help='Skip SSIM calculation and exclude SSIM reco loss from total loss')
+	parser.set_defaults(ssim_loss=False)
+
+	parser.add_argument('--kl_loss', dest='kl_loss', action='store_true',help='Compute and include KL reco loss in total loss (effective only for VAE model)')
+	parser.add_argument('--no-kl_loss', dest='kl_loss', action='store_false',help='Skip KL calculation and exclude KL reco loss from total loss')
+	parser.set_defaults(kl_loss=False)	
+
+	parser.add_argument('-mse_loss_weight', '--mse_loss_weight', dest='mse_loss_weight', required=False, type=float, default=1.0, action='store',help='Reconstruction loss weight (default=1.0)')
+	parser.add_argument('-kl_loss_weight', '--kl_loss_weight', dest='kl_loss_weight', required=False, type=float, default=1.0, action='store',help='KL loss weight (default=1.0)')
+	parser.add_argument('-ssim_loss_weight', '--ssim_loss_weight', dest='ssim_loss_weight', required=False, type=float, default=1.0, action='store',help='SSIM loss weight (default=1.0)')
+	parser.add_argument('-ssim_win_size', '--ssim_win_size', dest='ssim_win_size', required=False, type=int, default=3, action='store',help='SSIM filter window size in pixels (default=3)')
 	
 	# - UMAP classifier options
 	parser.add_argument('--run_umap', dest='run_umap', action='store_true',help='Run UMAP of VAE latent vector')	
@@ -181,8 +193,12 @@ def main():
 	batch_size= args.batch_size
 	nepochs= args.nepochs
 	mse_loss= args.mse_loss
-	rec_loss_weight= args.rec_loss_weight
+	kl_loss= args.kl_loss
+	ssim_loss= args.ssim_loss
+	mse_loss_weight= args.mse_loss_weight
 	kl_loss_weight= args.kl_loss_weight
+	ssim_loss_weight= args.ssim_loss_weight
+	ssim_win_size= args.ssim_win_size
 	weight_seed= args.weight_seed
 	reproducible= args.reproducible
 
@@ -242,8 +258,12 @@ def main():
 	vae_class.dense_layer_activation= dense_layer_activation
 
 	vae_class.use_mse_loss= mse_loss
-	vae_class.rec_loss_weight= rec_loss_weight
+	vae_class.use_kl_loss= kl_loss
+	vae_class.use_ssim_loss= ssim_loss
+	vae_class.mse_loss_weight= mse_loss_weight
 	vae_class.kl_loss_weight= kl_loss_weight
+	vae_class.ssim_loss_weight= ssim_loss_weight
+	vae_class.ssim_win_size= ssim_win_size
 	vae_class.weight_seed= weight_seed
 
 	if vae_class.train_model()<0:

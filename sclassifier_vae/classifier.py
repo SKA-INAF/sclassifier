@@ -274,8 +274,6 @@ class VAEClassifier(object):
 		self.dense_layer_activation= 'relu'
 		
 		self.decoder_output_layer_activation= 'sigmoid'
-		self.rec_loss_weight= 0.5
-		self.kl_loss_weight= 0.5
 		self.z_mean = None
 		self.z_log_var = None
 		self.z = None
@@ -287,7 +285,13 @@ class VAEClassifier(object):
 		self.learning_rate= 1.e-4
 		self.optimizer_default= 'adam'
 		self.optimizer= 'adam' # 'rmsprop'
-		self.use_mse_loss= False
+		self.use_mse_loss= True
+		self.use_kl_loss= False
+		self.use_ssim_loss= False
+		self.mse_loss_weight= 1.0
+		self.kl_loss_weight= 1.0
+		self.ssim_loss_weight= 1.0
+		self.ssim_win_size= 3
 
 		self.weight_init_seed= None
 		self.shuffle_train_data= True
@@ -499,15 +503,9 @@ class VAEClassifier(object):
 		#===========================
 		#==   SET LOSS & METRICS
 		#===========================	
-		#self.vae.compile(optimizer=self.optimizer, loss=self.loss_v2(self.z_mean, self.z_log_var), experimental_run_tf_function=False)
-		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.reco_loss_metric, self.kl_loss_metric], experimental_run_tf_function=False)
-		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.reco_loss_metric])
-		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.reco_loss_metric], experimental_run_tf_function=False)
-		###self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False) ### WORKING
-		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True)
-		self.vae.compile(optimizer=self.optimizer, loss=self.loss_ssim, run_eagerly=True)
-
-
+		###self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
+		self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True)
+		
 		# - Print and draw model
 		self.vae.summary()
 		plot_model(self.vae,to_file='vae.png',show_shapes=True)
@@ -655,82 +653,22 @@ class VAEClassifier(object):
 	###########################
 	##     LOSS DEFINITION
 	###########################	
-	@tf.function
-	def reco_loss_metric(self, y_true, y_pred):
-		""" Reconstruction loss function definition """
-    
-		y_true_shape= K.shape(y_true)
-		img_cube_size= y_true_shape[1]*y_true_shape[2]*y_true_shape[3]
-
-		if self.use_mse_loss:
-			reco_loss = mse(K.flatten(y_true), K.flatten(y_pred))
-		else:
-			reco_loss = binary_crossentropy(K.flatten(y_true), K.flatten(y_pred))
-      
-		return reco_loss*tf.cast(img_cube_size, tf.float32)
-		#return K.mean(y_pred-y_true)		
-		#return 0	
-		
-
-
-	@tf.function
-	def kl_loss_metric(self, y_true, y_pred):
-		""" KL loss function definition """
-	
-		kl_loss= - 0.5 * K.sum(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
-		kl_loss_mean= K.mean(kl_loss)
-		return kl_loss_mean
-
-		
 	#@tf.function
-	#def reco_loss(self, *args, **kwargs):
-	#	""" Reconstruction loss function definition """
-    
-	#	def fn(y_true, y_pred):
-	#		y_true_shape= K.shape(y_true)
-	#		img_cube_size= y_true_shape[1]*y_true_shape[2]*y_true_shape[3]
+	def mse_loss_fcn(self, y_true, y_pred):
+		""" MSE loss function definition used for reconstruction loss """
+		return K.mean(mse(y_true, y_pred))
 
-	#		if self.use_mse_loss:
-	#			reco_loss = mse(K.flatten(y_true), K.flatten(y_pred))
-	#		else:
-	#			reco_loss = binary_crossentropy(K.flatten(y_true), K.flatten(y_pred))
-      
-	#		return reco_loss*tf.cast(img_cube_size, tf.float32)
-
-	#	fn.__name__ = 'reco_loss'
-	#	return fn
-
+	#@tf.function
+	def ce_loss_fcn(self, y_true, y_pred):
+		""" Cross-Entropy loss function definition used for reconstruction loss """
+		return K.mean(binary_crossentropy(y_true, y_pred))
 	
 	#@tf.function
-	#def kl_loss(self, *args, **kwargs):
-	#	""" KL loss function definition """
-	
-	#	def fn(y_true, y_pred):
-	#		kl_loss= - 0.5 * K.sum(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
-	#		kl_loss_mean= K.mean(kl_loss)
-	#		return kl_loss_mean
-
-	#	fn.__name__ = 'kl_loss'
-	#	return fn
-
-	@tf.function
-	def reco_loss_fcn(self, y_true, y_pred):
-		""" Reco loss function definition """
-
-		if self.use_mse_loss:
-			reco_loss = mse(y_true, y_pred)
-		else:
-			reco_loss = binary_crossentropy(y_true, y_pred)
-			
-		reco_loss= K.mean(reco_loss)
-		return reco_loss
-  
-	#@tf.function
-	def loss_ssim(self, y_true, y_pred):
-		""" SSIM Loss function definition """
+	def ssim_loss_fcn(self, y_true, y_pred):
+		""" SSIM Loss function definition used for reconstruction loss """
 	
 		# - Compute ssim index averaged over channels and batch samples
-		winsize= 3
+		winsize= self.ssim_win_size
 		max_val= 1
 		filter_sigma= 1.5
 		k1= 0.01
@@ -748,130 +686,24 @@ class VAEClassifier(object):
 
 
 	#@tf.function
-	def loss_ssim_old(self, y_true, y_pred):
-		""" SSIM Loss function definition """
+	def kl_loss_fcn(self):
+		""" Kullback-Leibler loss function definition used for VAE latent space regularization """
 
-		
-		def compute_ssim_loss(y_true, y_pred):
-			""" SSIM Loss function definition """
-
-			# - Convert input tensors to numpy
-			logger.info("Print tensors shape ...")		
-			tf.print("\n y_true_dim:", K.shape(y_true), output_stream=sys.stdout)
-			tf.print("\n y_pred_dim:", K.shape(y_pred), output_stream=sys.stdout)
-
-			data_shape= K.shape(y_true)
-			nsamples= data_shape[0]
-			nchans= data_shape[3]
-
-			#imgcube_true= y_true.numpy()
-			#imgcube_pred= y_pred.numpy()
-			imgcube_true= y_true
-			imgcube_pred= y_pred
-
-			#logger.info("Print numpy array shape ...")	
-			#print(imgcube_true.shape)
-			#print(imgcube_pred.shape)
-
-			# - Loop over images and compute SSIM
-			#nsamples= imgcube_true.shape[0]
-			#nchans= imgcube_true.shape[3]
-			winsize= 3
-			ssim_mean_sample= 0		
-
-			for i in range(nsamples):
-	
-				ssim_mean_allch= 0
-
-				for j in range(nchans):
-					# - Compute SSIM
-					inputdata_img= imgcube_true[i,:,:,j]
-					recdata_img= imgcube_pred[i,:,:,j]
-					ssim_mean, ssim_2d= structural_similarity(inputdata_img, recdata_img, full=True, win_size=winsize)
-					
-					logger.info("Image no. %d (chan=%d): ssim_mean=%f" % (i+1, j+1, ssim_mean))
-
-					# - Compute SSIM mean excluding masked pixels
-					cond= np.logical_and(inputdata_img!=0, np.isfinite(inputdata_img))
-					inputdata_1d= inputdata_img[cond]
-					recdata_1d= recdata_img[cond]
-			
-					ssim_1d= ssim_2d[cond]
-					ssim_mean_mask= np.nanmean(ssim_1d)
-					logger.info("Image no. %d (chan=%d): ssim_mean_mask=%f" % (i+1, j+1, ssim_mean_mask))
-
-					if not np.isfinite(ssim_mean_mask):
-						logger.warn("Image no. %d (chan=%d): ssim_mean_mask is nan/inf, set it to -1" % (i+1, j+1))
-						ssim_mean_mask= -1
-
-					ssim_mean_allch+= ssim_mean_mask
-
-				# - Compute SSIM mean averaged over all channels
-				ssim_mean_allch/= float(nchans)
-				ssim_mean_sample+= ssim_mean_allch
-			
-			# - Compute SSIM mean averaged over all batch samples and DSSIM
-			ssim_mean_sample/= float(nsamples)
-			dssim= 0.5*(1.0-ssim_mean_sample)
-			#loss= tf.convert_to_tensor(dssim, dtype=tf.float32)
-			loss= tf.cast(dssim, tf.float32)
-			logger.info("ssim_mean_sample=%f, dssim=%f" % (ssim_mean_sample, dssim))	
-			tf.print("\n loss:", loss, output_stream=sys.stdout)
-
-			return loss
-
-		# - Call helper function
-		l = tf.py_function(func=compute_ssim_loss, inp=[y_true, y_pred], Tout=tf.float32)
-		
-		return l
-
+		kl_loss= - 0.5 * K.sum(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
+		kl_loss_mean= K.mean(kl_loss)
+		return kl_loss_mean
 
 
 	#@tf.function
-	def loss(self, y_true, y_pred):
-		""" Loss function definition """
+	def mse_reco_loss_fcn(self, y_true, y_pred):
+		""" MSE reco loss function definition """
 
-		# - Test TF to NUMPY
-		logger.info("Print tensors shape ...")		
-		tf.print("\n y_true_dim:", K.shape(y_true), output_stream=sys.stdout)
-		tf.print("\n y_pred_dim:", K.shape(y_pred), output_stream=sys.stdout)
-		#imgcube_true= tf.compat.v1.Session().run(y_true)
-		#imgcube_pred= tf.compat.v1.Session().run(y_pred)
-		#imgcube_true= tf.make_ndarray(tf.make_tensor_proto(y_true))
-		#imgcube_pred= tf.make_ndarray(tf.make_tensor_proto(y_pred))
-		imgcube_true= y_true.numpy()
-		imgcube_pred= y_pred.numpy()
-		
-		logger.info("Print numpy array shape ...")	
-		print(imgcube_true.shape)
-		print(imgcube_pred.shape)
-
-		# - Print and fix numerical issues
-		#logger.info("Print tensors and fix numerical issues before computing loss ...")		
-		#tf.print("\n y_true_dim:", K.shape(y_true), output_stream=sys.stdout)
-		#tf.print("\n y_pred_dim:", K.shape(y_pred), output_stream=sys.stdout)
-		#tf.print("\n y_true min:", tf.math.reduce_min(y_true), output_stream=sys.stdout)
-		#tf.print("\n y_true max:", tf.math.reduce_max(y_true), output_stream=sys.stdout)
-		#tf.print("\n y_pred min:", tf.math.reduce_min(y_pred), output_stream=sys.stdout)
-		#tf.print("\n y_pred max:", tf.math.reduce_max(y_pred), output_stream=sys.stdout)
-		
 		# - Compute flattened tensors
 		y_true_shape= K.shape(y_true)
 		img_cube_size= y_true_shape[1]*y_true_shape[2]*y_true_shape[3]
 		y_true_flattened= K.flatten(y_true)
 		y_pred_flattened= K.flatten(y_pred)
-		#y_pred_flattened_nonans = tf.where(tf.math.is_nan(y_pred_flattened_nonans), tf.ones_like(w) * 0, y_pred_flattened_nonans) 
-
-		#tf.print("\n img_cube_size:", img_cube_size, output_stream=sys.stdout)
-		#tf.print("\n flatten y_true:", y_true_flattened, output_stream=sys.stdout)
-		#tf.print("\n flatten y_pred:", y_pred_flattened, output_stream=sys.stdout)
-		#tf.print("\n flatten y_true_dim:", K.int_shape(y_true_flattened), output_stream=sys.stdout)
-		#tf.print("\n flatten y_pred_dim:", K.int_shape(y_pred_flattened), output_stream=sys.stdout)
-		#tf.print("\n flatten y_true min:", tf.math.reduce_min(y_true_flattened), output_stream=sys.stdout)
-		#tf.print("\n flatten y_true max:", tf.math.reduce_max(y_true_flattened), output_stream=sys.stdout)
-		#tf.print("\n flatten y_pred min:", tf.math.reduce_min(y_pred_flattened), output_stream=sys.stdout)
-		#tf.print("\n flatten y_pred max:", tf.math.reduce_max(y_pred_flattened), output_stream=sys.stdout)
-
+		
 		# - Extract sub tensorwith elements that are not NAN/inf.
 		#   NB: Exclude also true elements that are =0 (i.e. masked in input data)
 		mask= tf.logical_and(tf.logical_and(tf.math.is_finite(y_true_flattened),~tf.math.equal(y_true_flattened,0)), tf.math.is_finite(y_pred_flattened))
@@ -879,125 +711,49 @@ class VAEClassifier(object):
 		y_true_flattened_masked= tf.gather(y_true_flattened, indexes)
 		y_pred_flattened_masked= tf.gather(y_pred_flattened, indexes)
 		
-		#tf.print("\n y_true_flattened_masked min:", tf.math.reduce_min(y_true_flattened_masked), output_stream=sys.stdout)
-		#tf.print("\n y_true_flattened_masked max:", tf.math.reduce_max(y_true_flattened_masked), output_stream=sys.stdout)
-		#tf.print("\n y_pred_flattened_masked min:", tf.math.reduce_min(y_pred_flattened_masked), output_stream=sys.stdout)
-		#tf.print("\n y_pred_flattened_masked max:", tf.math.reduce_max(y_pred_flattened_masked), output_stream=sys.stdout)
-
 		# - Check if vectors are not empty
 		y_true_isempty= tf.equal(tf.size(y_true_flattened_masked),0)	
 		y_pred_isempty= tf.equal(tf.size(y_pred_flattened_masked),0)
 		are_empty= tf.logical_or(y_true_isempty, y_pred_isempty)
 		
-		#if tf.executing_eagerly():
-		#	are_empty= are_empty_tensor.numpy()
-		#else:
-		#	are_empty= are_empty_tensor.eval()
-
 		# - Compute reconstruction loss term
-		#logger.info("Computing the reconstruction loss ...")
 		reco_loss_default= 1.e+99
-		reco_loss= tf.cond(are_empty, lambda: tf.constant(reco_loss_default), lambda: self.reco_loss_fcn(y_true_flattened_masked, y_pred_flattened_masked))
-
-		#if self.use_mse_loss:
-		#	###reco_loss = mse(y_true_flattened, y_pred_flattened)
-		#	reco_loss = mse(y_true_flattened_masked, y_pred_flattened_masked)
-		#else:
-		#	###reco_loss = binary_crossentropy(y_true_flattened, y_pred_flattened)
-		#	reco_loss = binary_crossentropy(y_true_flattened_masked, y_pred_flattened_masked)
-			
-		#reco_loss= K.mean(reco_loss)
-      
-
-		if self.rec_loss_weight>0:
-			tf.print("\n reco_loss:", reco_loss, output_stream=sys.stdout)		
+		reco_loss= tf.cond(are_empty, lambda: tf.constant(reco_loss_default), lambda: self.mse_loss_fcn(y_true_flattened_masked, y_pred_flattened_masked))
 		#reco_loss*= tf.cast(img_cube_size, tf.float32)
-		#tf.print("\n reco_loss (after mult):", reco_loss, output_stream=sys.stdout)
-		
 
-		# - Compute KL loss term
-		#logger.info("Computing the KL loss ...")
-		kl_loss= 0
-		if self.use_vae:
-			kl_loss= - 0.5 * K.sum(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
-			kl_loss_mean= K.mean(kl_loss)
-			#print("kl_loss=", kl_loss)
-			#tf.print("\n kl_loss:", kl_loss, output_stream=sys.stdout)
-
-			if self.kl_loss_weight>0:
-				tf.print("\n kl_loss_mean:", kl_loss_mean, output_stream=sys.stdout)
-		
-		# Total loss
-		#logger.info("Computing the total loss ...")
-		if self.use_vae:
-			#vae_loss = K.mean(reco_loss + kl_loss)
-			vae_loss = self.rec_loss_weight*reco_loss + self.kl_loss_weight*kl_loss_mean
-			#tf.print("\n vae_loss:", vae_loss, output_stream=sys.stdout)
-		else:
-			vae_loss= reco_loss
-
-		return vae_loss
-
-
-	@tf.function
-	def loss_v2(self, encoder_mu, encoder_log_variance):
-		""" Loss function definition """
-
-		# - Taken from https://blog.paperspace.com/how-to-build-variational-autoencoder-keras/
-
-		def vae_reconstruction_loss(y_true, y_pred):
-			""" Define reconstruction loss """
-			reconstruction_loss_factor = 1000
-			logger.info("Computing the reconstruction loss ...")
-			reconstruction_loss = tf.keras.backend.mean(tf.keras.backend.square(y_true-y_pred), axis=[1, 2, 3])	
-			logger.info("Reconstruction loss done")
-			return reconstruction_loss_factor * reconstruction_loss
-
-		#def vae_kl_loss(encoder_mu, encoder_log_variance): # Original buggy code
-		def vae_kl_loss(y_true, y_pred):
-			""" Define KL loss """
-			logger.info("Computing the KL loss ...")
-			#kl_loss = -0.5 * tf.keras.backend.sum(1.0 + encoder_log_variance - tf.keras.backend.square(encoder_mu) - tf.keras.backend.exp(encoder_log_variance), axis=1) # Original buggy code
-			kl_loss = -0.5 * tf.keras.backend.sum(1.0 + encoder_log_variance - tf.keras.backend.square(encoder_mu) - tf.keras.backend.exp(encoder_log_variance), axis=[1, 2, 3])	
-			logger.info("KL loss done ...")
-			return kl_loss
+		return reco_loss
 
 	
-		#def vae_kl_loss_metric(y_true, y_pred):
-		#	logger.info("Computing the KL loss metric ...")
-		#	##kl_loss = -0.5 * tf.keras.backend.sum(1.0 + encoder_log_variance - tf.keras.backend.square(encoder_mu) - tf.keras.backend.exp(encoder_log_variance), axis=1) # Original buggy code
-		#	kl_loss = -0.5 * tf.keras.backend.sum(1.0 + encoder_log_variance - tf.keras.backend.square(encoder_mu) - tf.keras.backend.exp(encoder_log_variance), axis=[1, 2, 3])
-		#	logger.info("KL metric loss done ...")
-		#	return kl_loss
 
-		def vae_loss(y_true, y_pred):
-			""" Define total loss"""
+	@tf.function
+	def loss(self, y_true, y_pred):
+		""" Loss function definition """
 
-			y_true_dim= K.int_shape(y_true)
-			y_pred_dim= K.int_shape(y_pred)
-			tf.print("\n y_true_dim:", y_true_dim, output_stream=sys.stdout)
-			tf.print("\n y_pred_dim:", y_pred_dim, output_stream=sys.stdout)
-			tf.print("\n y_true min:", tf.math.reduce_min(y_true), output_stream=sys.stdout)
-			tf.print("\n y_true max:", tf.math.reduce_max(y_true), output_stream=sys.stdout)
-			tf.print("\n y_pred min:", tf.math.reduce_min(y_pred), output_stream=sys.stdout)
-			tf.print("\n y_pred max:", tf.math.reduce_max(y_pred), output_stream=sys.stdout)
+		# - Compute MSE reconstruction loss term
+		mse_loss= 0
+		if self.use_mse_loss and self.mse_loss_weight>0:
+			#logger.info("Computing the MSE reconstruction loss ...")	
+			mse_loss= self.mse_loss_weight*self.mse_reco_loss_fcn(y_true, y_pred)
+	
+		# - Compute SSIM reconstruction loss term
+		ssim_loss= 0
+		if self.use_ssim_loss and self.ssim_loss_weight>0:
+			#logger.info("Computing the SSIM reconstruction loss ...")	
+			ssim_loss= self.ssim_loss_weight*self.ssim_loss_fcn(y_true, y_pred)
+	
+		# - Compute KL loss term (ONLY FOR VAE)
+		kl_loss= 0
+		if self.use_vae and self.use_kl_loss and self.kl_loss_weight>0:
+			#logger.info("Computing the KL loss ...")
+			kl_loss= self.kl_loss_weight*self.kl_loss_fcn()
+
+		# - Compute the total loss
+		tot_loss= mse_loss + ssim_loss + kl_loss
+		logger.info("tot_loss=%f: mse=%f, ssim_loss=%f, kl_loss=%f" % (tot_loss, mse_loss, ssim_loss, kl_loss))
+		#tf.print("\n kl_loss_mean:", kl_loss_mean, output_stream=sys.stdout)
 		
-			reconstruction_loss = vae_reconstruction_loss(y_true, y_pred)
-			kl_loss = vae_kl_loss(y_true, y_pred)
-			loss = reconstruction_loss + kl_loss
-			#loss = K.mean(reconstruction_loss + kl_loss)	
+		return tot_loss
 
-			tf.print("\n reconstruction_loss dim:", K.int_shape(reconstruction_loss), output_stream=sys.stdout)
-			tf.print("\n reconstruction_loss:", reconstruction_loss, output_stream=sys.stdout)
-			tf.print("\n kl_loss dim:", K.int_shape(kl_loss), output_stream=sys.stdout)
-			tf.print("\n kl_loss:", kl_loss, output_stream=sys.stdout)
-			tf.print("\n loss dim:", K.int_shape(loss), output_stream=sys.stdout)
-			tf.print("\n loss:", loss, output_stream=sys.stdout)
-		
-
-			return loss
-
-		return vae_loss
 
 	###########################
 	##     TRAIN NETWORK
