@@ -682,8 +682,8 @@ class VAEClassifier(object):
 		filter_sigma= 1.5
 		k1= 0.01
 		k2= 0.03
-		#ssim_mean_sample= ssim_batchavg(y_true, y_pred, max_val=max_val, filter_size=winsize, filter_sigma=filter_sigma, k1=k1, k2=k2)
-		ssim_mean_sample= tf.py_function(func=ssim_batchavg, inp=[y_true, y_pred, max_val, winsize, filter_sigma, k1, k2], Tout=tf.float32)
+		ssim_mean_sample= ssim_batchavg(y_true, y_pred, max_val=max_val, filter_size=winsize, filter_sigma=filter_sigma, k1=k1, k2=k2)
+		#ssim_mean_sample= tf.py_function(func=ssim_batchavg, inp=[y_true, y_pred, max_val, winsize, filter_sigma, k1, k2], Tout=tf.float32)
 		
 		# - Compute ssim loss
 		dssim= 0.5*(1.0-ssim_mean_sample)
@@ -764,9 +764,9 @@ class VAEClassifier(object):
 		# - Compute the total loss
 		tot_loss= mse_loss + ssim_loss + kl_loss
 		#logger.info("tot_loss=%f: mse=%f, ssim_loss=%f, kl_loss=%f" % (tot_loss, mse_loss, ssim_loss, kl_loss))
-		tf.print("tot_loss: ", tot_loss, output_stream=sys.stdout)
-		tf.print("mse_loss: ", mse_loss, output_stream=sys.stdout)
-		tf.print("ssim_loss: ", ssim_loss, output_stream=sys.stdout)
+		#tf.print("tot_loss: ", tot_loss, output_stream=sys.stdout)
+		#tf.print("mse_loss: ", mse_loss, output_stream=sys.stdout)
+		#tf.print("ssim_loss: ", ssim_loss, output_stream=sys.stdout)
 		#tf.print("kl_loss: ", kl_loss, output_stream=sys.stdout)
 		tot_loss= tf.cast(tot_loss, tf.float32)
 
