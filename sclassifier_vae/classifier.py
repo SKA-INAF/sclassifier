@@ -730,7 +730,7 @@ class VAEClassifier(object):
 		""" SSIM Loss function definition """
 	
 		# - Compute ssim index averaged over channels and batch samples
-		winsize= 5
+		winsize= 3
 		max_val= 1
 		filter_sigma= 1.5
 		k1= 0.01
