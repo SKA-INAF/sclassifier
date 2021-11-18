@@ -67,8 +67,8 @@ from tensorflow.image import convert_image_dtype
 from tensorflow.python.ops.image_ops_impl import _fspecial_gauss, _ssim_helper, _verify_compatible_image_shapes
 
 
-from tensorflow.python.framework.ops import disable_eager_execution
-disable_eager_execution()
+#from tensorflow.python.framework.ops import disable_eager_execution
+#disable_eager_execution()
 
 ## SCIKIT MODULES
 from skimage.metrics import mean_squared_error
@@ -116,7 +116,7 @@ def ssim_batchavg(img1, img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01
 		tf.print("data_shape:", data_shape, output_stream=sys.stdout)
 		nsamples= data_shape[0]
 		#nsamples= 5
-		nsamples= nsamples.numpy()
+		#nsamples= nsamples.numpy()
 		tf.print("type(nsamples):", type(nsamples), output_stream=sys.stdout)
 		tf.print("nsamples:", nsamples, output_stream=sys.stdout)
 		ssim_list= []
@@ -680,8 +680,8 @@ class VAEClassifier(object):
 		filter_sigma= 1.5
 		k1= 0.01
 		k2= 0.03
-		ssim_mean_sample= ssim_batchavg(y_true, y_pred, max_val=max_val, filter_size=winsize, filter_sigma=filter_sigma, k1=k1, k2=k2)
-		#ssim_mean_sample= tf.py_function(func=ssim_batchavg, inp=[y_true, y_pred, max_val, winsize, filter_sigma, k1, k2], Tout=tf.float32)
+		#ssim_mean_sample= ssim_batchavg(y_true, y_pred, max_val=max_val, filter_size=winsize, filter_sigma=filter_sigma, k1=k1, k2=k2)
+		ssim_mean_sample= tf.py_function(func=ssim_batchavg, inp=[y_true, y_pred, max_val, winsize, filter_sigma, k1, k2], Tout=tf.float32)
 		
 		# - Compute ssim loss
 		dssim= 0.5*(1.0-ssim_mean_sample)
