@@ -656,17 +656,17 @@ class VAEClassifier(object):
 	###########################
 	##     LOSS DEFINITION
 	###########################	
-	#@tf.function
+	@tf.function
 	def mse_loss_fcn(self, y_true, y_pred):
 		""" MSE loss function definition used for reconstruction loss """
 		return K.mean(mse(y_true, y_pred))
 
-	#@tf.function
+	@tf.function
 	def ce_loss_fcn(self, y_true, y_pred):
 		""" Cross-Entropy loss function definition used for reconstruction loss """
 		return K.mean(binary_crossentropy(y_true, y_pred))
 	
-	#@tf.function
+	@tf.function
 	def ssim_loss_fcn(self, y_true, y_pred):
 		""" SSIM Loss function definition used for reconstruction loss """
 	
@@ -683,12 +683,12 @@ class VAEClassifier(object):
 		dssim= 0.5*(1.0-ssim_mean_sample)
 		loss= tf.cast(dssim, tf.float32)
 		logger.info("ssim_mean_sample=%f, dssim=%f" % (ssim_mean_sample, dssim))	
-		tf.print("\n loss:", loss, output_stream=sys.stdout)
+		tf.print("ssim loss:", loss, output_stream=sys.stdout)
 
 		return loss
 
 
-	#@tf.function
+	@tf.function
 	def kl_loss_fcn(self):
 		""" Kullback-Leibler loss function definition used for VAE latent space regularization """
 
@@ -697,7 +697,7 @@ class VAEClassifier(object):
 		return kl_loss_mean
 
 
-	#@tf.function
+	@tf.function
 	def mse_reco_loss_fcn(self, y_true, y_pred):
 		""" MSE reco loss function definition """
 
@@ -735,19 +735,19 @@ class VAEClassifier(object):
 		# - Compute MSE reconstruction loss term
 		mse_loss= 0
 		if self.use_mse_loss and self.mse_loss_weight>0:
-			#logger.info("Computing the MSE reconstruction loss ...")	
+			logger.info("Computing the MSE reconstruction loss ...")	
 			mse_loss= self.mse_loss_weight*self.mse_reco_loss_fcn(y_true, y_pred)
 	
 		# - Compute SSIM reconstruction loss term
 		ssim_loss= 0
 		if self.use_ssim_loss and self.ssim_loss_weight>0:
-			#logger.info("Computing the SSIM reconstruction loss ...")	
+			logger.info("Computing the SSIM reconstruction loss ...")	
 			ssim_loss= self.ssim_loss_weight*self.ssim_loss_fcn(y_true, y_pred)
 	
 		# - Compute KL loss term (ONLY FOR VAE)
 		kl_loss= 0
 		if self.use_vae and self.use_kl_loss and self.kl_loss_weight>0:
-			#logger.info("Computing the KL loss ...")
+			logger.info("Computing the KL loss ...")
 			kl_loss= self.kl_loss_weight*self.kl_loss_fcn()
 
 		# - Compute the total loss
