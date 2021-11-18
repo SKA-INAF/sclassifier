@@ -111,9 +111,11 @@ def ssim_batchavg(img1, img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01
 		with ops.control_dependencies(checks):
 			img1 = array_ops.identity(img1)
 
-		# Compute ssim for all batch and store in list
+		# Compute ssim for all batch and store in list		
 		data_shape= tf.shape(img1)
+		tf.print("data_shape:", data_shape, output_stream=sys.stdout)
 		nsamples= data_shape[0]
+		print(nsamples)
 		ssim_list= []
 		for i in range(nsamples):
 			ssim_curr= ssim_chanavg(img1[i,:,:,:], img2[i,:,:,:], max_val, filter_size, filter_sigma, k1, k2)
