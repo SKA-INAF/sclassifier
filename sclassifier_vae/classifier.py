@@ -152,7 +152,7 @@ def ssim(img1, img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01, k2=0.03
 
 
 def compute_ssim_per_channel(img1, img2, max_val=1.0, filter_size=11, filter_sigma=1.5, k1=0.01, k2=0.03):
-  """ Computes SSIM index between img1 and img2 per channel """
+	""" Computes SSIM index between img1 and img2 per channel """
 
 	filter_size = constant_op.constant(filter_size, dtype=dtypes.int32)
 	filter_sigma = constant_op.constant(filter_sigma, dtype=img1.dtype)
@@ -161,7 +161,7 @@ def compute_ssim_per_channel(img1, img2, max_val=1.0, filter_size=11, filter_sig
 	checks = [
 		control_flow_ops.Assert(math_ops.reduce_all(math_ops.greater_equal(shape1[-3:-1], filter_size)), [shape1, filter_size], summarize=8),
 		control_flow_ops.Assert(math_ops.reduce_all(math_ops.greater_equal(shape2[-3:-1], filter_size)), [shape2, filter_size], summarize=8)
-  ]
+	]
 
 	# Enforce the check to run before computation.
 	with ops.control_dependencies(checks):
@@ -203,7 +203,7 @@ def compute_ssim_per_channel(img1, img2, max_val=1.0, filter_size=11, filter_sig
 	# Compute masked ssim (excluding nan/inf/0), averaged over 2D 
 	ssim_img= luminance * cs
 	cond_ssim= tf.math.is_finite(ssim_img)
-  mask= tf.logical_and(tf.logical_and(cond_img1, cond_img2), cond_ssim)
+	mask= tf.logical_and(tf.logical_and(cond_img1, cond_img2), cond_ssim)
 	ssim_masked= math_ops.reduce_mean(tf.ragged.boolean_mask(ssim_img, mask=mask), axes)
 
 	#return ssim_val, cs
