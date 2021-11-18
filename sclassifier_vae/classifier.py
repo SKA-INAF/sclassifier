@@ -113,7 +113,7 @@ def ssim_batchavg(img1, img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01
 
 		# Compute ssim for all batch and store in list		
 		data_shape= tf.shape(img1)
-		tf.print("data_shape:", data_shape, output_stream=sys.stdout)
+		#tf.print("data_shape:", data_shape, output_stream=sys.stdout)
 		#data_shape_int= K.int_shape(img1)
 		#tf.print("data_shape_int:", data_shape_int, output_stream=sys.stdout)
 		nsamples= (int)(data_shape[0])
@@ -121,18 +121,17 @@ def ssim_batchavg(img1, img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01
 		#tf.print("NN:", NN, output_stream=sys.stdout)
 		#nsamples= 5
 		#nsamples= nsamples.numpy()
-		tf.print("type(nsamples):", type(nsamples), output_stream=sys.stdout)
-		tf.print("nsamples:", nsamples, output_stream=sys.stdout)
+		#tf.print("type(nsamples):", type(nsamples), output_stream=sys.stdout)
+		#tf.print("nsamples:", nsamples, output_stream=sys.stdout)
 		ssim_list= []
 		for i in range(nsamples):
 			ssim_curr= ssim_chanavg(img1[i,:,:,:], img2[i,:,:,:], max_val, filter_size, filter_sigma, k1, k2)
 			ssim_list.append(ssim_curr)
-			tf.print("ssim_curr:", ssim_curr, output_stream=sys.stdout)
+			#tf.print("ssim_curr:", ssim_curr, output_stream=sys.stdout)
 
 		# Compute mean over batch size
 		ssim_tensor= tf.stack(ssim_list)
 		ssim_batch_mean= tf.reduce_mean(ssim_tensor)
-		##ssim_batch_mean= 1
 		ssim_batch_mean= tf.cast(ssim_batch_mean, tf.float32)
 
 		return ssim_batch_mean
@@ -692,7 +691,7 @@ class VAEClassifier(object):
 		# - Compute ssim loss
 		dssim= 0.5*(1.0-ssim_mean_sample)
 		loss= tf.cast(dssim, tf.float32)
-		#logger.info("ssim_mean_sample=%f, dssim=%f" % (ssim_mean_sample, dssim))
+		logger.info("ssim_mean_sample=%f, dssim=%f" % (ssim_mean_sample, dssim))
 		tf.print("ssim_mean_sample:", ssim_mean_sample, output_stream=sys.stdout)
 		tf.print("ssim loss:", loss, output_stream=sys.stdout)
 
@@ -750,14 +749,14 @@ class VAEClassifier(object):
 		# - Compute MSE reconstruction loss term
 		mse_loss= tf.zeros((),dtype=tf.float32)
 		if self.use_mse_loss and self.mse_loss_weight>0:
-			logger.info("Computing the MSE reconstruction loss ...")	
+			#logger.info("Computing the MSE reconstruction loss ...")	
 			mse_loss= self.mse_loss_weight*self.mse_reco_loss_fcn(y_true, y_pred)
 		mse_loss= tf.cast(mse_loss, tf.float32)
 	
 		# - Compute SSIM reconstruction loss term
 		ssim_loss= tf.zeros((),dtype=tf.float32)
 		if self.use_ssim_loss and self.ssim_loss_weight>0:
-			logger.info("Computing the SSIM reconstruction loss ...")	
+			#logger.info("Computing the SSIM reconstruction loss ...")	
 			ssim_loss= self.ssim_loss_weight*self.ssim_loss_fcn(y_true, y_pred)
 		ssim_loss= tf.cast(ssim_loss, tf.float32)
 	
@@ -770,7 +769,7 @@ class VAEClassifier(object):
 
 		# - Compute the total loss
 		tot_loss= mse_loss + ssim_loss + kl_loss
-		#logger.info("tot_loss=%f: mse=%f, ssim_loss=%f, kl_loss=%f" % (tot_loss, mse_loss, ssim_loss, kl_loss))
+		logger.info("tot_loss=%f: mse=%f, ssim_loss=%f, kl_loss=%f" % (tot_loss, mse_loss, ssim_loss, kl_loss))
 		#tf.print("tot_loss: ", tot_loss, output_stream=sys.stdout)
 		#tf.print("mse_loss: ", mse_loss, output_stream=sys.stdout)
 		#tf.print("ssim_loss: ", ssim_loss, output_stream=sys.stdout)
