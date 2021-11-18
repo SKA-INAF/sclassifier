@@ -98,7 +98,7 @@ class Sampling(layers.Layer):
 		return z_mean + tf.exp(0.5 * z_log_var) * epsilon
 
 
-def ssim_batch(img1, img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01, k2=0.03):
+def ssim_batchavg(img1, img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01, k2=0.03):
 	""" Compute SSIM averaged over all channels and batch """
 
 	with ops.name_scope(None, 'MS-SSIM', [img1, img2]):
@@ -116,8 +116,8 @@ def ssim_batch(img1, img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01, k
 		nsamples= data_shape[0]
 		ssim_list= []
 		for i in range(nsamples):
-			ssim_curr= ssim(img1[i,:,:,:], img2[i,:,:,:], max_val, filter_size, filter_sigma, k1, k2)
-			ssim_list.append(ssim_list)
+			ssim_curr= ssim_chanavg(img1[i,:,:,:], img2[i,:,:,:], max_val, filter_size, filter_sigma, k1, k2)
+			ssim_list.append(ssim_curr)
 
 		# Compute mean over batch size
 		ssim_tensor= tf.stack(ssim_list)
@@ -126,7 +126,7 @@ def ssim_batch(img1, img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01, k
 		return ssim_batch_mean
 
 
-def ssim(img1, img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01, k2=0.03):
+def ssim_chanavg(img1, img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01, k2=0.03):
 	""" Compute SSIM averaged over all channels """
 
 	with ops.name_scope(None, 'SSIM', [img1, img2]):
@@ -735,8 +735,8 @@ class VAEClassifier(object):
 		filter_sigma= 1.5
 		k1= 0.01
 		k2= 0.03
-		#ssim_mean_sample= ssim_batch(y_true, y_pred, max_val=max_val, filter_size=winsize, filter_sigma=1.5, k1=0.01, k2=0.03)
-		ssim_mean_sample= tf.py_function(func=ssim_batch, inp=[y_true, y_pred, max_val, winsize, filter_sigma, k1, k2], Tout=tf.float32)
+		ssim_mean_sample= ssim_batchavg(y_true, y_pred, max_val=max_val, filter_size=winsize, filter_sigma=filter_sigma, k1=k1, k2=k2)
+		#ssim_mean_sample= tf.py_function(func=ssim_batchavg, inp=[y_true, y_pred, max_val, winsize, filter_sigma, k1, k2], Tout=tf.float32)
 		
 		# - Compute ssim loss
 		dssim= 0.5*(1.0-ssim_mean_sample)
