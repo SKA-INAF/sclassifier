@@ -116,7 +116,10 @@ def ssim_batchavg(img1, img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01
 		tf.print("data_shape:", data_shape, output_stream=sys.stdout)
 		#data_shape_int= K.int_shape(img1)
 		#tf.print("data_shape_int:", data_shape_int, output_stream=sys.stdout)
-		#nsamples= data_shape_list[0]
+		#nsamples= data_shape[0]
+		NN= data_shape[0].eval()
+		tf.print("NN:", NN, output_stream=sys.stdout)
+
 		nsamples= 5
 		#nsamples= nsamples.numpy()
 		tf.print("type(nsamples):", type(nsamples), output_stream=sys.stdout)
@@ -742,8 +745,8 @@ class VAEClassifier(object):
 	def loss(self, y_true, y_pred):
 		""" Loss function definition """
 
-		data_shape_int= K.int_shape(y_true)
-		tf.print("data_shape_int: ", data_shape_int, output_stream=sys.stdout)
+		#data_shape_int= K.int_shape(y_true)
+		#tf.print("data_shape_int: ", data_shape_int, output_stream=sys.stdout)
 
 		# - Compute MSE reconstruction loss term
 		mse_loss= tf.zeros((),dtype=tf.float32)
