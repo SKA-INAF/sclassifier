@@ -55,35 +55,16 @@ from tensorflow.keras.layers import Input
 from tensorflow.keras.utils import get_custom_objects
 from tensorflow.keras.losses import mse, binary_crossentropy
 
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import ops
+from tensorflow.python.framework import constant_op
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import control_flow_ops
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops import nn
 
-
-#import keras
-#from keras import layers
-#from keras import models
-#from keras import optimizers
-#try:
-#	from keras.utils import plot_model
-#except:
-#	from keras.utils.vis_utils import plot_model
-#from keras import backend as K
-#from keras.models import Model
-#from keras.models import load_model
-#try:
-#	from keras.layers.normalization import BatchNormalization
-#except Exception as e:
-#	logger.warn("Failed to import BatchNormalization (err=%s), trying in another way ..." % str(e))
-#	from keras.layers import BatchNormalization
-#from keras.layers.convolutional import Conv2D
-#from keras.layers.convolutional import MaxPooling2D
-#from keras.layers.core import Activation
-#from keras.layers.core import Dropout
-#from keras.layers.core import Lambda
-#from keras.layers.core import Dense
-#from keras.layers import Flatten
-#from keras.layers import Input
-#from keras.utils.generic_utils import get_custom_objects
-#import tensorflow as tf
-#from keras.losses import mse, binary_crossentropy
+from tensorflow.image import convert_image_dtype
+from tensorflow.python.ops.image_ops_impl import _fspecial_gauss, _ssim_helper, _verify_compatible_image_shapes
 
 
 #from tensorflow.python.framework.ops import disable_eager_execution
@@ -115,6 +96,120 @@ class Sampling(layers.Layer):
 		dim = tf.shape(z_mean)[1]
 		epsilon = tf.keras.backend.random_normal(shape=(batch, dim))
 		return z_mean + tf.exp(0.5 * z_log_var) * epsilon
+
+
+def ssim_batch(img1, img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01, k2=0.03):
+	""" Compute SSIM averaged over all channels and batch """
+
+	with ops.name_scope(None, 'MS-SSIM', [img1, img2]):
+		# Convert to tensor if needed.
+		img1 = ops.convert_to_tensor(img1, name='img1')
+		img2 = ops.convert_to_tensor(img2, name='img2')
+
+		# Shape checking.
+		shape1, shape2, checks = _verify_compatible_image_shapes(img1, img2)
+		with ops.control_dependencies(checks):
+			img1 = array_ops.identity(img1)
+
+		# Compute ssim for all batch and store in list
+		data_shape= tf.shape(img1)
+		nsamples= data_shape[0]
+		ssim_list= []
+		for i in range(nsamples):
+			ssim_curr= ssim(img1[i,:,:,:], img2[i,:,:,:], max_val, filter_size, filter_sigma, k1, k2)
+			ssim_list.append(ssim_list)
+
+		# Compute mean over batch size
+		ssim_tensor= tf.stack(ssim_list)
+		ssim_batch_mean= tk.reduce_mean(ssim_tensor)
+
+		return ssim_batch_mean
+
+
+def ssim(img1, img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01, k2=0.03):
+	""" Compute SSIM averaged over all channels """
+
+	with ops.name_scope(None, 'SSIM', [img1, img2]):
+		# Convert to tensor if needed.
+		img1 = ops.convert_to_tensor(img1, name='img1')
+		img2 = ops.convert_to_tensor(img2, name='img2')
+
+		# Shape checking.
+		_, _, checks = _verify_compatible_image_shapes(img1, img2)
+		with ops.control_dependencies(checks):
+			img1 = array_ops.identity(img1)
+
+		# Need to convert the images to float32.  Scale max_val accordingly so that
+		# SSIM is computed correctly.
+		max_val = math_ops.cast(max_val, img1.dtype)
+		max_val = convert_image_dtype(max_val, dtypes.float32)
+		img1 = convert_image_dtype(img1, dtypes.float32)
+		img2 = convert_image_dtype(img2, dtypes.float32)
+		ssim_per_channel, _ = compute_ssim_per_channel(img1, img2, max_val, filter_size, filter_sigma, k1, k2)
+    
+		# Compute average over color channels.
+		return math_ops.reduce_mean(ssim_per_channel, [-1])
+
+
+def compute_ssim_per_channel(img1, img2, max_val=1.0, filter_size=11, filter_sigma=1.5, k1=0.01, k2=0.03):
+  """ Computes SSIM index between img1 and img2 per channel """
+
+	filter_size = constant_op.constant(filter_size, dtype=dtypes.int32)
+	filter_sigma = constant_op.constant(filter_sigma, dtype=img1.dtype)
+
+	shape1, shape2 = array_ops.shape_n([img1, img2])
+	checks = [
+		control_flow_ops.Assert(math_ops.reduce_all(math_ops.greater_equal(shape1[-3:-1], filter_size)), [shape1, filter_size], summarize=8),
+		control_flow_ops.Assert(math_ops.reduce_all(math_ops.greater_equal(shape2[-3:-1], filter_size)), [shape2, filter_size], summarize=8)
+  ]
+
+	# Enforce the check to run before computation.
+	with ops.control_dependencies(checks):
+		img1 = array_ops.identity(img1)
+
+	# Replace nans & inf with image minimum
+	img1_min= tf.reduce_min(tf.ragged.boolean_mask(img1, mask=tf.math.is_finite(img1)))
+	img2_min= tf.reduce_min(tf.ragged.boolean_mask(img2, mask=tf.math.is_finite(img2)))
+	cond_img1= tf.logical_and(tf.math.is_finite(img1),~tf.math.equal(img1,0))
+	cond_img2= tf.math.is_finite(img2)
+	img1= tf.where(~tf.math.is_finite(img1), tf.ones_like(img1) * img1_min, img1)
+	img2= tf.where(~tf.math.is_finite(img2), tf.ones_like(img2) * img2_min, img2)
+
+
+	# TODO(sjhwang): Try to cache kernels and compensation factor.
+	kernel = _fspecial_gauss(filter_size, filter_sigma)
+	kernel = array_ops.tile(kernel, multiples=[1, 1, shape1[-1], 1])
+
+	# The correct compensation factor is `1.0 - tf.reduce_sum(tf.square(kernel))`,
+	# but to match MATLAB implementation of MS-SSIM, we use 1.0 instead.
+	compensation = 1.0
+
+	# TODO(sjhwang): Try FFT.
+	# TODO(sjhwang): Gaussian kernel is separable in space. Consider applying
+	#   1-by-n and n-by-1 Gaussian filters instead of an n-by-n filter.
+	def reducer(x):
+		shape = array_ops.shape(x)
+		x = array_ops.reshape(x, shape=array_ops.concat([[-1], shape[-3:]], 0))
+		y = nn.depthwise_conv2d(x, kernel, strides=[1, 1, 1, 1], padding='VALID')
+		return array_ops.reshape(y, array_ops.concat([shape[:-3], array_ops.shape(y)[1:]], 0))
+
+	luminance, cs = _ssim_helper(img1, img2, reducer, max_val, compensation, k1, k2)
+
+	# Average over the second and the third from the last: height, width.
+	axes = constant_op.constant([-3, -2], dtype=dtypes.int32)
+	ssim_val = math_ops.reduce_mean(luminance * cs, axes)
+	cs = math_ops.reduce_mean(cs, axes)
+
+	# Compute masked ssim (excluding nan/inf/0), averaged over 2D 
+	ssim_img= luminance * cs
+	cond_ssim= tf.math.is_finite(ssim_img)
+  mask= tf.logical_and(tf.logical_and(cond_img1, cond_img2), cond_ssim)
+	ssim_masked= math_ops.reduce_mean(tf.ragged.boolean_mask(ssim_img, mask=mask), axes)
+
+	#return ssim_val, cs
+	return ssim_masked, cs
+
+
 
 ##############################
 ##     VAEClassifier CLASS
@@ -629,9 +724,25 @@ class VAEClassifier(object):
 		reco_loss= K.mean(reco_loss)
 		return reco_loss
   
-
 	#@tf.function
 	def loss_ssim(self, y_true, y_pred):
+		""" SSIM Loss function definition """
+	
+		# - Compute ssim index averaged over channels and batch samples
+		winsize= 5
+		ssim_mean_sample= ssim_batch(y_true, y_pred, max_val=1, filter_size=winsize, filter_sigma=1.5, k1=0.01, k2=0.03)
+
+		# - Compute ssim loss
+		dssim= 0.5*(1.0-ssim_mean_sample)
+		loss= tf.cast(dssim, tf.float32)
+		logger.info("ssim_mean_sample=%f, dssim=%f" % (ssim_mean_sample, dssim))	
+		tf.print("\n loss:", loss, output_stream=sys.stdout)
+
+		return loss
+
+
+	#@tf.function
+	def loss_ssim_old(self, y_true, y_pred):
 		""" SSIM Loss function definition """
 
 		
