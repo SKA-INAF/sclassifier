@@ -684,7 +684,8 @@ class VAEClassifier(object):
 		# - Compute ssim loss
 		dssim= 0.5*(1.0-ssim_mean_sample)
 		loss= tf.cast(dssim, tf.float32)
-		logger.info("ssim_mean_sample=%f, dssim=%f" % (ssim_mean_sample, dssim))	
+		#logger.info("ssim_mean_sample=%f, dssim=%f" % (ssim_mean_sample, dssim))
+		tf.print("ssim_mean_sample:", ssim_mean_sample, output_stream=sys.stdout)
 		tf.print("ssim loss:", loss, output_stream=sys.stdout)
 
 		return loss
