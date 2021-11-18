@@ -116,11 +116,10 @@ def ssim_batchavg(img1, img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01
 		tf.print("data_shape:", data_shape, output_stream=sys.stdout)
 		#data_shape_int= K.int_shape(img1)
 		#tf.print("data_shape_int:", data_shape_int, output_stream=sys.stdout)
-		#nsamples= data_shape[0]
-		NN= int(data_shape[0])
-		tf.print("NN:", NN, output_stream=sys.stdout)
-
-		nsamples= 5
+		nsamples= (int)(data_shape[0])
+		#NN= int(data_shape[0])
+		#tf.print("NN:", NN, output_stream=sys.stdout)
+		#nsamples= 5
 		#nsamples= nsamples.numpy()
 		tf.print("type(nsamples):", type(nsamples), output_stream=sys.stdout)
 		tf.print("nsamples:", nsamples, output_stream=sys.stdout)
