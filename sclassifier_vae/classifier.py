@@ -667,17 +667,17 @@ class VAEClassifier(object):
 	###########################
 	##     LOSS DEFINITION
 	###########################	
-	@tf.function
+	#@tf.function
 	def mse_loss_fcn(self, y_true, y_pred):
 		""" MSE loss function definition used for reconstruction loss """
 		return K.mean(mse(y_true, y_pred))
 
-	@tf.function
+	#@tf.function
 	def ce_loss_fcn(self, y_true, y_pred):
 		""" Cross-Entropy loss function definition used for reconstruction loss """
 		return K.mean(binary_crossentropy(y_true, y_pred))
 	
-	@tf.function
+	#@tf.function
 	def ssim_loss_fcn(self, y_true, y_pred):
 		""" SSIM Loss function definition used for reconstruction loss """
 	
@@ -700,7 +700,7 @@ class VAEClassifier(object):
 		return loss
 
 
-	@tf.function
+	#@tf.function
 	def kl_loss_fcn(self):
 		""" Kullback-Leibler loss function definition used for VAE latent space regularization """
 
@@ -710,7 +710,7 @@ class VAEClassifier(object):
 		return kl_loss_mean
 
 
-	@tf.function
+	#@tf.function
 	def mse_reco_loss_fcn(self, y_true, y_pred):
 		""" MSE reco loss function definition """
 
@@ -741,7 +741,7 @@ class VAEClassifier(object):
 		return reco_loss
 
 	
-	@tf.function
+	#@tf.function
 	def loss(self, y_true, y_pred):
 		""" Loss function definition """
 
