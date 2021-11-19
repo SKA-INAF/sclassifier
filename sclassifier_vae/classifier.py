@@ -67,8 +67,9 @@ from tensorflow.image import convert_image_dtype
 from tensorflow.python.ops.image_ops_impl import _fspecial_gauss, _ssim_helper, _verify_compatible_image_shapes
 
 
-#from tensorflow.python.framework.ops import disable_eager_execution
+from tensorflow.python.framework.ops import disable_eager_execution, enable_eager_execution 
 #disable_eager_execution()
+enable_eager_execution()
 
 ## SCIKIT MODULES
 from skimage.metrics import mean_squared_error
