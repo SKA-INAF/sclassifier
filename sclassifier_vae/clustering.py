@@ -626,7 +626,7 @@ class Clusterer(object):
 		self.exemplars= self.clusterer.exemplars_  # list
 		self.cluster_persistence= self.clusterer.cluster_persistence_  # shape (n_clusters, )
 		
-		labels_unique= set(self.labels).discard(-1) # get set of unique labels, without -1=noise
+		labels_unique= set(list(self.labels)).discard(-1) # get set of unique labels, without -1=noise
 		print("labels_unique")
 		print(labels_unique)
 		#self.nclusters= self.labels.max()
@@ -708,7 +708,7 @@ class Clusterer(object):
 		varnames_counter= list(range(1,ndim+1))
 		varnames= '{}{}'.format('z',' z'.join(str(item) for item in varnames_counter))
 		#nclusters= clusterer.labels_.max()
-		nclusters= len(set(clusterer.labels_).discard(-1))
+		nclusters= len(set(list(clusterer.labels_)).discard(-1))
 
 		print("len(clusterer.labels_)")
 		print(len(clusterer.labels_))
@@ -784,7 +784,7 @@ class Clusterer(object):
 		varnames_counter= list(range(1,ndim+1))
 		varnames= '{}{}'.format('z',' z'.join(str(item) for item in varnames_counter))
 		#nclusters= clusterer.labels_.max()
-		nclusters= len(set(clusterer.labels_).discard(-1))
+		nclusters= len(set(list(clusterer.labels_)).discard(-1))
 
 
 		# - Set cluster colors
