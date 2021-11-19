@@ -626,7 +626,11 @@ class Clusterer(object):
 		self.exemplars= self.clusterer.exemplars_  # list
 		self.cluster_persistence= self.clusterer.cluster_persistence_  # shape (n_clusters, )
 		
-		self.nclusters= self.labels.max()
+		labels_unique= set(self.labels).disgard(-1) # get set of unique labels, without -1=noise
+		print("labels_unique")
+		print(labels_unique)
+		#self.nclusters= self.labels.max()
+		self.nclusters= len(labels_unique)
 		logger.info("#%d clusters found ..." % (self.nclusters))
 	
 
@@ -703,10 +707,14 @@ class Clusterer(object):
 		N= data_shape[0]
 		varnames_counter= list(range(1,ndim+1))
 		varnames= '{}{}'.format('z',' z'.join(str(item) for item in varnames_counter))
-		nclusters= clusterer.labels_.max()
+		#nclusters= clusterer.labels_.max()
+		nclusters= len(set(clusterer.labels_).disgard(-1))
+
 		print("len(clusterer.labels_)")
 		print(len(clusterer.labels_))
 		print(clusterer.labels_)
+		print("nclusters")
+		print(nclusters)
 
 		# - Set cluster colors
 		palette = sns.color_palette('deep', nclusters+1)
@@ -775,7 +783,9 @@ class Clusterer(object):
 		N= data_shape[0]
 		varnames_counter= list(range(1,ndim+1))
 		varnames= '{}{}'.format('z',' z'.join(str(item) for item in varnames_counter))
-		nclusters= clusterer.labels_.max()
+		#nclusters= clusterer.labels_.max()
+		nclusters= len(set(clusterer.labels_).disgard(-1))
+
 
 		# - Set cluster colors
 		palette = sns.color_palette('deep', nclusters+1)
