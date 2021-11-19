@@ -537,8 +537,11 @@ class VAEClassifier(object):
 		""" Build encoder parametrized network """
 		
 		# - Initialize weights
-		weight_initializer = tf.keras.initializers.HeUniform(seed=self.weight_init_seed)
-		
+		try:
+			weight_initializer = tf.keras.initializers.HeUniform(seed=self.weight_init_seed)
+		except:
+			logger.info("Failed to find tf.keras.initializers.HeUniform, trying with tf.keras.initializers.he_uniform ...")
+			weight_initializer= tf.keras.initializers.he_uniform(seed=self.weight_init_seed) 
 
 		# - Input layer	
 		inputShape = (self.ny, self.nx, self.nchannels)
