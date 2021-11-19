@@ -62,6 +62,8 @@ reqs.append('imgaug>=0.4.0')
 reqs.append('umap-learn')
 reqs.append('hdbscan')
 reqs.append('seaborn')
+reqs.append('skimage')
+reqs.append('sklearn')
 
 
 data_dir = 'data'

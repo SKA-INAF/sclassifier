@@ -25,6 +25,7 @@ from astropy.io import ascii
 
 ## CLUSTERING MODULES
 import hdbscan
+from sklearn.manifold import TSNE
 
 ## GRAPHICS MODULES
 import seaborn as sns
@@ -720,6 +721,12 @@ class Clusterer(object):
 		#fig.subplots_adjust(top=0.93, wspace=0.3)
 		#t = fig.suptitle('Clustering Plots', fontsize=14)
 
+		# - If data dimension is >2 project with tSNE
+		data_draw= data
+		if ndim>2:
+			logger.info("Data size is >2, projecting to 2D with tSNE (assuming default pars) ...")
+			data_draw= TSNE().fit_transform(data)
+
 		# - Display a 2D plot of clustered data
 		logger.info("Plot a 2D plot of the clustered data ...")
 		plt.figure(figsize=(12, 10))
@@ -739,8 +746,8 @@ class Clusterer(object):
 
 			cluster_color= cluster_member_colors[i]
 
-			#plt.scatter(data[i,0], data[i,1], s=50, linewidth=0, color=color, marker=marker, alpha=0.25)
-			plt.scatter(data[i,0], data[i,1], s=50, linewidth=0, color=cluster_color, marker=marker, alpha=0.25)
+			#plt.scatter(data_draw[i,0], data_draw[i,1], s=50, linewidth=0, color=color, marker=marker, alpha=0.25)
+			plt.scatter(data_draw[i,0], data_draw[i,1], s=50, linewidth=0, color=cluster_color, marker=marker, alpha=0.25)
 
 		
 		plt.xlabel("z0")
@@ -752,6 +759,16 @@ class Clusterer(object):
 	def __plot_predict(self, clusterer, data_test, labels_test, snames_test, class_labels_test, prediction_data, prediction_extra_data, outfile):
 		""" Plot clusters """
 
+		###########################################################################
+		## NB: data is the data clustered assuming the loaded clustering model
+		##     data_test is the new data passed by user 
+		###########################################################################
+		
+		# - Retrieve prediction data
+		data= prediction_data.data
+		snames= prediction_extra_data.snames
+		class_labels= prediction_extra_data.class_labels
+
 		# - Set variable names
 		data_shape= data.shape
 		ndim= data_shape[1]
@@ -760,16 +777,18 @@ class Clusterer(object):
 		varnames= '{}{}'.format('z',' z'.join(str(item) for item in varnames_counter))
 		nclusters= clusterer.labels_.max()
 
-		# - Retrieve prediction data
-		data= prediction_data.data
-		snames= prediction_extra_data.snames
-		class_labels= prediction_extra_data.class_labels
-
 		# - Set cluster colors
 		palette = sns.color_palette('deep', nclusters+1)
 		cluster_colors = [palette[x] if x >= 0 else (0.5, 0.5, 0.5) for x in clusterer.labels_]
 		cluster_member_colors = [sns.desaturate(x, p) for x, p in zip(cluster_colors, clusterer.probabilities_)]
 				
+		# - If data dimension is >2, merge data & data_test and project all with tSNE
+		data_all= np.concatenate((data, data_test), axis=0)
+		data_merged_draw= data_all
+		if ndim>2:
+			logger.info("Data size is >2, projecting all data to 2D with tSNE (assuming default pars) ...")
+			data_merged_draw= TSNE().fit_transform(data_all)
+
 		# - Display a 2D plot of clustered data
 		logger.info("Plot a 2D plot of the clustered data ...")
 		plt.figure(figsize=(12, 10))
@@ -787,8 +806,9 @@ class Clusterer(object):
 
 			cluster_color= cluster_member_colors[i]
 
-			#plt.scatter(data[i,0], data[i,1], s=50, linewidth=0, color=color, marker=marker, alpha=0.25)
-			plt.scatter(data[i,0], data[i,1], s=50, linewidth=0, color=cluster_color, marker=marker, alpha=0.25)
+			index= i
+			#plt.scatter(data_merged_draw[index,0], data_merged_draw[index,1], s=50, linewidth=0, color=color, marker=marker, alpha=0.25)
+			plt.scatter(data_merged_draw[index,0], data_merged_draw[index,1], s=50, linewidth=0, color=cluster_color, marker=marker, alpha=0.25)
 
 		# - Plot test data
 		N_test= data_test.shape[0]
@@ -807,7 +827,8 @@ class Clusterer(object):
 
 			cluster_color= cluster_colors_test[i]
 
-			plt.scatter(data_test[i,0], data_test[i,1], s=80, linewidths=1, edgecolors='k', c=cluster_color, marker=marker)		
+			index= N + i
+			plt.scatter(data_merged_draw[index,0], data_merged_draw[index,1], s=80, linewidths=1, edgecolors='k', c=cluster_color, marker=marker)		
 
 		plt.xlabel("z0")
 		plt.ylabel("z1")
