@@ -1167,7 +1167,9 @@ class VAEClassifier(object):
 					#print(mse)
 
 					# - Compute similarity index
-					ssim_mean, ssim_2d= structural_similarity(inputdata_img, recdata_img, full=True, win_size=winsize)
+					#   NB: Need to normalize images to max otherwise the returned values are always ~1.
+					img_max= np.max([inputdata_img,recdata_img])
+					ssim_mean, ssim_2d= structural_similarity(inputdata_img/img_max, recdata_img/img_max, full=True, win_size=winsize)
 					ssim_1d= ssim_2d[cond]
 					ssim_mean_mask= np.nanmean(ssim_1d)
 					ssim_min_mask= np.nanmin(ssim_1d)
