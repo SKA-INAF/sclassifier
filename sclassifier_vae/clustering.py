@@ -629,8 +629,9 @@ class Clusterer(object):
 		print("self.labels")
 		print(type(self.labels))
 		print(self.labels)
+		print(self.labels.tolist())
 
-		labels_unique= set(list(self.labels)).discard(-1) # get set of unique labels, without -1=noise
+		labels_unique= set(self.labels.tolist()).discard(-1) # get set of unique labels, without -1=noise
 		print("labels_unique")
 		print(labels_unique)
 		#self.nclusters= self.labels.max()
