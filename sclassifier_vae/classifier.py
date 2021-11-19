@@ -69,7 +69,7 @@ from tensorflow.python.ops.image_ops_impl import _fspecial_gauss, _ssim_helper, 
 
 from tensorflow.python.framework.ops import disable_eager_execution, enable_eager_execution 
 #disable_eager_execution()
-enable_eager_execution()
+#enable_eager_execution()
 
 ## SCIKIT MODULES
 from skimage.metrics import mean_squared_error
@@ -525,8 +525,9 @@ class VAEClassifier(object):
 		#==   SET LOSS & METRICS
 		#===========================	
 		###self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
-		if not tf.executing_eagerly():
-			self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True)
+		##if not tf.executing_eagerly():
+		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True)
+		self.vae.compile(optimizer=self.optimizer, loss=self.loss)
 		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=False)
 		
 		# - Print and draw model
