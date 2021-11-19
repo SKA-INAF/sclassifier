@@ -1,0 +1,14 @@
+numpy>=1.18
+astropy>=2.0
+scipy
+scikit-learn
+pyparsing
+matplotlib
+six==1.15.0
+numpy==1.19.5
+tensorflow==2.6.0
+imgaug>=0.4.0
+umap-learn
+hdbscan
+seaborn
+scikit-image
