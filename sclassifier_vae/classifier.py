@@ -524,7 +524,8 @@ class VAEClassifier(object):
 		#==   SET LOSS & METRICS
 		#===========================	
 		###self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
-		self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True)
+		if not tf.executing_eagerly():
+			self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True)
 		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=False)
 		
 		# - Print and draw model
