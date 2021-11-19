@@ -2,7 +2,7 @@ numpy>=1.18
 astropy>=2.0
 scipy
 scikit-learn
-pyparsing
+pyparsing<=2.4.7
 matplotlib
 six==1.15.0
 numpy==1.19.5
