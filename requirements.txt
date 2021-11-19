@@ -12,3 +12,4 @@ umap-learn
 hdbscan
 seaborn
 scikit-image
+ipython
