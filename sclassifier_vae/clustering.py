@@ -626,6 +626,10 @@ class Clusterer(object):
 		self.exemplars= self.clusterer.exemplars_  # list
 		self.cluster_persistence= self.clusterer.cluster_persistence_  # shape (n_clusters, )
 		
+		print("self.labels")
+		print(type(self.labels))
+		print(self.labels)
+
 		labels_unique= set(list(self.labels)).discard(-1) # get set of unique labels, without -1=noise
 		print("labels_unique")
 		print(labels_unique)
