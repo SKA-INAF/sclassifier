@@ -179,13 +179,22 @@ def compute_ssim_per_channel(img1, img2, max_val=1.0, filter_size=11, filter_sig
 		img1 = array_ops.identity(img1)
 
 	# Replace nans & inf with image minimum
-	img1_min= tf.reduce_min(tf.ragged.boolean_mask(img1, mask=tf.math.is_finite(img1)))
-	img2_min= tf.reduce_min(tf.ragged.boolean_mask(img2, mask=tf.math.is_finite(img2)))
+	img1_nanmin= tf.reduce_min(tf.ragged.boolean_mask(img1, mask=tf.math.is_finite(img1)))
+	img2_nanmin= tf.reduce_min(tf.ragged.boolean_mask(img2, mask=tf.math.is_finite(img2)))
 	cond_img1= tf.logical_and(tf.math.is_finite(img1),~tf.math.equal(img1,0))
 	cond_img2= tf.math.is_finite(img2)
-	img1= tf.where(~tf.math.is_finite(img1), tf.ones_like(img1) * img1_min, img1)
-	img2= tf.where(~tf.math.is_finite(img2), tf.ones_like(img2) * img2_min, img2)
+	img1= tf.where(~tf.math.is_finite(img1), tf.ones_like(img1) * img1_nanmin, img1)
+	img2= tf.where(~tf.math.is_finite(img2), tf.ones_like(img2) * img2_nanmin, img2)
 
+	# Scale images by global maximum among the two
+	img1_max= tf.reduce_max(img1)
+	img2_max= tf.reduce_max(img2)
+	if tf.greater(img1_max, img2_max):
+		img1= tf.math.divide(img1,img1_max)
+		img2= tf.math.divide(img2,img1_max)
+	else:
+		img1= tf.math.divide(img1,img2_max)
+		img2= tf.math.divide(img2,img2_max)
 
 	# TODO(sjhwang): Try to cache kernels and compensation factor.
 	kernel = _fspecial_gauss(filter_size, filter_sigma)
