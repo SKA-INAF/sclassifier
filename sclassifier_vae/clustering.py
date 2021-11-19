@@ -716,7 +716,9 @@ class Clusterer(object):
 		varnames_counter= list(range(1,ndim+1))
 		varnames= '{}{}'.format('z',' z'.join(str(item) for item in varnames_counter))
 		#nclusters= clusterer.labels_.max()
-		nclusters= len(set(list(clusterer.labels_)).discard(-1))
+		labels_unique= set(clusterer.labels_.tolist())
+		labels_unique.discard(-1)
+		nclusters= len(labels_unique)
 
 		print("len(clusterer.labels_)")
 		print(len(clusterer.labels_))
@@ -792,8 +794,9 @@ class Clusterer(object):
 		varnames_counter= list(range(1,ndim+1))
 		varnames= '{}{}'.format('z',' z'.join(str(item) for item in varnames_counter))
 		#nclusters= clusterer.labels_.max()
-		nclusters= len(set(list(clusterer.labels_)).discard(-1))
-
+		labels_unique= set(clusterer.labels_.tolist())
+		labels_unique.discard(-1)
+		nclusters= len(labels_unique)
 
 		# - Set cluster colors
 		palette = sns.color_palette('deep', nclusters+1)
