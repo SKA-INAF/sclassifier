@@ -54,7 +54,8 @@ reqs.append('six==1.15.0')
 reqs.append('numpy==1.19.5')
 
 #reqs.append('tensorflow>=2.3')
-reqs.append('tensorflow==2.6.0')
+#reqs.append('tensorflow==2.6.0')
+reqs.append('tensorflow>=2.6.1')
 
 #reqs.append('imgaug')
 reqs.append('imgaug>=0.4.0')
@@ -63,7 +64,6 @@ reqs.append('umap-learn')
 reqs.append('hdbscan')
 reqs.append('seaborn')
 reqs.append('scikit-image')
-reqs.append('scikit-learn')
 
 
 data_dir = 'data'
