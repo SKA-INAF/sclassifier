@@ -271,7 +271,7 @@ class VAEClassifier(object):
 		self.data_generator= None
 		self.augmentation= False	
 		self.validation_steps= 10
-		self.use_multiprocessing= False
+		self.use_multiprocessing= True
 		self.nworkers= 1
 		
 		# - NN architecture
