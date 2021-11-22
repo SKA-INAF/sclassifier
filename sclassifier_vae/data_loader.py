@@ -122,6 +122,7 @@ class SourceData(object):
 
 		# - Set data cube
 		self.img_cube= np.dstack(self.img_data)
+		self.img_cube= self.img_cube.astype(np.float32) # convert otherwise skimage resize fails for 1d image
 		self.img_cube_mask= np.dstack(self.img_data_mask)
 		self.nx= self.img_cube.shape[1]
 		self.ny= self.img_cube.shape[0]
