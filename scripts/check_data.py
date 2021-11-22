@@ -51,11 +51,19 @@ def get_args():
 	parser.add_argument('-datalist','--datalist', dest='datalist', required=True, type=str, help='Input data json filelist') 
 	
 	# - Data pre-processing options
-	parser.add_argument('-nx', '--nx', dest='nx', required=False, type=int, default=128, action='store',help='Image resize width in pixels (default=128)')
-	parser.add_argument('-ny', '--ny', dest='ny', required=False, type=int, default=128, action='store',help='Image resize height in pixels (default=128)')	
+	parser.add_argument('-nx', '--nx', dest='nx', required=False, type=int, default=64, action='store',help='Image resize width in pixels (default=64)')
+	parser.add_argument('-ny', '--ny', dest='ny', required=False, type=int, default=64, action='store',help='Image resize height in pixels (default=64)')	
 	
 	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize input images in range [0,1]')	
 	parser.set_defaults(normalize=False)
+
+	parser.add_argument('--log_transform', dest='log_transform', action='store_true',help='Apply log transform to images')	
+	parser.set_defaults(log_transform=False)
+
+	parser.add_argument('--scale', dest='scale', action='store_true',help='Apply scale factors to images')	
+	parser.set_defaults(scale=False)
+
+	parser.add_argument('-scale_factors', '--scale_factors', dest='scale_factors', required=False, type=str, default='', action='store',help='Image scale factors separated by commas (default=empty)')
 	
 	parser.add_argument('--augment', dest='augment', action='store_true',help='Augment images')	
 	parser.set_defaults(augment=False)
@@ -99,11 +107,14 @@ def main():
 	nx= args.nx
 	ny= args.ny
 	normalize= args.normalize
+	log_transform= args.log_transform
 	resize= args.resize
 	augment= args.augment
 	shuffle= args.shuffle
 	draw= args.draw
-
+	scale= args.scale
+	scale_factors= [float(x.strip()) for x in args.scale_factors.split(',')]
+	
 	#===========================
 	#==   READ DATA
 	#===========================
@@ -129,7 +140,9 @@ def main():
 		shuffle=shuffle,
 		resize=resize, nx=nx, ny=ny, 	
 		normalize=normalize, 
-		augment=augment
+		augment=augment,
+		log_transform=log_transform,
+		scale=scale, scale_factors=scale_factors
 	)	
 
 	img_counter= 0
