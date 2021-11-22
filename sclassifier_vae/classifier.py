@@ -566,18 +566,26 @@ class VAEClassifier(object):
 			else:
 				x = layers.Conv2D(self.nfilters_cnn[k], (self.kernsizes_cnn[k], self.kernsizes_cnn[k]), strides=self.strides_cnn[k], activation=self.activation_fcn_cnn, padding=padding)(x)
 
+			# - Add batch normalization?
+			if self.add_batchnorm:
+				x = BatchNormalization(axis=-1)(x)
+
+			# - Add Leaky RELU?	
+			if self.add_leakyrelu:
+				x = layers.LeakyReLU(alpha=self.leakyrelu_alpha)(x)
+
 			# - Add max pooling?
 			if self.add_max_pooling:
 				padding= "valid"
 				x = layers.MaxPooling2D(pool_size=(self.pool_size,self.pool_size),strides=None,padding=padding)(x)
 					
 			# - Add Leaky RELU?	
-			if self.add_leakyrelu:
-				x = layers.LeakyReLU(alpha=self.leakyrelu_alpha)(x)
+			#if self.add_leakyrelu:
+			#	x = layers.LeakyReLU(alpha=self.leakyrelu_alpha)(x)
 
 			# - Add batch normalization?
-			if self.add_batchnorm:
-				x = BatchNormalization(axis=-1)(x)
+			#if self.add_batchnorm:
+			#	x = BatchNormalization(axis=-1)(x)
 			
 
 		# - Store layer size before flattening (needed for decoder network)
@@ -643,18 +651,25 @@ class VAEClassifier(object):
 			# - Add deconv 2D layer
 			padding= "same"
 			x = layers.Conv2DTranspose(self.nfilters_cnn[k], (self.kernsizes_cnn[k], self.kernsizes_cnn[k]), strides=self.strides_cnn[k], activation=self.activation_fcn_cnn, padding=padding)(x)
-			
+			# - Add batch normalization?
+			if self.add_batchnorm:
+				x = BatchNormalization(axis=-1)(x)
+
+			# - Add Leaky RELU?	
+			if self.add_leakyrelu:
+				x = layers.LeakyReLU(alpha=self.leakyrelu_alpha)(x)
+
 			# - Add max pooling?
 			if self.add_max_pooling:
 				x = layers.UpSampling2D((self.pool_size,self.pool_size),interpolation='nearest')(x)
 	
 			# - Add Leaky RELU?	
-			if self.add_leakyrelu:
-				x = layers.LeakyReLU(alpha=self.leakyrelu_alpha)(x)
+			#if self.add_leakyrelu:
+			#	x = layers.LeakyReLU(alpha=self.leakyrelu_alpha)(x)
 
 			# - Add batch normalization?
-			if self.add_batchnorm:
-				x = BatchNormalization(axis=-1)(x)
+			#if self.add_batchnorm:
+			#	x = BatchNormalization(axis=-1)(x)
 
 
 		# - Apply a single conv (or Conv tranpose??) layer to recover the original depth of the image

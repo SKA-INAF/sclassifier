@@ -84,6 +84,9 @@ def get_args():
 	parser.set_defaults(add_maxpooling_layer=False)	
 	parser.add_argument('--add_batchnorm_layer', dest='add_batchnorm_layer', action='store_true',help='Add batch normalization layer after conv layers ')	
 	parser.set_defaults(add_batchnorm_layer=False)	
+	parser.add_argument('--add_leakyrelu', dest='add_leakyrelu', action='store_true',help='Add LeakyRELU after batch norm layers ')	
+	parser.set_defaults(add_leakyrelu=False)
+
 	parser.add_argument('--add_dense_layer', dest='add_dense_layer', action='store_true',help='Add dense layers in encoder after flattening layers ')	
 	parser.set_defaults(add_dense_layer=False)
 
@@ -167,6 +170,7 @@ def main():
 	use_vae= args.use_vae
 	add_maxpooling_layer= args.add_maxpooling_layer
 	add_batchnorm_layer= args.add_batchnorm_layer
+	add_leakyrelu= args.add_leakyrelu
 	add_dense_layer= args.add_dense_layer	
 	nfilters_cnn= [int(x.strip()) for x in args.nfilters_cnn.split(',')]
 	kernsizes_cnn= [int(x.strip()) for x in args.kernsizes_cnn.split(',')]	
@@ -251,6 +255,7 @@ def main():
 	
 	vae_class.add_max_pooling= add_maxpooling_layer
 	vae_class.add_batchnorm= add_batchnorm_layer
+	vae_class.add_leakyrelu= add_leakyrelu
 	vae_class.add_dense= add_dense_layer
 	vae_class.nfilters_cnn= nfilters_cnn
 	vae_class.kernsizes_cnn= kernsizes_cnn
