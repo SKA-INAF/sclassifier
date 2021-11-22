@@ -1242,6 +1242,7 @@ class VAEClassifier(object):
 					plt.savefig(outfile_plot)
 					#plt.tight_layout()
 					#plt.show()
+					plt.close()
 					
 				# - Stop generator
 				if img_counter>=self.nsamples:
