@@ -863,8 +863,11 @@ class VAEClassifier(object):
 		# - Get losses and plot
 		logger.info("Retrieving losses and plot ...")
 		loss_train= self.fitout.history['loss']
-		loss_val= self.fitout.history['val_loss']
 		N= len(loss_train)
+				
+		loss_val= [0]*N
+		if 'val_loss' in self.fitout.history:
+			loss_val= self.fitout.history['val_loss']
 		epoch_ids= np.array(range(N))
 		epoch_ids+= 1
 		epoch_ids= epoch_ids.reshape(N,1)
