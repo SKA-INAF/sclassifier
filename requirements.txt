@@ -11,7 +11,7 @@ imgaug>=0.4.0
 umap-learn
 hdbscan
 seaborn
-scikit-image<=0.15.0
+scikit-image
 jedi<0.18.0
 ipython
 pydot
