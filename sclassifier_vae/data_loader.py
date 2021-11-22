@@ -244,6 +244,72 @@ class SourceData(object):
 
 		return 0	
 		
+	
+	def scale_imgs(self, scale_factors):
+		""" Rescale image pixels with given weights """
+
+		# - Return if data cube is None
+		if self.img_cube is None:
+			logger.error("Image data cube is None!")
+			return -1
+
+		# - Check size of scale factors
+		nchannels= self.img_cube.shape[2]
+		nscales= len(scale_factors)
+		if nscales<=0 or nscales!=nchannels:
+			logger.error("Empty scale factors or size different from data channels!")
+			return -1
+
+		# - Apply scale factors
+		self.img_cube*= scale_factors
+
+		return 0
+		
+
+	def log_transform_imgs(self):
+		""" Apply log transform to images """
+
+		# - Return if data cube is None
+		if self.img_cube is None:
+			logger.error("Image data cube is None!")
+			return -1
+
+		# - Find min & max across all channels
+		#   NB: Excluding masked pixels (=0)
+		data_masked= np.ma.masked_equal(self.img_cube, 0.0, copy=False)
+		data_min= data_masked.min()
+		data_max= data_masked.max()
+
+		# - Log transform
+		#   NB: Set previously masked pixels to 0
+		data_transf= np.log10(self.img_cube+1-data_min)
+		data_transf[self.img_cube==0]= 0
+
+		# - Check data cube integrity
+		has_bad_pixs= self.has_bad_pixel(data_transf, check_fract=False, thr=0)
+		if has_bad_pixs:
+			logger.warn("Log-transformed data cube has bad pixels!")	
+			return -1
+
+		# - Normalize in range [0,1].
+		#   NB: Set previously masked pixels to 0
+		data_masked= np.ma.masked_equal(data_transf, 0.0, copy=False)
+		data_min= data_masked.min()
+		data_max= data_masked.max()
+		data_norm= (data_transf-data_min)/(data_max-data_min)
+		data_norm[self.img_cube==0]= 0
+
+		# - Check data cube integrity
+		has_bad_pixs= self.has_bad_pixel(data_norm, check_fract=False, thr=0)
+		if has_bad_pixs:
+			logger.warn("Log-transformed and normalized data cube has bad pixels!")	
+			return -1
+
+		# - Update data cube
+		self.img_cube= data_norm
+	
+		return 0
+
 
 	def normalize_imgs(self):
 		""" Normalize images in range [0,1] """
@@ -267,7 +333,7 @@ class SourceData(object):
 		# - Check data cube integrity
 		has_bad_pixs= self.has_bad_pixel(data_norm, check_fract=False, thr=0)
 		if has_bad_pixs:
-			logger.warn("Resized data cube has bad pixels!")	
+			logger.warn("Normalized data cube has bad pixels!")	
 			return -1
 
 		# - Update data cube
@@ -396,7 +462,7 @@ class DataLoader(object):
 
 		return 0
 
-	def read_data(self, index, resize=True, nx=128, ny=128, normalize=True, augment=False):	
+	def read_data(self, index, resize=True, nx=64, ny=64, normalize=True, augment=False, log_transform=False, scale=False, scale_factors=[]):	
 		""" Read data at given index """
 
 		# - Check index
@@ -416,6 +482,13 @@ class DataLoader(object):
 			logger.error("Failed to read source images %d!" % index)
 			return None
 
+		# - Rescale image data?
+		if scale and scale_factors:
+			logger.debug("Rescaling source image data %d ..." % index)
+			if sdata.scale_imgs(scale_factors)<0:
+				logger.error("Failed to re-scale source image %d!" % index)
+				return None
+
 		# - Run augmentation?
 		if augment:
 			logger.debug("Augmenting source image data %d ..." % index)
@@ -429,11 +502,17 @@ class DataLoader(object):
 			if sdata.resize_imgs(nx, ny, preserve_range=True)<0:
 				logger.error("Failed to resize source image %d to size (%d,%d)!" % (index,nx,ny))
 				return None
-			
+
 		# - Normalize image?
 		if normalize:
 			if sdata.normalize_imgs()<0:
 				logger.error("Failed to normalize source image %d!" % index)
+				return None
+
+		# - Log-tranform image?
+		if log_transform:
+			if sdata.log_transform_imgs()<0:
+				logger.error("Failed to log-transform source image %d!" % index)
 				return None
 
 		return sdata
@@ -441,7 +520,7 @@ class DataLoader(object):
 	###################################
 	##     GENERATE DATA FOR TRAINING
 	###################################
-	def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=128, ny=128, normalize=True, augment=False):	
+	def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=64, ny=64, normalize=True, augment=False, log_transform=False, scale=False, scale_factors=[]):	
 		""" Generator function reading nsamples images from disk and returning to caller """
 	
 		nb= 0
@@ -466,7 +545,9 @@ class DataLoader(object):
 					data_index, 
 					resize=resize, nx=nx, ny=ny,
 					normalize=normalize, 
-					augment=augment
+					augment=augment,
+					log_transform=log_transform,
+					scale=scale, scale_factors=scale_factors
 				)
 				if sdata is None:
 					logger.warn("Failed to read source data at index %d, skip to next ..." % data_index)
