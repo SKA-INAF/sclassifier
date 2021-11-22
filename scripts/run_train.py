@@ -75,8 +75,7 @@ def get_args():
 	parser.add_argument('-weight_seed', '--weight_seed', dest='weight_seed', required=False, type=int, default=None, action='store',help='Weight seed to set reproducible training (default=None)')
 	parser.add_argument('--reproducible', dest='reproducible', action='store_true',help='Fix seed and make model reproducible from run to run')	
 	parser.set_defaults(reproducible=False)
-
-		
+	parser.add_argument('-validation_steps', '--validation_steps', dest='validation_steps', required=False, type=int, default=10, action='store',help='Number of validation steps used in each epoch (default=10)')
 
 	# - Network architecture options
 	parser.add_argument('--use_vae', dest='use_vae', action='store_true',help='Use variational autoencoders')	
@@ -201,6 +200,7 @@ def main():
 	ssim_win_size= args.ssim_win_size
 	weight_seed= args.weight_seed
 	reproducible= args.reproducible
+	validation_steps= args.validation_steps
 
 	# - UMAP options
 	run_umap= args.run_umap
@@ -244,6 +244,7 @@ def main():
 	vae_class.augment_scale_factor= augment_scale_factor
 	vae_class.batch_size= batch_size
 	vae_class.nepochs= nepochs
+	vae_class.validation_steps= validation_steps
 	vae_class.set_optimizer(optimizer, learning_rate)
 	if reproducible:
 		vae_class.set_reproducible_model()
