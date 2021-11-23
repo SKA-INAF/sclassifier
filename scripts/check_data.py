@@ -51,6 +51,7 @@ def get_args():
 
 	# - Input options
 	parser.add_argument('-datalist','--datalist', dest='datalist', required=True, type=str, help='Input data json filelist') 
+	parser.add_argument('-nmax', '--nmax', dest='nmax', required=False, type=int, default=-1, action='store',help='Max number of images to be read (-1=all) (default=-1)')
 	
 	# - Data pre-processing options
 	parser.add_argument('-nx', '--nx', dest='nx', required=False, type=int, default=64, action='store',help='Image resize width in pixels (default=64)')
@@ -106,6 +107,7 @@ def main():
 
 	# - Input filelist
 	datalist= args.datalist
+	nmax= args.nmax
 
 	# - Data process options	
 	nx= args.nx
@@ -137,6 +139,8 @@ def main():
 	
 	source_labels= dl.snames
 	nsamples= len(source_labels)
+	if nmax>0 and nmax<nsamples:
+		nsamples= nmax
 
 	logger.info("#%d samples to be read ..." % nsamples)
 
@@ -155,6 +159,7 @@ def main():
 	)	
 
 	img_counter= 0
+	img_stats_all= []
 
 	while True:
 		try:
@@ -211,15 +216,7 @@ def main():
 					img_stats.append(data_mean)
 					img_stats.append(data_std)
 
-				head= "# sname "
-				for i in range(nchannels):
-					ch= i+1
-					s= 'min_ch{i} max_ch{i} mean_ch{i} std_ch{i} '.format(i=ch)
-					head= head + s
-				head= head + "id"
-				logger.info("Stats file head: %s" % (head))
-				Utils.write_ascii(np.array(img_stats), outfile_stats, head)	
-
+				img_stats_all.append(img_stats)
 
 			# - Draw data
 			if draw:
@@ -244,6 +241,21 @@ def main():
 		except Exception as e:
 			logger.warn("Stop loop (exception catched %s) ..." % str(e))
 			break
+
+	# - Dump img stats
+	if dump_stats:
+		# - Set file header
+		head= "# sname "
+		for i in range(nchannels):
+			ch= i+1
+			s= 'min_ch{i} max_ch{i} mean_ch{i} std_ch{i} '.format(i=ch)
+			head= head + s
+			head= head + "id"
+		logger.info("Stats file head: %s" % (head))
+		
+		# - Dump to file
+		Utils.write_ascii(np.array(img_stats_all), outfile_stats, head)	
+
 	
 	return 0
 
