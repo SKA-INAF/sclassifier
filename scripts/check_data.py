@@ -203,7 +203,7 @@ def main():
 
 			# - Dump image stats
 			if dump_stats:
-				img_stats= [sname,classid]
+				img_stats= [sname]
 				
 				for i in range(nchannels):
 					data_masked= np.ma.masked_equal(data[0,:,:,i], 0.0, copy=False)
@@ -216,6 +216,7 @@ def main():
 					img_stats.append(data_mean)
 					img_stats.append(data_std)
 
+				img_stats.append(classid)
 				img_stats_all.append(img_stats)
 
 			# - Draw data
@@ -251,7 +252,7 @@ def main():
 			ch= i+1
 			s= 'min_ch{i} max_ch{i} mean_ch{i} std_ch{i} '.format(i=ch)
 			head= head + s
-			head= head + "id"
+		head= head + "id"
 		logger.info("Stats file head: %s" % (head))
 		
 		# - Dump to file
