@@ -244,7 +244,8 @@ def main():
 
 	# - Dump img stats
 	if dump_stats:
-		# - Set file header
+		logger.info("Dumping img stats info to file %s ..." % (outfile_stats))
+
 		head= "# sname "
 		for i in range(nchannels):
 			ch= i+1
