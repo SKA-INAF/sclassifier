@@ -521,7 +521,7 @@ class DataLoader(object):
 	###################################
 	##     GENERATE DATA FOR TRAINING
 	###################################
-	def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=64, ny=64, normalize=True, augment=False, log_transform=False, scale=False, scale_factors=[]):	
+	def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=64, ny=64, normalize=True, augment=False, log_transform=False, scale=False, scale_factors=[], retsdata=False):	
 		""" Generator function reading nsamples images from disk and returning to caller """
 	
 		nb= 0
@@ -578,7 +578,10 @@ class DataLoader(object):
 					#print("inputs.shape")
 					#print(inputs.shape)
 					logger.debug("Batch size (%d) reached, yielding generated data of size (%d,%d,%d,%d) ..." % (nb,inputs.shape[0],inputs.shape[1],inputs.shape[2],inputs.shape[3]))
-					yield inputs, inputs
+					if retsdata:
+						yield inputs, sdata
+					else:
+						yield inputs, inputs
 					nb= 0
 
 			except (GeneratorExit, KeyboardInterrupt):

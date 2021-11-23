@@ -77,7 +77,9 @@ def get_args():
 	parser.add_argument('--draw', dest='draw', action='store_true',help='Draw images')	
 	parser.set_defaults(draw=False)
 	
-
+	parser.add_argument('--dump_stats', dest='dump_stats', action='store_true',help='Dump image stats')	
+	parser.set_defaults(dump_stats=False)
+	
 	args = parser.parse_args()	
 
 	return args
@@ -112,8 +114,10 @@ def main():
 	augment= args.augment
 	shuffle= args.shuffle
 	draw= args.draw
+	dump_stats= args.dump_stats
 	scale= args.scale
 	scale_factors= [float(x.strip()) for x in args.scale_factors.split(',')]
+	outfile_stats= "stats_info.dat"
 	
 	#===========================
 	#==   READ DATA
@@ -142,15 +146,20 @@ def main():
 		normalize=normalize, 
 		augment=augment,
 		log_transform=log_transform,
-		scale=scale, scale_factors=scale_factors
+		scale=scale, scale_factors=scale_factors,
+		retsdata=True
 	)	
 
 	img_counter= 0
 
 	while True:
 		try:
-			data, _= next(data_generator)
+			data, sdata= next(data_generator)
 			img_counter+= 1
+
+			sname= sdata.sname
+			label= sdata.label
+			classid= sdata.id
 
 			logger.info("Reading image no. %d" % img_counter)
 			#print("data shape")
@@ -182,7 +191,31 @@ def main():
 				if not correct_norm:
 					logger.error("Image %d chan %d (name=%s) has invalid norm (%f,%f), check!" % (img_counter, i+1, source_labels[img_counter-1],data_min,data_max))
 					break
-		
+
+			# - Dump image stats
+			if dump_stats:
+				img_stats= [sname,classid]
+				
+				for i in range(nchannels):
+					data_masked= np.ma.masked_equal(data[0,:,:,i], 0.0, copy=False)
+					data_min= data_masked.min()
+					data_max= data_masked.max()
+					data_mean= data_masked.mean() 
+					data_std= data_masked.std()
+					img_stats.append(data_min)
+					img_stats.append(data_max)
+					img_stats.append(data_mean)
+					img_stats.append(data_std)
+
+				head= "# sname "
+				for i in range(nchannels):
+					ch= i+1
+					s= 'min_ch{i} max_ch{i} mean_ch{i} std_ch{i} '.format(i=ch)
+					head= head + s
+				head= head + "id"
+				logger.info("Stats file head: %s" % (head))
+				Utils.write_ascii(np.array(img_stats), outfile_stats, head)	
+
 
 			# - Draw data
 			if draw:
