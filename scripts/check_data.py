@@ -116,7 +116,9 @@ def main():
 	draw= args.draw
 	dump_stats= args.dump_stats
 	scale= args.scale
-	scale_factors= [float(x.strip()) for x in args.scale_factors.split(',')]
+	scale_factors= []
+	if args.scale_factors!="":
+		scale_factors= [float(x.strip()) for x in args.scale_factors.split(',')]
 	outfile_stats= "stats_info.dat"
 	
 	#===========================
