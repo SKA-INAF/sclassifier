@@ -317,6 +317,9 @@ class VAEClassifier(object):
 		self.weight_init_seed= None
 		self.shuffle_train_data= True
 		self.augment_scale_factor= 1
+		self.log_transform_img= False
+		self.scale_img= False
+		self.scale_img_factors= []
 		
 		# - Draw options
 		self.marker_mapping= {
@@ -409,8 +412,10 @@ class VAEClassifier(object):
 			shuffle=self.shuffle_train_data,
 			resize=True, nx=self.nx, ny=self.ny, 
 			normalize=True, 
-			augment=self.augmentation
-		)	
+			augment=self.augmentation,
+			log_transform=self.log_transform_img,
+			scale=self.scale_img, scale_factors=self.scale_img_factors
+		)
 
 		# - Create cross validation data generator
 		self.crossval_data_generator= self.dl.data_generator(
@@ -418,7 +423,9 @@ class VAEClassifier(object):
 			shuffle=self.shuffle_train_data,
 			resize=True, nx=self.nx, ny=self.ny, 
 			normalize=True, 
-			augment=self.augmentation
+			augment=self.augmentation,
+			log_transform=self.log_transform_img,
+			scale=self.scale_img, scale_factors=self.scale_img_factors
 		)	
 
 		# - Create test data generator
@@ -427,7 +434,9 @@ class VAEClassifier(object):
 			shuffle=False,
 			resize=True, nx=self.nx, ny=self.ny, 
 			normalize=True, 
-			augment=False
+			augment=False,
+			log_transform=self.log_transform_img,
+			scale=self.scale_img, scale_factors=self.scale_img_factors
 		)
 
 		# - Create standard generator (for reconstruction)
@@ -436,7 +445,9 @@ class VAEClassifier(object):
 			shuffle=False,
 			resize=True, nx=self.nx, ny=self.ny, 
 			normalize=True, 
-			augment=False
+			augment=False,
+			log_transform=self.log_transform_img,
+			scale=self.scale_img, scale_factors=self.scale_img_factors
 		)
 		
 		return 0

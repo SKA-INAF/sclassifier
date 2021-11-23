@@ -65,6 +65,10 @@ def get_args():
 	parser.add_argument('--augment', dest='augment', action='store_true',help='Augment images')	
 	parser.set_defaults(augment=False)
 	parser.add_argument('-augment_scale_factor', '--augment_scale_factor', dest='augment_scale_factor', required=False, type=int, default=1, action='store',help='Number of times images are augmented. E.g. if 2, nsteps_per_epoch=2*nsamples/batch_size (default=1)')
+	parser.add_argument('--scale', dest='scale', action='store_true',help='Apply scale factors to images')	
+	parser.set_defaults(scale=False)
+
+	parser.add_argument('-scale_factors', '--scale_factors', dest='scale_factors', required=False, type=str, default='', action='store',help='Image scale factors separated by commas (default=empty)')
 
 	# - Network training options
 	parser.add_argument('-latentdim', '--latentdim', dest='latentdim', required=False, type=int, default=2, action='store',help='Dimension of latent vector (default=2)')	
@@ -165,6 +169,10 @@ def main():
 	ny= args.ny
 	augment= args.augment
 	augment_scale_factor= args.augment_scale_factor
+	scale= args.scale
+	scale_factors= []
+	if args.scale_factors!="":
+		scale_factors= [float(x.strip()) for x in args.scale_factors.split(',')]
 
 	# - NN architecture
 	use_vae= args.use_vae
@@ -246,6 +254,9 @@ def main():
 	vae_class.set_image_size(nx, ny)
 	vae_class.augmentation= augment
 	vae_class.augment_scale_factor= augment_scale_factor
+	vae_class.scale_img= scale
+	vae_class.scale_img_factors= scale_factors
+
 	vae_class.batch_size= batch_size
 	vae_class.nepochs= nepochs
 	vae_class.validation_steps= validation_steps
