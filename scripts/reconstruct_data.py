@@ -60,6 +60,10 @@ def get_args():
 	# - Data pre-processing options
 	parser.add_argument('-nx', '--nx', dest='nx', required=False, type=int, default=64, action='store',help='Image resize width in pixels (default=64)')
 	parser.add_argument('-ny', '--ny', dest='ny', required=False, type=int, default=64, action='store',help='Image resize height in pixels (default=64)')	
+	parser.add_argument('--scale', dest='scale', action='store_true',help='Apply scale factors to images')	
+	parser.set_defaults(scale=False)
+
+	parser.add_argument('-scale_factors', '--scale_factors', dest='scale_factors', required=False, type=str, default='', action='store',help='Image scale factors separated by commas (default=empty)')
 
 	# - Autoencoder model options
 	parser.add_argument('-modelfile_encoder', '--modelfile_encoder', dest='modelfile_encoder', required=True, type=str, action='store',help='Encoder model architecture filename (.json)')
@@ -101,6 +105,10 @@ def main():
 	# - Data process options	
 	nx= args.nx
 	ny= args.ny
+	scale= args.scale
+	scale_factors= []
+	if args.scale_factors!="":
+		scale_factors= [float(x.strip()) for x in args.scale_factors.split(',')]
 	
 	# - Autoencoder options
 	modelfile_encoder= args.modelfile_encoder
@@ -131,7 +139,9 @@ def main():
 	logger.info("Running autoencoder classifier reconstruction ...")
 	vae_class= VAEClassifier(dl)
 	vae_class.set_image_size(nx, ny)
-	
+	vae_class.scale_img= scale
+	vae_class.scale_img_factors= scale_factors
+
 	status= vae_class.reconstruct_data(
 		modelfile_encoder, weightfile_encoder, 
 		modelfile_decoder, weightfile_decoder,
