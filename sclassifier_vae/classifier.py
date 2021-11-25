@@ -573,9 +573,10 @@ class VAEClassifier(object):
 			padding= "same"
 			if k==0:
 				# - Set weights for the first layer
-				x = layers.Conv2D(self.nfilters_cnn[k], (self.kernsizes_cnn[k], self.kernsizes_cnn[k]), strides=self.strides_cnn[k], activation=self.activation_fcn_cnn, padding=padding, kernel_initializer=weight_initializer)(x)
+				#x = layers.Conv2D(self.nfilters_cnn[k], (self.kernsizes_cnn[k], self.kernsizes_cnn[k]), strides=self.strides_cnn[k], activation=self.activation_fcn_cnn, padding=padding, kernel_initializer=weight_initializer)(x)
+				x = layers.Conv2D(self.nfilters_cnn[k], (self.kernsizes_cnn[k], self.kernsizes_cnn[k]), strides=self.strides_cnn[k], padding=padding, kernel_initializer=weight_initializer)(x)
 			else:
-				x = layers.Conv2D(self.nfilters_cnn[k], (self.kernsizes_cnn[k], self.kernsizes_cnn[k]), strides=self.strides_cnn[k], activation=self.activation_fcn_cnn, padding=padding)(x)
+				x = layers.Conv2D(self.nfilters_cnn[k], (self.kernsizes_cnn[k], self.kernsizes_cnn[k]), strides=self.strides_cnn[k], padding=padding)(x)
 
 			# - Add batch normalization?
 			if self.add_batchnorm:
@@ -584,6 +585,8 @@ class VAEClassifier(object):
 			# - Add Leaky RELU?	
 			if self.add_leakyrelu:
 				x = layers.LeakyReLU(alpha=self.leakyrelu_alpha)(x)
+			else:
+				x = layers.ReLU()(x)
 
 			# - Add max pooling?
 			if self.add_max_pooling:
@@ -661,7 +664,9 @@ class VAEClassifier(object):
 		for k in reversed(range(len(self.nfilters_cnn))):
 			# - Add deconv 2D layer
 			padding= "same"
-			x = layers.Conv2DTranspose(self.nfilters_cnn[k], (self.kernsizes_cnn[k], self.kernsizes_cnn[k]), strides=self.strides_cnn[k], activation=self.activation_fcn_cnn, padding=padding)(x)
+			#x = layers.Conv2DTranspose(self.nfilters_cnn[k], (self.kernsizes_cnn[k], self.kernsizes_cnn[k]), strides=self.strides_cnn[k], activation=self.activation_fcn_cnn, padding=padding)(x)
+			x = layers.Conv2DTranspose(self.nfilters_cnn[k], (self.kernsizes_cnn[k], self.kernsizes_cnn[k]), strides=self.strides_cnn[k], padding=padding)(x)
+
 			# - Add batch normalization?
 			if self.add_batchnorm:
 				x = BatchNormalization(axis=-1)(x)
@@ -669,6 +674,8 @@ class VAEClassifier(object):
 			# - Add Leaky RELU?	
 			if self.add_leakyrelu:
 				x = layers.LeakyReLU(alpha=self.leakyrelu_alpha)(x)
+			else:
+				x = layers.ReLU()(x)
 
 			# - Add max pooling?
 			if self.add_max_pooling:
