@@ -671,7 +671,7 @@ class Clusterer(object):
 			axis=1
 		)
 
-		head= "# sname id clust_id clust_prob outlier_score"
+		head= "# sname id label clust_id clust_prob outlier_score"
 		Utils.write_ascii(clustered_data, self.outfile, head)	
 
 		#================================
