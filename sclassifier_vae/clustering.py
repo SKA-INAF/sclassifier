@@ -26,6 +26,7 @@ from astropy.io import ascii
 ## CLUSTERING MODULES
 import hdbscan
 from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA 
 
 ## GRAPHICS MODULES
 import seaborn as sns
@@ -75,6 +76,17 @@ class Clusterer(object):
 		self.data_classids= []
 		self.source_names= []
 		self.source_names_preclassified= []
+		
+		# *****************************
+		# ** Pre-processing
+		# *****************************
+		self.normalize= False
+		self.norm_min= 0
+		self.norm_max= 1
+		self.reduce_dim= False
+		self.reduce_dim_method= 'pca'
+		self.pca_ncomps= -1
+		self.pca_varthr= 0.9
 		
 		# *****************************
 		# ** Clustering parameters
@@ -166,23 +178,46 @@ class Clusterer(object):
 	#####################################
 	##     SETTERS/GETTERS
 	#####################################
-	#def set_encoded_data_unsupervised_outfile(self,outfile):
-	#	""" Set name of encoded data output unsupervised file """
-	#	self.outfile_encoded_data_unsupervised= outfile	
+	def __normalize_data(self, x, norm_min, norm_max):
+		""" Normalize input data to desired range """
+		
+		x_min= x.min(axis=0)
+		x_max= x.max(axis=0)
+		x_norm = norm_min + (x-x_min)/(x_max-x_min) * (norm_max-norm_min)
+		return x_norm
 
-	#def set_encoded_data_supervised_outfile(self,outfile):
-	#	""" Set name of encoded data output supervised file """
-	#	self.outfile_encoded_data_supervised= outfile	
+	def __reduce_data_dim(self, x, normalize=False):
+		""" Reduce input data dimensionality """
 
-	#def set_encoded_data_preclassified_outfile(self,outfile):
-	#	""" Set name of encoded preclassified data output file """
-	#	self.outfile_encoded_data_preclassified= outfile	
+		if self.reduce_dim_method=="pca":
+			x_transf= self.__pca_transform(x, self.pca_ncomps, self.pca_varthr)
+		else:
+			logger.error("Unknown/unsupported dimensionality reduction method (%s) given!" % (self.reduce_dim_method))
+			return None
 
-	#def set_encoded_data_dim(self,dim):
-	#	""" Set encoded data dim """
-	#	self.encoded_data_dim= dim
+		if normalize:
+			logger.info("Normalizing dim reducted data ...")
+			x_norm= self.__normalize_data(x_transf, self.norm_min, self.norm_max)
+			x_transf= x_norm
 
+		return x_transf
+		
+
+	def __pca_transform(self, x, ncomps=-1, var_ratio_thr=0.9):
+		""" Normalize input data to desired range """
 	
+		# - Define PCA and set desired number of components		
+		nfeat= x.shape[1]
+		if ncomps==-1:
+			logger.info("Applying PCA and selecting components with total variance ratio >= than %f ..." % (var_ratio_thr))
+			pca= PCA(n_components=var_ratio_thr, svd_solver == 'full')
+		else:
+			logger.info("Applying PCA and selecting %d components ..." % (ncomps))
+			pca= PCA(n_components=ncomps, svd_solver == 'full')
+			
+		x_transf= pca.fit_transform(x)
+
+		return x_transf
 
 	def __set_preclass_data(self):
 		""" Set pre-classified data """
@@ -259,10 +294,28 @@ class Clusterer(object):
 			logger.error("Empty feature data vector read!")
 			return -1
 
+		data_shape= self.data.shape
 		self.nsamples= data_shape[0]
 		self.nfeatures= data_shape[1]
-		logger.info("#nsamples=%d" % (self.nsamples))
+		logger.info("#nsamples=%d, #nfeatures=%d" % (self.nsamples, self.nfeatures))
 		
+		# - Normalize feature data?
+		if self.normalize:
+			logger.info("Normalizing feature data ...")
+			data_norm= self.__normalize_data(self.data, self.norm_min, self.norm_max)
+			self.data= data_norm
+
+		# - Apply dimensionality reduction?
+		if self.reduce_dim:
+			logger.info("Reducing data dimensionality using method %s ..." % (self.reduce_dim_method))
+			post_normalize= False
+			data_transf= self.__reduce_data_dim(self.data, normalize=post_normalize)
+			self.data= data_transf
+			data_shape= self.data.shape
+			self.nsamples= data_shape[0]
+			self.nfeatures= data_shape[1]
+			logger.info("#nsamples=%d, #nfeatures=%d (after dim reduction)" % (self.nsamples, self.nfeatures))
+
 		# - Set pre-classified data
 		logger.info("Setting pre-classified data (if any) ...")
 		self.__set_preclass_data()
@@ -313,8 +366,26 @@ class Clusterer(object):
 		else:
 			self.source_names= ["XXX"]*self.nsamples # Init to unclassified
 		
-		logger.info("#nsamples=%d" % (self.nsamples))
+		logger.info("#nsamples=%d, #nfeatures=%d" % (self.nsamples, self.nfeatures))
 		
+		# - Normalize feature data?
+		if self.normalize:
+			logger.info("Normalizing feature data ...")
+			data_norm= self.__normalize_data(self.data, self.norm_min, self.norm_max)
+			self.data= data_norm
+
+		# - Apply dimensionality reduction?
+		if self.reduce_dim:
+			logger.info("Reducing data dimensionality using method %s ..." % (self.reduce_dim_method))
+			post_normalize= False
+			data_transf= self.__reduce_data_dim(self.data, normalize=post_normalize)
+			self.data= data_transf
+			data_shape= self.data.shape
+			self.nsamples= data_shape[0]
+			self.nfeatures= data_shape[1]
+			logger.info("#nsamples=%d, #nfeatures=%d (after dim reduction)" % (self.nsamples, self.nfeatures))
+
+
 		# - Set pre-classified data
 		logger.info("Setting pre-classified data (if any) ...")
 		self.__set_preclass_data()

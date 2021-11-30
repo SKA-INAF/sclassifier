@@ -60,6 +60,15 @@ def get_args():
 	# - Input options
 	parser.add_argument('-inputfile','--inputfile', dest='inputfile', required=True, type=str, help='Input feature data table filename') 
 	
+	# - Pre-processing options
+	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize feature data in range [0,1] before clustering (default=false)')	
+	parser.set_defaults(normalize=False)	
+	parser.add_argument('--reduce_dim', dest='reduce_dim', action='store_true',help='Reduce feature data dimensionality before applying the clustering (default=false)')	
+	parser.set_defaults(reduce_dim=False)
+	parser.add_argument('-reduce_dim_method', '--reduce_dim_method', dest='reduce_dim_method', default='pca', required=False, type=str, action='store',help='Dimensionality reduction method {pca} (default=pca)')
+	parser.add_argument('-pca_ncomps', '--pca_ncomps', dest='pca_ncomps', required=False, type=int, default=-1, action='store',help='Number of PCA components to be used (-1=retain all cumulating a variance above threshold) (default=-1)')
+	parser.add_argument('-pca_varthr', '--pca_varthr', dest='pca_varthr', required=False, type=float, default=0.9, action='store',help='Cumulative variance threshold used to retain PCA components (default=0.9)')
+
 	# - Clustering options
 	parser.add_argument('-min_cluster_size', '--min_cluster_size', dest='min_cluster_size', required=False, type=int, default=5, action='store',help='Minimum cluster size for HDBSCAN clustering (default=5)')
 	parser.add_argument('-min_samples', '--min_samples', dest='min_samples', required=False, type=int, default=None, action='store',help='Minimum cluster sample parameter for HDBSCAN clustering. Typically equal to min_cluster_size (default=None')	
@@ -93,6 +102,13 @@ def main():
 	# - Input filelist
 	inputfile= args.inputfile
 
+	# - Data pre-processing
+	normalize= args.normalize
+	reduce_dim= args.reduce_dim
+	reduce_dim_method= args.reduce_dim_method
+	pca_ncomps= args.pca_ncomps
+	pca_varthr= args.pca_varthr
+	
 	# - Clustering options
 	min_cluster_size= args.min_cluster_size
 	min_samples= args.min_samples	
@@ -118,7 +134,12 @@ def main():
 	clust_class= Clusterer()
 	clust_class.min_cluster_size= min_cluster_size
 	clust_class.min_samples= min_samples
-	
+	clust_class.normalize= normalize
+	clust_class.reduce_dim= reduce_dim
+	clust_class.reduce_dim_method= reduce_dim_method
+	clust_class.pca_ncomps= pca_ncomps
+	clust_class.pca_varthr= pca_varthr
+
 	status= 0
 	if predict_clust:
 		if clust_class.run_predict(data, class_ids=classids, snames=snames, modelfile=modelfile_clust)<0:
