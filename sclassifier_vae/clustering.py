@@ -210,10 +210,10 @@ class Clusterer(object):
 		nfeat= x.shape[1]
 		if ncomps==-1:
 			logger.info("Applying PCA and selecting components with total variance ratio >= than %f ..." % (var_ratio_thr))
-			pca= PCA(n_components=var_ratio_thr, svd_solver == 'full')
+			pca= PCA(n_components=var_ratio_thr, svd_solver='full')
 		else:
 			logger.info("Applying PCA and selecting %d components ..." % (ncomps))
-			pca= PCA(n_components=ncomps, svd_solver == 'full')
+			pca= PCA(n_components=ncomps, svd_solver='full')
 			
 		x_transf= pca.fit_transform(x)
 
