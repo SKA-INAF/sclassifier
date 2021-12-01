@@ -392,7 +392,7 @@ class FeatExtractor(object):
 			fp.write("# ")
 			dict_writer = csv.DictWriter(fp, parnames)
 			dict_writer.writeheader()
-			dict_writer.writerows(spar_dict)
+			dict_writer.writerows(par_dict_list)
 
 		return 0
 
