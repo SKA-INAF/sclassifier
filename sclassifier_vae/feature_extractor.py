@@ -292,6 +292,7 @@ class FeatExtractor(object):
 
 				# - Save images
 				if save_imgs:
+					logger.info("Adding subplot (%d,%d,%d) ..." % (plot_nrows,plot_ncols,plot_index))
 					
 					# - Save ssim map
 					plot_index= 3*index + 1
