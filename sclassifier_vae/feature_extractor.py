@@ -292,10 +292,11 @@ class FeatExtractor(object):
 
 				# - Save images
 				if save_imgs:
-					logger.info("Adding subplot (%d,%d,%d) ..." % (plot_nrows,plot_ncols,plot_index))
 					
 					# - Save ssim map
 					plot_index= 3*index + 1
+					logger.info("Adding subplot (%d,%d,%d) ..." % (plot_nrows,plot_ncols,plot_index))
+					
 					plt.subplot(plot_nrows, plot_ncols, plot_index)
 					plt.imshow(ssim_2d, origin='lower')
 					plt.colorbar()
