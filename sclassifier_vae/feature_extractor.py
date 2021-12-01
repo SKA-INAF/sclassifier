@@ -18,6 +18,7 @@ import numpy as np
 import random
 import math
 import logging
+import collections
 
 ##############################
 ##     GLOBAL VARS
