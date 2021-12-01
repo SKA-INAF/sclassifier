@@ -272,13 +272,13 @@ class Utils(object):
 
 	@classmethod
 	def weighted_skew(cls, x, wts):
-    """ Calculates the weighted skewness of a data sample """
+		""" Calculates the weighted skewness of a data sample """
 		return (np.average((x - cls.weighted_mean(x, wts))**3, weights=wts) /
 			cls.weighted_variance(x, wts)**(1.5))
 
 	@classmethod
 	def weighted_kurtosis(x, wts):
-    """ Calculates the weighted skewness """
+		""" Calculates the weighted skewness """
 		return (np.average((x - cls.weighted_mean(x, wts))**4, weights=wts) /
 			cls.weighted_variance(x, wts)**(2))
 
