@@ -294,7 +294,7 @@ class FeatExtractor(object):
 				if save_imgs:
 					
 					# - Save ssim map
-					plot_index= 3*index + 1
+					plot_index= plot_nrows*index + 1
 					logger.info("Adding subplot (%d,%d,%d) ..." % (plot_nrows,plot_ncols,plot_index))
 					
 					plt.subplot(plot_nrows, plot_ncols, plot_index)
@@ -302,7 +302,7 @@ class FeatExtractor(object):
 					plt.colorbar()
 
 					# - Save flux ratio map
-					plot_index= 3*index + 2
+					plot_index= plot_nrows*index + 2
 					logger.info("Adding subplot (%d,%d,%d) ..." % (plot_nrows,plot_ncols,plot_index))
 					
 					plt.subplot(plot_nrows, plot_ncols, plot_index)
@@ -310,14 +310,14 @@ class FeatExtractor(object):
 					plt.colorbar()
 
 					# - Save flux ratio histogram
-					plot_index= 3*index + 3
+					plot_index= plot_nrows*index + 3
 					logger.info("Adding subplot (%d,%d,%d) ..." % (plot_nrows,plot_ncols,plot_index))
 					
 					plt.subplot(plot_nrows, plot_ncols, plot_index)
 					plt.hist(fluxratio_1d, bins='auto')
 
 					# - Save weighted flux ratio histogram
-					plot_index= 3*index + 4
+					plot_index= plot_nrows*index + 4
 					logger.info("Adding subplot (%d,%d,%d) ..." % (plot_nrows,plot_ncols,plot_index))
 					
 					plt.subplot(plot_nrows, plot_ncols, plot_index)
