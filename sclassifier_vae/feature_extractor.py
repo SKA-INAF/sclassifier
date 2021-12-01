@@ -303,28 +303,36 @@ class FeatExtractor(object):
 
 					# - Save flux ratio map
 					plot_index= 3*index + 2
+					logger.info("Adding subplot (%d,%d,%d) ..." % (plot_nrows,plot_ncols,plot_index))
+					
 					plt.subplot(plot_nrows, plot_ncols, plot_index)
 					plt.imshow(fluxratio_2d, origin='lower')
 					plt.colorbar()
 
 					# - Save flux ratio histogram
 					plot_index= 3*index + 3
+					logger.info("Adding subplot (%d,%d,%d) ..." % (plot_nrows,plot_ncols,plot_index))
+					
 					plt.subplot(plot_nrows, plot_ncols, plot_index)
 					plt.hist(fluxratio_1d, bins='auto')
 
 					# - Save weighted flux ratio histogram
 					plot_index= 3*index + 4
+					logger.info("Adding subplot (%d,%d,%d) ..." % (plot_nrows,plot_ncols,plot_index))
+					
 					plt.subplot(plot_nrows, plot_ncols, plot_index)
 					plt.hist(fluxratio_1d, weights=fluxratio_ssim_1d, bins=20)
 
-					plt.savefig(outfile_plot)
-					#plt.tight_layout()
-					#plt.show()
-					plt.close()
-	
+					
 				index+= 1	
 
-
+		# - Save image
+		if save_imgs:
+			plt.savefig(outfile_plot)
+			#plt.tight_layout()
+			#plt.show()
+			plt.close()
+	
 		return param_dict
 
 	#####################################
