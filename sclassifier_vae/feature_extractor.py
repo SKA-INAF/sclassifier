@@ -173,19 +173,22 @@ class FeatExtractor(object):
 			plot_nrows= int(nchans*(nchans-1)/2)
 			plot_ncols= 4
 
-		# - Loop over images and compute pars
-		index= 0
+		# - Loop over images and compute total flux
+		for i in range(nchans):
+			img_i= data[0,:,:,i]
+			cond_i= np.logical_and(img_i!=0, np.isfinite(img_i))
+			
+			S= np.nansum(img_i[cond_i])
+			parname= "fluxSum_ch" + str(i+1)
+			param_dict[parname]= S
 
+		# - Loop over images and compute params
+		index= 0
 		for i in range(nchans):
 			img_i= data[0,:,:,i]
 			cond_i= np.logical_and(img_i!=0, np.isfinite(img_i))
 			img_max_i= np.nanmax(img_i[cond_i])
 			cond_col_i= np.logical_and(img_i>0, np.isfinite(img_i))
-
-			# - Compute total flux
-			S= np.nansum(img_i[cond_i])
-			parname= "fluxSum_ch" + str(i+1)
-			param_dict[parname]= S
 
 			# - Compute SSIM and color indices
 			for j in range(i+1,nchans):
