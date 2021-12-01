@@ -277,7 +277,7 @@ class Utils(object):
 			cls.weighted_variance(x, wts)**(1.5))
 
 	@classmethod
-	def weighted_kurtosis(x, wts):
+	def weighted_kurtosis(cls, x, wts):
 		""" Calculates the weighted skewness """
 		return (np.average((x - cls.weighted_mean(x, wts))**4, weights=wts) /
 			cls.weighted_variance(x, wts)**(2))

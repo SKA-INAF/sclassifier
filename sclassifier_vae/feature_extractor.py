@@ -344,6 +344,7 @@ class FeatExtractor(object):
 		#===========================
 		img_counter= 0
 		par_dict_list= []
+		failed= False
 		
 		while True:
 			try:
@@ -372,9 +373,12 @@ class FeatExtractor(object):
 				break
 			except Exception as e:
 				logger.warn("Stop loop (exception catched %s) ..." % str(e))
+				failed= True
 				break
 
-		
+		if failed:
+			return -1
+
 		#===========================
 		#==   SAVE PARAM FILE
 		#===========================
