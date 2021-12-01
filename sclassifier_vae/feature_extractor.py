@@ -19,6 +19,7 @@ import random
 import math
 import logging
 import collections
+import csv
 
 ##############################
 ##     GLOBAL VARS
