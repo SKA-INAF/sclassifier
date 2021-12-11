@@ -36,8 +36,8 @@ import collections
 from sclassifier_vae import __version__, __date__
 from sclassifier_vae import logger
 from sclassifier_vae.data_loader import DataLoader
-from sclassifier_vae.classifier import VAEClassifier
-from sclassifier_vae.classifier_umap import UMAPClassifier
+from sclassifier_vae.feature_extractor_ae import FeatExtractorAE
+from sclassifier_vae.feature_extractor_umap import FeatExtractorUMAP
 from sclassifier_vae.clustering import Clusterer
 
 #### GET SCRIPT ARGS ####
@@ -145,7 +145,7 @@ def main():
 	#==   RUN AUTOENCODER PREDICT
 	#===============================
 	logger.info("Running autoencoder classifier predict ...")
-	vae_class= VAEClassifier(dl)
+	vae_class= FeatExtractorAE(dl)
 	vae_class.set_image_size(nx, ny)
 	
 	if vae_class.predict_model(modelfile_encoder, weightfile_encoder)<0:
@@ -165,7 +165,7 @@ def main():
 
 		# - Run UMAP
 		logger.info("Running UMAP classifier prediction on autoencoder latent data ...")
-		umap_class= UMAPClassifier()
+		umap_class= FeatExtractorUMAP()
 		umap_class.set_encoded_data_unsupervised_outfile(outfile_umap_unsupervised)
 		
 		if umap_class.run_predict(vae_data, class_ids=classids, snames=snames, modelfile=modelfile_umap)<0:

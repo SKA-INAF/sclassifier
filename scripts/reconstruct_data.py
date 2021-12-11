@@ -36,7 +36,7 @@ import collections
 from sclassifier_vae import __version__, __date__
 from sclassifier_vae import logger
 from sclassifier_vae.data_loader import DataLoader
-from sclassifier_vae.classifier import VAEClassifier
+from sclassifier_vae.feature_extractor_ae import FeatExtractorAE
 
 #### GET SCRIPT ARGS ####
 def str2bool(v):
@@ -137,7 +137,7 @@ def main():
 	#==   RUN AUTOENCODER RECO
 	#===============================
 	logger.info("Running autoencoder classifier reconstruction ...")
-	vae_class= VAEClassifier(dl)
+	vae_class= FeatExtractorAE(dl)
 	vae_class.set_image_size(nx, ny)
 	vae_class.scale_img= scale
 	vae_class.scale_img_factors= scale_factors

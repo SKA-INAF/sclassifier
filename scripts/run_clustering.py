@@ -37,8 +37,6 @@ from sclassifier_vae import __version__, __date__
 from sclassifier_vae import logger
 from sclassifier_vae.utils import Utils
 from sclassifier_vae.data_loader import DataLoader
-from sclassifier_vae.classifier import VAEClassifier
-from sclassifier_vae.classifier_umap import UMAPClassifier
 from sclassifier_vae.clustering import Clusterer
 
 #### GET SCRIPT ARGS ####

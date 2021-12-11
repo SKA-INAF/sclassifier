@@ -36,8 +36,8 @@ import collections
 from sclassifier_vae import __version__, __date__
 from sclassifier_vae import logger
 from sclassifier_vae.data_loader import DataLoader
-from sclassifier_vae.classifier import VAEClassifier
-from sclassifier_vae.classifier_umap import UMAPClassifier
+from sclassifier_vae.feature_extractor_ae import FeatExtractorAE
+from sclassifier_vae.feature_extractor_umap import FeatExtractorUMAP
 from sclassifier_vae.clustering import Clusterer
 
 #### GET SCRIPT ARGS ####
@@ -247,7 +247,7 @@ def main():
 	#==   TRAIN VAE
 	#===========================
 	logger.info("Running VAE classifier training ...")
-	vae_class= VAEClassifier(dl)
+	vae_class= FeatExtractorAE(dl)
 
 	vae_class.use_vae= use_vae
 	vae_class.latent_dim= latentdim
@@ -300,7 +300,7 @@ def main():
 
 		# - Run UMAP	
 		logger.info("Running UMAP classifier training on VAE latent data ...")
-		umap_class= UMAPClassifier()
+		umap_class= FeatExtractorUMAP()
 
 		umap_class.set_encoded_data_unsupervised_outfile(outfile_umap_unsupervised)
 		umap_class.set_encoded_data_supervised_outfile(outfile_umap_supervised)
