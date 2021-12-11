@@ -50,7 +50,7 @@ class FeatExtractor(object):
 	""" Feature extraction class """
 	
 	def __init__(self, data_loader):
-		""" Return a Classifer object """
+		""" Return a FeatExtractor object """
 
 		# - Input data
 		self.dl= data_loader

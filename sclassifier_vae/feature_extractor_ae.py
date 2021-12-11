@@ -234,19 +234,17 @@ def compute_ssim_per_channel(img1, img2, max_val=1.0, filter_size=11, filter_sig
 
 
 ##############################
-##     VAEClassifier CLASS
+##     FeatExtractorAE CLASS
 ##############################
-class VAEClassifier(object):
-	""" Class to create and train a VAE classifier
+class FeatExtractorAE(object):
+	""" Class to create and train a feature extractor based on convolutional autoencoders
 
 			Arguments:
-				- encoder_nnarc_file: File with encoder network architecture to be created
-				- decoder_nnarc_file: File with decoder network architecture to be created
 				- DataLoader class
 	"""
 	
 	def __init__(self, data_loader):
-		""" Return a Classifer object """
+		""" Return a feature extractor AE object """
 
 		# - Input data
 		self.encoder_nnarc_file= ''

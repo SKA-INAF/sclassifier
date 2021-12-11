@@ -41,17 +41,13 @@ from sclassifier_vae import logger
 
 
 ##############################
-##     UMAPClassifier CLASS
+##     FeatExtractorUMAP CLASS
 ##############################
-class UMAPClassifier(object):
-	""" Class to create and train a UMAP classifier
-
-			Arguments:
-				- DataProvider class
-	"""
+class FeatExtractorUMAP(object):
+	""" Class to create and train a UMAP feature extractor """
 	
 	def __init__(self):
-		""" Return a Classifer object """
+		""" Return a UMAP feature extractor object """
 
 		# - Input data
 		self.nsamples= 0
