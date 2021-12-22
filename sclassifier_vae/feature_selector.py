@@ -184,16 +184,14 @@ class FeatSelector(object):
 			self.models.append(m)
 
 		# - Define dataset split (unique for all models)
-		self.cv= StratifiedKFold(n_splits=self.cv_nsplits, random_state=self.cv_seed)
+		self.cv= StratifiedKFold(n_splits=self.cv_nsplits, shuffle=True, random_state=self.cv_seed)
 
 		# - Create RFE & pipeline
 		self.rfe= RFECV(
 			estimator=self.model,
 			step=1,
-			#cv=self.cv, 
-			scoring=self.scoring,
-			min_features_to_select=1,
-			n_jobs=self.ncores
+			#cv=self.cv,
+			min_features_to_select=1
 		)
 		self.pipeline = Pipeline(
 			steps=[('featsel', self.rfe),('model', self.model)]
@@ -202,10 +200,8 @@ class FeatSelector(object):
 		for i in range(1,self.nfeatures):
 			r= RFE(
 				estimator=self.models[i-1],
-				#cv=self.cv, 
-				scoring=self.scoring,
-				n_features_to_select=i,
-				n_jobs=self.ncores
+				#cv=self.cv,
+				n_features_to_select=i
 			)
 			p= Pipeline(steps=[('featsel', r),('model', self.models[i-1])])
 			self.pipelines.append(p)
