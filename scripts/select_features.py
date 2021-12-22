@@ -123,7 +123,7 @@ def main():
 	fsel.scoring= scoring
 	fsel.outfile= outfile
 
-	status= fsel.run(data, class_ids, snames)
+	status= fsel.run(data, classids, snames)
 	if status<0:
 		logger.error("Feature selector failed!")
 		return 1
