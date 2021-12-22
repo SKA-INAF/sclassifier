@@ -82,7 +82,7 @@ class FeatSelector(object):
 		# ** Scoring
 		# *****************************
 		self.cv_nsplits= 5
-		self.cv_nrepeats= 3
+		#self.cv_nrepeats= 3
 		self.cv_seed= 1
 		self.scoring= 'f1_weighted'
 		#self.scoring= 'accuracy'
@@ -234,8 +234,8 @@ class FeatSelector(object):
 				n_jobs=self.ncores, 
 				error_score='raise'
 			)
-			scores_mean= mean(scores)
-			scores_std= std(scores)
+			scores_mean= np.mean(scores)
+			scores_std= np.std(scores)
 			results.append(scores)
 			nfeats.append(i)
 			logger.info('--> nfeats=%d: score=%.3f (std=%.3f)' % (i, scores_mean, scores_std))
@@ -251,8 +251,8 @@ class FeatSelector(object):
 			error_score='raise'
 		)
 
-		best_scores_mean= mean(scores)
-		best_scores_std= std(scores)
+		best_scores_mean= np.mean(scores)
+		best_scores_std= np.std(scores)
 		logger.info('Best scores: %.3f (std=%.3f)' % (best_scores_mean, best_scores_std))
 
 		# - Fit data and show which features were selected
