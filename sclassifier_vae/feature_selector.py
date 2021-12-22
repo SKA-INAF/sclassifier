@@ -156,7 +156,7 @@ class FeatSelector(object):
 
 
 	def __create_model(self):
-		""" Create the model """"
+		""" Create the model """
 		
 		# - Check if model type exists in classifier inventory
 		if self.classifier not in self.classifier_inventory:
