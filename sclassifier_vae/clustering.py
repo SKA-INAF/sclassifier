@@ -353,7 +353,7 @@ class Clusterer(object):
 
 		else:
 			self.data_classids= [0]*self.nsamples # Init to unknown type
-			self.data_labels= ["UNKNOWN"]**self.nsamples
+			self.data_labels= ["UNKNOWN"]*self.nsamples
 		
 		
 		# - Set obj names
