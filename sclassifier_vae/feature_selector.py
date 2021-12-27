@@ -150,7 +150,8 @@ class FeatSelector(object):
 			"RandomForestClassifier": RandomForestClassifier(max_depth=self.max_depth, n_estimators=10, max_features=1),
 			"GradientBoostingClassifier": GradientBoostingClassifier(),
 			"MLPClassifier": MLPClassifier(alpha=1, max_iter=1000),
-			"SVC": SVC(gamma=2, C=1),
+			#"SVC": SVC(gamma=2, C=1),
+			"SVC": SVC(),
 			"QuadraticDiscriminantAnalysis": QuadraticDiscriminantAnalysis()
     }
 
