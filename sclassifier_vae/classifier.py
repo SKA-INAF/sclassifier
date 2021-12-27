@@ -490,7 +490,7 @@ class SClassifier(object):
 			self.targets_pred= self.model.predict(self.data_preclassified)
 			self.probs_pred= self.model.predict_proba(self.data_preclassified)
 			print("== probs_pred ==")
-			print(probs_pred.shape)
+			print(self.probs_pred.shape)
 
 		except Exception as e:
 			logger.error("Failed to predict model on data (err=%s)!" % (str(e)))
