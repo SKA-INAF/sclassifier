@@ -63,6 +63,10 @@ def get_args():
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
 	parser.set_defaults(predict=False)
 
+	# - Decision Tree options
+	parser.add_argument('-max_depth','--max_depth', dest='max_depth', required=False, type=int, default=3, help='Max depth for decision tree or random forest') 
+	
+
 	# - Output options
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='classified_data.dat', help='Output filename (.dat) with classified data') 
 
@@ -98,6 +102,9 @@ def main():
 	classifier= args.classifier
 	modelfile= args.modelfile
 	predict= args.predict
+
+	# - Decision Tree options
+	max_depth= args.max_depth
 	
 	# - Output options
 	outfile= args.outfile
@@ -122,6 +129,7 @@ def main():
 	sclass.normalize= normalize
 	sclass.classifier= classifier
 	sclass.outfile= outfile
+	sclass.max_depth= max_depth
 
 	if predict:
 		status= sclass.run_predict(data, classids, snames, modelfile)
