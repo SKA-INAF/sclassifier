@@ -666,10 +666,8 @@ class SClassifier(object):
 			metric_names.append("recall_" + classname)
 			metric_names.append("f1score_" + classname)
 			
-		metric_data= np.concatenate(
-			(metrics),
-			axis=1
-		)
+		Nmetrics= len(metrics)
+		metric_data= np.array(metrics).reshape(1,Nmetrics)
 
 		metric_names_str= ' '.join(str(item) for item in metric_names)
 		head= '{} {}'.format("# ",metric_names_str)
