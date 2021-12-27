@@ -556,7 +556,7 @@ class Clusterer(object):
 		#================================
 		#==   LOAD MODEL
 		#================================
-		if modelfile is not None:
+		if modelfile and modelfile is not None:
 			logger.info("Loading the clustering model from file %s ..." % modelfile)
 			try:
 				self.clusterer, self.prediction_extra_data = pickle.load((open(modelfile, 'rb')))
@@ -597,7 +597,7 @@ class Clusterer(object):
 		#================================
 		#==   LOAD MODEL
 		#================================
-		if modelfile is not None:
+		if modelfile and modelfile is not None:
 			logger.info("Loading the clustering model from file %s ..." % modelfile)
 			try:
 				self.clusterer, self.prediction_extra_data = pickle.load((open(modelfile, 'rb')))

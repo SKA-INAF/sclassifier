@@ -370,7 +370,7 @@ class SClassifier(object):
 		#================================
 		#==   LOAD MODEL
 		#================================
-		if modelfile:
+		if modelfile and modelfile is not None:
 			logger.info("Loading the model from file %s ..." % modelfile)
 			try:
 				#self.model, self.prediction_extra_data = pickle.load((open(modelfile, 'rb')))
@@ -421,7 +421,7 @@ class SClassifier(object):
 		#================================
 		#==   LOAD MODEL
 		#================================
-		if modelfile:
+		if modelfile and modelfile is not None:
 			logger.info("Loading the model from file %s ..." % modelfile)
 			try:
 				#self.model, self.prediction_extra_data = pickle.load((open(modelfile, 'rb')))
