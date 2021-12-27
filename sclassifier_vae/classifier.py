@@ -161,8 +161,13 @@ class SClassifier(object):
 	def __create_model(self):
 		""" Create the model """
 		
+		# - Create classifier inventory
+		logger.info("Creating classifier inventory ...")
+		self.__create_classifier_inventory()		
+
 		# - Check if model type exists in classifier inventory
 		if self.classifier not in self.classifier_inventory:
+			logger.error("Chosen classifier (%s) is not in the inventory, returning None!" % (self.classifier))
 			return None
 
 		# - Return classifier
