@@ -666,10 +666,19 @@ class SClassifier(object):
 			metric_names.append("recall_" + classname)
 			metric_names.append("f1score_" + classname)
 			
-		metric_data= np.array(metrics)
+		metric_data= np.concatenate(
+			(metrics),
+			axis=1
+		)
+
 		metric_names_str= ' '.join(str(item) for item in metric_names)
 		head= '{} {}'.format("# ",metric_names_str)
 
+		print("metric_data")
+		print(metrics)
+		print(len(metrics))
+		print(metric_data.shape)
+		
 		Utils.write_ascii(metric_data, self.outfile_metrics, head)	
 		
 		#================================
