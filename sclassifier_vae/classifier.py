@@ -488,7 +488,7 @@ class SClassifier(object):
 		logger.info("Predicting class and probabilities on train data ...")
 		try:
 			self.targets_pred= self.model.predict(self.data_preclassified)
-			self.probs_pred= self.model.predict_proba(self.data_preclassified)
+			self.probs_pred= max(self.model.predict_proba(self.data_preclassified))
 
 		except Exception as e:
 			logger.error("Failed to predict model on data (err=%s)!" % (str(e)))
