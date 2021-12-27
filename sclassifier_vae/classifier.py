@@ -42,7 +42,7 @@ from sklearn import metrics
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn import tree
-from sklearn.tree.export import export_text
+from sklearn.tree import export_text
 
 ## GRAPHICS MODULES
 import matplotlib
