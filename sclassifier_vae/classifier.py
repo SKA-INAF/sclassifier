@@ -705,7 +705,7 @@ class SClassifier(object):
 
 		# - Set feature names
 		feat_counter= list(range(1,self.nfeatures+1))
-		feat_names= '{}{}'.format('z',' z'.join(str(item) for item in feat_counter))
+		feat_names= ['z'+str(item) for item in feat_counter]
 
 		# - Print decision rules
 		logger.info("Printing decision tree rules ...")
