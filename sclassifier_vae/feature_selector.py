@@ -381,8 +381,8 @@ class FeatSelector(object):
 			logger.error("Failed to read feature file %s!" % filename)
 			return -1
 	
-		print(table.colnames)
-		print(table)
+		#print(table.colnames)
+		#print(table)
 
 		ncols= len(table.colnames)
 		nfeat= ncols-2
