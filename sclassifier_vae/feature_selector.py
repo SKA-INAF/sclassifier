@@ -303,12 +303,13 @@ class FeatSelector(object):
 		rfe_best.fit(self.data_preclassified, self.data_preclassified_targets)
 	
 		selfeats= rfe_best.support_
-		featranks= rfe_best.ranking_ 
+		featranks= rfe_best.ranking_
+		nfeat_sel= rfe_best.n_features_
 		for i in range(self.data_preclassified.shape[1]):
 			logger.info('Feature %d: selected? %d (rank=%.3f)' % (i, selfeats[i], featranks[i]))
 
 		# - Extract selected data columns
-		logger.info("Extracting selected data columns (N=%d) from original data ..." % (len(selfeats)))
+		logger.info("Extracting selected data columns (N=%d) from original data ..." % (nfeat_sel))
 		self.data_sel= self.data[:,selfeats]
 		self.data_preclassified_sel= self.data_preclassified[:,selfeats]
 
