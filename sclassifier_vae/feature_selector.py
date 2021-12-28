@@ -91,6 +91,10 @@ class FeatSelector(object):
 		# *****************************
 		# ** Model
 		# *****************************
+		self.nfeat_min= 1
+		self.nfeat_max= -1 # -1 means =nfeat
+		self.nfeats= []
+		self.auto_selection= True
 		self.max_depth= None
 		self.classifier_inventory= {}
 		self.classifier= 'DecisionTreeClassifier'
@@ -174,13 +178,23 @@ class FeatSelector(object):
 		logger.info("Creating classifier inventory ...")
 		self.__create_classifier_inventory()
 
+		# - Set min/max nfeat range
+		nf_min= self.nfeat_min
+		nf_max= self.nfeat_max
+		if nf_max==-1:
+			nf_max= self.nfeatures
+
+		self.nfeats= []	
+		for i in range(nf_min,nf_max):
+			self.nfeats.append(i)
+
 		# - Create models
 		self.model= self.__create_model()
 		if self.model is None:
 			logger.error("Created model is None!")
 			return -1
 
-		for i in range(1,self.nfeatures):
+		for i in range(len(self.nfeats)):
 			m= self.__create_model()
 			self.models.append(m)
 
@@ -192,19 +206,20 @@ class FeatSelector(object):
 			estimator=self.model,
 			step=1,
 			#cv=self.cv,
-			min_features_to_select=1
+			min_features_to_select=self.nfeat_min
 		)
 		self.pipeline = Pipeline(
 			steps=[('featsel', self.rfe),('model', self.model)]
 		)
 
-		for i in range(1,self.nfeatures):
+		for i in range(len(self.nfeats)):
+			n= self.nfeats[i]
 			r= RFE(
-				estimator=self.models[i-1],
+				estimator=self.models[i],
 				#cv=self.cv,
-				n_features_to_select=i
+				n_features_to_select=n
 			)
-			p= Pipeline(steps=[('featsel', r),('model', self.models[i-1])])
+			p= Pipeline(steps=[('featsel', r),('model', self.models[i])])
 			self.pipelines.append(p)
 		
 		
@@ -224,9 +239,16 @@ class FeatSelector(object):
 
 		# - Evaluate models
 		logger.info("Evaluating models as a function of #features ...")
-		results, nfeats = list(), list()
-		for i in range(1,self.nfeatures):
-			p= self.pipelines[i-1]
+		#results, nfeats = list(), list()
+		results= list()
+		rfe_best= None
+		score_best= -1
+		nfeat_best= -1
+		rfe_best_index= -1
+		#for i in range(1,self.nfeatures):
+		for i in range(len(self.nfeats)):
+			n= self.nfeats[i]
+			p= self.pipelines[i]
 			scores= cross_val_score(
 				p, 
 				self.data_preclassified, self.data_preclassified_targets, 
@@ -238,41 +260,61 @@ class FeatSelector(object):
 			scores_mean= np.mean(scores)
 			scores_std= np.std(scores)
 			results.append(scores)
-			nfeats.append(i)
-			logger.info('--> nfeats=%d: score=%.3f (std=%.3f)' % (i, scores_mean, scores_std))
-			
-		# - Evaluate automatically-selected model
-		logger.info("Evaluate model (automated feature selection) ...")
-		scores= cross_val_score(
-			self.pipeline, 
-			self.data_preclassified, self.data_preclassified_targets, 
-			scoring=self.scoring, 
-			cv=self.cv, 
-			n_jobs=self.ncores, 
-			error_score='raise'
-		)
+			#nfeats.append(i)
 
-		best_scores_mean= np.mean(scores)
-		best_scores_std= np.std(scores)
-		logger.info('Best scores: %.3f (std=%.3f)' % (best_scores_mean, best_scores_std))
+			if scores_mean>score_best:
+				score_best= scores_mean
+				nfeat_best= n
+				rfe_best_index= i
+			logger.info('--> nfeats=%d: score=%.3f (std=%.3f)' % (n, scores_mean, scores_std))
+			
+		
+		# - Evaluate automatically-selected model?
+		rfe_best= None
+
+		if self.auto_selection:
+			logger.info("Evaluate model (automated feature selection) ...")
+			scores= cross_val_score(
+				self.pipeline, 
+				self.data_preclassified, self.data_preclassified_targets, 
+				scoring=self.scoring, 
+				cv=self.cv, 
+				n_jobs=self.ncores, 
+				error_score='raise'
+			)
+
+			best_scores_mean= np.mean(scores)
+			best_scores_std= np.std(scores)
+			logger.info('Selecting best scores automatically: %.3f (std=%.3f)' % (best_scores_mean, best_scores_std))
+
+			rfe_best= self.rfe
+
+		else:
+			logger.info("Selecting best model after scan: index=%d, n_feat=%d, score=%.3f" % (rfe_best_index, nfeat_best, score_best))
+		
+			rfe_best= RFE(
+				estimator=self.models[rfe_best_index],
+				#cv=self.cv,
+				n_features_to_select=nfeat_best
+			)
 
 		# - Fit data and show which features were selected
 		logger.info("Fitting RFE model on dataset ...")
-		self.rfe.fit(self.data_preclassified, self.data_preclassified_targets)
+		rfe_best.fit(self.data_preclassified, self.data_preclassified_targets)
 	
-		selfeats= self.rfe.support_
-		featranks= self.rfe.ranking_ 
+		selfeats= rfe_best.support_
+		featranks= rfe_best.ranking_ 
 		for i in range(self.data_preclassified.shape[1]):
 			logger.info('Feature %d: selected? %d (rank=%.3f)' % (i, selfeats[i], featranks[i]))
 
 		# - Extract selected data columns
-		logger.info("Extracting selected data columns from original data ...")
+		logger.info("Extracting selected data columns (N=%d) from original data ..." % (len(selfeats)))
 		self.data_sel= self.data[:,selfeats]
 		self.data_preclassified_sel= self.data_preclassified[:,selfeats]
 
 		# - Plot results
 		logger.info("Plotting and saving feature score results ...")
-		plt.boxplot(results, labels=nfeats, showmeans=True)
+		plt.boxplot(results, labels=self.nfeats, showmeans=True)
 		#plt.show()
 		plt.savefig(self.outfile_scores)
 

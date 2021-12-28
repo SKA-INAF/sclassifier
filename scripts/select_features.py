@@ -61,7 +61,11 @@ def get_args():
 	parser.add_argument('-classifier','--classifier', dest='classifier', required=False, type=str, default='DecisionTreeClassifier', help='Classifier to be used.') 
 	parser.add_argument('-scoring','--scoring', dest='scoring', required=False, type=str, default='f1_weighted', help='Classifier scoring to be used. Valid values: {f1_weighted,accuracy}') 
 	parser.add_argument('-cv_nsplits','--cv_nsplits', dest='cv_nsplits', required=False, type=int, default=5, help='Number of dataset split for cross-validation') 	
-	
+	parser.add_argument('-nfeat_min','--nfeat_min', dest='nfeat_min', required=False, type=int, default=2, help='Min number of features to be scanned') 	
+	parser.add_argument('-nfeat_max','--nfeat_max', dest='nfeat_max', required=False, type=int, default=-1, help='Max number of features to be scanned (-1=all)') 	
+	parser.add_argument('--autoselect', dest='autoselect', action='store_true',help='Select number of features automatically (default=false)')	
+	parser.set_defaults(autoselect=False)
+
 	# - Output options
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='featdata_sel.dat', help='Output filename (.dat) with selected feature data') 
 
@@ -97,6 +101,9 @@ def main():
 	classifier= args.classifier
 	scoring= args.scoring
 	cv_nsplits= args.cv_nsplits
+	nfeat_min= args.nfeat_min
+	nfeat_max= args.nfeat_max
+	autoselect= args.autoselect
 
 	# - Output options
 	outfile= args.outfile
@@ -122,6 +129,9 @@ def main():
 	fsel.classifier= classifier
 	fsel.scoring= scoring
 	fsel.outfile= outfile
+	fsel.nfeat_min= nfeat_min
+	fsel.nfeat_max= nfeat_max
+	fsel.auto_selection= autoselect
 
 	status= fsel.run(data, classids, snames)
 	if status<0:
