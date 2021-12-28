@@ -185,7 +185,7 @@ class FeatSelector(object):
 			nf_max= self.nfeatures
 
 		self.nfeats= []	
-		for i in range(nf_min,nf_max):
+		for i in range(nf_min,nf_max+1):
 			self.nfeats.append(i)
 
 		# - Create models
