@@ -45,6 +45,8 @@ from sklearn.metrics import confusion_matrix
 from sklearn import tree
 from sklearn.tree import export_text
 
+from lightgbm import LGBMClassifier
+
 ## GRAPHICS MODULES
 import matplotlib
 import matplotlib.pyplot as plt
@@ -86,6 +88,11 @@ class SClassifier(object):
 		# *****************************
 		self.max_depth= None
 		self.criterion= 'gini'
+		self.min_data_in_leaf= 20
+		self.num_leaves= 31
+		self.n_estimators= 100
+		self.learning_rate= 0.1
+		self.niters= 100
 		self.classifier_inventory= {}
 		self.classifier= 'DecisionTreeClassifier'
 		self.model= None
@@ -148,14 +155,32 @@ class SClassifier(object):
 	def __create_classifier_inventory(self):
 		""" Create classifier inventory """
 
+		# - Set LGBM classifier
+		max_depth_lgbm= self.max_depth
+		if max_depth_lgbm is None:
+			max_depth_lgbm= -1
+
+		lgbm= LGBMClassifier(
+			n_estimators=self.n_estimators, 
+			max_depth=max_depth_lgbm, 
+			min_data_in_leaf=self.min_data_in_leaf, 
+			num_leaves=self.num_leaves,
+			learning_rate=self.learning_rate,
+			num_iterations=self.niters,
+			objective='multiclass',
+			boosting_type='gbdt'
+		)
+
+		# - Set inventory
 		self.classifier_inventory= {
 			"DecisionTreeClassifier": DecisionTreeClassifier(max_depth=self.max_depth),
-			"RandomForestClassifier": RandomForestClassifier(max_depth=self.max_depth, n_estimators=10, max_features=1),
+			"RandomForestClassifier": RandomForestClassifier(max_depth=self.max_depth, n_estimators=self.n_estimators, max_features=1),
 			"GradientBoostingClassifier": GradientBoostingClassifier(),
 			"MLPClassifier": MLPClassifier(alpha=1, max_iter=1000),
 			#"SVC": SVC(gamma=2, C=1),
 			"SVC": SVC(),
-			"QuadraticDiscriminantAnalysis": QuadraticDiscriminantAnalysis()
+			"QuadraticDiscriminantAnalysis": QuadraticDiscriminantAnalysis(),
+			"LGBM": lgbm
     }
 
 

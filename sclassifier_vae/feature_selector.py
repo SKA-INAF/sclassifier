@@ -96,6 +96,7 @@ class FeatSelector(object):
 		self.nfeats= []
 		self.auto_selection= True
 		self.max_depth= None
+		self.n_estimators= 100
 		self.classifier_inventory= {}
 		self.classifier= 'DecisionTreeClassifier'
 		self.model= None
@@ -151,7 +152,7 @@ class FeatSelector(object):
 
 		self.classifier_inventory= {
 			"DecisionTreeClassifier": DecisionTreeClassifier(max_depth=self.max_depth),
-			"RandomForestClassifier": RandomForestClassifier(max_depth=self.max_depth, n_estimators=10, max_features=1),
+			"RandomForestClassifier": RandomForestClassifier(max_depth=self.max_depth, n_estimators=self.n_estimators, max_features=1),
 			"GradientBoostingClassifier": GradientBoostingClassifier(),
 			"MLPClassifier": MLPClassifier(alpha=1, max_iter=1000),
 			#"SVC": SVC(gamma=2, C=1),

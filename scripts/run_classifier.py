@@ -63,10 +63,14 @@ def get_args():
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
 	parser.set_defaults(predict=False)
 
-	# - Decision Tree options
+	# - Tree options
 	parser.add_argument('-max_depth','--max_depth', dest='max_depth', required=False, type=int, default=3, help='Max depth for decision tree or random forest') 
+	parser.add_argument('-n_estimators','--n_estimators', dest='n_estimators', required=False, type=int, default=100, help='Number of boosted or forest trees to fit') 
+	parser.add_argument('-min_data_in_leaf','--min_data_in_leaf', dest='min_data_in_leaf', required=False, type=int, default=20, help='Min number of data in one leaf for LGBM classifier')
+	parser.add_argument('-num_leaves','--num_leaves', dest='num_leaves', required=False, type=int, default=31, help='Max number of leaves in one tree for LGBM classifier') 
+	parser.add_argument('-learning_rate','--learning_rate', dest='learning_rate', required=False, type=float, default=0.1, help='Learning rate for LGBM classifier and others (TBD)') 
+	parser.add_argument('-niters','--niters', dest='niters', required=False, type=int, default=100, help='Number of boosting iterations for LGBM classifier and others (TBD)') 
 	
-
 	# - Output options
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='classified_data.dat', help='Output filename (.dat) with classified data') 
 
@@ -103,8 +107,13 @@ def main():
 	modelfile= args.modelfile
 	predict= args.predict
 
-	# - Decision Tree options
+	# - Tree options
 	max_depth= args.max_depth
+	n_estimators= args.n_estimators
+	min_data_in_leaf= args.min_data_in_leaf
+	num_leaves= args.num_leaves
+	learning_rate= args.learning_rate
+	niters= args.niters
 	
 	# - Output options
 	outfile= args.outfile
@@ -130,6 +139,11 @@ def main():
 	sclass.classifier= classifier
 	sclass.outfile= outfile
 	sclass.max_depth= max_depth
+	sclass.n_estimators= n_estimators
+	sclass.min_data_in_leaf= min_data_in_leaf
+	sclass.num_leaves= num_leaves
+	sclass.learning_rate= learning_rate
+	sclass.niters= niters
 
 	if predict:
 		status= sclass.run_predict(data, classids, snames, modelfile)
