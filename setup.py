@@ -65,7 +65,7 @@ reqs.append('hdbscan')
 reqs.append('seaborn')
 ##reqs.append('scikit-image<=0.15.0')
 reqs.append('scikit-image')
-
+reqs.append('lightgbm')
 
 data_dir = 'data'
 

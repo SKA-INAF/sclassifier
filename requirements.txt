@@ -16,4 +16,4 @@ jedi<0.18.0
 ipython
 pydot
 graphviz
-
+lightgbm
