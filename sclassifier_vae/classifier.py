@@ -87,8 +87,9 @@ class SClassifier(object):
 		# ** Model
 		# *****************************
 		self.max_depth= None
+		self.min_samples_split= 2
+		self.min_samples_leaf= 1
 		self.criterion= 'gini'
-		self.min_data_in_leaf= 20
 		self.num_leaves= 31
 		self.n_estimators= 100
 		self.learning_rate= 0.1
@@ -163,7 +164,7 @@ class SClassifier(object):
 		lgbm= LGBMClassifier(
 			n_estimators=self.n_estimators, 
 			max_depth=max_depth_lgbm, 
-			min_data_in_leaf=self.min_data_in_leaf, 
+			min_data_in_leaf=self.min_samples_leaf, 
 			num_leaves=self.num_leaves,
 			learning_rate=self.learning_rate,
 			num_iterations=self.niters,
@@ -173,7 +174,7 @@ class SClassifier(object):
 
 		# - Set inventory
 		self.classifier_inventory= {
-			"DecisionTreeClassifier": DecisionTreeClassifier(max_depth=self.max_depth),
+			"DecisionTreeClassifier": DecisionTreeClassifier(max_depth=self.max_depth, min_samples_split=self.min_samples_split, min_samples_leaf=self.min_samples_leaf),
 			"RandomForestClassifier": RandomForestClassifier(max_depth=self.max_depth, n_estimators=self.n_estimators, max_features=1),
 			"GradientBoostingClassifier": GradientBoostingClassifier(),
 			"MLPClassifier": MLPClassifier(alpha=1, max_iter=1000),

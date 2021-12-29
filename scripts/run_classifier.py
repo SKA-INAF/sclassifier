@@ -64,7 +64,9 @@ def get_args():
 	parser.set_defaults(predict=False)
 
 	# - Tree options
-	parser.add_argument('-max_depth','--max_depth', dest='max_depth', required=False, type=int, default=3, help='Max depth for decision tree or random forest') 
+	parser.add_argument('-max_depth','--max_depth', dest='max_depth', required=False, type=int, default=None, help='Max depth for decision tree, random forest and LGBM')
+	parser.add_argument('-min_samples_split','--min_samples_split', dest='min_samples_split', required=False, type=int, default=2, help='Minimum number of samples required to split an internal node')
+	parser.add_argument('-min_samples_leaf','--min_samples_leaf', dest='min_samples_leaf', required=False, type=int, default=1, help='Minimum number of samples required to be at a leaf node')
 	parser.add_argument('-n_estimators','--n_estimators', dest='n_estimators', required=False, type=int, default=100, help='Number of boosted or forest trees to fit') 
 	parser.add_argument('-min_data_in_leaf','--min_data_in_leaf', dest='min_data_in_leaf', required=False, type=int, default=20, help='Min number of data in one leaf for LGBM classifier')
 	parser.add_argument('-num_leaves','--num_leaves', dest='num_leaves', required=False, type=int, default=31, help='Max number of leaves in one tree for LGBM classifier') 
@@ -109,6 +111,8 @@ def main():
 
 	# - Tree options
 	max_depth= args.max_depth
+	min_samples_split= args.min_samples_split
+	min_samples_leaf= args.min_samples_leaf
 	n_estimators= args.n_estimators
 	min_data_in_leaf= args.min_data_in_leaf
 	num_leaves= args.num_leaves
@@ -139,8 +143,9 @@ def main():
 	sclass.classifier= classifier
 	sclass.outfile= outfile
 	sclass.max_depth= max_depth
+	sclass.min_samples_split= min_samples_split
+	sclass.min_samples_leaf= min_samples_leaf
 	sclass.n_estimators= n_estimators
-	sclass.min_data_in_leaf= min_data_in_leaf
 	sclass.num_leaves= num_leaves
 	sclass.learning_rate= learning_rate
 	sclass.niters= niters
