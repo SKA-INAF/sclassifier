@@ -172,10 +172,26 @@ class SClassifier(object):
 			boosting_type='gbdt'
 		)
 
+		# - Set DecisionTree classifier
+		dt= DecisionTreeClassifier(
+			max_depth=self.max_depth, 
+			min_samples_split=self.min_samples_split, 
+			min_samples_leaf=self.min_samples_leaf
+		)
+
+		# - Set RandomForest classifier
+		rf= RandomForestClassifier(
+			max_depth=self.max_depth, 
+			min_samples_split=self.min_samples_split, 
+			min_samples_leaf=self.min_samples_leaf, 
+			n_estimators=self.n_estimators, 
+			max_features=1
+		)
+
 		# - Set inventory
 		self.classifier_inventory= {
-			"DecisionTreeClassifier": DecisionTreeClassifier(max_depth=self.max_depth, min_samples_split=self.min_samples_split, min_samples_leaf=self.min_samples_leaf),
-			"RandomForestClassifier": RandomForestClassifier(max_depth=self.max_depth, n_estimators=self.n_estimators, max_features=1),
+			"DecisionTreeClassifier": dt,
+			"RandomForestClassifier": rf,
 			"GradientBoostingClassifier": GradientBoostingClassifier(),
 			"MLPClassifier": MLPClassifier(alpha=1, max_iter=1000),
 			#"SVC": SVC(gamma=2, C=1),
