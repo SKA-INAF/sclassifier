@@ -180,7 +180,7 @@ class SClassifier(object):
 			#"SVC": SVC(gamma=2, C=1),
 			"SVC": SVC(),
 			"QuadraticDiscriminantAnalysis": QuadraticDiscriminantAnalysis(),
-			"LGBM": lgbm
+			"LGBMClassifier": lgbm
     }
 
 
