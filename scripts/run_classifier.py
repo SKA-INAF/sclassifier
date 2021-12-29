@@ -68,7 +68,6 @@ def get_args():
 	parser.add_argument('-min_samples_split','--min_samples_split', dest='min_samples_split', required=False, type=int, default=2, help='Minimum number of samples required to split an internal node')
 	parser.add_argument('-min_samples_leaf','--min_samples_leaf', dest='min_samples_leaf', required=False, type=int, default=1, help='Minimum number of samples required to be at a leaf node')
 	parser.add_argument('-n_estimators','--n_estimators', dest='n_estimators', required=False, type=int, default=100, help='Number of boosted or forest trees to fit') 
-	parser.add_argument('-min_data_in_leaf','--min_data_in_leaf', dest='min_data_in_leaf', required=False, type=int, default=20, help='Min number of data in one leaf for LGBM classifier')
 	parser.add_argument('-num_leaves','--num_leaves', dest='num_leaves', required=False, type=int, default=31, help='Max number of leaves in one tree for LGBM classifier') 
 	parser.add_argument('-learning_rate','--learning_rate', dest='learning_rate', required=False, type=float, default=0.1, help='Learning rate for LGBM classifier and others (TBD)') 
 	parser.add_argument('-niters','--niters', dest='niters', required=False, type=int, default=100, help='Number of boosting iterations for LGBM classifier and others (TBD)') 
@@ -114,7 +113,6 @@ def main():
 	min_samples_split= args.min_samples_split
 	min_samples_leaf= args.min_samples_leaf
 	n_estimators= args.n_estimators
-	min_data_in_leaf= args.min_data_in_leaf
 	num_leaves= args.num_leaves
 	learning_rate= args.learning_rate
 	niters= args.niters
