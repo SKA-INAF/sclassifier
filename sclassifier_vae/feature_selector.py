@@ -141,7 +141,7 @@ class FeatSelector(object):
 		# *****************************
 		self.outfile= 'featdata_sel.dat'
 		self.outfile_scores= 'featscores.png'
-
+		self.outfile_scorestats= 'featscores.dat'
 
 	#####################################
 	##     BUILD PIPELINE
@@ -245,6 +245,8 @@ class FeatSelector(object):
 		score_best= -1
 		nfeat_best= -1
 		rfe_best_index= -1
+		scores_stats= []
+
 		#for i in range(1,self.nfeatures):
 		for i in range(len(self.nfeats)):
 			n= self.nfeats[i]
@@ -259,6 +261,13 @@ class FeatSelector(object):
 			)
 			scores_mean= np.mean(scores)
 			scores_std= np.std(scores)
+			scores_min= np.min(scores)
+			scores_max= np.max(scores)
+			scores_median= np.median(scores)
+			scores_q1= np.percentile(scores, 25)
+			scores_q3= np.percentile(scores, 75)
+			scores_stats.append([n, scores_mean, scores_std, scores_min, scores_max, scores_median, scores_q1, scores_q3])
+
 			results.append(scores)
 			#nfeats.append(i)
 
@@ -268,7 +277,12 @@ class FeatSelector(object):
 				rfe_best_index= i
 			logger.info('--> nfeats=%d: score=%.3f (std=%.3f)' % (n, scores_mean, scores_std))
 			
-		
+		# - Save scores stats
+		logger.info("Saving score stats ...")
+		scores_head= "# n mean std min max median q1 q3"
+		scores_stats= np.array(scores_stats).reshape(len(self.nfeats), 8)
+		Utils.write_ascii(scores_stats, self.outfile_scorestats, scores_head)			
+
 		# - Evaluate automatically-selected model?
 		rfe_best= None
 
