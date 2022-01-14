@@ -329,6 +329,8 @@ class FeatSelector(object):
 			if selfeats[i]:
 				self.selfeatids.append(i)
 
+		self.selfeatids.sort()
+
 		# - Extract selected data columns
 		logger.info("Extracting selected data columns (N=%d) from original data ..." % (nfeat_sel))
 		self.data_sel= self.data[:,selfeats]
@@ -648,8 +650,9 @@ class FeatSelector(object):
 			logger.error("Empty sel col list!")
 			return -1
 
-		# - Remove any duplicated col ids and set colsel flags
+		# - Remove any duplicated col ids, sort and set colsel flags
 		selcols= list(set(selcols))
+		selcols.sort()
 		selcolflags= [False]*self.nfeatures
 		for col in selcols:
 			if col<0 or col>=self.nfeatures:
