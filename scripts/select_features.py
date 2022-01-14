@@ -113,10 +113,11 @@ def main():
 	# - Run options
 	colselect= args.colselect
 	selcols= []
-	if colselect and args.selcols=="":
-		logger.error("No selected column ids given (mandatory when colselect option is chosen)!")
-		return 1
-	selcols= [int(x.strip()) for x in args.selcols.split(',')]
+	if colselect:
+		if args.selcols=="":
+			logger.error("No selected column ids given (mandatory when colselect option is chosen)!")
+			return 1
+		selcols= [int(x.strip()) for x in args.selcols.split(',')]
 
 	# - Output options
 	outfile= args.outfile
