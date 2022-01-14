@@ -94,6 +94,7 @@ class FeatSelector(object):
 		self.nfeat_min= 1
 		self.nfeat_max= -1 # -1 means =nfeat
 		self.nfeats= []
+		self.selfeatids= []
 		self.auto_selection= True
 		self.max_depth= None
 		self.n_estimators= 100
@@ -105,6 +106,7 @@ class FeatSelector(object):
 		self.pipeline= None
 		self.pipelines= []
 		self.cv= None
+		
 
 		# *****************************
 		# ** Pre-processing
@@ -143,6 +145,7 @@ class FeatSelector(object):
 		self.outfile= 'featdata_sel.dat'
 		self.outfile_scores= 'featscores.png'
 		self.outfile_scorestats= 'featscores.dat'
+		self.outfile_selfeat= 'selfeatids.dat'
 
 	#####################################
 	##     BUILD PIPELINE
@@ -320,8 +323,11 @@ class FeatSelector(object):
 		selfeats= rfe_best.support_
 		featranks= rfe_best.ranking_
 		nfeat_sel= rfe_best.n_features_
+		self.selfeatids= []
 		for i in range(self.data_preclassified.shape[1]):
 			logger.info('Feature %d: selected? %d (rank=%.3f)' % (i, selfeats[i], featranks[i]))
+			if selfeats[i]:
+				self.selfeatids.append(i)
 
 		# - Extract selected data columns
 		logger.info("Extracting selected data columns (N=%d) from original data ..." % (nfeat_sel))
@@ -548,7 +554,14 @@ class FeatSelector(object):
 
 		# - Save feature selected data 
 		logger.info("Saving feature-selected data to file %s ..." % (self.outfile))
-		Utils.write_ascii(outdata, self.outfile, head)	
+		Utils.write_ascii(outdata, self.outfile, head)
+
+		# - Save selected feature column ids
+		logger.info("Saving selected feature column ids, separated by commas ...")
+		selcolids_str= ','.join(str(item) for item in self.selfeatids)
+		with open(self.outfile_selfeat, 'w') as f:
+			f.write(selcolids_str)
+		
 
 		return 0
 
@@ -611,6 +624,107 @@ class FeatSelector(object):
 		logger.info("Evaluating models ...")
 		if self.__evaluate_model()<0:
 			logger.error("Failed to evaluate models!")
+			return -1
+
+		#================================
+		#==   SAVE
+		#================================
+		logger.info("Saving results ...")
+		if self.__save()<0:
+			logger.error("Failed to save results!")
+			return -1
+
+		return 0
+
+
+	#####################################
+	##     SELECT COLUMNS
+	#####################################
+	def __select_cols(self, selcols):
+		""" Select data columns provided in selcols list """
+
+		# - Check sel cols
+		if not selcols:
+			logger.error("Empty sel col list!")
+			return -1
+
+		# - Remove any duplicated col ids and set colsel flags
+		selcols= list(set(selcols))
+		selcolflags= [False]*self.nfeatures
+		for col in selcols:
+			if col<0 or col>=self.nfeatures:
+				logger.error("Given sel col id %d is not in nfeature col range [0,%d]!" % (col, self.nfeatures-1))
+				return -1
+			selcolflags[col]= True
+
+		print("--> Selected columns")
+		print(selcols)
+		print("--> Selected column flags")
+		print(selcolflags)
+			
+		# - Extract selected data columns
+		logger.info("Extracting selected data columns (N=%d) from original data ..." % (len(selcols)))
+		self.data_sel= self.data[:,selcolflags]
+		self.data_preclassified_sel= self.data_preclassified[:,selcolflags]
+		self.selfeatids= selcols
+
+		return 0
+
+
+	def select(self, datafile, selcols):
+		""" Select data columns provided in selcols list """
+		
+		#================================
+		#==   LOAD DATA
+		#================================
+		# - Check inputs
+		if datafile=="":
+			logger.error("Empty data file specified!")
+			return -1
+
+		if self.set_data_from_file(datafile)<0:
+			logger.error("Failed to read datafile %s!" % datafile)
+			return -1
+	
+		#================================
+		#==   SELECT COLUMNS
+		#================================
+		logger.info("Extracting columns ...")
+		if self.__select_cols(selcols)<0:
+			logger.error("Failed to select data columns!")
+			return -1
+
+		#================================
+		#==   SAVE
+		#================================
+		logger.info("Saving results ...")
+		if self.__save()<0:
+			logger.error("Failed to save results!")
+			return -1
+
+		return 0
+
+	def select(self, data, selcols, class_ids=[], snames=[]):
+		""" Select data columns provided in selcols list """
+
+		#================================
+		#==   LOAD DATA
+		#================================
+		# - Check inputs
+		if data is None:
+			logger.error("None input data specified!")
+			return -1
+
+		if self.set_data(data, class_ids, snames)<0:
+			logger.error("Failed to read datafile %s!" % datafile)
+			return -1
+
+		#================================
+		#==   SELECT COLUMNS
+		#================================
+		logger.info("Extracting columns ...")
+		if self.__select_cols(selcols)<0:
+			logger.error("Failed to select data columns!")
 			return -1
 
 		#================================

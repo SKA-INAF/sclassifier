@@ -57,7 +57,7 @@ def get_args():
 	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize feature data in range [0,1] before applying models (default=false)')	
 	parser.set_defaults(normalize=False)
 
-	# - Model options
+	# - Feature selection model options
 	parser.add_argument('-classifier','--classifier', dest='classifier', required=False, type=str, default='DecisionTreeClassifier', help='Classifier to be used.') 
 	parser.add_argument('-scoring','--scoring', dest='scoring', required=False, type=str, default='f1_weighted', help='Classifier scoring to be used. Valid values: {f1_weighted,accuracy}') 
 	parser.add_argument('-cv_nsplits','--cv_nsplits', dest='cv_nsplits', required=False, type=int, default=5, help='Number of dataset split for cross-validation') 	
@@ -66,6 +66,11 @@ def get_args():
 	parser.add_argument('--autoselect', dest='autoselect', action='store_true',help='Select number of features automatically (default=false)')	
 	parser.set_defaults(autoselect=False)
 
+	# - Feature selection run options
+	parser.add_argument('--colselect', dest='colselect', action='store_true',help='If true, just extract selected column ids, if false run feature selection (default=false)')	
+	parser.set_defaults(colselect=False)
+	parser.add_argument('-selcols','--selcols', dest='selcols', required=False, type=str, default='', help='Data column ids to be selected from input data, separated by commas') 
+	
 	# - Output options
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='featdata_sel.dat', help='Output filename (.dat) with selected feature data') 
 
@@ -105,6 +110,14 @@ def main():
 	nfeat_max= args.nfeat_max
 	autoselect= args.autoselect
 
+	# - Run options
+	colselect= args.colselect
+	selcols= []
+	if colselect and args.selcols=="":
+		logger.error("No selected column ids given (mandatory when colselect option is chosen)!")
+		return 1
+	selcols= [int(x.strip()) for x in args.selcols.split(',')]
+
 	# - Output options
 	outfile= args.outfile
 
@@ -133,7 +146,11 @@ def main():
 	fsel.nfeat_max= nfeat_max
 	fsel.auto_selection= autoselect
 
-	status= fsel.run(data, classids, snames)
+	if colselect:
+		status= fsel.select(data, selcols, classids, snames)
+	else:
+		status= fsel.run(data, classids, snames)
+	
 	if status<0:
 		logger.error("Feature selector failed!")
 		return 1
