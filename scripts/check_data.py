@@ -183,7 +183,7 @@ def main():
 			# - Check for NANs
 			has_naninf= np.any(~np.isfinite(data))
 			if has_naninf:
-				logger.error("Image %d (name=%s, label=%s) has some nan/inf, check!" % (img_counter, source_labels[img_counter-1], label))
+				logger.error("Image %d (name=%s, label=%s) has some nan/inf, check!" % (img_counter, sname, label))
 				if exit_on_fault:
 					return 1
 				else:
@@ -195,7 +195,7 @@ def main():
 				data_max= np.max(data[0,:,:,i])
 				same_values= (data_min==data_max)
 				if same_values:
-					logger.error("Image %d chan %d (name=%s, label=%s) has all elements equal to %f, check!" % (img_counter, i+1, source_labels[img_counter-1], label, data_min))
+					logger.error("Image %d chan %d (name=%s, label=%s) has all elements equal to %f, check!" % (img_counter, i+1, sname, label, data_min))
 					if exit_on_fault:
 						return 1
 					else:
@@ -208,7 +208,7 @@ def main():
 				data_max= np.max(data[0,:,:,:])
 				correct_norm= (data_min==0 and data_max==1)
 				if not correct_norm:
-					logger.error("Image %d chan %d (name=%s, label=%s) has invalid norm (%f,%f), check!" % (img_counter, i+1, source_labels[img_counter-1], label, data_min,data_max))
+					logger.error("Image %d chan %d (name=%s, label=%s) has invalid norm (%f,%f), check!" % (img_counter, i+1, sname, label, data_min,data_max))
 					if exit_on_fault:
 						return 1
 					else:
