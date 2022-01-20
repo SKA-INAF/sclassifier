@@ -82,6 +82,9 @@ def get_args():
 	
 	parser.add_argument('--dump_stats', dest='dump_stats', action='store_true',help='Dump image stats')	
 	parser.set_defaults(dump_stats=False)
+
+	parser.add_argument('--exit_on_fault', dest='exit_on_fault', action='store_true',help='Exit on fault')	
+	parser.set_defaults(exit_on_fault=False)
 	
 	args = parser.parse_args()	
 
@@ -124,6 +127,7 @@ def main():
 	if args.scale_factors!="":
 		scale_factors= [float(x.strip()) for x in args.scale_factors.split(',')]
 	outfile_stats= "stats_info.dat"
+	exit_on_fault= args.exit_on_fault
 	
 	#===========================
 	#==   READ DATA
@@ -180,7 +184,10 @@ def main():
 			has_naninf= np.any(~np.isfinite(data))
 			if has_naninf:
 				logger.error("Image %d (name=%s) has some nan/inf, check!" % (img_counter, source_labels[img_counter-1]))
-				break
+				if exit_on_fault:
+					return 1
+				else:
+					break
 
 			# - Check if channels have elements all equal
 			for i in range(nchannels):
@@ -189,7 +196,10 @@ def main():
 				same_values= (data_min==data_max)
 				if same_values:
 					logger.error("Image %d chan %d (name=%s) has all elements equal to %f, check!" % (img_counter, i+1, source_labels[img_counter-1],data_min))
-					break
+					if exit_on_fault:
+						return 1
+					else:
+						break
 						
 				
 			# - Check correct norm
@@ -199,7 +209,10 @@ def main():
 				correct_norm= (data_min==0 and data_max==1)
 				if not correct_norm:
 					logger.error("Image %d chan %d (name=%s) has invalid norm (%f,%f), check!" % (img_counter, i+1, source_labels[img_counter-1],data_min,data_max))
-					break
+					if exit_on_fault:
+						return 1
+					else:
+						break
 
 			# - Dump image stats
 			if dump_stats:
