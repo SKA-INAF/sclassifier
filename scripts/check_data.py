@@ -160,7 +160,7 @@ def main():
 
 	img_counter= 0
 	img_stats_all= []
-
+	
 	while True:
 		try:
 			data, sdata= next(data_generator)
@@ -170,7 +170,7 @@ def main():
 			label= sdata.label
 			classid= sdata.id
 
-			logger.info("Reading image no. %d" % img_counter)
+			logger.info("Reading image no. %d (name=%s, label=%s) ..." % (img_counter, sname, label))
 			#print("data shape")
 			#print(data.shape)
 
