@@ -1195,6 +1195,7 @@ class FeatExtractorAE(object):
 
 					inputdata_1d= inputdata_img[cond]
 					recdata_1d= recdata_img[cond]
+					recdata_img[~cond]= 0
 			
 					#print("pto 2")
 
@@ -1230,7 +1231,7 @@ class FeatExtractorAE(object):
 						ssim_mean_mask= -999
 
 					# - Append images
-					recdata_img[~cond]= 0
+					#recdata_img[~cond]= 0
 					ssim_2d[~cond]= 0
 					
 					img_list.append([])		
