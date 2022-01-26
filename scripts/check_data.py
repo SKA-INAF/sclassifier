@@ -298,7 +298,7 @@ def main():
 			data_max= data.max()
 			data_mean= data.mean() 
 			data_std= data.std()
-			data_median= data.median()
+			data_median= np.median(data)
 			data_q3, data_q1= np.percentile(data, [75 ,25])
 			data_iqr = data_q3 - data_q1
 
