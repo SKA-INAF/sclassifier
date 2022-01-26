@@ -246,8 +246,8 @@ def main():
 				for i in range(nchannels):
 					data_masked= np.ma.masked_equal(data[0,:,:,i], 0.0, copy=False)
 					data_masked_list= data_masked[~data_masked.mask].tolist() # Extract non-masked values and put to list
-					print("type(data_masked_list)")
-					print(type(data_masked_list))
+					#print("type(data_masked_list)")
+					#print(type(data_masked_list))
 					#print(data_masked_list)
 					if not data_masked_list:
 						logger.error("Image %d chan %d (name=%s, label=%s) has non masked pixels!" % (img_counter, i+1, sname, label))
@@ -313,8 +313,10 @@ def main():
 			for j in range(len(pixel_values_per_channels[i])):
 				item= pixel_values_per_channels[i][j]
 				item_type= type(item)
-				if item!=np.float:
-					logger.error("Pixel not float (ch=%d)!" % (i+1))
+				if item!=np.float32:
+					logger.error("Pixel no. %d not float (ch=%d)!" % (j+1, i+1))
+					print("item_type")
+					print(item_type)
 					print("item")
 					print(item)
 					return 1
