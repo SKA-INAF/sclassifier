@@ -248,6 +248,7 @@ def main():
 					data_masked_list= data_masked[~data_masked.mask].tolist() # Extract non-masked values and put to list
 					print("type(data_masked_list)")
 					print(type(data_masked_list))
+					print(data_masked_list)
 					pixel_values_per_channels[i].extend(data_masked_list)
 
 			# - Draw data
@@ -299,7 +300,9 @@ def main():
 			print(type(pixel_values_per_channels))
 			print("type(pixel_values_per_channels[i])")
 			print(type(pixel_values_per_channels[i]))
-			print(pixel_values_per_channels[i])
+			#print(pixel_values_per_channels[i])
+			print("len(pixel_values_per_channels[i])")
+			print(len(pixel_values_per_channels[i]))
 			data= np.array(pixel_values_per_channels[i], dtype=np.float32)
 			print("type(data)")
 			print(type(data))
