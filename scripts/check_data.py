@@ -246,6 +246,8 @@ def main():
 				for i in range(nchannels):
 					data_masked= np.ma.masked_equal(data[0,:,:,i], 0.0, copy=False)
 					data_masked_list= data_masked[~data_masked.mask].tolist() # Extract non-masked values and put to list
+					print("type(data_masked_list)")
+					print(type(data_masked_list))
 					pixel_values_per_channels[i].extend(data_masked_list)
 
 			# - Draw data
@@ -293,7 +295,13 @@ def main():
 		img_sample_stats= [[]]
 		
 		for i in range(len(pixel_values_per_channels)):
-			data= np.array(pixel_values_per_channels[i])
+			print("type(pixel_values_per_channels)")
+			print(type(pixel_values_per_channels))
+			print("type(pixel_values_per_channels[i])")
+			print(type(pixel_values_per_channels[i]))
+			data= np.array(pixel_values_per_channels[i], dtype=np.float32))
+			print("type(data)")
+			print(type(data))
 			data_min= data.min()
 			data_max= data.max()
 			data_mean= data.mean() 
