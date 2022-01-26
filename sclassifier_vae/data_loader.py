@@ -521,18 +521,18 @@ class DataLoader(object):
 			return None
 
 		# - Rescale image data?
-		if scale and scale_factors:
-			logger.debug("Rescaling source image data %d ..." % index)
-			if sdata.scale_imgs(scale_factors)<0:
-				logger.error("Failed to re-scale source image %d!" % index)
-				return None
+		#if scale and scale_factors:
+		#	logger.debug("Rescaling source image data %d ..." % index)
+		#	if sdata.scale_imgs(scale_factors)<0:
+		#		logger.error("Failed to re-scale source image %d!" % index)
+		#		return None
 
 		# - Standardize image data?
-		if standardize and means:
-			logger.debug("Standardizing source image data %d ..." % index)
-			if sdata.standardize_imgs(means, sigmas)<0:
-				logger.error("Failed to standardize source image %d!" % index)
-				return None
+		#if standardize and means:
+		#	logger.debug("Standardizing source image data %d ..." % index)
+		#	if sdata.standardize_imgs(means, sigmas)<0:
+		#		logger.error("Failed to standardize source image %d!" % index)
+		#		return None
 
 		# - Run augmentation?
 		if augment:
@@ -547,6 +547,20 @@ class DataLoader(object):
 			if sdata.resize_imgs(nx, ny, preserve_range=True)<0:
 				logger.error("Failed to resize source image %d to size (%d,%d)!" % (index,nx,ny))
 				return None
+
+		# - Rescale image data?
+		if scale and scale_factors:
+			logger.debug("Rescaling source image data %d ..." % index)
+			if sdata.scale_imgs(scale_factors)<0:
+				logger.error("Failed to re-scale source image %d!" % index)
+				return None
+
+		# - Standardize image data?
+		if standardize and means:
+			logger.debug("Standardizing source image data %d ..." % index)
+			if sdata.standardize_imgs(means, sigmas)<0:
+				logger.error("Failed to standardize source image %d!" % index)
+				return None			
 
 		# - Normalize image?
 		if normalize:
