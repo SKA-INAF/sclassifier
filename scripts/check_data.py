@@ -234,8 +234,6 @@ def main():
 					img_stats.append(data_max)
 					img_stats.append(data_mean)
 					img_stats.append(data_std)
-					img_stats.append(data_median)
-					img_stats.append(data_iqr)
 
 				img_stats.append(classid)
 				img_stats_all.append(img_stats)
