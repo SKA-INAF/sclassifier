@@ -290,7 +290,7 @@ def main():
 	# - Dump sample pixel stats
 	if dump_sample_stats:
 		logger.info("Computing sample pixel stats ...")
-		img_sample_stats= []
+		img_sample_stats= [[]]
 		
 		for i in range(len(pixel_values_per_channels)):
 			data= np.array(pixel_values_per_channels[i])
@@ -302,12 +302,12 @@ def main():
 			data_q3, data_q1= np.percentile(data, [75 ,25])
 			data_iqr = data_q3 - data_q1
 
-			img_sample_stats.append(data_min)
-			img_sample_stats.append(data_max)
-			img_sample_stats.append(data_mean)
-			img_sample_stats.append(data_std)
-			img_sample_stats.append(data_median)
-			img_sample_stats.append(data_iqr)
+			img_sample_stats[0].append(data_min)
+			img_sample_stats[0].append(data_max)
+			img_sample_stats[0].append(data_mean)
+			img_sample_stats[0].append(data_std)
+			img_sample_stats[0].append(data_median)
+			img_sample_stats[0].append(data_iqr)
 			
 
 		logger.info("Dumping pixel sample stats info to file %s ..." % (outfile_sample_stats))
