@@ -299,6 +299,7 @@ def main():
 			print(type(pixel_values_per_channels))
 			print("type(pixel_values_per_channels[i])")
 			print(type(pixel_values_per_channels[i]))
+			print(pixel_values_per_channels[i])
 			data= np.array(pixel_values_per_channels[i], dtype=np.float32)
 			print("type(data)")
 			print(type(data))
