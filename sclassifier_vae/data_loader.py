@@ -265,6 +265,43 @@ class SourceData(object):
 		self.img_cube*= scale_factors
 
 		return 0
+
+
+	def standardize_imgs(self, means, sigmas=[]):
+		""" Rescale image pixels with given weights """
+
+		# - Return if data cube is None
+		if self.img_cube is None:
+			logger.error("Image data cube is None!")
+			return -1
+
+		# - Check size of means
+		nchannels= self.img_cube.shape[2]
+		nmeans= len(means)
+		if nmeans<=0 or nmeans!=nchannels:
+			logger.error("Empty mean coefficient or size different from data channels!")
+			return -1
+
+		# - Check size of sigmas
+		sigma_scaling= False
+		if sigmas:
+			nsigmas= len(sigmas)
+			if nsigmas<=0 or nsigmas!=nchannels:
+				logger.error("Empty sigma coefficient or size different from data channels!")
+				return -1
+			sigma_scaling= True
+
+		# - Subtract mean.
+		#   NB: Set previously masked pixels to 0
+		if sigma_scaling:
+			data_norm= (self.img_cube-means)/sigmas
+		else:
+			data_norm= (self.img_cube-means)
+		data_norm[self.img_cube==0]= 0
+
+		self.img_cube= data_norm
+
+		return 0
 		
 
 	def log_transform_imgs(self):
@@ -463,7 +500,7 @@ class DataLoader(object):
 
 		return 0
 
-	def read_data(self, index, resize=True, nx=64, ny=64, normalize=True, augment=False, log_transform=False, scale=False, scale_factors=[]):	
+	def read_data(self, index, resize=True, nx=64, ny=64, normalize=True, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[]):	
 		""" Read data at given index """
 
 		# - Check index
@@ -488,6 +525,13 @@ class DataLoader(object):
 			logger.debug("Rescaling source image data %d ..." % index)
 			if sdata.scale_imgs(scale_factors)<0:
 				logger.error("Failed to re-scale source image %d!" % index)
+				return None
+
+		# - Standardize image data?
+		if standardize and means:
+			logger.debug("Standardizing source image data %d ..." % index)
+			if sdata.standardize_imgs(means, sigmas)<0:
+				logger.error("Failed to standardize source image %d!" % index)
 				return None
 
 		# - Run augmentation?
@@ -521,7 +565,7 @@ class DataLoader(object):
 	###################################
 	##     GENERATE DATA FOR TRAINING
 	###################################
-	def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=64, ny=64, normalize=True, augment=False, log_transform=False, scale=False, scale_factors=[], retsdata=False):	
+	def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=64, ny=64, normalize=True, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], retsdata=False):	
 		""" Generator function reading nsamples images from disk and returning to caller """
 	
 		nb= 0
@@ -548,7 +592,8 @@ class DataLoader(object):
 					normalize=normalize, 
 					augment=augment,
 					log_transform=log_transform,
-					scale=scale, scale_factors=scale_factors
+					scale=scale, scale_factors=scale_factors,
+					standardize=standardize, means=means, sigmas=sigmas
 				)
 				if sdata is None:
 					logger.warn("Failed to read source data at index %d, skip to next ..." % data_index)

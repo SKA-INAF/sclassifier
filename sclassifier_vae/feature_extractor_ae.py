@@ -318,7 +318,10 @@ class FeatExtractorAE(object):
 		self.log_transform_img= False
 		self.scale_img= False
 		self.scale_img_factors= []
-		
+		self.standardize_img= False		
+		self.img_means= []
+		self.img_sigmas= []	
+
 		# - Draw options
 		self.marker_mapping= {
 			'UNKNOWN': 'o', # unknown
@@ -412,7 +415,8 @@ class FeatExtractorAE(object):
 			normalize=True, 
 			augment=self.augmentation,
 			log_transform=self.log_transform_img,
-			scale=self.scale_img, scale_factors=self.scale_img_factors
+			scale=self.scale_img, scale_factors=self.scale_img_factors,
+			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas
 		)
 
 		# - Create cross validation data generator
@@ -423,7 +427,8 @@ class FeatExtractorAE(object):
 			normalize=True, 
 			augment=self.augmentation,
 			log_transform=self.log_transform_img,
-			scale=self.scale_img, scale_factors=self.scale_img_factors
+			scale=self.scale_img, scale_factors=self.scale_img_factors,
+			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas		
 		)	
 
 		# - Create test data generator
@@ -434,7 +439,8 @@ class FeatExtractorAE(object):
 			normalize=True, 
 			augment=False,
 			log_transform=self.log_transform_img,
-			scale=self.scale_img, scale_factors=self.scale_img_factors
+			scale=self.scale_img, scale_factors=self.scale_img_factors,
+			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas
 		)
 
 		# - Create standard generator (for reconstruction)
@@ -445,7 +451,8 @@ class FeatExtractorAE(object):
 			normalize=True, 
 			augment=False,
 			log_transform=self.log_transform_img,
-			scale=self.scale_img, scale_factors=self.scale_img_factors
+			scale=self.scale_img, scale_factors=self.scale_img_factors,
+			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas
 		)
 		
 		return 0

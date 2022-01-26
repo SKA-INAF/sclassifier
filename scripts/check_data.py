@@ -65,8 +65,12 @@ def get_args():
 
 	parser.add_argument('--scale', dest='scale', action='store_true',help='Apply scale factors to images')	
 	parser.set_defaults(scale=False)
-
 	parser.add_argument('-scale_factors', '--scale_factors', dest='scale_factors', required=False, type=str, default='', action='store',help='Image scale factors separated by commas (default=empty)')
+
+	parser.add_argument('--standardize', dest='standardize', action='store_true',help='Apply standardization to images')	
+	parser.set_defaults(standardize=False)
+	parser.add_argument('-img_means', '--img_means', dest='img_means', required=False, type=str, default='', action='store',help='Image means (separated by commas) to be used in standardization (default=empty)')
+	parser.add_argument('-img_sigmas', '--img_sigmas', dest='img_sigmas', required=False, type=str, default='', action='store',help='Image sigmas (separated by commas) to be used in standardization (default=empty)')
 	
 	parser.add_argument('--augment', dest='augment', action='store_true',help='Augment images')	
 	parser.set_defaults(augment=False)
@@ -130,6 +134,14 @@ def main():
 	scale_factors= []
 	if args.scale_factors!="":
 		scale_factors= [float(x.strip()) for x in args.scale_factors.split(',')]
+	standardize= args.standardize
+	img_means= []
+	img_sigmas= []
+	if args.img_means!="":
+		img_means= [float(x.strip()) for x in args.img_means.split(',')]
+	if args.img_sigmas!="":
+		img_sigmas= [float(x.strip()) for x in args.img_sigmas.split(',')]
+
 	outfile_stats= "stats_info.dat"
 	outfile_sample_stats= "stats_sample_info.dat"
 	exit_on_fault= args.exit_on_fault
@@ -164,6 +176,7 @@ def main():
 		augment=augment,
 		log_transform=log_transform,
 		scale=scale, scale_factors=scale_factors,
+		standardize=standardize, means=img_means, sigmas=img_sigmas,
 		retsdata=True
 	)	
 

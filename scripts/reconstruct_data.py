@@ -62,8 +62,12 @@ def get_args():
 	parser.add_argument('-ny', '--ny', dest='ny', required=False, type=int, default=64, action='store',help='Image resize height in pixels (default=64)')	
 	parser.add_argument('--scale', dest='scale', action='store_true',help='Apply scale factors to images')	
 	parser.set_defaults(scale=False)
-
 	parser.add_argument('-scale_factors', '--scale_factors', dest='scale_factors', required=False, type=str, default='', action='store',help='Image scale factors separated by commas (default=empty)')
+
+	parser.add_argument('--standardize', dest='standardize', action='store_true',help='Apply standardization to images')	
+	parser.set_defaults(standardize=False)
+	parser.add_argument('-img_means', '--img_means', dest='img_means', required=False, type=str, default='', action='store',help='Image means (separated by commas) to be used in standardization (default=empty)')
+	parser.add_argument('-img_sigmas', '--img_sigmas', dest='img_sigmas', required=False, type=str, default='', action='store',help='Image sigmas (separated by commas) to be used in standardization (default=empty)')
 
 	# - Autoencoder model options
 	parser.add_argument('-modelfile_encoder', '--modelfile_encoder', dest='modelfile_encoder', required=True, type=str, action='store',help='Encoder model architecture filename (.json)')
@@ -109,6 +113,14 @@ def main():
 	scale_factors= []
 	if args.scale_factors!="":
 		scale_factors= [float(x.strip()) for x in args.scale_factors.split(',')]
+	standardize= args.standardize
+	img_means= []
+	img_sigmas= []
+	if args.img_means!="":
+		img_means= [float(x.strip()) for x in args.img_means.split(',')]
+	if args.img_sigmas!="":
+		img_sigmas= [float(x.strip()) for x in args.img_sigmas.split(',')]
+
 	
 	# - Autoencoder options
 	modelfile_encoder= args.modelfile_encoder
@@ -141,6 +153,9 @@ def main():
 	vae_class.set_image_size(nx, ny)
 	vae_class.scale_img= scale
 	vae_class.scale_img_factors= scale_factors
+	vae_class.standardize_img= standardize
+	vae_class.img_means= img_means
+	vae_class.img_sigmas= img_sigmas
 
 	status= vae_class.reconstruct_data(
 		modelfile_encoder, weightfile_encoder, 
