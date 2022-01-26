@@ -249,6 +249,23 @@ def main():
 					#print("type(data_masked_list)")
 					#print(type(data_masked_list))
 					#print(data_masked_list)
+
+					if type(data_masked_list)!=list:
+						logger.error("Collection of non-masked pixels in image %d chan %d (name=%s, label=%s) is not a list!" % (img_counter, i+1, sname, label))
+						print(type(data_masked_list))
+						return 1
+					else:
+						for item in data_masked_list:
+							item_type= type(item)
+							if item_type!=float and item_type!=np.float and item_type!=np.float32:
+								logger.error("Current pixel in collection of non-masked pixels in image %d chan %d (name=%s, label=%s) is not a float!" % (img_counter, i+1, sname, label))
+								print("item")
+								print(item)
+								print("item_type")
+								print(item_type)
+								print(data_masked_list)
+								return 1
+
 					if not data_masked_list:
 						logger.error("Image %d chan %d (name=%s, label=%s) has non masked pixels!" % (img_counter, i+1, sname, label))
 						if exit_on_fault:
