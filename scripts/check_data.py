@@ -309,6 +309,15 @@ def main():
 			#print(pixel_values_per_channels[i])
 			print("len(pixel_values_per_channels[i])")
 			print(len(pixel_values_per_channels[i]))
+
+			for j in range(len(pixel_values_per_channels[i])):
+				item= pixel_values_per_channels[i][j]
+				item_type= type(item)
+				if item!=np.float:
+					logger.error("Pixel not float (ch=%d)!" % (i+1))
+					print("item")
+					print(item)
+					return 1
 			data= np.array(pixel_values_per_channels[i], dtype=np.float32)
 			print("type(data)")
 			print(type(data))
