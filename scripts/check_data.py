@@ -244,8 +244,12 @@ def main():
 					pixel_values_per_channels= [[] for i in range(nchannels)]
 
 				for i in range(nchannels):
-					data_masked= np.ma.masked_equal(data[0,:,:,i], 0.0, copy=False)
-					data_masked_list= data_masked[~data_masked.mask].tolist() # Extract non-masked values and put to list
+					cond= np.logical_and(data[0,:,:,i]!=0, np.isfinite(data[0,:,:,i]))
+
+					data_masked_1d= data[0,:,:,i][cond]
+					data_masked_list= list(data_masked_1d)
+					#data_masked= np.ma.masked_equal(data[0,:,:,i], 0.0, copy=False)
+					#data_masked_list= data_masked[~data_masked.mask].tolist() # Extract non-masked values and put to list
 					#print("type(data_masked_list)")
 					#print(type(data_masked_list))
 					#print(data_masked_list)
