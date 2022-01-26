@@ -248,7 +248,13 @@ def main():
 					data_masked_list= data_masked[~data_masked.mask].tolist() # Extract non-masked values and put to list
 					print("type(data_masked_list)")
 					print(type(data_masked_list))
-					print(data_masked_list)
+					#print(data_masked_list)
+					if not data_masked_list:
+						logger.error("Image %d chan %d (name=%s, label=%s) has non masked pixels!" % (img_counter, i+1, sname, label))
+						if exit_on_fault:
+							return 1
+						else:
+							break
 					pixel_values_per_channels[i].extend(data_masked_list)
 
 			# - Draw data
