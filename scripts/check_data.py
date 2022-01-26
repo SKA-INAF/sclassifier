@@ -293,12 +293,13 @@ def main():
 		img_sample_stats= []
 		
 		for i in range(len(pixel_values_per_channels)):
-			data_min= pixel_values_per_channels[i].min()
-			data_max= pixel_values_per_channels[i].max()
-			data_mean= pixel_values_per_channels[i].mean() 
-			data_std= pixel_values_per_channels[i].std()
-			data_median= pixel_values_per_channels[i].median()
-			data_q3, data_q1= np.percentile(pixel_values_per_channels[i], [75 ,25])
+			data= np.array(pixel_values_per_channels[i])
+			data_min= data.min()
+			data_max= data.max()
+			data_mean= data.mean() 
+			data_std= data.std()
+			data_median= data.median()
+			data_q3, data_q1= np.percentile(data, [75 ,25])
 			data_iqr = data_q3 - data_q1
 
 			img_sample_stats.append(data_min)
