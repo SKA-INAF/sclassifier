@@ -131,7 +131,7 @@ def main():
 	if args.scale_factors!="":
 		scale_factors= [float(x.strip()) for x in args.scale_factors.split(',')]
 	outfile_stats= "stats_info.dat"
-	outfile_sample_stats= "stats_sample_info"
+	outfile_sample_stats= "stats_sample_info.dat"
 	exit_on_fault= args.exit_on_fault
 	
 	#===========================
