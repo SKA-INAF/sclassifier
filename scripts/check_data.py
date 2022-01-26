@@ -313,14 +313,14 @@ def main():
 			for j in range(len(pixel_values_per_channels[i])):
 				item= pixel_values_per_channels[i][j]
 				item_type= type(item)
-				if item!=np.float32 and item!=np.float and item!=float:
+				if item_type!=np.float32 and item_type!=np.float and item_type!=float:
 					logger.error("Pixel no. %d not float (ch=%d)!" % (j+1, i+1))
 					print("item_type")
 					print(item_type)
 					print("item")
 					print(item)
 					return 1
-			data= np.array(pixel_values_per_channels[i], dtype=np.float32)
+			data= np.array(pixel_values_per_channels[i], dtype=np.float)
 			print("type(data)")
 			print(type(data))
 			data_min= data.min()
