@@ -83,6 +83,9 @@ def get_args():
 	parser.add_argument('--dump_stats', dest='dump_stats', action='store_true',help='Dump image stats')	
 	parser.set_defaults(dump_stats=False)
 
+	parser.add_argument('--dump_sample_stats', dest='dump_sample_stats', action='store_true',help='Dump image stats over entire sample')	
+	parser.set_defaults(dump_sample_stats=False)
+
 	parser.add_argument('--exit_on_fault', dest='exit_on_fault', action='store_true',help='Exit on fault')	
 	parser.set_defaults(exit_on_fault=False)
 	
@@ -122,11 +125,13 @@ def main():
 	shuffle= args.shuffle
 	draw= args.draw
 	dump_stats= args.dump_stats
+	dump_sample_stats= args.dump_sample_stats
 	scale= args.scale
 	scale_factors= []
 	if args.scale_factors!="":
 		scale_factors= [float(x.strip()) for x in args.scale_factors.split(',')]
 	outfile_stats= "stats_info.dat"
+	outfile_sample_stats= "stats_sample_info"
 	exit_on_fault= args.exit_on_fault
 	
 	#===========================
@@ -164,6 +169,7 @@ def main():
 
 	img_counter= 0
 	img_stats_all= []
+	pixel_values_per_channels= []
 	
 	while True:
 		try:
@@ -228,9 +234,21 @@ def main():
 					img_stats.append(data_max)
 					img_stats.append(data_mean)
 					img_stats.append(data_std)
+					img_stats.append(data_median)
+					img_stats.append(data_iqr)
 
 				img_stats.append(classid)
 				img_stats_all.append(img_stats)
+
+			# - Dump sample image stats
+			if dump_sample_stats:
+				if not pixel_values_per_channels:
+					pixel_values_per_channels= [[] for i in range(nchannels)]
+
+				for i in range(nchannels):
+					data_masked= np.ma.masked_equal(data[0,:,:,i], 0.0, copy=False)
+					data_masked_list= data_masked[~data_masked.mask].tolist() # Extract non-masked values and put to list
+					pixel_values_per_channels[i].extend(data_masked_list)
 
 			# - Draw data
 			if draw:
@@ -271,7 +289,39 @@ def main():
 		# - Dump to file
 		Utils.write_ascii(np.array(img_stats_all), outfile_stats, head)	
 
-	
+	# - Dump sample pixel stats
+	if dump_sample_stats:
+		logger.info("Computing sample pixel stats ...")
+		img_sample_stats= []
+		
+		for i in range(len(pixel_values_per_channels)):
+			data_min= pixel_values_per_channels[i].min()
+			data_max= pixel_values_per_channels[i].max()
+			data_mean= pixel_values_per_channels[i].mean() 
+			data_std= pixel_values_per_channels[i].std()
+			data_median= pixel_values_per_channels[i].median()
+			data_q3, data_q1= np.percentile(pixel_values_per_channels[i], [75 ,25])
+			data_iqr = data_q3 - data_q1
+
+			img_sample_stats.append(data_min)
+			img_sample_stats.append(data_max)
+			img_sample_stats.append(data_mean)
+			img_sample_stats.append(data_std)
+			img_sample_stats.append(data_median)
+			img_sample_stats.append(data_iqr)
+			
+
+		logger.info("Dumping pixel sample stats info to file %s ..." % (outfile_sample_stats))
+
+		head= "# "
+		for i in range(len(pixel_values_per_channels)):
+			ch= i+1
+			s= 'min_ch{i} max_ch{i} mean_ch{i} std_ch{i} median_ch{i} iqr_ch{i} '.format(i=ch)
+			head= head + s
+		logger.info("Sample stats file head: %s" % (head))
+			
+		Utils.write_ascii(np.array(img_sample_stats), outfile_sample_stats, head)	
+
 	return 0
 
 ###################
