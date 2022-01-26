@@ -313,7 +313,7 @@ def main():
 			for j in range(len(pixel_values_per_channels[i])):
 				item= pixel_values_per_channels[i][j]
 				item_type= type(item)
-				if item!=np.float32 and item!=np.float:
+				if item!=np.float32 and item!=np.float and item!=float:
 					logger.error("Pixel no. %d not float (ch=%d)!" % (j+1, i+1))
 					print("item_type")
 					print(item_type)
