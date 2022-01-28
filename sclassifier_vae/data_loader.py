@@ -412,12 +412,12 @@ class SourceData(object):
 			return -1
 
 		# - Make positive?
+		data_norm= np.copy(self.img_cube)
 		if make_positive and len(chan_mins)==self.img_cube.shape[-1]:
-			self.img_cube-= chan_mins
+			data_norm-= chan_mins
 
 		# - Divide by reference channel
-		data_norm= self.img_cube
-		data_denom= np.copy(self.img_cube[:,:,chref])
+		data_denom= np.copy(data_norm[:,:,chref])
 		data_denom[data_denom==0]= 1
 		for i in range(data_norm.shape[-1]):
 			data_norm[:,:,i]/= data_denom
