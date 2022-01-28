@@ -315,6 +315,9 @@ class FeatExtractorAE(object):
 		self.weight_init_seed= None
 		self.shuffle_train_data= True
 		self.augment_scale_factor= 1
+
+		self.normalize= False
+		self.resize= True
 		self.log_transform_img= False
 		self.scale_img= False
 		self.scale_img_factors= []
@@ -415,8 +418,8 @@ class FeatExtractorAE(object):
 		self.train_data_generator= self.dl.data_generator(
 			batch_size=self.batch_size, 
 			shuffle=self.shuffle_train_data,
-			resize=True, nx=self.nx, ny=self.ny, 
-			normalize=True, 
+			resize=self.resize, nx=self.nx, ny=self.ny, 
+			normalize=self.normalize, 
 			augment=self.augmentation,
 			log_transform=self.log_transform_img,
 			scale=self.scale_img, scale_factors=self.scale_img_factors,
@@ -429,8 +432,8 @@ class FeatExtractorAE(object):
 		self.crossval_data_generator= self.dl.data_generator(
 			batch_size=self.batch_size, 
 			shuffle=self.shuffle_train_data,
-			resize=True, nx=self.nx, ny=self.ny, 
-			normalize=True, 
+			resize=self.resize, nx=self.nx, ny=self.ny, 
+			normalize=self.normalize, 
 			augment=self.augmentation,
 			log_transform=self.log_transform_img,
 			scale=self.scale_img, scale_factors=self.scale_img_factors,
@@ -443,8 +446,8 @@ class FeatExtractorAE(object):
 		self.test_data_generator= self.dl.data_generator(
 			batch_size=self.nsamples, 
 			shuffle=False,
-			resize=True, nx=self.nx, ny=self.ny, 
-			normalize=True, 
+			resize=self.resize, nx=self.nx, ny=self.ny, 
+			normalize=self.normalize, 
 			augment=False,
 			log_transform=self.log_transform_img,
 			scale=self.scale_img, scale_factors=self.scale_img_factors,
@@ -457,8 +460,8 @@ class FeatExtractorAE(object):
 		self.data_generator= self.dl.data_generator(
 			batch_size=1, 
 			shuffle=False,
-			resize=True, nx=self.nx, ny=self.ny, 
-			normalize=True, 
+			resize=self.resize, nx=self.nx, ny=self.ny, 
+			normalize=self.normalize, 
 			augment=False,
 			log_transform=self.log_transform_img,
 			scale=self.scale_img, scale_factors=self.scale_img_factors,

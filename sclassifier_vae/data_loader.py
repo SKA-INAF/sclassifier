@@ -296,18 +296,18 @@ class SourceData(object):
 
 		# - Subtract mean.
 		#   NB: Set previously masked pixels to 0
-		print("== img_cube shape ==")
-		print(self.img_cube.shape)
-		print("== means ==")
-		print(means)
-		print("== sigmas ==")
-		print(sigmas)
-		print("== pixels (before standardization) ==")
-		pix_x= 30
-		pix_y= 30
-		for i in range(self.img_cube.shape[-1]):
-			print("--> ch%d" % (i+1))
-			print(self.img_cube[pix_y,pix_x,i])
+		#print("== img_cube shape ==")
+		#print(self.img_cube.shape)
+		#print("== means ==")
+		#print(means)
+		#print("== sigmas ==")
+		#print(sigmas)
+		#print("== pixels (before standardization) ==")
+		#pix_x= 30
+		#pix_y= 30
+		#for i in range(self.img_cube.shape[-1]):
+		#	print("--> ch%d" % (i+1))
+		#	print(self.img_cube[pix_y,pix_x,i])
 
 		if sigma_scaling:
 			data_norm= (self.img_cube-means)/sigmas
@@ -315,15 +315,12 @@ class SourceData(object):
 			data_norm= (self.img_cube-means)
 		data_norm[self.img_cube==0]= 0
 
-		
 		self.img_cube= data_norm
 
-		print("== pixels (after standardization) ==")
-		for i in range(self.img_cube.shape[-1]):
-			print("--> ch%d" % (i+1))
-			print(self.img_cube[pix_y,pix_x,i])
-
-
+		#print("== pixels (after standardization) ==")
+		#for i in range(self.img_cube.shape[-1]):
+		#	print("--> ch%d" % (i+1))
+		#	print(self.img_cube[pix_y,pix_x,i])
 
 		return 0
 		
@@ -400,8 +397,8 @@ class SourceData(object):
 		# - Update mask
 		self.img_cube_mask= np.logical_and(self.img_cube!=0,np.isfinite(self.img_cube)).astype(np.uint8)
 
-		print("self.img_cube_mask.shape")
-		print(self.img_cube_mask.shape)
+		#print("self.img_cube_mask.shape")
+		#print(self.img_cube_mask.shape)
 		
 		return 0
 
@@ -412,12 +409,6 @@ class SourceData(object):
 		# - Return if data cube is None
 		if self.img_cube is None:
 			logger.error("Image data cube is None!")
-			return -1
-
-		# - Check data cube integrity
-		has_bad_pixs= self.has_bad_pixel(self.img_cube, check_fract=False, thr=0)
-		if has_bad_pixs:
-			logger.warn("Input data cube has bad pixels!")	
 			return -1
 
 		# - Make positive?
@@ -432,12 +423,12 @@ class SourceData(object):
 			data_norm[:,:,i]/= data_denom
 		data_norm[self.img_cube==0]= 0
 
-		data_min= data_norm.min()
-		data_max= data_norm.max()
+		#data_min= data_norm.min()
+		#data_max= data_norm.max()
 
-		print("== data min/max ==")
-		print(data_min)
-		print(data_max)
+		#print("== data min/max ==")
+		#print(data_min)
+		#print(data_max)
 
 		if logtransf:
 			data_norm[data_norm<=0]= 1
@@ -446,11 +437,11 @@ class SourceData(object):
 
 			data_norm[self.img_cube==0]= 0
 
-			data_min= data_norm.min()
-			data_max= data_norm.max()
-			print("== lg data min/max ==")
-			print(data_min)
-			print(data_max)
+			#data_min= data_norm.min()
+			#data_max= data_norm.max()
+			#print("== lg data min/max ==")
+			#print(data_min)
+			#print(data_max)
 
 		# - Check data cube integrity
 		has_bad_pixs= self.has_bad_pixel(data_norm, check_fract=False, thr=0)
@@ -485,20 +476,20 @@ class SourceData(object):
 		data_min_ch1= data_masked.min()
 		data_max_ch1= data_masked.max()
 
-		print("== data min/max ==")
-		print(data_min)
-		print(data_max)
+		#print("== data min/max ==")
+		#print(data_min)
+		#print(data_max)
 
-		print("== data min/max ch1 ==")
-		print(data_min_ch1)
-		print(data_max_ch1)
+		#print("== data min/max ch1 ==")
+		#print(data_min_ch1)
+		#print(data_max_ch1)
 
-		print("== pixels (before norm) ==")
-		pix_x= 30
-		pix_y= 30
-		for i in range(self.img_cube.shape[-1]):
-			print("--> ch%d" % (i+1))
-			print(self.img_cube[pix_y,pix_x,i])
+		#print("== pixels (before norm) ==")
+		#pix_x= 30
+		#pix_y= 30
+		#for i in range(self.img_cube.shape[-1]):
+		#	print("--> ch%d" % (i+1))
+		#	print(self.img_cube[pix_y,pix_x,i])
 
 		# - Normalize in range [0,1].
 		#   NB: Set previously masked pixels to 0
@@ -516,10 +507,10 @@ class SourceData(object):
 		# - Update data cube
 		self.img_cube= data_norm
 
-		print("== pixels (after norm) ==")
-		for i in range(self.img_cube.shape[-1]):
-			print("--> ch%d" % (i+1))
-			print(self.img_cube[pix_y,pix_x,i])
+		#print("== pixels (after norm) ==")
+		#for i in range(self.img_cube.shape[-1]):
+		#	print("--> ch%d" % (i+1))
+		#	print(self.img_cube[pix_y,pix_x,i])
 	
 		return 0
 

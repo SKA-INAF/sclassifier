@@ -65,10 +65,17 @@ def get_args():
 	parser.add_argument('--augment', dest='augment', action='store_true',help='Augment images')	
 	parser.set_defaults(augment=False)
 	parser.add_argument('-augment_scale_factor', '--augment_scale_factor', dest='augment_scale_factor', required=False, type=int, default=1, action='store',help='Number of times images are augmented. E.g. if 2, nsteps_per_epoch=2*nsamples/batch_size (default=1)')
+	
+	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize input images in range [0,1]')	
+	parser.set_defaults(normalize=False)
+
+	parser.add_argument('--log_transform', dest='log_transform', action='store_true',help='Apply log transform to images')	
+	parser.set_defaults(log_transform=False)
+
 	parser.add_argument('--scale', dest='scale', action='store_true',help='Apply scale factors to images')	
 	parser.set_defaults(scale=False)
 	parser.add_argument('-scale_factors', '--scale_factors', dest='scale_factors', required=False, type=str, default='', action='store',help='Image scale factors separated by commas (default=empty)')
-	
+
 	parser.add_argument('--standardize', dest='standardize', action='store_true',help='Apply standardization to images')	
 	parser.set_defaults(standardize=False)
 	parser.add_argument('-img_means', '--img_means', dest='img_means', required=False, type=str, default='', action='store',help='Image means (separated by commas) to be used in standardization (default=empty)')
@@ -186,6 +193,8 @@ def main():
 	if args.scale_factors!="":
 		scale_factors= [float(x.strip()) for x in args.scale_factors.split(',')]
 
+	normalize= args.normalize
+	log_transform= args.log_transform
 	standardize= args.standardize
 	img_means= []
 	img_sigmas= []
@@ -281,6 +290,8 @@ def main():
 	vae_class.set_image_size(nx, ny)
 	vae_class.augmentation= augment
 	vae_class.augment_scale_factor= augment_scale_factor
+	vae_class.normalize= normalize	
+	vae_class.log_transform_img= log_transform
 	vae_class.scale_img= scale
 	vae_class.scale_img_factors= scale_factors
 	vae_class.standardize_img= standardize

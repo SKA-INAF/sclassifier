@@ -59,7 +59,14 @@ def get_args():
 	
 	# - Data pre-processing options
 	parser.add_argument('-nx', '--nx', dest='nx', required=False, type=int, default=64, action='store',help='Image resize width in pixels (default=64)')
-	parser.add_argument('-ny', '--ny', dest='ny', required=False, type=int, default=64, action='store',help='Image resize height in pixels (default=64)')	
+	parser.add_argument('-ny', '--ny', dest='ny', required=False, type=int, default=64, action='store',help='Image resize height in pixels (default=64)')
+
+	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize input images in range [0,1]')	
+	parser.set_defaults(normalize=False)
+
+	parser.add_argument('--log_transform', dest='log_transform', action='store_true',help='Apply log transform to images')	
+	parser.set_defaults(log_transform=False)
+	
 	parser.add_argument('--scale', dest='scale', action='store_true',help='Apply scale factors to images')	
 	parser.set_defaults(scale=False)
 	parser.add_argument('-scale_factors', '--scale_factors', dest='scale_factors', required=False, type=str, default='', action='store',help='Image scale factors separated by commas (default=empty)')
@@ -118,6 +125,9 @@ def main():
 	# - Data process options	
 	nx= args.nx
 	ny= args.ny
+
+	normalize= args.normalize
+	log_transform= args.log_transform
 	scale= args.scale
 	scale_factors= []
 	if args.scale_factors!="":
@@ -166,6 +176,8 @@ def main():
 	logger.info("Running autoencoder classifier reconstruction ...")
 	vae_class= FeatExtractorAE(dl)
 	vae_class.set_image_size(nx, ny)
+	vae_class.normalize= normalize	
+	vae_class.log_transform_img= log_transform
 	vae_class.scale_img= scale
 	vae_class.scale_img_factors= scale_factors
 	vae_class.standardize_img= standardize
