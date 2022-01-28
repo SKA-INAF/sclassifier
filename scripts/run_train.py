@@ -74,6 +74,14 @@ def get_args():
 	parser.add_argument('-img_means', '--img_means', dest='img_means', required=False, type=str, default='', action='store',help='Image means (separated by commas) to be used in standardization (default=empty)')
 	parser.add_argument('-img_sigmas', '--img_sigmas', dest='img_sigmas', required=False, type=str, default='', action='store',help='Image sigmas (separated by commas) to be used in standardization (default=empty)')
 
+	parser.add_argument('--chan_divide', dest='chan_divide', action='store_true',help='Apply channel division to images')	
+	parser.set_defaults(chan_divide=False)
+	parser.add_argument('-chan_mins', '--chan_mins', dest='chan_mins', required=False, type=str, default='', action='store',help='Image channel means (separated by commas) to be used in chan divide (default=empty)')
+
+	parser.add_argument('--erode', dest='erode', action='store_true',help='Apply erosion to image sourve mask')	
+	parser.set_defaults(erode=False)	
+	parser.add_argument('-erode_kernel', '--erode_kernel', dest='erode_kernel', required=False, type=int, default=5, action='store',help='Erosion kernel size in pixels (default=5)')	
+
 	# - Network training options
 	parser.add_argument('-latentdim', '--latentdim', dest='latentdim', required=False, type=int, default=2, action='store',help='Dimension of latent vector (default=2)')	
 	parser.add_argument('-nepochs', '--nepochs', dest='nepochs', required=False, type=int, default=100, action='store',help='Number of epochs used in network training (default=100)')	
@@ -186,6 +194,12 @@ def main():
 	if args.img_sigmas!="":
 		img_sigmas= [float(x.strip()) for x in args.img_sigmas.split(',')]
 
+	chan_divide= args.chan_divide
+	chan_mins= []
+	if args.chan_mins!="":
+		chan_mins= [float(x.strip()) for x in args.chan_mins.split(',')]
+	erode= args.erode	
+	erode_kernel= args.erode_kernel
 
 	# - NN architecture
 	use_vae= args.use_vae
@@ -272,6 +286,10 @@ def main():
 	vae_class.standardize_img= standardize
 	vae_class.img_means= img_means
 	vae_class.img_sigmas= img_sigmas
+	vae_class.chan_divide= chan_divide
+	vae_class.chan_mins= chan_mins
+	vae_class.erode= erode
+	vae_class.erode_kernel= erode_kernel
 
 	vae_class.batch_size= batch_size
 	vae_class.nepochs= nepochs

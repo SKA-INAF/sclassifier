@@ -71,6 +71,15 @@ def get_args():
 	parser.set_defaults(standardize=False)
 	parser.add_argument('-img_means', '--img_means', dest='img_means', required=False, type=str, default='', action='store',help='Image means (separated by commas) to be used in standardization (default=empty)')
 	parser.add_argument('-img_sigmas', '--img_sigmas', dest='img_sigmas', required=False, type=str, default='', action='store',help='Image sigmas (separated by commas) to be used in standardization (default=empty)')
+
+	parser.add_argument('--chan_divide', dest='chan_divide', action='store_true',help='Apply channel division to images')	
+	parser.set_defaults(chan_divide=False)
+	parser.add_argument('-chan_mins', '--chan_mins', dest='chan_mins', required=False, type=str, default='', action='store',help='Image channel means (separated by commas) to be used in chan divide (default=empty)')
+
+	parser.add_argument('--erode', dest='erode', action='store_true',help='Apply erosion to image sourve mask')	
+	parser.set_defaults(erode=False)	
+	parser.add_argument('-erode_kernel', '--erode_kernel', dest='erode_kernel', required=False, type=int, default=5, action='store',help='Erosion kernel size in pixels (default=5)')	
+	
 	
 	parser.add_argument('--augment', dest='augment', action='store_true',help='Augment images')	
 	parser.set_defaults(augment=False)
@@ -83,6 +92,9 @@ def get_args():
 
 	parser.add_argument('--draw', dest='draw', action='store_true',help='Draw images')	
 	parser.set_defaults(draw=False)
+
+	parser.add_argument('--save_fits', dest='save_fits', action='store_true',help='Save images')	
+	parser.set_defaults(save_fits=False)
 	
 	parser.add_argument('--dump_stats', dest='dump_stats', action='store_true',help='Dump image stats')	
 	parser.set_defaults(dump_stats=False)
@@ -142,10 +154,17 @@ def main():
 	if args.img_sigmas!="":
 		img_sigmas= [float(x.strip()) for x in args.img_sigmas.split(',')]
 
+	chan_divide= args.chan_divide
+	chan_mins= []
+	if args.chan_mins!="":
+		chan_mins= [float(x.strip()) for x in args.chan_mins.split(',')]
+	erode= args.erode	
+	erode_kernel= args.erode_kernel
 	outfile_stats= "stats_info.dat"
 	outfile_sample_stats= "stats_sample_info.dat"
 	exit_on_fault= args.exit_on_fault
-	
+	save_fits= args.save_fits
+
 	#===========================
 	#==   READ DATA
 	#===========================
@@ -177,6 +196,8 @@ def main():
 		log_transform=log_transform,
 		scale=scale, scale_factors=scale_factors,
 		standardize=standardize, means=img_means, sigmas=img_sigmas,
+		chan_divide=chan_divide, chan_mins=chan_mins,
+		erode=erode, erode_kernel=erode_kernel,
 		retsdata=True
 	)	
 
@@ -269,18 +290,18 @@ def main():
 
 					if type(data_masked_list)!=list:
 						logger.error("Collection of non-masked pixels in image %d chan %d (name=%s, label=%s) is not a list!" % (img_counter, i+1, sname, label))
-						print(type(data_masked_list))
+						#print(type(data_masked_list))
 						return 1
 					else:
 						for item in data_masked_list:
 							item_type= type(item)
 							if item_type!=float and item_type!=np.float and item_type!=np.float32:
 								logger.error("Current pixel in collection of non-masked pixels in image %d chan %d (name=%s, label=%s) is not a float!" % (img_counter, i+1, sname, label))
-								print("item")
-								print(item)
-								print("item_type")
-								print(item_type)
-								print(data_masked_list)
+								#print("item")
+								#print(item)
+								#print("item_type")
+								#print(item_type)
+								#print(data_masked_list)
 								return 1
 
 					if not data_masked_list:
@@ -302,6 +323,13 @@ def main():
 			
 				plt.tight_layout()
 				plt.show()
+
+			# - Dump fits
+			if save_fits:
+				logger.info("Writing FITS ...")
+				for i in range(nchannels):
+					outfile_fits= sname + '_id' + str(classid) + '_ch' + str(i+1) + '.fits'
+					Utils.write_fits(data[0,:,:,i], outfile_fits)
 
 			# - Stop generator
 			if img_counter>=nsamples:
@@ -336,27 +364,27 @@ def main():
 		img_sample_stats= [[]]
 		
 		for i in range(len(pixel_values_per_channels)):
-			print("type(pixel_values_per_channels)")
-			print(type(pixel_values_per_channels))
-			print("type(pixel_values_per_channels[i])")
-			print(type(pixel_values_per_channels[i]))
+			#print("type(pixel_values_per_channels)")
+			#print(type(pixel_values_per_channels))
+			#print("type(pixel_values_per_channels[i])")
+			#print(type(pixel_values_per_channels[i]))
 			#print(pixel_values_per_channels[i])
-			print("len(pixel_values_per_channels[i])")
-			print(len(pixel_values_per_channels[i]))
+			#print("len(pixel_values_per_channels[i])")
+			#print(len(pixel_values_per_channels[i]))
 
 			for j in range(len(pixel_values_per_channels[i])):
 				item= pixel_values_per_channels[i][j]
 				item_type= type(item)
 				if item_type!=np.float32 and item_type!=np.float and item_type!=float:
 					logger.error("Pixel no. %d not float (ch=%d)!" % (j+1, i+1))
-					print("item_type")
-					print(item_type)
-					print("item")
-					print(item)
+					#print("item_type")
+					#print(item_type)
+					#print("item")
+					#print(item)
 					return 1
 			data= np.array(pixel_values_per_channels[i], dtype=np.float)
-			print("type(data)")
-			print(type(data))
+			#print("type(data)")
+			#print(type(data))
 			data_min= data.min()
 			data_max= data.max()
 			data_mean= data.mean() 
