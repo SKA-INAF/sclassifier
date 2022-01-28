@@ -29,6 +29,9 @@ from sklearn.model_selection import train_test_split
 import imgaug
 from imgaug import augmenters as iaa
 
+## OPENCV
+import cv2
+
 ## PACKAGE MODULES
 from .utils import Utils
 
@@ -293,13 +296,34 @@ class SourceData(object):
 
 		# - Subtract mean.
 		#   NB: Set previously masked pixels to 0
+		print("== img_cube shape ==")
+		print(self.img_cube.shape)
+		print("== means ==")
+		print(means)
+		print("== sigmas ==")
+		print(sigmas)
+		print("== pixels (before standardization) ==")
+		pix_x= 30
+		pix_y= 30
+		for i in range(self.img_cube.shape[-1]):
+			print("--> ch%d" % (i+1))
+			print(self.img_cube[pix_y,pix_x,i])
+
 		if sigma_scaling:
 			data_norm= (self.img_cube-means)/sigmas
 		else:
 			data_norm= (self.img_cube-means)
 		data_norm[self.img_cube==0]= 0
 
+		
 		self.img_cube= data_norm
+
+		print("== pixels (after standardization) ==")
+		for i in range(self.img_cube.shape[-1]):
+			print("--> ch%d" % (i+1))
+			print(self.img_cube[pix_y,pix_x,i])
+
+
 
 		return 0
 		
@@ -348,6 +372,100 @@ class SourceData(object):
 	
 		return 0
 
+	def erode_imgs(self, kernsize=5):
+		""" Erode images """
+
+		# - Return if data cube is None
+		if self.img_cube is None:
+			logger.error("Image data cube is None!")
+			return -1
+
+		# - Define erosion operation
+		structel= cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernsize,kernsize))
+		#structel= cv2.getStructuringElement(cv2.MORPH_RECTANGLE, (kernsize,kernsize))
+
+		# - Create erosion masks and apply to input data
+		for i in range(self.img_cube.shape[-1]):
+			mask= np.logical_and(self.img_cube[:,:,i]!=0,np.isfinite(self.img_cube[:,:,i])).astype(np.uint8)
+			mask= mask.astype(np.uint8)
+			#mask[mask!=0]= 1
+			print(mask.min())
+			print(mask.max())
+			mask_eroded = cv2.erode(mask, structel, iterations = 1)
+			
+			img_eroded= self.img_cube[:,:,i]
+			img_eroded[mask_eroded==0]= 0
+			self.img_cube[:,:,i]= img_eroded
+			
+		# - Update mask
+		self.img_cube_mask= np.logical_and(self.img_cube!=0,np.isfinite(self.img_cube)).astype(np.uint8)
+
+		print("self.img_cube_mask.shape")
+		print(self.img_cube_mask.shape)
+		
+		return 0
+
+
+	def divide_imgs(self, chref=0, logtransf=False, make_positive=True, chan_mins=[], strip_chref=True):
+		""" Normalize images by dividing for a given channel id """
+
+		# - Return if data cube is None
+		if self.img_cube is None:
+			logger.error("Image data cube is None!")
+			return -1
+
+		# - Check data cube integrity
+		has_bad_pixs= self.has_bad_pixel(self.img_cube, check_fract=False, thr=0)
+		if has_bad_pixs:
+			logger.warn("Input data cube has bad pixels!")	
+			return -1
+
+		# - Make positive?
+		if make_positive and len(chan_mins)==self.img_cube.shape[-1]:
+			self.img_cube-= chan_mins
+
+		# - Divide by reference channel
+		data_norm= self.img_cube
+		data_denom= np.copy(self.img_cube[:,:,chref])
+		data_denom[data_denom==0]= 1
+		for i in range(data_norm.shape[-1]):
+			data_norm[:,:,i]/= data_denom
+		data_norm[self.img_cube==0]= 0
+
+		data_min= data_norm.min()
+		data_max= data_norm.max()
+
+		print("== data min/max ==")
+		print(data_min)
+		print(data_max)
+
+		if logtransf:
+			data_norm[data_norm<=0]= 1
+			data_norm_lg= np.log10(data_norm)
+			data_norm= data_norm_lg
+
+			data_norm[self.img_cube==0]= 0
+
+			data_min= data_norm.min()
+			data_max= data_norm.max()
+			print("== lg data min/max ==")
+			print(data_min)
+			print(data_max)
+
+		# - Check data cube integrity
+		has_bad_pixs= self.has_bad_pixel(data_norm, check_fract=False, thr=0)
+		if has_bad_pixs:
+			logger.warn("Normalized data cube has bad pixels!")	
+			return -1
+
+		# - Update data cube 
+		if strip_chref:
+			self.img_cube = np.delete(data_norm, chref, axis=2)
+		else:
+			self.img_cube= data_norm
+
+		return 0
+
 
 	def normalize_imgs(self):
 		""" Normalize images in range [0,1] """
@@ -363,9 +481,30 @@ class SourceData(object):
 		data_min= data_masked.min()
 		data_max= data_masked.max()
 
+		data_masked_ch1= np.ma.masked_equal(self.img_cube[:,:,0], 0.0, copy=False)	
+		data_min_ch1= data_masked.min()
+		data_max_ch1= data_masked.max()
+
+		print("== data min/max ==")
+		print(data_min)
+		print(data_max)
+
+		print("== data min/max ch1 ==")
+		print(data_min_ch1)
+		print(data_max_ch1)
+
+		print("== pixels (before norm) ==")
+		pix_x= 30
+		pix_y= 30
+		for i in range(self.img_cube.shape[-1]):
+			print("--> ch%d" % (i+1))
+			print(self.img_cube[pix_y,pix_x,i])
+
 		# - Normalize in range [0,1].
 		#   NB: Set previously masked pixels to 0
 		data_norm= (self.img_cube-data_min)/(data_max-data_min)
+		##data_norm= self.img_cube/data_max
+		##data_norm= self.img_cube/data_max_ch1
 		data_norm[self.img_cube==0]= 0
 
 		# - Check data cube integrity
@@ -376,6 +515,11 @@ class SourceData(object):
 
 		# - Update data cube
 		self.img_cube= data_norm
+
+		print("== pixels (after norm) ==")
+		for i in range(self.img_cube.shape[-1]):
+			print("--> ch%d" % (i+1))
+			print(self.img_cube[pix_y,pix_x,i])
 	
 		return 0
 
@@ -500,7 +644,7 @@ class DataLoader(object):
 
 		return 0
 
-	def read_data(self, index, resize=True, nx=64, ny=64, normalize=True, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[]):	
+	def read_data(self, index, resize=True, nx=64, ny=64, normalize=True, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False,chan_mins=[], erode=False, erode_kernel=5):	
 		""" Read data at given index """
 
 		# - Check index
@@ -534,6 +678,13 @@ class DataLoader(object):
 		#		logger.error("Failed to standardize source image %d!" % index)
 		#		return None
 
+		# - Erode image?
+		if erode:
+			logger.debug("Eroding source image data %d ..." % index)
+			if sdata.erode_imgs(erode_kernel)<0:
+				logger.error("Failed to erode source image %d!" % index)
+				return None
+			
 		# - Run augmentation?
 		if augment:
 			logger.debug("Augmenting source image data %d ..." % index)
@@ -568,18 +719,24 @@ class DataLoader(object):
 				logger.error("Failed to normalize source image %d!" % index)
 				return None
 
-		# - Log-tranform image?
-		if log_transform:
-			if sdata.log_transform_imgs()<0:
-				logger.error("Failed to log-transform source image %d!" % index)
+		# - Channel division?
+		if chan_divide:
+			if sdata.divide_imgs(chref=0, logtransf=log_transform, make_positive=True, chan_mins=chan_mins)<0:
+				logger.error("Failed to chan divide source image %d!" % index)
 				return None
+
+		# - Log-tranform image?
+		#if log_transform:
+		#	if sdata.log_transform_imgs()<0:
+		#		logger.error("Failed to log-transform source image %d!" % index)
+		#		return None
 
 		return sdata
 
 	###################################
 	##     GENERATE DATA FOR TRAINING
 	###################################
-	def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=64, ny=64, normalize=True, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], retsdata=False):	
+	def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=64, ny=64, normalize=True, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5, retsdata=False):	
 		""" Generator function reading nsamples images from disk and returning to caller """
 	
 		nb= 0
@@ -607,7 +764,9 @@ class DataLoader(object):
 					augment=augment,
 					log_transform=log_transform,
 					scale=scale, scale_factors=scale_factors,
-					standardize=standardize, means=means, sigmas=sigmas
+					standardize=standardize, means=means, sigmas=sigmas,
+					chan_divide=chan_divide, chan_mins=chan_mins,
+					erode=erode, erode_kernel=erode_kernel
 				)
 				if sdata is None:
 					logger.warn("Failed to read source data at index %d, skip to next ..." % data_index)

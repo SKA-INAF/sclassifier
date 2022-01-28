@@ -321,6 +321,10 @@ class FeatExtractorAE(object):
 		self.standardize_img= False		
 		self.img_means= []
 		self.img_sigmas= []	
+		self.chan_divide= False
+		self.chan_mins= []
+		self.erode= False
+		self.erode_kernel= 5
 
 		# - Draw options
 		self.marker_mapping= {
@@ -416,7 +420,9 @@ class FeatExtractorAE(object):
 			augment=self.augmentation,
 			log_transform=self.log_transform_img,
 			scale=self.scale_img, scale_factors=self.scale_img_factors,
-			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas
+			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
+			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
+			erode=self.erode, erode_kernel=self.erode_kernel
 		)
 
 		# - Create cross validation data generator
@@ -428,7 +434,9 @@ class FeatExtractorAE(object):
 			augment=self.augmentation,
 			log_transform=self.log_transform_img,
 			scale=self.scale_img, scale_factors=self.scale_img_factors,
-			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas		
+			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
+			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
+			erode=self.erode, erode_kernel=self.erode_kernel	
 		)	
 
 		# - Create test data generator
@@ -440,7 +448,9 @@ class FeatExtractorAE(object):
 			augment=False,
 			log_transform=self.log_transform_img,
 			scale=self.scale_img, scale_factors=self.scale_img_factors,
-			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas
+			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
+			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
+			erode=self.erode, erode_kernel=self.erode_kernel
 		)
 
 		# - Create standard generator (for reconstruction)
@@ -452,7 +462,9 @@ class FeatExtractorAE(object):
 			augment=False,
 			log_transform=self.log_transform_img,
 			scale=self.scale_img, scale_factors=self.scale_img_factors,
-			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas
+			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
+			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
+			erode=self.erode, erode_kernel=self.erode_kernel
 		)
 		
 		return 0
@@ -1226,7 +1238,11 @@ class FeatExtractorAE(object):
 					# - Compute similarity index
 					#   NB: Need to normalize images to max otherwise the returned values are always ~1.
 					img_max= np.max([inputdata_img,recdata_img])
-					ssim_mean, ssim_2d= structural_similarity(inputdata_img/img_max, recdata_img/img_max, full=True, win_size=winsize, data_range=1)
+					try:
+						ssim_mean, ssim_2d= structural_similarity(inputdata_img/img_max, recdata_img/img_max, full=True, win_size=winsize, data_range=1)
+					except Exception as e:
+						logger.error("ssim calculation failed for image no. %d (chan=%d, sname=%s, id=%d) (err=%s)!" % (img_counter, j+1, sname, classid, str(e)))
+						return -1
 					ssim_1d= ssim_2d[cond]
 					ssim_mean_mask= np.nanmean(ssim_1d)
 					ssim_min_mask= np.nanmin(ssim_1d)
