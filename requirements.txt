@@ -5,7 +5,7 @@ scikit-learn
 pyparsing<=2.4.7
 matplotlib
 six==1.15.0
-numpy==1.19.5
+numpy==1.21.0
 tensorflow>=2.6.1
 imgaug>=0.4.0
 umap-learn
