@@ -66,7 +66,7 @@ reqs.append('seaborn')
 ##reqs.append('scikit-image<=0.15.0')
 reqs.append('scikit-image')
 reqs.append('lightgbm')
-reqs.append('opencv-python'
+reqs.append('opencv-python')
 
 data_dir = 'data'
 
