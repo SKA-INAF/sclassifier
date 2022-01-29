@@ -455,7 +455,8 @@ class SourceData(object):
 
 		# - Update data cube 
 		if strip_chref:
-			self.img_cube = np.delete(data_norm, chref, axis=2)
+			self.img_cube= np.delete(data_norm, chref, axis=2)
+			self.nchannels= self.img_cube.shape[-1]
 		else:
 			self.img_cube= data_norm
 
