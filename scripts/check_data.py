@@ -104,6 +104,9 @@ def get_args():
 
 	parser.add_argument('--exit_on_fault', dest='exit_on_fault', action='store_true',help='Exit on fault')	
 	parser.set_defaults(exit_on_fault=False)
+
+	parser.add_argument('-fthr_zeros', '--fthr_zeros', dest='fthr_zeros', required=False, type=float, default=0.1, action='store',help='Max fraction of zeros above which channel is bad (default=0.1)')	
+	
 	
 	args = parser.parse_args()	
 
@@ -164,6 +167,7 @@ def main():
 	outfile_sample_stats= "stats_sample_info.dat"
 	exit_on_fault= args.exit_on_fault
 	save_fits= args.save_fits
+	fthr_zeros= args.fthr_zeros
 
 	#===========================
 	#==   READ DATA
@@ -228,6 +232,18 @@ def main():
 					return 1
 				else:
 					break
+
+			# - Check for fraction of zeros in radio mask
+			cond= np.logical_and(data[0,:,:,0]!=0,np.isfinite(data[0,:,:,0]))
+			for i in range(1,nchannels):
+				data_2d= data[0,:,:,i]
+				data_1d= data_2d[cond]
+				n= data_1d.size
+				n_zeros= np.count_nonzero(data_1d==0)
+				logger.info("Image %d chan %d (name=%s, label=%s): n=%d, n_zeros=%d, f=%f" % (img_counter, i+1, sname, label, n, n_zeros, f))
+				f= n_zeros/n
+				if f>=fthr_zeros:
+					logger.warn("Image %d chan %d (name=%s, label=%s) has a zero fraction %f, check!" % (img_counter, i+1, sname, label, f))
 
 			# - Check if channels have elements all equal
 			for i in range(nchannels):
