@@ -246,6 +246,7 @@ def main():
 				
 				if f>=fthr_zeros:
 					logger.warn("Image %d chan %d (name=%s, label=%s) has a zero fraction %f, check!" % (img_counter, i+1, sname, label, f))
+					break
 
 			# - Check if channels have elements all equal
 			for i in range(nchannels):
