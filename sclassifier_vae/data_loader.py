@@ -403,7 +403,7 @@ class SourceData(object):
 		return 0
 
 
-	def divide_imgs(self, chref=0, logtransf=False, make_positive=True, chan_mins=[], strip_chref=True):
+	def divide_imgs(self, chref=0, logtransf=False, make_positive=True, chan_mins=[], strip_chref=True, trim=True, trim_min=-6, trim_max=6):
 		""" Normalize images by dividing for a given channel id """
 
 		# - Return if data cube is None
@@ -443,6 +443,10 @@ class SourceData(object):
 			#print(data_min)
 			#print(data_max)
 
+			if trim:
+				data_norm[data_norm>trim_max]= trim_max
+				data_norm[data_norm<trim_min]= trim_min	
+					
 		# - Check data cube integrity
 		has_bad_pixs= self.has_bad_pixel(data_norm, check_fract=False, thr=0)
 		if has_bad_pixs:
