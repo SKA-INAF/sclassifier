@@ -240,8 +240,9 @@ def main():
 				data_1d= data_2d[cond]
 				n= data_1d.size
 				n_zeros= np.count_nonzero(data_1d==0)
-				logger.info("Image %d chan %d (name=%s, label=%s): n=%d, n_zeros=%d, f=%f" % (img_counter, i+1, sname, label, n, n_zeros, f))
 				f= n_zeros/n
+				logger.info("Image %d chan %d (name=%s, label=%s): n=%d, n_zeros=%d, f=%f" % (img_counter, i+1, sname, label, n, n_zeros, f))
+				
 				if f>=fthr_zeros:
 					logger.warn("Image %d chan %d (name=%s, label=%s) has a zero fraction %f, check!" % (img_counter, i+1, sname, label, f))
 
