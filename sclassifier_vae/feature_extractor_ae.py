@@ -317,6 +317,7 @@ class FeatExtractorAE(object):
 		self.augment_scale_factor= 1
 
 		self.normalize= False
+		self.scale_to_max= False
 		self.resize= True
 		self.log_transform_img= False
 		self.scale_img= False
@@ -421,7 +422,7 @@ class FeatExtractorAE(object):
 			batch_size=self.batch_size, 
 			shuffle=self.shuffle_train_data,
 			resize=self.resize, nx=self.nx, ny=self.ny, 
-			normalize=self.normalize, 
+			normalize=self.normalize, scale_to_max=self.scale_to_max,
 			augment=self.augmentation,
 			log_transform=self.log_transform_img,
 			scale=self.scale_img, scale_factors=self.scale_img_factors,
@@ -435,7 +436,7 @@ class FeatExtractorAE(object):
 			batch_size=self.batch_size, 
 			shuffle=self.shuffle_train_data,
 			resize=self.resize, nx=self.nx, ny=self.ny, 
-			normalize=self.normalize, 
+			normalize=self.normalize, scale_to_max=self.scale_to_max,
 			augment=self.augmentation,
 			log_transform=self.log_transform_img,
 			scale=self.scale_img, scale_factors=self.scale_img_factors,
@@ -449,7 +450,7 @@ class FeatExtractorAE(object):
 			batch_size=self.nsamples, 
 			shuffle=False,
 			resize=self.resize, nx=self.nx, ny=self.ny, 
-			normalize=self.normalize, 
+			normalize=self.normalize, scale_to_max=self.scale_to_max,
 			augment=False,
 			log_transform=self.log_transform_img,
 			scale=self.scale_img, scale_factors=self.scale_img_factors,
@@ -463,7 +464,7 @@ class FeatExtractorAE(object):
 			batch_size=1, 
 			shuffle=False,
 			resize=self.resize, nx=self.nx, ny=self.ny, 
-			normalize=self.normalize, 
+			normalize=self.normalize, scale_to_max=self.scale_to_max,
 			augment=False,
 			log_transform=self.log_transform_img,
 			scale=self.scale_img, scale_factors=self.scale_img_factors,

@@ -63,6 +63,8 @@ def get_args():
 
 	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize input images in range [0,1]')	
 	parser.set_defaults(normalize=False)
+	parser.add_argument('--scale_to_max', dest='scale_to_max', action='store_true',help='In normalization, scale to max not to min-max range')	
+	parser.set_defaults(scale_to_max=False)
 
 	parser.add_argument('--log_transform', dest='log_transform', action='store_true',help='Apply log transform to images')	
 	parser.set_defaults(log_transform=False)
@@ -127,6 +129,7 @@ def main():
 	ny= args.ny
 
 	normalize= args.normalize
+	scale_to_max= args.scale_to_max
 	log_transform= args.log_transform
 	scale= args.scale
 	scale_factors= []
@@ -177,6 +180,7 @@ def main():
 	vae_class= FeatExtractorAE(dl)
 	vae_class.set_image_size(nx, ny)
 	vae_class.normalize= normalize	
+	vae_class.scale_to_max= scale_to_max
 	vae_class.log_transform_img= log_transform
 	vae_class.scale_img= scale
 	vae_class.scale_img_factors= scale_factors

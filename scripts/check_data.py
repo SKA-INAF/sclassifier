@@ -57,8 +57,10 @@ def get_args():
 	parser.add_argument('-nx', '--nx', dest='nx', required=False, type=int, default=64, action='store',help='Image resize width in pixels (default=64)')
 	parser.add_argument('-ny', '--ny', dest='ny', required=False, type=int, default=64, action='store',help='Image resize height in pixels (default=64)')	
 	
-	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize input images in range [0,1]')	
+	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize input images in range [0,1] or to max')	
 	parser.set_defaults(normalize=False)
+	parser.add_argument('--scale_to_max', dest='scale_to_max', action='store_true',help='In normalization, scale to max not to min-max range')	
+	parser.set_defaults(scale_to_max=False)
 
 	parser.add_argument('--log_transform', dest='log_transform', action='store_true',help='Apply log transform to images')	
 	parser.set_defaults(log_transform=False)
@@ -138,6 +140,7 @@ def main():
 	nx= args.nx
 	ny= args.ny
 	normalize= args.normalize
+	scale_to_max= args.scale_to_max
 	log_transform= args.log_transform
 	resize= args.resize
 	augment= args.augment
@@ -195,7 +198,7 @@ def main():
 		batch_size=1, 
 		shuffle=shuffle,
 		resize=resize, nx=nx, ny=ny, 	
-		normalize=normalize, 
+		normalize=normalize, scale_to_max=scale_to_max,
 		augment=augment,
 		log_transform=log_transform,
 		scale=scale, scale_factors=scale_factors,
@@ -259,13 +262,15 @@ def main():
 						return 1
 					else:
 						break
-						
-				
+			
 			# - Check correct norm
 			if normalize:
 				data_min= np.min(data[0,:,:,:])
 				data_max= np.max(data[0,:,:,:])
-				correct_norm= (data_min==0 and data_max==1)
+				if scale_to_max:
+					correct_norm= (data_max==1)
+				else:
+					correct_norm= (data_min==0 and data_max==1)
 				if not correct_norm:
 					logger.error("Image %d chan %d (name=%s, label=%s) has invalid norm (%f,%f), check!" % (img_counter, i+1, sname, label, data_min,data_max))
 					if exit_on_fault:

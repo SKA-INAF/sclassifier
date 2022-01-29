@@ -463,7 +463,7 @@ class SourceData(object):
 		return 0
 
 
-	def normalize_imgs(self):
+	def normalize_imgs(self, scale_to_max=False, refch=-1):
 		""" Normalize images in range [0,1] """
 
 		# - Return if data cube is None
@@ -477,17 +477,17 @@ class SourceData(object):
 		data_min= data_masked.min()
 		data_max= data_masked.max()
 
-		#data_masked_ch1= np.ma.masked_equal(self.img_cube[:,:,0], 0.0, copy=False)	
-		#data_min_ch1= data_masked.min()
-		#data_max_ch1= data_masked.max()
+		data_masked_ch= np.ma.masked_equal(self.img_cube[:,:,refch], 0.0, copy=False)	
+		data_min_ch= data_masked_ch.min()
+		data_max_ch= data_masked_ch.max()
 
 		#print("== data min/max ==")
 		#print(data_min)
 		#print(data_max)
 
-		#print("== data min/max ch1 ==")
-		#print(data_min_ch1)
-		#print(data_max_ch1)
+		#print("== data min/max chref ==")
+		#print(data_min_ch)
+		#print(data_max_ch)
 
 		#print("== pixels (before norm) ==")
 		#pix_x= 30
@@ -496,11 +496,16 @@ class SourceData(object):
 		#	print("--> ch%d" % (i+1))
 		#	print(self.img_cube[pix_y,pix_x,i])
 
-		# - Normalize in range [0,1].
+		# - Normalize in range [0,1] or to max.
 		#   NB: Set previously masked pixels to 0
-		data_norm= (self.img_cube-data_min)/(data_max-data_min)
-		##data_norm= self.img_cube/data_max
-		##data_norm= self.img_cube/data_max_ch1
+		if scale_to_max:
+			scale_factor= data_max_ch
+			if refch==-1:
+				scale_factor= data_max
+			data_norm= self.img_cube/scale_factor
+		else:
+			data_norm= (self.img_cube-data_min)/(data_max-data_min)
+		
 		data_norm[self.img_cube==0]= 0
 
 		# - Check data cube integrity
@@ -640,7 +645,7 @@ class DataLoader(object):
 
 		return 0
 
-	def read_data(self, index, resize=True, nx=64, ny=64, normalize=True, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False,chan_mins=[], erode=False, erode_kernel=5):	
+	def read_data(self, index, resize=True, nx=64, ny=64, normalize=True, scale_to_max=False, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False,chan_mins=[], erode=False, erode_kernel=5):	
 		""" Read data at given index """
 
 		# - Check index
@@ -711,7 +716,7 @@ class DataLoader(object):
 
 		# - Normalize image?
 		if normalize:
-			if sdata.normalize_imgs()<0:
+			if sdata.normalize_imgs(scale_to_max)<0:
 				logger.error("Failed to normalize source image %d!" % index)
 				return None
 
@@ -732,7 +737,7 @@ class DataLoader(object):
 	###################################
 	##     GENERATE DATA FOR TRAINING
 	###################################
-	def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=64, ny=64, normalize=True, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5, retsdata=False):	
+	def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=64, ny=64, normalize=True, scale_to_max=False, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5, retsdata=False):	
 		""" Generator function reading nsamples images from disk and returning to caller """
 	
 		nb= 0
@@ -756,7 +761,7 @@ class DataLoader(object):
 				sdata= self.read_data(
 					data_index, 
 					resize=resize, nx=nx, ny=ny,
-					normalize=normalize, 
+					normalize=normalize, scale_to_max=scale_to_max, 
 					augment=augment,
 					log_transform=log_transform,
 					scale=scale, scale_factors=scale_factors,
