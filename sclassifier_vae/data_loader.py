@@ -403,7 +403,7 @@ class SourceData(object):
 		return 0
 
 
-	def divide_imgs(self, chref=0, logtransf=False, make_positive=True, chan_mins=[], strip_chref=True, trim=False, trim_min=-6, trim_max=6):
+	def divide_imgs(self, chref=0, logtransf=False, make_positive=True, chan_mins=[], strip_chref=True, trim=True, trim_min=-6, trim_max=6):
 		""" Normalize images by dividing for a given channel id """
 
 		# - Return if data cube is None
