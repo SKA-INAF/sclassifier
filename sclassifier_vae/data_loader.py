@@ -386,8 +386,8 @@ class SourceData(object):
 			mask= np.logical_and(self.img_cube[:,:,i]!=0,np.isfinite(self.img_cube[:,:,i])).astype(np.uint8)
 			mask= mask.astype(np.uint8)
 			#mask[mask!=0]= 1
-			print(mask.min())
-			print(mask.max())
+			#print(mask.min())
+			#print(mask.max())
 			mask_eroded = cv2.erode(mask, structel, iterations = 1)
 			
 			img_eroded= self.img_cube[:,:,i]
@@ -472,9 +472,9 @@ class SourceData(object):
 		data_min= data_masked.min()
 		data_max= data_masked.max()
 
-		data_masked_ch1= np.ma.masked_equal(self.img_cube[:,:,0], 0.0, copy=False)	
-		data_min_ch1= data_masked.min()
-		data_max_ch1= data_masked.max()
+		#data_masked_ch1= np.ma.masked_equal(self.img_cube[:,:,0], 0.0, copy=False)	
+		#data_min_ch1= data_masked.min()
+		#data_max_ch1= data_masked.max()
 
 		#print("== data min/max ==")
 		#print(data_min)
