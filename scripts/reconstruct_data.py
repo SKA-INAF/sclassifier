@@ -63,6 +63,8 @@ def get_args():
 
 	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize input images in range [0,1]')	
 	parser.set_defaults(normalize=False)
+	parser.add_argument('--scale_to_abs_max', dest='scale_to_abs_max', action='store_true',help='In normalization, if scale_to_max is active, scale to global max across all channels')	
+	parser.set_defaults(scale_to_abs_max=False)
 	parser.add_argument('--scale_to_max', dest='scale_to_max', action='store_true',help='In normalization, scale to max not to min-max range')	
 	parser.set_defaults(scale_to_max=False)
 
@@ -129,6 +131,7 @@ def main():
 	ny= args.ny
 
 	normalize= args.normalize
+	scale_to_abs_max= args.scale_to_abs_max
 	scale_to_max= args.scale_to_max
 	log_transform= args.log_transform
 	scale= args.scale
@@ -179,7 +182,8 @@ def main():
 	logger.info("Running autoencoder classifier reconstruction ...")
 	vae_class= FeatExtractorAE(dl)
 	vae_class.set_image_size(nx, ny)
-	vae_class.normalize= normalize	
+	vae_class.normalize= normalize
+	vae_class.scale_to_abs_max= scale_to_abs_max
 	vae_class.scale_to_max= scale_to_max
 	vae_class.log_transform_img= log_transform
 	vae_class.scale_img= scale

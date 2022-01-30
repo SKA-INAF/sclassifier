@@ -59,6 +59,8 @@ def get_args():
 	
 	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize input images in range [0,1] or to max')	
 	parser.set_defaults(normalize=False)
+	parser.add_argument('--scale_to_abs_max', dest='scale_to_abs_max', action='store_true',help='In normalization, if scale_to_max is active, scale to global max across all channels')	
+	parser.set_defaults(scale_to_abs_max=False)
 	parser.add_argument('--scale_to_max', dest='scale_to_max', action='store_true',help='In normalization, scale to max not to min-max range')	
 	parser.set_defaults(scale_to_max=False)
 
@@ -140,6 +142,7 @@ def main():
 	nx= args.nx
 	ny= args.ny
 	normalize= args.normalize
+	scale_to_abs_max= args.scale_to_abs_max
 	scale_to_max= args.scale_to_max
 	log_transform= args.log_transform
 	resize= args.resize
@@ -198,7 +201,7 @@ def main():
 		batch_size=1, 
 		shuffle=shuffle,
 		resize=resize, nx=nx, ny=ny, 	
-		normalize=normalize, scale_to_max=scale_to_max,
+		normalize=normalize, scale_to_abs_max=scale_to_abs_max, scale_to_max=scale_to_max,
 		augment=augment,
 		log_transform=log_transform,
 		scale=scale, scale_factors=scale_factors,
@@ -341,9 +344,15 @@ def main():
 				logger.info("Drawing data ...")
 				fig = plt.figure(figsize=(20, 10))
 				for i in range(nchannels):
+					data_ch= data[0,:,:,i] 
+					data_masked= np.ma.masked_equal(data_ch, 0.0, copy=False)
+					data_min= data_masked.min()
+					data_max= data_masked.max()
+					data_ch[data_ch==0]= data_min
+
 					#logger.info("Reading nchan %d ..." % i+1)
 					plt.subplot(1, nchannels, i+1)
-					plt.imshow(data[0,:,:,i], origin='lower')
+					plt.imshow(data_ch, origin='lower')
 			
 				plt.tight_layout()
 				plt.show()
