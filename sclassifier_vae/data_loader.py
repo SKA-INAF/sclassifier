@@ -517,8 +517,12 @@ class SourceData(object):
 					scale_factor= data_maxs[refch]
 			data_norm= self.img_cube/scale_factor
 		else:
-			data_norm= (self.img_cube-data_min)/(data_max-data_min)
-		
+			if scale_to_abs_max:
+				data_norm= (self.img_cube-data_min)/(data_max-data_min)
+			else:
+				diffs= [x - y for x, y in zip(data_maxs, data_mins)] 
+				data_norm= (self.img_cube-data_mins)/diffs			
+
 		data_norm[self.img_cube==0]= 0
 
 		# - Check data cube integrity
