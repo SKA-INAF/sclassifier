@@ -490,20 +490,20 @@ class SourceData(object):
 			data_mins.append(data_min_ch)
 			data_maxs.append(data_max_ch)
 
-		print("== data min/max ==")
-		print(data_min)
-		print(data_max)
+		#print("== data min/max ==")
+		#print(data_min)
+		#print(data_max)
 
-		print("== data mins/maxs ==")
-		print(data_mins)
-		print(data_maxs)
+		#print("== data mins/maxs ==")
+		#print(data_mins)
+		#print(data_maxs)
 
-		print("== pixels (before norm) ==")
-		pix_x= 30
-		pix_y= 30
-		for i in range(self.img_cube.shape[-1]):
-			print("--> ch%d" % (i+1))
-			print(self.img_cube[pix_y,pix_x,i])
+		#print("== pixels (before norm) ==")
+		#pix_x= 30
+		#pix_y= 30
+		#for i in range(self.img_cube.shape[-1]):
+		#	print("--> ch%d" % (i+1))
+		#	print(self.img_cube[pix_y,pix_x,i])
 
 		# - Normalize in range [0,1] or to max.
 		#   NB: Set previously masked pixels to 0
@@ -530,10 +530,10 @@ class SourceData(object):
 		# - Update data cube
 		self.img_cube= data_norm
 
-		print("== pixels (after norm) ==")
-		for i in range(self.img_cube.shape[-1]):
-			print("--> ch%d" % (i+1))
-			print(self.img_cube[pix_y,pix_x,i])
+		#print("== pixels (after norm) ==")
+		#for i in range(self.img_cube.shape[-1]):
+		#	print("--> ch%d" % (i+1))
+		#	print(self.img_cube[pix_y,pix_x,i])
 	
 		return 0
 
