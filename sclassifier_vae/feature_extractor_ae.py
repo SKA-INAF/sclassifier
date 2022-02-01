@@ -922,18 +922,19 @@ class FeatExtractorAE(object):
 			tf.print("pto 1", K.shape(y_true), output_stream=sys.stdout)
 			cond= tf.logical_and(tf.math.is_finite(y_true), tf.math.not_equal(y_true, 0.))
 			tf.print("pto 2", K.shape(y_true), output_stream=sys.stdout)
-			#data_mask= tf.ragged.boolean_mask(y_true, mask=cond)
-			data_mask= tf.boolean_mask(y_true, mask=cond)	
+			data_mask= tf.ragged.boolean_mask(y_true, mask=cond)
 			tf.print("pto 3", K.shape(y_true), output_stream=sys.stdout)
-			data_max= tf.reduce_max(data_mask, axis=(1,2))
-			tf.print("pto 4", K.shape(y_true), output_stream=sys.stdout)
-			#tf.print("data_max shape:", K.shape(data_max), output_stream=sys.stdout)
-			data_abs_max= tf.reduce_max(data_mask)
-			#tf.print("data_abs_max shape:", K.shape(data_abs_max), output_stream=sys.stdout)
-			tf.print("pto 5", K.shape(y_true), output_stream=sys.stdout)
+			data_max= tf.reduce_max(data_mask, axis=(1,2)).to_tensor()
+			#tf.print("pto 4", K.shape(y_true), output_stream=sys.stdout)
+			tf.print("data_max shape:", K.shape(data_max), output_stream=sys.stdout)
+			data_abs_max= tf.reduce_max(data_mask).to_tensor()
+			tf.print("data_abs_max shape:", K.shape(data_abs_max), output_stream=sys.stdout)
+			#tf.print("pto 5", K.shape(y_true), output_stream=sys.stdout)
 			chan_weights= data_abs_max/data_max
+			chan_weights= tf.expand_dims(tf.expand_dims(chan_weights, axis=1),axis=1)
+
 			tf.print("chan_weights shape:", K.shape(chan_weights), output_stream=sys.stdout)
-			tf.print("pto 6", K.shape(y_true), output_stream=sys.stdout)
+			#tf.print("pto 6", K.shape(y_true), output_stream=sys.stdout)
 			y_true*= chan_weights
 			tf.print("pto 7", K.shape(y_true), output_stream=sys.stdout)
 			y_pred*= chan_weights
