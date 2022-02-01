@@ -919,32 +919,14 @@ class FeatExtractorAE(object):
 
 		# - Compute max of each channel and apply weights per channel?
 		if self.scale_chan_mse_loss:
-			tf.print("pto 1", K.shape(y_true), output_stream=sys.stdout)
 			cond= tf.logical_and(tf.math.is_finite(y_true), tf.math.not_equal(y_true, 0.))
-			tf.print("pto 2", K.shape(y_true), output_stream=sys.stdout)
 			data_mask= tf.ragged.boolean_mask(y_true, mask=cond)
-			tf.print("pto 3", K.shape(y_true), output_stream=sys.stdout)
 			data_max= tf.reduce_max(data_mask, axis=(1,2))
-			#data_max= data_max.to_tensor()
-			#data_max= tf.convert_to_tensor(data_max)
-			#tf.print("pto 4", K.shape(y_true), output_stream=sys.stdout)
-			#tf.print("data_max shape:", K.shape(data_max), output_stream=sys.stdout)
 			data_abs_max= tf.reduce_max(data_mask)
-			#data_abs_max= data_abs_max.to_tensor()
-			#data_abs_max= tf.convert_to_tensor(data_abs_max)
-			#tf.print("data_abs_max shape:", K.shape(data_abs_max), output_stream=sys.stdout)
-			tf.print("pto 5", K.shape(y_true), output_stream=sys.stdout)
 			chan_weights= data_abs_max/data_max
-			tf.print("pto 6", K.shape(y_true), output_stream=sys.stdout)
-			
 			chan_weights= tf.expand_dims(tf.expand_dims(chan_weights, axis=1),axis=1)
 			chan_weights= chan_weights.to_tensor()
-
-			tf.print("chan_weights shape:", K.shape(chan_weights), output_stream=sys.stdout)
-			tf.print("chan_weights", chan_weights, output_stream=sys.stdout)
-			tf.print("pto 7", K.shape(y_true), output_stream=sys.stdout)
 			y_true*= chan_weights
-			tf.print("pto 8", K.shape(y_true), output_stream=sys.stdout)
 			y_pred*= chan_weights
 
 		# - Compute flattened tensors
