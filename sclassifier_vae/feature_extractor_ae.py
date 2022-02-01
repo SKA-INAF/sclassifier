@@ -938,6 +938,7 @@ class FeatExtractorAE(object):
 			tf.print("pto 6", K.shape(y_true), output_stream=sys.stdout)
 			
 			chan_weights= tf.expand_dims(tf.expand_dims(chan_weights, axis=1),axis=1)
+			chan_weights= chan_weights.to_tensor()
 
 			#tf.print("chan_weights shape:", K.shape(chan_weights), output_stream=sys.stdout)
 			tf.print("chan_weights", chan_weights, output_stream=sys.stdout)
