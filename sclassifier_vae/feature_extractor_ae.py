@@ -931,9 +931,10 @@ class FeatExtractorAE(object):
 			#tf.print("data_abs_max shape:", K.shape(data_abs_max), output_stream=sys.stdout)
 			tf.print("pto 5", K.shape(y_true), output_stream=sys.stdout)
 			chan_weights= data_abs_max/data_max
-			#tf.print("chan_weights shape:", K.shape(chan_weights), output_stream=sys.stdout)
+			tf.print("chan_weights shape:", K.shape(chan_weights), output_stream=sys.stdout)
 			tf.print("pto 6", K.shape(y_true), output_stream=sys.stdout)
 			y_true*= chan_weights
+			tf.print("pto 7", K.shape(y_true), output_stream=sys.stdout)
 			y_pred*= chan_weights
 
 		# - Compute flattened tensors
