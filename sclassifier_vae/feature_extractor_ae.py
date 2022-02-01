@@ -678,7 +678,8 @@ class FeatExtractorAE(object):
 		#===========================	
 		###self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
 		##if not tf.executing_eagerly():
-		self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True)
+		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True) ### CORRECT
+		self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=False)
 		#self.vae.compile(optimizer=self.optimizer, loss=self.loss)
 		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=False)
 		
