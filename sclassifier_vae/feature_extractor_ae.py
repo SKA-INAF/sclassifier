@@ -923,8 +923,11 @@ class FeatExtractorAE(object):
 			data_mask= tf.ragged.boolean_mask(y_true, mask=cond)
 			#data_min= tf.reduce_min(data_mask, axis=(1,2))
 			data_max= tf.reduce_max(data_mask, axis=(1,2))
+			tf.print("data_max shape:", K.shape(data_max), output_stream=sys.stdout)
 			data_abs_max= tf.reduce_max(data_mask)
+			tf.print("data_abs_max shape:", K.shape(data_abs_max), output_stream=sys.stdout)
 			chan_weights= data_abs_max/data_max
+			tf.print("chan_weights shape:", K.shape(chan_weights), output_stream=sys.stdout)
 			y_true*= chan_weights
 			y_pred*= chan_weights
 
