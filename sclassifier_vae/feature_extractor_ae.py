@@ -926,10 +926,12 @@ class FeatExtractorAE(object):
 			tf.print("pto 3", K.shape(y_true), output_stream=sys.stdout)
 			data_max= tf.reduce_max(data_mask, axis=(1,2))
 			#data_max= data_max.to_tensor()
+			data_max= tf.convert_to_tensor(data_max)
 			#tf.print("pto 4", K.shape(y_true), output_stream=sys.stdout)
 			tf.print("data_max shape:", K.shape(data_max), output_stream=sys.stdout)
 			data_abs_max= tf.reduce_max(data_mask)
 			#data_abs_max= data_abs_max.to_tensor()
+			data_abs_max= tf.convert_to_tensor(data_abs_max)
 			tf.print("data_abs_max shape:", K.shape(data_abs_max), output_stream=sys.stdout)
 			#tf.print("pto 5", K.shape(y_true), output_stream=sys.stdout)
 			chan_weights= data_abs_max/data_max
