@@ -88,17 +88,9 @@ from .data_loader import SourceData
 
 
 
-class Sampling(layers.Layer):
-	"""Uses (z_mean, z_log_var) to sample z, the vector encoding a digit."""
-
-	def call(self, inputs):
-		z_mean, z_log_var = inputs
-		batch = tf.shape(z_mean)[0]
-		dim = tf.shape(z_mean)[1]
-		epsilon = tf.keras.backend.random_normal(shape=(batch, dim))
-		return z_mean + tf.exp(0.5 * z_log_var) * epsilon
-
-
+#===============================
+#==     CUSTOM METRICS
+#===============================
 def ssim_batchavg(img1, img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01, k2=0.03):
 	""" Compute SSIM averaged over all channels and batch """
 
@@ -232,6 +224,127 @@ def compute_ssim_per_channel(img1, img2, max_val=1.0, filter_size=11, filter_sig
 	return ssim_masked, cs
 
 
+#===============================
+#==     CUSTOM LAYERS
+#===============================
+class Sampling(layers.Layer):
+	"""Uses (z_mean, z_log_var) to sample z, the vector encoding a digit."""
+
+	def call(self, inputs):
+		z_mean, z_log_var = inputs
+		batch = tf.shape(z_mean)[0]
+		dim = tf.shape(z_mean)[1]
+		epsilon = tf.keras.backend.random_normal(shape=(batch, dim))
+		return z_mean + tf.exp(0.5 * z_log_var) * epsilon
+
+
+#@keras_export('keras.layers.experimental.preprocessing.Rescaling')
+class ChanNormalization(Layer):
+	"""Scale inputs in range.
+	The rescaling is applied both during training and inference.
+	Input shape:
+		Arbitrary.
+	Output shape:
+		Same as input.
+	Arguments:
+		norm_min: Float, the data min to the inputs.
+		norm_max: Float, the offset to apply to the inputs.
+		name: A string, the name of the layer.
+	"""
+
+	def __init__(self, data_min=0., data_max=1., name=None, **kwargs):
+		self.data_min = data_min
+		self.data_max = data_max
+		super(ChanNormalization, self).__init__(name=name, **kwargs)
+
+	def call(self, inputs):
+		#dtype = self._compute_dtype
+		#norm_min = math_ops.cast(self.norm_min, dtype)
+		#norm_max = math_ops.cast(self.norm_max, dtype)
+		#data= math_ops.cast(inputs, dtype)
+		norm_min= self.norm_min
+		norm_max= self.norm_max
+		data= inputs
+
+		# - Compute input data min & max, excluding NANs & zeros
+		cond= tf.logical_and(tf.math.is_finite(data), tf.math.not_equal(data, 0.))
+		mask= tf.ragged.boolean_mask(data, mask=cond)
+		data_min= tf.reduce_min(mask, axis=(1,2))
+		data_max= tf.reduce_max(mask, axis=(1,2))
+		
+		# - Normalize data in range (norm_min, norm_max)
+		data_norm= (data-data_min)/(data_max-data_min) * (norm_max-norm_min) + norm_min
+
+		# - Set masked values (NANs, zeros) to norm_min
+		data_norm= tf.where(~cond, tf.ones_like(data_norm) * norm_min, data_norm)
+		
+		return data_norm
+
+	def compute_output_shape(self, input_shape):
+		return input_shape
+
+	def get_config(self):
+		config = {
+			'norm_min': self.norm_min,
+			'norm_max': self.norm_max,
+		}
+		base_config = super(ChanNormalization, self).get_config()
+		return dict(list(base_config.items()) + list(config.items()))
+
+
+class ChanDeNormalization(Layer):
+	"""Restore inputs original normalization in range.
+	The rescaling is applied both during training and inference.
+	Input shape:
+		Arbitrary.
+	Output shape:
+		Same as input.
+	Arguments:
+		norm_min: Float, the data min to the inputs.
+		norm_max: Float, the offset to apply to the inputs.
+		name: A string, the name of the layer.
+	"""
+
+	def __init__(self, data_min=0., data_max=1., name=None, **kwargs):
+		self.data_min = data_min
+		self.data_max = data_max
+		super(ChanDeNormalization, self).__init__(name=name, **kwargs)
+
+	def call(self, inputs):
+		#dtype = self._compute_dtype
+		#norm_min = math_ops.cast(self.data_min, dtype)
+		#norm_max = math_ops.cast(self.data_max, dtype)
+		#data= math_ops.cast(inputs, dtype)
+		norm_min= self.norm_min
+		norm_max= self.norm_max
+		data= inputs[0]
+		data_norm= inputs[1]
+
+		# - Compute input data min & max, excluding NANs & zeros
+		cond= tf.logical_and(tf.math.is_finite(data), tf.math.not_equal(data, 0.))
+		mask= tf.ragged.boolean_mask(data, mask=cond)
+		data_min= tf.reduce_min(mask, axis=(1,2))
+		data_max= tf.reduce_max(mask, axis=(1,2))
+		
+		# - Normalize data in range (data_min, data_max)
+		data_denorm= (data_norm-norm_min)/(norm_max-norm_min) * (data_max-data_min) + data_min
+
+		# - Set masked values (NANs, zeros) to norm_min
+		data_denorm= tf.where(~cond, tf.ones_like(data_denorm) * norm_min, data_denorm)
+		
+		return data_denorm
+
+	def compute_output_shape(self, input_shape):
+		return input_shape[0]
+
+	def get_config(self):
+		config = {
+			'norm_min': self.norm_min,
+			'norm_max': self.norm_max,
+		}
+		base_config = super(ChanDeNormalization, self).get_config()
+		return dict(list(base_config.items()) + list(config.items()))
+
 
 ##############################
 ##     FeatExtractorAE CLASS
@@ -278,6 +391,9 @@ class FeatExtractorAE(object):
 		self.vae= None
 		self.encoder= None
 		self.decoder= None	
+		self.add_channorm_layer= False
+		self.channorm_min= 0.0
+		self.channorm_max= 1.0
 		self.nfilters_cnn= [32,64,128]
 		self.kernsizes_cnn= [3,5,7]
 		self.strides_cnn= [2,2,2]
@@ -304,6 +420,7 @@ class FeatExtractorAE(object):
 		self.learning_rate= 1.e-4
 		self.optimizer_default= 'adam'
 		self.optimizer= 'adam' # 'rmsprop'
+		self.scale_chan_mse_loss= True
 		self.use_mse_loss= True
 		self.use_kl_loss= False
 		self.use_ssim_loss= False
@@ -590,6 +707,14 @@ class FeatExtractorAE(object):
 		self.input_data_dim= K.int_shape(x)
 		print("Input data dim=", self.input_data_dim)
 
+		# - Add chan normalization layer
+		if self.add_channorm_layer:
+			logger.info("Adding chan normalization layer ...")
+			self.inputs_norm= ChanNormalization(norm_min=self.channorm_min, norm_max=self.channorm_max, dtype='float', name='encoder_norm_input')(x)
+			x= self.inputs_norm
+			print("Input norm data dim=", K.int_shape(x))
+
+
 		# - Create a number of CNN layers
 		for k in range(len(self.nfilters_cnn)):
 
@@ -720,6 +845,14 @@ class FeatExtractorAE(object):
 		x = layers.Conv2DTranspose(self.nchannels, (3, 3), activation=self.decoder_output_layer_activation, padding=padding)(x)
 		outputs = x
 
+		# - Add de-normalization layer
+		if self.add_channorm_layer:
+			logger.info("Adding chan de-normalization layer ...")
+			self.outputs_denorm= ChanDeNormalization(norm_min=self.channorm_min, norm_max=self.channorm_max, dtype='float', name='decoder_denorm_output')([self.inputs, x])
+			x= self.outputs_denorm
+			print("Input norm data dim=", K.int_shape(x))
+
+
 		# - Flatten layer
 		x = layers.Flatten()(x)
 		self.flattened_outputs= x
@@ -783,6 +916,17 @@ class FeatExtractorAE(object):
 	#@tf.function
 	def mse_reco_loss_fcn(self, y_true, y_pred):
 		""" MSE reco loss function definition """
+
+		# - Compute max of each channel and apply weights per channel?
+		if self.scale_chan_mse_loss:
+			cond= tf.logical_and(tf.math.is_finite(y_true), tf.math.not_equal(y_true, 0.))
+			data_mask= tf.ragged.boolean_mask(y_true, mask=cond)
+			#data_min= tf.reduce_min(data_mask, axis=(1,2))
+			data_max= tf.reduce_max(data_mask, axis=(1,2))
+			data_abs_max= tf.reduce_max(data_mask)
+			chan_weights= data_abs_max/data_max
+			y_true*= chan_weights
+			y_pred*= chan_weights
 
 		# - Compute flattened tensors
 		y_true_shape= K.shape(y_true)

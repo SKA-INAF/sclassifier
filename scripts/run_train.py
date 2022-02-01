@@ -128,6 +128,8 @@ def get_args():
 	parser.add_argument('--mse_loss', dest='mse_loss', action='store_true',help='Compute and include MSE reco loss in total loss')
 	parser.add_argument('--no-mse_loss', dest='mse_loss', action='store_false',help='Skip MSE calculation and exclude MSE reco loss from total loss')
 	parser.set_defaults(mse_loss=True)
+	parser.add_argument('--scale_chan_mse_loss', dest='scale_chan_mse_loss', action='store_true',help='Scale MSE loss per channel by abs_max/max')
+	parser.set_defaults(scale_chan_mse_loss=False)
 	
 	parser.add_argument('--ssim_loss', dest='ssim_loss', action='store_true',help='Compute and include SSIM reco loss in total loss')
 	parser.add_argument('--no-ssim_loss', dest='ssim_loss', action='store_false',help='Skip SSIM calculation and exclude SSIM reco loss from total loss')
@@ -246,6 +248,7 @@ def main():
 	batch_size= args.batch_size
 	nepochs= args.nepochs
 	mse_loss= args.mse_loss
+	scale_chan_mse_loss= args.scale_chan_mse_loss
 	kl_loss= args.kl_loss
 	ssim_loss= args.ssim_loss
 	mse_loss_weight= args.mse_loss_weight
@@ -328,6 +331,7 @@ def main():
 	vae_class.dense_layer_activation= dense_layer_activation
 
 	vae_class.use_mse_loss= mse_loss
+	vae_class.scale_chan_mse_loss= scale_chan_mse_loss
 	vae_class.use_kl_loss= kl_loss
 	vae_class.use_ssim_loss= ssim_loss
 	vae_class.mse_loss_weight= mse_loss_weight
