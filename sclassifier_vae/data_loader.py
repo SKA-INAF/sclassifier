@@ -839,6 +839,9 @@ class DataLoader(object):
 
 
 				##### DEBUG ############
+				pix_x= 31
+				pix_y= 31
+
 				data_masked= np.ma.masked_equal(sdata.img_cube, 0.0, copy=False)
 				data_min= data_masked.min()
 				data_max= data_masked.max()
