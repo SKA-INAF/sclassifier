@@ -362,7 +362,7 @@ class ChanDeNormalization(layers.Layer):
 		return tf.reshape(data_denorm, self.compute_output_shape(input_shape))
 
 	def compute_output_shape(self, input_shape):
-		return input_shape[0]
+		return input_shape
 
 	#def compute_output_signature(self, input_spec):
   #  return input_spec
