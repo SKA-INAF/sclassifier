@@ -850,6 +850,7 @@ class FeatExtractorAE(object):
 			logger.info("Adding chan de-normalization layer ...")
 			self.outputs_denorm= ChanDeNormalization(norm_min=self.channorm_min, norm_max=self.channorm_max, dtype='float', name='decoder_denorm_output')([self.inputs, x])
 			x= self.outputs_denorm
+			outputs = x
 			print("Input norm data dim=", K.int_shape(x))
 
 

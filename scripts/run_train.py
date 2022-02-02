@@ -117,6 +117,10 @@ def get_args():
 	parser.add_argument('--add_dense_layer', dest='add_dense_layer', action='store_true',help='Add dense layers in encoder after flattening layers ')	
 	parser.set_defaults(add_dense_layer=False)
 
+	
+	parser.add_argument('--add_channorm_layer', dest='add_channorm_layer', action='store_true',help='Add norm layer before encoder input and denorm layer before decoder output')	
+	parser.set_defaults(add_channorm_layer=False)
+
 	parser.add_argument('-nfilters_cnn', '--nfilters_cnn', dest='nfilters_cnn', required=False, type=str, default='32,64,128', action='store',help='Number of convolution filters per each layer')
 	parser.add_argument('-kernsizes_cnn', '--kernsizes_cnn', dest='kernsizes_cnn', required=False, type=str, default='3,5,7', action='store',help='Convolution filter kernel sizes per each layer')
 	parser.add_argument('-strides_cnn', '--strides_cnn', dest='strides_cnn', required=False, type=str, default='2,2,2', action='store',help='Convolution strides per each layer')
@@ -224,6 +228,7 @@ def main():
 	add_batchnorm_layer= args.add_batchnorm_layer
 	add_leakyrelu= args.add_leakyrelu
 	add_dense_layer= args.add_dense_layer	
+	add_channorm_layer= args.add_channorm_layer
 	nfilters_cnn= [int(x.strip()) for x in args.nfilters_cnn.split(',')]
 	kernsizes_cnn= [int(x.strip()) for x in args.kernsizes_cnn.split(',')]	
 	strides_cnn= [int(x.strip()) for x in args.strides_cnn.split(',')]
@@ -324,6 +329,7 @@ def main():
 	vae_class.add_batchnorm= add_batchnorm_layer
 	vae_class.add_leakyrelu= add_leakyrelu
 	vae_class.add_dense= add_dense_layer
+	vae_class.add_channorm_layer= add_channorm_layer
 	vae_class.nfilters_cnn= nfilters_cnn
 	vae_class.kernsizes_cnn= kernsizes_cnn
 	vae_class.strides_cnn= strides_cnn
