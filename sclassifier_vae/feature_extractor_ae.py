@@ -279,21 +279,13 @@ class ChanNormalization(layers.Layer):
 		tf.print("call(): K.int_shape", K.int_shape(inputs), output_stream=sys.stdout)
 
 		# - Compute input data min & max, excluding NANs & zeros
-		#cond= tf.logical_and(tf.math.is_finite(data), tf.math.not_equal(data, 0.))
-		cond= tf.math.not_equal(data, 0.)
-		mask= tf.ragged.boolean_mask(data, mask=cond)
-		data_min= tf.reduce_min(mask, axis=(1,2))
-		data_max= tf.reduce_max(mask, axis=(1,2))
+		cond= tf.logical_and(tf.math.is_finite(data), tf.math.not_equal(data, 0.))
+		#mask= tf.ragged.boolean_mask(data, mask=cond)
+		#data_min= tf.reduce_min(mask, axis=(1,2)) ## NB: WRONG not providing correct results with ragged tensor, don't use!!!
+		#data_max= tf.reduce_max(mask, axis=(1,2)) ## NB: WRONG not providing correct results with ragged tensor, don't use!!!
 
-		
-		cond_ch= tf.math.not_equal(data[0,:,:,0], 0.)
-		mask_ch= tf.ragged.boolean_mask(data[0,:,:,0], mask=cond_ch)
-		data_min_ch= tf.reduce_min(mask_ch)
-		data_max_ch= tf.reduce_max(mask_ch)
-		tf.print("data_min_ch raw", data_min_ch, output_stream=sys.stdout)
-		tf.print("data_max_ch raw", data_max_ch, output_stream=sys.stdout)
-
-
+		data_min= tf.reduce_min(tf.where(~cond, tf.ones_like(data) * 1.e+99, data), axis=(1,2))
+		data_min= tf.reduce_max(tf.where(~cond, tf.ones_like(data) * -1.e+99, data), axis=(1,2))
 		
 		tf.print("data_min raw", data_min, output_stream=sys.stdout)
 		tf.print("data_max raw", data_max, output_stream=sys.stdout)
@@ -330,9 +322,13 @@ class ChanNormalization(layers.Layer):
 
 
 		# - CHECK
-		mask= tf.ragged.boolean_mask(data_norm, mask=cond)
-		data_min= tf.reduce_min(mask, axis=(1,2))
-		data_max= tf.reduce_max(mask, axis=(1,2))
+		#mask= tf.ragged.boolean_mask(data_norm, mask=cond)
+		#data_min= tf.reduce_min(mask, axis=(1,2))
+		#data_max= tf.reduce_max(mask, axis=(1,2))
+		#data_min= tf.reduce_min(tf.where(~cond, tf.ones_like(data_norm) * 1.e+99, data_norm), axis=(1,2))
+		#data_min= tf.reduce_max(tf.where(~cond, tf.ones_like(data_norm) * -1.e+99, data_norm), axis=(1,2))
+		data_min= tf.reduce_min(data_norm, axis=(1,2))
+		data_max= tf.reduce_max(data_norm, axis=(1,2))
 		data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1),axis=1)
 		data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1),axis=1)
 		data_min= data_min.to_tensor()
