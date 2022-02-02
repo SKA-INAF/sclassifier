@@ -275,16 +275,16 @@ class ChanNormalization(layers.Layer):
 		norm_max= self.norm_max
 		data= inputs
 
-		tf.print("call(): input_shape", input_shape, output_stream=sys.stdout)
-		tf.print("call(): K.int_shape", K.int_shape(inputs), output_stream=sys.stdout)
+		#tf.print("call(): input_shape", input_shape, output_stream=sys.stdout)
+		#tf.print("call(): K.int_shape", K.int_shape(inputs), output_stream=sys.stdout)
 
 		# - Compute input data min & max, excluding NANs & zeros
 		cond= tf.logical_and(tf.math.is_finite(data), tf.math.not_equal(data, 0.))
 		mask= tf.ragged.boolean_mask(data, mask=cond)
 		data_min= tf.reduce_min(mask, axis=(1,2))
 		data_max= tf.reduce_max(mask, axis=(1,2))
-		tf.print("call(): computed data_min", data_min, output_stream=sys.stdout)
-		tf.print("call(): computed data_max", data_max, output_stream=sys.stdout)
+		#tf.print("call(): computed data_min", data_min, output_stream=sys.stdout)
+		#tf.print("call(): computed data_max", data_max, output_stream=sys.stdout)
 		
 		data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1),axis=1)
 		data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1),axis=1)
@@ -292,9 +292,9 @@ class ChanNormalization(layers.Layer):
 		data_max= data_max.to_tensor()
 
 		# - Normalize data in range (norm_min, norm_max)
-		tf.print("call(): Normalize data in range: before", data_min, output_stream=sys.stdout)
+		#tf.print("call(): Normalize data in range: before", data_min, output_stream=sys.stdout)
 		data_norm= (data-data_min)/(data_max-data_min) * (norm_max-norm_min) + norm_min
-		tf.print("call(): Normalize data in range: after", data_min, output_stream=sys.stdout)
+		#tf.print("call(): Normalize data in range: after", data_min, output_stream=sys.stdout)
 
 		# - Set masked values (NANs, zeros) to norm_min
 		#tf.print("call(): Convert to tensor (before) ", data_min, output_stream=sys.stdout)
@@ -302,7 +302,7 @@ class ChanNormalization(layers.Layer):
 		#tf.print("call(): Convert to tensor (after) ", data_min, output_stream=sys.stdout)
 		
 		data_norm= tf.where(~cond, tf.ones_like(data_norm) * norm_min, data_norm)
-		tf.print("call(): Set masked values (NANs, zeros) to norm_min ", data_min, output_stream=sys.stdout)
+		#tf.print("call(): Set masked values (NANs, zeros) to norm_min ", data_min, output_stream=sys.stdout)
 		
 		return tf.reshape(data_norm, self.compute_output_shape(input_shape))
 		#return data_norm
