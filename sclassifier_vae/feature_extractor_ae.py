@@ -252,9 +252,9 @@ class ChanNormalization(layers.Layer):
 		name: A string, the name of the layer.
 	"""
 
-	def __init__(self, data_min=0., data_max=1., name=None, **kwargs):
-		self.data_min = data_min
-		self.data_max = data_max
+	def __init__(self, norm_min=0., norm_max=1., name=None, **kwargs):
+		self.norm_min = norm_min
+		self.norm_max = norm_max
 		super(ChanNormalization, self).__init__(name=name, **kwargs)
 
 	def call(self, inputs):
@@ -305,9 +305,9 @@ class ChanDeNormalization(layers.Layer):
 		name: A string, the name of the layer.
 	"""
 
-	def __init__(self, data_min=0., data_max=1., name=None, **kwargs):
-		self.data_min = data_min
-		self.data_max = data_max
+	def __init__(self, norm_min=0., norm_max=1., name=None, **kwargs):
+		self.norm_min = norm_min
+		self.norm_max = norm_max
 		super(ChanDeNormalization, self).__init__(name=name, **kwargs)
 
 	def call(self, inputs):
