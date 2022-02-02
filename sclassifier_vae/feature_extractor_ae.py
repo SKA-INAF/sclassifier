@@ -265,8 +265,8 @@ class ChanNormalization(keras.keras.engine.base_preprocessing_layer.Preprocessin
 												'passing a python list or tuple as a single input, '
 												'please convert to a numpy array or `tf.Tensor`.')
 
-    input_shape = tf.TensorShape(input_shape).as_list()
-    ndim = len(input_shape)
+		input_shape = tf.TensorShape(input_shape).as_list()
+		ndim = len(input_shape)
 
 	def call(self, inputs, training=False):
 		#dtype = self._compute_dtype
@@ -333,8 +333,8 @@ class ChanDeNormalization(keras.keras.engine.base_preprocessing_layer.Preprocess
 												'passing a python list or tuple as a single input, '
 												'please convert to a numpy array or `tf.Tensor`.')
 
-    input_shape = tf.TensorShape(input_shape).as_list()
-    ndim = len(input_shape)		
+		input_shape = tf.TensorShape(input_shape).as_list()
+		ndim = len(input_shape)		
 
 	def call(self, inputs, training=False):
 		#dtype = self._compute_dtype
