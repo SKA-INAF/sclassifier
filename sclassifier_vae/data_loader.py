@@ -845,8 +845,8 @@ class DataLoader(object):
 
 				data_mins= []
 				data_maxs= []
-				for i in range(self.img_cube.shape[-1]):
-					data_masked_ch= np.ma.masked_equal(self.img_cube[:,:,i], 0.0, copy=False)
+				for i in range(sdata.img_cube.shape[-1]):
+					data_masked_ch= np.ma.masked_equal(sdata.img_cube[:,:,i], 0.0, copy=False)
 					data_min_ch= data_masked_ch.min()
 					data_max_ch= data_masked_ch.max()
 					data_mins.append(data_min_ch)
@@ -861,9 +861,9 @@ class DataLoader(object):
 				print(data_maxs)
 
 				print("== pixels (after norm) ==")
-				for i in range(self.img_cube.shape[-1]):
+				for i in range(sdata.img_cube.shape[-1]):
 					print("--> ch%d" % (i+1))
-					print(self.img_cube[pix_y,pix_x,i])
+					print(sdata.img_cube[pix_y,pix_x,i])
 	
 				##########################
 
