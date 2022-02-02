@@ -875,21 +875,27 @@ class FeatExtractorAE(object):
 		x = layers.Conv2DTranspose(self.nchannels, (3, 3), activation=self.decoder_output_layer_activation, padding=padding)(x)
 		outputs = x
 
-		# - Add de-normalization layer
-		if self.add_channorm_layer:
-			logger.info("Adding chan de-normalization layer ...")
-			self.outputs_denorm= ChanDeNormalization(norm_min=self.channorm_min, norm_max=self.channorm_max, dtype='float', name='decoder_denorm_output')([self.inputs, x])
-			x= self.outputs_denorm
-			outputs = x
-			print("Input norm data dim=", K.int_shape(x))
-
-
+		
 		# - Flatten layer
 		x = layers.Flatten()(x)
 		self.flattened_outputs= x
 
 		# - Create decoder model
-		self.decoder = Model(latent_inputs, outputs, name='decoder')
+		if self.add_channorm_layer:
+			# - Create de-normalization layer & model
+			logger.info("Adding chan de-normalization layer ...")
+			outputs_denorm= ChanDeNormalization(norm_min=self.channorm_min, norm_max=self.channorm_max, dtype='float', name='decoder_denorm_output')([self.inputs, outputs])
+			print("outputs_denorm dim=", K.int_shape(outputs_denorm))
+			
+			# - Create decoder & concatenate	
+			decoder_unnorm= Model(latent_inputs, outputs, name='decoder_unnorm')
+			decoder_denorm= Model([self.inputs, outputs], outputs_denorm, name='decoder_denorm')
+			
+			#outputs_final= decoder_denorm(output) 
+			self.decoder = Model(decoder_unnorm.input, decoder_denorm.output, name='decoder')
+
+		else:
+			self.decoder = Model(latent_inputs, outputs, name='decoder')
 
 		# - Print and draw model		
 		self.decoder.summary()
