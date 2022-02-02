@@ -294,6 +294,8 @@ class ChanNormalization(layers.Layer):
 		data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1),axis=1)
 		#data_min= data_min.to_tensor()
 		#data_max= data_max.to_tensor()
+
+		
 		tf.print("data_min shape", K.int_shape(data_min), output_stream=sys.stdout)
 		tf.print("data_max shape", K.int_shape(data_max), output_stream=sys.stdout)
 		
@@ -321,25 +323,20 @@ class ChanNormalization(layers.Layer):
 		#tf.print("call(): Set masked values (NANs, zeros) to norm_min ", data_min, output_stream=sys.stdout)
 
 
-		# - CHECK
-		#mask= tf.ragged.boolean_mask(data_norm, mask=cond)
-		#data_min= tf.reduce_min(mask, axis=(1,2))
-		#data_max= tf.reduce_max(mask, axis=(1,2))
-		#data_min= tf.reduce_min(tf.where(~cond, tf.ones_like(data_norm) * 1.e+99, data_norm), axis=(1,2))
-		#data_min= tf.reduce_max(tf.where(~cond, tf.ones_like(data_norm) * -1.e+99, data_norm), axis=(1,2))
+		#######  DEBUG ###########
 		data_min= tf.reduce_min(data_norm, axis=(1,2))
 		data_max= tf.reduce_max(data_norm, axis=(1,2))
-		data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1),axis=1)
-		data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1),axis=1)
-		#data_min= data_min.to_tensor()
-		#data_max= data_max.to_tensor()
+		data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1), axis=1)
+		data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1), axis=1)
 		
 		tf.print("data_min (after norm)", data_min, output_stream=sys.stdout)
 		tf.print("data_max (after norm)", data_max, output_stream=sys.stdout)
 		tf.print("data_min[sample,:,:,:] (after norm)", data_min[sample,:,:,:], output_stream=sys.stdout)
 		tf.print("data_max[sample,:,:,:] (after norm)", data_max[sample,:,:,:], output_stream=sys.stdout)
 		tf.print("data[sample,iy,ix,:] (after norm)", data_norm[sample,iy,ix,:], output_stream=sys.stdout)
-		
+		###########################
+
+
 		return tf.reshape(data_norm, self.compute_output_shape(input_shape))
 		#return data_norm
 
@@ -396,23 +393,17 @@ class ChanDeNormalization(layers.Layer):
 
 		# - Compute input data min & max, excluding NANs & zeros
 		cond= tf.logical_and(tf.math.is_finite(data), tf.math.not_equal(data, 0.))
-		mask= tf.ragged.boolean_mask(data, mask=cond)
-		data_min= tf.reduce_min(mask, axis=(1,2))
-		data_max= tf.reduce_max(mask, axis=(1,2))
-
-		data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1),axis=1)
-		data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1),axis=1)
-		data_min= data_min.to_tensor()
-		data_max= data_max.to_tensor()
+		data_min= tf.reduce_min(tf.where(~cond, tf.ones_like(data) * 1.e+99, data), axis=(1,2))
+		data_max= tf.reduce_max(tf.where(~cond, tf.ones_like(data) * -1.e+99, data), axis=(1,2))
+		data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1), axis=1)
+		data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1), axis=1)
 		
 		# - Normalize data in range (data_min, data_max)
 		data_denorm= (data_norm-norm_min)/(norm_max-norm_min) * (data_max-data_min) + data_min
 
 		# - Set masked values (NANs, zeros) to norm_min
-		#data_denorm= data_denorm.to_tensor()
 		data_denorm= tf.where(~cond, tf.ones_like(data_denorm) * norm_min, data_denorm)
 				
-		#return data_denorm
 		return tf.reshape(data_denorm, self.compute_output_shape(input_shape))
 
 	def compute_output_shape(self, input_shape):
