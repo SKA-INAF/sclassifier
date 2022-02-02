@@ -739,7 +739,7 @@ class FeatExtractorAE(object):
 		# - Add chan normalization layer
 		if self.add_channorm_layer:
 			logger.info("Adding chan normalization layer ...")
-			self.inputs_norm= ChanNormalization(input_shape=, norm_min=self.channorm_min, norm_max=self.channorm_max, dtype='float', name='encoder_norm_input')(x)
+			self.inputs_norm= ChanNormalization(norm_min=self.channorm_min, norm_max=self.channorm_max, dtype='float', name='encoder_norm_input')(x)
 			x= self.inputs_norm
 			print("Input norm data dim=", K.int_shape(x))
 
