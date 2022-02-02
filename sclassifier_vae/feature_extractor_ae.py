@@ -291,13 +291,16 @@ class ChanNormalization(layers.Layer):
 		tf.print("data_min shape", K.int_shape(data_min), output_stream=sys.stdout)
 		tf.print("data_max shape", K.int_shape(data_max), output_stream=sys.stdout)
 		
+		sample= 0
+		ch= 0
+		iy= 31
+		ix= 31
 		tf.print("data_min (before norm)", data_min, output_stream=sys.stdout)
 		tf.print("data_max (before norm)", data_max, output_stream=sys.stdout)
+		tf.print("data_min[sample,:,:,:] (before norm)", data_min[sample,:,:,:], output_stream=sys.stdout)
+		tf.print("data_max[sample,:,:,:] (before norm)", data_max[sample,:,:,:], output_stream=sys.stdout)
+		tf.print("data[sample,iy,ix,:] (before norm)", data[sample,iy,ix,:], output_stream=sys.stdout)
 		
-		tf.print("data[0,31,31,:] (before norm)", data[0,31,31,:], output_stream=sys.stdout)
-		tf.print("data_min[0,31,31,:] (before norm)", data_min[0,31,31,:], output_stream=sys.stdout)
-		tf.print("data_max[0,31,31,:] (before norm)", data_max[0,31,31,:], output_stream=sys.stdout)
-
 		# - Normalize data in range (norm_min, norm_max)
 		#tf.print("call(): Normalize data in range: before", data_min, output_stream=sys.stdout)
 		data_norm= (data-data_min)/(data_max-data_min) * (norm_max-norm_min) + norm_min
@@ -323,11 +326,10 @@ class ChanNormalization(layers.Layer):
 		
 		tf.print("data_min (after norm)", data_min, output_stream=sys.stdout)
 		tf.print("data_max (after norm)", data_max, output_stream=sys.stdout)
+		tf.print("data_min[sample,:,:,:] (after norm)", data_min[sample,:,:,:], output_stream=sys.stdout)
+		tf.print("data_max[sample,:,:,:] (after norm)", data_max[sample,:,:,:], output_stream=sys.stdout)
+		tf.print("data[sample,iy,ix,:] (after norm)", data_norm[sample,iy,ix,:], output_stream=sys.stdout)
 		
-		tf.print("data[0,31,31,:] (after norm)", data_norm[0,31,31,:], output_stream=sys.stdout)
-		tf.print("data_min[0,31,31,:] (after norm)", data_min[0,31,31,:], output_stream=sys.stdout)
-		tf.print("data_max[0,31,31,:] (after norm)", data_max[0,31,31,:], output_stream=sys.stdout)
-
 		return tf.reshape(data_norm, self.compute_output_shape(input_shape))
 		#return data_norm
 
