@@ -192,7 +192,7 @@ def main():
 
 	# - Input filelist
 	datalist= args.datalist
-
+	
 	# - Data process options	
 	nx= args.nx
 	ny= args.ny

@@ -284,6 +284,9 @@ class ChanNormalization(layers.Layer):
 		data_min= tf.reduce_min(mask, axis=(1,2))
 		data_max= tf.reduce_max(mask, axis=(1,2))
 		
+		tf.print("data_min raw", data_min, output_stream=sys.stdout)
+		tf.print("data_max raw", data_max, output_stream=sys.stdout)
+
 		data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1),axis=1)
 		data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1),axis=1)
 		data_min= data_min.to_tensor()
