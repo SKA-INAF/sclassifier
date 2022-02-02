@@ -239,7 +239,7 @@ class Sampling(layers.Layer):
 
 
 #@keras_export('keras.layers.experimental.preprocessing.Rescaling')
-class ChanNormalization(keras.keras.engine.base_preprocessing_layer.PreprocessingLayer):
+class ChanNormalization(layers.Layer):
 	"""Scale inputs in range.
 	The rescaling is applied both during training and inference.
 	Input shape:
@@ -306,8 +306,7 @@ class ChanNormalization(keras.keras.engine.base_preprocessing_layer.Preprocessin
 		return dict(list(base_config.items()) + list(config.items()))
 
 
-#class ChanDeNormalization(layers.Layer):
-class ChanDeNormalization(keras.keras.engine.base_preprocessing_layer.PreprocessingLayer):
+class ChanDeNormalization(layers.Layer):
 	"""Restore inputs original normalization in range.
 	The rescaling is applied both during training and inference.
 	Input shape:
