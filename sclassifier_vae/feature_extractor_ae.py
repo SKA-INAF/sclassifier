@@ -261,9 +261,9 @@ class ChanNormalization(keras.keras.engine.base_preprocessing_layer.Preprocessin
 		super(ChanNormalization, self).build(input_shape)
 
 		if (isinstance(input_shape, (list, tuple)) and all(isinstance(shape, tf.TensorShape) for shape in input_shape)):
-		raise ValueError( 'Normalization only accepts a single input. If you are '
-											'passing a python list or tuple as a single input, '
-											'please convert to a numpy array or `tf.Tensor`.')
+			raise ValueError( 'Normalization only accepts a single input. If you are '
+												'passing a python list or tuple as a single input, '
+												'please convert to a numpy array or `tf.Tensor`.')
 
     input_shape = tf.TensorShape(input_shape).as_list()
     ndim = len(input_shape)
@@ -329,9 +329,9 @@ class ChanDeNormalization(keras.keras.engine.base_preprocessing_layer.Preprocess
 		super(ChanDeNormalization, self).build(input_shape)
 
 		if (isinstance(input_shape, (list, tuple)) and all(isinstance(shape, tf.TensorShape) for shape in input_shape)):
-		raise ValueError( 'Normalization only accepts a single input. If you are '
-											'passing a python list or tuple as a single input, '
-											'please convert to a numpy array or `tf.Tensor`.')
+			raise ValueError( 'Normalization only accepts a single input. If you are '
+												'passing a python list or tuple as a single input, '
+												'please convert to a numpy array or `tf.Tensor`.')
 
     input_shape = tf.TensorShape(input_shape).as_list()
     ndim = len(input_shape)		
