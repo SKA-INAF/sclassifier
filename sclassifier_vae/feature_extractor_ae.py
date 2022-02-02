@@ -287,12 +287,18 @@ class ChanNormalization(layers.Layer):
 		tf.print("call(): computed data_max", data_max, output_stream=sys.stdout)
 		
 		# - Normalize data in range (norm_min, norm_max)
+		tf.print("call(): Normalize data in range: before", data_min, output_stream=sys.stdout)
 		data_norm= (data-data_min)/(data_max-data_min) * (norm_max-norm_min) + norm_min
+		tf.print("call(): Normalize data in range: after", data_min, output_stream=sys.stdout)
 
 		# - Set masked values (NANs, zeros) to norm_min
-		data_norm= tf.where(~cond, tf.ones_like(data_norm) * norm_min, data_norm)
+		tf.print("call(): Convert to tensor (before) ", data_min, output_stream=sys.stdout)
 		data_norm= data_norm.to_tensor()
-
+		tf.print("call(): Convert to tensor (after) ", data_min, output_stream=sys.stdout)
+		
+		data_norm= tf.where(~cond, tf.ones_like(data_norm) * norm_min, data_norm)
+		tf.print("call(): Set masked values (NANs, zeros) to norm_min ", data_min, output_stream=sys.stdout)
+		
 		return tf.reshape(data_norm, self.compute_output_shape(input_shape))
 		#return data_norm
 
@@ -357,9 +363,9 @@ class ChanDeNormalization(layers.Layer):
 		data_denorm= (data_norm-norm_min)/(norm_max-norm_min) * (data_max-data_min) + data_min
 
 		# - Set masked values (NANs, zeros) to norm_min
-		data_denorm= tf.where(~cond, tf.ones_like(data_denorm) * norm_min, data_denorm)
 		data_denorm= data_denorm.to_tensor()
-		
+		data_denorm= tf.where(~cond, tf.ones_like(data_denorm) * norm_min, data_denorm)
+				
 		#return data_denorm
 		return tf.reshape(data_denorm, self.compute_output_shape(input_shape))
 
