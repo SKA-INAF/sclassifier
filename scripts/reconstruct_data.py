@@ -95,6 +95,9 @@ def get_args():
 	parser.add_argument('-modelfile_decoder', '--modelfile_decoder', dest='modelfile_decoder', required=True, type=str, action='store',help='Decoder model architecture filename (.json)')
 	parser.add_argument('-weightfile_decoder', '--weightfile_decoder', dest='weightfile_decoder', required=True, type=str, action='store',help='Decoder model weights filename (.h5)')
 
+	parser.add_argument('--add_channorm_layer', dest='add_channorm_layer', action='store_true',help='Add norm layer before encoder input and denorm layer before decoder output')	
+	parser.set_defaults(add_channorm_layer=False)
+
 	# - Reco metrics & plot options
 	parser.add_argument('-winsize', '--winsize', dest='winsize', required=False, type=int, default=3, action='store',help='Window size (odd) in pixels used to compute similarity index map (default=3)')	
 	parser.add_argument('--save_plots', dest='save_plots', action='store_true',help='Save reco plots')	
@@ -158,6 +161,7 @@ def main():
 	modelfile_decoder= args.modelfile_decoder
 	weightfile_encoder= args.weightfile_encoder
 	weightfile_decoder= args.weightfile_decoder
+	add_channorm_layer= args.add_channorm_layer
 
 	# - Reco metrics & plot options
 	winsize= args.winsize
@@ -195,6 +199,7 @@ def main():
 	vae_class.chan_mins= chan_mins
 	vae_class.erode= erode
 	vae_class.erode_kernel= erode_kernel
+	vae_class.add_channorm_layer= add_channorm_layer
 
 	status= vae_class.reconstruct_data(
 		modelfile_encoder, weightfile_encoder, 
