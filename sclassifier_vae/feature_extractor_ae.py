@@ -303,6 +303,14 @@ class ChanNormalization(layers.Layer):
 		
 		data_norm= tf.where(~cond, tf.ones_like(data_norm) * norm_min, data_norm)
 		#tf.print("call(): Set masked values (NANs, zeros) to norm_min ", data_min, output_stream=sys.stdout)
+
+
+		# - CHECK
+		data_min= tf.reduce_min(data_norm, axis=(1,2))
+		data_max= tf.reduce_max(data_norm, axis=(1,2))
+		tf.print("call(): computed data_min after norm ", data_min, output_stream=sys.stdout)
+		tf.print("call(): computed data_max after norm ", data_max, output_stream=sys.stdout)
+		
 		
 		return tf.reshape(data_norm, self.compute_output_shape(input_shape))
 		#return data_norm
