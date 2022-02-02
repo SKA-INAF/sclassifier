@@ -1593,8 +1593,9 @@ class FeatExtractorAE(object):
 		""" Load model and weights from input h5 file """
 
 		try:
-			self.vae= load_model(modelfile)
-		
+			#self.vae= load_model(modelfile)
+			self.vae= load_model(modelfile,	custom_objects={'ChanNormalization': ChanNormalization, 'ChanDeNormalization': ChanDeNormalization})
+
 		except Exception as e:
 			logger.warn("Failed to load model from file %s (err=%s)!" % (modelfile, str(e)))
 			return -1
