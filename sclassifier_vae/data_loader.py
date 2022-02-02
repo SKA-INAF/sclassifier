@@ -491,20 +491,20 @@ class SourceData(object):
 			data_maxs.append(data_max_ch)
 
 		####### DEBUG ###########
-		print("== data min/max ==")
-		print(data_min)
-		print(data_max)
+		#print("== data min/max ==")
+		#print(data_min)
+		#print(data_max)
 
-		print("== data mins/maxs ==")
-		print(data_mins)
-		print(data_maxs)
+		#print("== data mins/maxs ==")
+		#print(data_mins)
+		#print(data_maxs)
 
-		print("== pixels (before norm) ==")
-		pix_x= 31
-		pix_y= 31
-		for i in range(self.img_cube.shape[-1]):
-			print("--> ch%d" % (i+1))
-			print(self.img_cube[pix_y,pix_x,i])
+		#print("== pixels (before norm) ==")
+		#pix_x= 31
+		#pix_y= 31
+		#for i in range(self.img_cube.shape[-1]):
+		#	print("--> ch%d" % (i+1))
+		#	print(self.img_cube[pix_y,pix_x,i])
 		###########################
 
 
@@ -539,31 +539,31 @@ class SourceData(object):
 
 
 		##### DEBUG ############
-		data_masked= np.ma.masked_equal(self.img_cube, 0.0, copy=False)
-		data_min= data_masked.min()
-		data_max= data_masked.max()
+		#data_masked= np.ma.masked_equal(self.img_cube, 0.0, copy=False)
+		#data_min= data_masked.min()
+		#data_max= data_masked.max()
 
-		data_mins= []
-		data_maxs= []
-		for i in range(self.img_cube.shape[-1]):
-			data_masked_ch= np.ma.masked_equal(self.img_cube[:,:,i], 0.0, copy=False)
-			data_min_ch= data_masked_ch.min()
-			data_max_ch= data_masked_ch.max()
-			data_mins.append(data_min_ch)
-			data_maxs.append(data_max_ch)
+		#data_mins= []
+		#data_maxs= []
+		#for i in range(self.img_cube.shape[-1]):
+		#	data_masked_ch= np.ma.masked_equal(self.img_cube[:,:,i], 0.0, copy=False)
+		#	data_min_ch= data_masked_ch.min()
+		#	data_max_ch= data_masked_ch.max()
+		#	data_mins.append(data_min_ch)
+		#	data_maxs.append(data_max_ch)
 
-		print("== data min/max (after norm) ==")
-		print(data_min)
-		print(data_max)
+		#print("== data min/max (after norm) ==")
+		#print(data_min)
+		#print(data_max)
 
-		print("== data mins/maxs (after norm) ==")
-		print(data_mins)
-		print(data_maxs)
+		#print("== data mins/maxs (after norm) ==")
+		#print(data_mins)
+		#print(data_maxs)
 
-		print("== pixels (after norm) ==")
-		for i in range(self.img_cube.shape[-1]):
-			print("--> ch%d" % (i+1))
-			print(self.img_cube[pix_y,pix_x,i])
+		#print("== pixels (after norm) ==")
+		#for i in range(self.img_cube.shape[-1]):
+		#	print("--> ch%d" % (i+1))
+		#	print(self.img_cube[pix_y,pix_x,i])
 	
 		##########################
 
@@ -839,35 +839,34 @@ class DataLoader(object):
 
 
 				##### DEBUG ############
-				pix_x= 31
-				pix_y= 31
+				#pix_x= 31
+				#pix_y= 31
 
-				data_masked= np.ma.masked_equal(sdata.img_cube, 0.0, copy=False)
-				data_min= data_masked.min()
-				data_max= data_masked.max()
+				#data_masked= np.ma.masked_equal(sdata.img_cube, 0.0, copy=False)
+				#data_min= data_masked.min()
+				#data_max= data_masked.max()
 
-				data_mins= []
-				data_maxs= []
-				for i in range(sdata.img_cube.shape[-1]):
-					data_masked_ch= np.ma.masked_equal(sdata.img_cube[:,:,i], 0.0, copy=False)
-					data_min_ch= data_masked_ch.min()
-					data_max_ch= data_masked_ch.max()
-					data_mins.append(data_min_ch)
-					data_maxs.append(data_max_ch)
+				#data_mins= []
+				#data_maxs= []
+				#for i in range(sdata.img_cube.shape[-1]):
+				#	data_masked_ch= np.ma.masked_equal(sdata.img_cube[:,:,i], 0.0, copy=False)
+				#	data_min_ch= data_masked_ch.min()
+				#	data_max_ch= data_masked_ch.max()
+				#	data_mins.append(data_min_ch)
+				#	data_maxs.append(data_max_ch)
 
-				print("== GENERATOR data min/max (after norm) ==")
-				print(data_min)
-				print(data_max)
+				#print("== GENERATOR data min/max (after norm) ==")
+				#print(data_min)
+				#print(data_max)
 
-				print("== GENERATOR data mins/maxs (after norm) ==")
-				print(data_mins)
-				print(data_maxs)
+				#print("== GENERATOR data mins/maxs (after norm) ==")
+				#print(data_mins)
+				#print(data_maxs)
 
-				print("== GENERATOR pixels (after norm) ==")
-				for i in range(sdata.img_cube.shape[-1]):
-					print("--> ch%d" % (i+1))
-					print(sdata.img_cube[pix_y,pix_x,i])
-	
+				#print("== GENERATOR pixels (after norm) ==")
+				#for i in range(sdata.img_cube.shape[-1]):
+				#	print("--> ch%d" % (i+1))
+				#	print(sdata.img_cube[pix_y,pix_x,i])
 				##########################
 
 				# - Return data if number of batch is reached and restart the batch
