@@ -490,6 +490,7 @@ class SourceData(object):
 			data_mins.append(data_min_ch)
 			data_maxs.append(data_max_ch)
 
+		####### DEBUG ###########
 		print("== data min/max ==")
 		print(data_min)
 		print(data_max)
@@ -504,6 +505,8 @@ class SourceData(object):
 		for i in range(self.img_cube.shape[-1]):
 			print("--> ch%d" % (i+1))
 			print(self.img_cube[pix_y,pix_x,i])
+		###########################
+
 
 		# - Normalize in range [0,1] or to max.
 		#   NB: Set previously masked pixels to 0
@@ -534,11 +537,36 @@ class SourceData(object):
 		# - Update data cube
 		self.img_cube= data_norm
 
+
+		##### DEBUG ############
+		data_masked= np.ma.masked_equal(self.img_cube, 0.0, copy=False)
+		data_min= data_masked.min()
+		data_max= data_masked.max()
+
+		data_mins= []
+		data_maxs= []
+		for i in range(self.img_cube.shape[-1]):
+			data_masked_ch= np.ma.masked_equal(self.img_cube[:,:,i], 0.0, copy=False)
+			data_min_ch= data_masked_ch.min()
+			data_max_ch= data_masked_ch.max()
+			data_mins.append(data_min_ch)
+			data_maxs.append(data_max_ch)
+
+		print("== data min/max (after norm) ==")
+		print(data_min)
+		print(data_max)
+
+		print("== data mins/maxs (after norm) ==")
+		print(data_mins)
+		print(data_maxs)
+
 		print("== pixels (after norm) ==")
 		for i in range(self.img_cube.shape[-1]):
 			print("--> ch%d" % (i+1))
 			print(self.img_cube[pix_y,pix_x,i])
 	
+		##########################
+
 		return 0
 
 	def augment_imgs(self, augmenter):
