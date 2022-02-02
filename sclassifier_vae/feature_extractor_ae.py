@@ -283,6 +283,8 @@ class ChanNormalization(layers.Layer):
 		mask= tf.ragged.boolean_mask(data, mask=cond)
 		data_min= tf.reduce_min(mask, axis=(1,2))
 		data_max= tf.reduce_max(mask, axis=(1,2))
+		tf.print("call(): computed data_min", data_min, output_stream=sys.stdout)
+		tf.print("call(): computed data_max", data_max, output_stream=sys.stdout)
 		
 		# - Normalize data in range (norm_min, norm_max)
 		data_norm= (data-data_min)/(data_max-data_min) * (norm_max-norm_min) + norm_min
@@ -342,8 +344,8 @@ class ChanDeNormalization(layers.Layer):
 		input_shape = tf.shape( inputs[0] )
 		norm_min= self.norm_min
 		norm_max= self.norm_max
-		data= inputs[0]
-		data_norm= inputs[1]
+		data_norm= inputs[0] # this is the input of previous layer, already normalized
+		data= inputs[1] # this is the original input data (not normalized)
 
 		# - Compute input data min & max, excluding NANs & zeros
 		cond= tf.logical_and(tf.math.is_finite(data), tf.math.not_equal(data, 0.))
@@ -686,7 +688,10 @@ class FeatExtractorAE(object):
 		if self.use_vae:
 			self.outputs= self.decoder(self.encoder(self.inputs)[2])
 		else:
-			self.outputs= self.decoder(self.encoder(self.inputs))
+			if self.add_channorm_layer:
+				self.outputs= self.decoder([self.encoder(self.inputs), self.inputs])
+			else:
+				self.outputs= self.decoder(self.encoder(self.inputs))
 
 		print("inputs shape")
 		print(K.int_shape(self.inputs))
@@ -881,28 +886,39 @@ class FeatExtractorAE(object):
 		self.flattened_outputs= x
 
 		# - Create decoder model
+		#self.decoder = Model(latent_inputs, outputs, name='decoder')
+
+		# - Create the 
 		if self.add_channorm_layer:
-			# - Create decoder unnormalized model	
-			decoder_unnorm= Model(latent_inputs, outputs, name='decoder_unnorm')
-			decoder_unnorm_outputs= decoder_unnorm(latent_inputs)
+			# - Add de-norm layer
+			outputs_denorm= ChanDeNormalization(norm_min=self.channorm_min, norm_max=self.channorm_max, dtype='float', name='denorm_output')([outputs, self.inputs])
+
+			# - Create decoder unnormalized model		
+			#logger.info("Creating decoder denorm layer ...")
+			#decoder_unnorm= Model(latent_inputs, outputs, name='decoder_unnorm')
+			#decoder_unnorm_outputs= decoder_unnorm(latent_inputs)
 			
 			# - Create de-normalization layer & model
-			logger.info("Adding chan de-normalization layer ...")
-			inputShape_denorm= K.int_shape(self.inputs)
-			inputs1_denorm= Input(shape=inputShape_denorm, dtype='float', name='denorm_input1')
-			inputs2_denorm= Input(shape=inputShape_denorm, dtype='float', name='denorm_input2')
-			outputs_denorm= ChanDeNormalization(norm_min=self.channorm_min, norm_max=self.channorm_max, dtype='float', name='denorm_output')([inputs1_denorm, inputs2_denorm])
-
-			self.decoder= Model([self.inputs, decoder_unnorm_outputs], outputs_denorm, name='decoder')			
-			outputs_final= denormalizer([self.inputs, decoder_unnorm_outputs])
-			print("outputs_denorm dim=", K.int_shape(outputs_final))
+			#logger.info("Creating chan de-normalization layer ...")
+			#inputShape_denorm= K.int_shape(self.inputs)
+			#inputs1_denorm= Input(shape=inputShape_denorm, dtype='float', name='denorm_input1')
+			#inputs2_denorm= Input(shape=inputShape_denorm, dtype='float', name='denorm_input2')
+			#outputs_denorm= ChanDeNormalization(norm_min=self.channorm_min, norm_max=self.channorm_max, dtype='float', name='denorm_output')([inputs1_denorm, inputs2_denorm])
+			##decoder_unnorm= Model([self.inputs, decoder_unnorm_outputs], outputs_denorm, name='decoder_norm')
+			#decoder_unnorm= Model([inputs1_denorm, inputs2_denorm], outputs_denorm, name='denorm_layer')
+				
+			# - Create decoder model
+			#	self.decoder= Model([self.inputs, decoder_unnorm_outputs], outputs_denorm, name='decoder')			
+			#	outputs_final= denormalizer([self.inputs, decoder_unnorm_outputs])
+			#	print("outputs_denorm dim=", K.int_shape(outputs_final))
 			
-			#outputs_final= decoder_denorm(output) 
-			#self.decoder = Model(latent_inputs, outputs_final, name='decoder')
+			self.decoder= Model([latent_inputs, self.inputs], outputs_denorm, name='decoder')		
+
+			#self.decoder = Model(latent_inputs, outputs, name='decoder')
 
 		else:
 			self.decoder = Model(latent_inputs, outputs, name='decoder')
-
+		
 		# - Print and draw model		
 		self.decoder.summary()
 		plot_model(self.decoder, to_file='decoder.png', show_shapes=True)
@@ -1387,7 +1403,10 @@ class FeatExtractorAE(object):
 		
 				# - Compute reconstructed image
 				logger.info("Reconstructing image sample no. %d (name=%s, id=%d) ..." % (img_counter, sname, classid))
-				decoded_imgs = self.decoder.predict(predout)
+				if self.add_channorm_layer:
+					decoded_imgs = self.decoder.predict([predout,data])
+				else:
+					decoded_imgs = self.decoder.predict(predout)
 				###decoded_imgs = self.decoder.predict(self.encoded_data)
 				#print("type(decoded_imgs)")
 				#print(type(decoded_imgs))
