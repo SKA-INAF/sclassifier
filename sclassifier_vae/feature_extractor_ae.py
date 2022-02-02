@@ -1021,9 +1021,9 @@ class FeatExtractorAE(object):
 			chan_weights= tf.expand_dims(tf.expand_dims(chan_weights, axis=1), axis=1)
 			#chan_weights= chan_weights.to_tensor()
 
-			tf.print("--> MSE loss: data_max=", data_max, output_stream=sys.stdout)
-			tf.print("--> MSE loss: data_abs_max=", data_abs_max, output_stream=sys.stdout)
-			tf.print("--> MSE loss: chan_weights=", chan_weights, output_stream=sys.stdout)
+			#tf.print("--> MSE loss: data_max=", data_max, output_stream=sys.stdout)
+			#tf.print("--> MSE loss: data_abs_max=", data_abs_max, output_stream=sys.stdout)
+			#tf.print("--> MSE loss: chan_weights=", chan_weights, output_stream=sys.stdout)
 
 			y_true*= chan_weights
 			y_pred*= chan_weights
