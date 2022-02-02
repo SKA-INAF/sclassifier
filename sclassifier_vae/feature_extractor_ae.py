@@ -260,22 +260,23 @@ class ChanNormalization(layers.Layer):
 	def build(self, input_shape):
 		super(ChanNormalization, self).build(input_shape)
 
-		if (isinstance(input_shape, (list, tuple)) and all(isinstance(shape, tf.TensorShape) for shape in input_shape)):
-			raise ValueError( 'Normalization only accepts a single input. If you are '
-												'passing a python list or tuple as a single input, '
-												'please convert to a numpy array or `tf.Tensor`.')
+		#if (isinstance(input_shape, (list, tuple)) and all(isinstance(shape, tf.TensorShape) for shape in input_shape)):
+		#	raise ValueError( 'Normalization only accepts a single input. If you are '
+		#										'passing a python list or tuple as a single input, '
+		#										'please convert to a numpy array or `tf.Tensor`.')
 
-		input_shape = tf.TensorShape(input_shape).as_list()
-		ndim = len(input_shape)
+		#input_shape = tf.TensorShape(input_shape).as_list()
+		#ndim = len(input_shape)
 
 	def call(self, inputs, training=False):
-		#dtype = self._compute_dtype
-		#norm_min = math_ops.cast(self.norm_min, dtype)
-		#norm_max = math_ops.cast(self.norm_max, dtype)
-		#data= math_ops.cast(inputs, dtype)
+		# - Init stuff
+		input_shape = tf.shape( inputs )
 		norm_min= self.norm_min
 		norm_max= self.norm_max
 		data= inputs
+
+		tf.print("call(): input_shape", input_shape, output_stream=sys.stdout)
+		tf.print("call(): K.int_shape", K.int_shape(inputs), output_stream=sys.stdout)
 
 		# - Compute input data min & max, excluding NANs & zeros
 		cond= tf.logical_and(tf.math.is_finite(data), tf.math.not_equal(data, 0.))
@@ -289,7 +290,8 @@ class ChanNormalization(layers.Layer):
 		# - Set masked values (NANs, zeros) to norm_min
 		data_norm= tf.where(~cond, tf.ones_like(data_norm) * norm_min, data_norm)
 		
-		return data_norm
+		return tf.reshape(data_norm, self.compute_output_shape(input_shape))
+		#return data_norm
 
 	def compute_output_shape(self, input_shape):
 		return input_shape
@@ -327,19 +329,16 @@ class ChanDeNormalization(layers.Layer):
 	def build(self, input_shape):
 		super(ChanDeNormalization, self).build(input_shape)
 
-		if (isinstance(input_shape, (list, tuple)) and all(isinstance(shape, tf.TensorShape) for shape in input_shape)):
-			raise ValueError( 'Normalization only accepts a single input. If you are '
-												'passing a python list or tuple as a single input, '
-												'please convert to a numpy array or `tf.Tensor`.')
+		#if (isinstance(input_shape, (list, tuple)) and all(isinstance(shape, tf.TensorShape) for shape in input_shape)):
+		#	raise ValueError( 'Normalization only accepts a single input. If you are '
+		#										'passing a python list or tuple as a single input, '
+		#										'please convert to a numpy array or `tf.Tensor`.')
 
-		input_shape = tf.TensorShape(input_shape).as_list()
-		ndim = len(input_shape)		
+		#input_shape = tf.TensorShape(input_shape).as_list()
+		#ndim = len(input_shape)		
 
 	def call(self, inputs, training=False):
-		#dtype = self._compute_dtype
-		#norm_min = math_ops.cast(self.data_min, dtype)
-		#norm_max = math_ops.cast(self.data_max, dtype)
-		#data= math_ops.cast(inputs, dtype)
+		input_shape = tf.shape( inputs[0] )
 		norm_min= self.norm_min
 		norm_max= self.norm_max
 		data= inputs[0]
@@ -357,7 +356,8 @@ class ChanDeNormalization(layers.Layer):
 		# - Set masked values (NANs, zeros) to norm_min
 		data_denorm= tf.where(~cond, tf.ones_like(data_denorm) * norm_min, data_denorm)
 		
-		return data_denorm
+		#return data_denorm
+		return tf.reshape(data_denorm, self.compute_output_shape(input_shape))
 
 	def compute_output_shape(self, input_shape):
 		return input_shape[0]
