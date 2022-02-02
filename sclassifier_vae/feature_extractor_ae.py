@@ -275,8 +275,8 @@ class ChanNormalization(layers.Layer):
 		norm_max= self.norm_max
 		data= inputs
 
-		#tf.print("call(): input_shape", input_shape, output_stream=sys.stdout)
-		#tf.print("call(): K.int_shape", K.int_shape(inputs), output_stream=sys.stdout)
+		tf.print("call(): input_shape", input_shape, output_stream=sys.stdout)
+		tf.print("call(): K.int_shape", K.int_shape(inputs), output_stream=sys.stdout)
 
 		# - Compute input data min & max, excluding NANs & zeros
 		#cond= tf.logical_and(tf.math.is_finite(data), tf.math.not_equal(data, 0.))
