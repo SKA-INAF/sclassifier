@@ -285,7 +285,7 @@ class ChanNormalization(layers.Layer):
 		#data_max= tf.reduce_max(mask, axis=(1,2)) ## NB: WRONG not providing correct results with ragged tensor, don't use!!!
 
 		data_min= tf.reduce_min(tf.where(~cond, tf.ones_like(data) * 1.e+99, data), axis=(1,2))
-		data_min= tf.reduce_max(tf.where(~cond, tf.ones_like(data) * -1.e+99, data), axis=(1,2))
+		data_max= tf.reduce_max(tf.where(~cond, tf.ones_like(data) * -1.e+99, data), axis=(1,2))
 		
 		tf.print("data_min raw", data_min, output_stream=sys.stdout)
 		tf.print("data_max raw", data_max, output_stream=sys.stdout)
