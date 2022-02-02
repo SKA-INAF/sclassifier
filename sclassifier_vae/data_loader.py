@@ -855,15 +855,15 @@ class DataLoader(object):
 					data_mins.append(data_min_ch)
 					data_maxs.append(data_max_ch)
 
-				print("== data min/max (after norm) ==")
+				print("== GENERATOR data min/max (after norm) ==")
 				print(data_min)
 				print(data_max)
 
-				print("== data mins/maxs (after norm) ==")
+				print("== GENERATOR data mins/maxs (after norm) ==")
 				print(data_mins)
 				print(data_maxs)
 
-				print("== pixels (after norm) ==")
+				print("== GENERATOR pixels (after norm) ==")
 				for i in range(sdata.img_cube.shape[-1]):
 					print("--> ch%d" % (i+1))
 					print(sdata.img_cube[pix_y,pix_x,i])
