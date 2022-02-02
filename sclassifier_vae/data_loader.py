@@ -837,6 +837,36 @@ class DataLoader(object):
 				inputs[nb]= sdata.img_cube
 				nb+= 1
 
+
+				##### DEBUG ############
+				data_masked= np.ma.masked_equal(sdata.img_cube, 0.0, copy=False)
+				data_min= data_masked.min()
+				data_max= data_masked.max()
+
+				data_mins= []
+				data_maxs= []
+				for i in range(self.img_cube.shape[-1]):
+					data_masked_ch= np.ma.masked_equal(self.img_cube[:,:,i], 0.0, copy=False)
+					data_min_ch= data_masked_ch.min()
+					data_max_ch= data_masked_ch.max()
+					data_mins.append(data_min_ch)
+					data_maxs.append(data_max_ch)
+
+				print("== data min/max (after norm) ==")
+				print(data_min)
+				print(data_max)
+
+				print("== data mins/maxs (after norm) ==")
+				print(data_mins)
+				print(data_maxs)
+
+				print("== pixels (after norm) ==")
+				for i in range(self.img_cube.shape[-1]):
+					print("--> ch%d" % (i+1))
+					print(self.img_cube[pix_y,pix_x,i])
+	
+				##########################
+
 				# - Return data if number of batch is reached and restart the batch
 				if nb>=batch_size:
 					#print("inputs.shape")
