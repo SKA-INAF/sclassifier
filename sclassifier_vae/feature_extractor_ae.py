@@ -291,8 +291,8 @@ class ChanNormalization(layers.Layer):
 		data_norm= tf.where(~cond, tf.ones_like(data_norm) * norm_min, data_norm)
 		data_norm= data_norm.to_tensor()
 
-		#return tf.reshape(data_norm, self.compute_output_shape(input_shape))
-		return data_norm
+		return tf.reshape(data_norm, self.compute_output_shape(input_shape))
+		#return data_norm
 
 	def compute_output_shape(self, input_shape):
 		return input_shape
@@ -358,8 +358,8 @@ class ChanDeNormalization(layers.Layer):
 		data_denorm= tf.where(~cond, tf.ones_like(data_denorm) * norm_min, data_denorm)
 		data_denorm= data_denorm.to_tensor()
 		
-		return data_denorm
-		#return tf.reshape(data_denorm, self.compute_output_shape(input_shape))
+		#return data_denorm
+		return tf.reshape(data_denorm, self.compute_output_shape(input_shape))
 
 	def compute_output_shape(self, input_shape):
 		return input_shape[0]
