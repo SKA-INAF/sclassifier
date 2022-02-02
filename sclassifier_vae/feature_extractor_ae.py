@@ -315,6 +315,8 @@ class ChanNormalization(layers.Layer):
 		mask= tf.ragged.boolean_mask(data_norm, mask=cond)
 		data_min= tf.reduce_min(mask, axis=(1,2))
 		data_max= tf.reduce_max(mask, axis=(1,2))
+		data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1),axis=1)
+		data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1),axis=1)
 		data_min= data_min.to_tensor()
 		data_max= data_max.to_tensor()
 		tf.print("call(): computed data_min after norm ", data_min, output_stream=sys.stdout)
