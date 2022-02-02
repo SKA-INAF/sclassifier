@@ -239,7 +239,7 @@ class Sampling(layers.Layer):
 
 
 #@keras_export('keras.layers.experimental.preprocessing.Rescaling')
-class ChanNormalization(layers.Layer):
+class ChanNormalization(keras.keras.engine.base_preprocessing_layer.PreprocessingLayer):
 	"""Scale inputs in range.
 	The rescaling is applied both during training and inference.
 	Input shape:
@@ -259,6 +259,14 @@ class ChanNormalization(layers.Layer):
 
 	def build(self, input_shape):
 		super(ChanNormalization, self).build(input_shape)
+
+		if (isinstance(input_shape, (list, tuple)) and all(isinstance(shape, tf.TensorShape) for shape in input_shape)):
+		raise ValueError( 'Normalization only accepts a single input. If you are '
+											'passing a python list or tuple as a single input, '
+											'please convert to a numpy array or `tf.Tensor`.')
+
+    input_shape = tf.TensorShape(input_shape).as_list()
+    ndim = len(input_shape)
 
 	def call(self, inputs, training=False):
 		#dtype = self._compute_dtype
@@ -286,6 +294,9 @@ class ChanNormalization(layers.Layer):
 	def compute_output_shape(self, input_shape):
 		return input_shape
 
+	#def compute_output_signature(self, input_spec):
+  #  return input_spec
+
 	def get_config(self):
 		config = {
 			'norm_min': self.norm_min,
@@ -295,7 +306,8 @@ class ChanNormalization(layers.Layer):
 		return dict(list(base_config.items()) + list(config.items()))
 
 
-class ChanDeNormalization(layers.Layer):
+#class ChanDeNormalization(layers.Layer):
+class ChanDeNormalization(keras.keras.engine.base_preprocessing_layer.PreprocessingLayer):
 	"""Restore inputs original normalization in range.
 	The rescaling is applied both during training and inference.
 	Input shape:
@@ -315,6 +327,14 @@ class ChanDeNormalization(layers.Layer):
 
 	def build(self, input_shape):
 		super(ChanDeNormalization, self).build(input_shape)
+
+		if (isinstance(input_shape, (list, tuple)) and all(isinstance(shape, tf.TensorShape) for shape in input_shape)):
+		raise ValueError( 'Normalization only accepts a single input. If you are '
+											'passing a python list or tuple as a single input, '
+											'please convert to a numpy array or `tf.Tensor`.')
+
+    input_shape = tf.TensorShape(input_shape).as_list()
+    ndim = len(input_shape)		
 
 	def call(self, inputs, training=False):
 		#dtype = self._compute_dtype
@@ -342,6 +362,9 @@ class ChanDeNormalization(layers.Layer):
 
 	def compute_output_shape(self, input_shape):
 		return input_shape[0]
+
+	#def compute_output_signature(self, input_spec):
+  #  return input_spec
 
 	def get_config(self):
 		config = {
@@ -716,7 +739,7 @@ class FeatExtractorAE(object):
 		# - Add chan normalization layer
 		if self.add_channorm_layer:
 			logger.info("Adding chan normalization layer ...")
-			self.inputs_norm= ChanNormalization(norm_min=self.channorm_min, norm_max=self.channorm_max, dtype='float', name='encoder_norm_input')(x)
+			self.inputs_norm= ChanNormalization(input_shape=, norm_min=self.channorm_min, norm_max=self.channorm_max, dtype='float', name='encoder_norm_input')(x)
 			x= self.inputs_norm
 			print("Input norm data dim=", K.int_shape(x))
 
