@@ -257,7 +257,7 @@ class ChanNormalization(layers.Layer):
 		self.norm_max = norm_max
 		super(ChanNormalization, self).__init__(name=name, **kwargs)
 
-	def call(self, inputs):
+	def call(self, inputs, training=False):
 		#dtype = self._compute_dtype
 		#norm_min = math_ops.cast(self.norm_min, dtype)
 		#norm_max = math_ops.cast(self.norm_max, dtype)
@@ -310,7 +310,7 @@ class ChanDeNormalization(layers.Layer):
 		self.norm_max = norm_max
 		super(ChanDeNormalization, self).__init__(name=name, **kwargs)
 
-	def call(self, inputs):
+	def call(self, inputs, training=False):
 		#dtype = self._compute_dtype
 		#norm_min = math_ops.cast(self.data_min, dtype)
 		#norm_max = math_ops.cast(self.data_max, dtype)
