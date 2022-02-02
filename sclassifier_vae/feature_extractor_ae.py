@@ -1594,7 +1594,8 @@ class FeatExtractorAE(object):
 
 		try:
 			if self.add_channorm_layer:
-				self.vae= load_model(modelfile,	custom_objects={'encoder_norm_input': ChanNormalization, 'denorm_output': ChanDeNormalization})
+				#self.vae= load_model(modelfile,	custom_objects={'encoder_norm_input': ChanNormalization, 'denorm_output': ChanDeNormalization})
+				self.vae= load_model(modelfile,	custom_objects={'ChanNormalization': ChanNormalization, 'ChanDeNormalization': ChanDeNormalization})
 			else:
 				self.vae= load_model(modelfile)
 			
@@ -1610,7 +1611,11 @@ class FeatExtractorAE(object):
 
 		# - Load model
 		try:
-			self.vae = model_from_json(open(modelfile_json).read())
+			if self.add_channorm_layer:
+				#self.vae = model_from_json(open(modelfile_json).read(), custom_objects={'encoder_norm_input': ChanNormalization, 'denorm_output': ChanDeNormalization})
+				self.vae = model_from_json(open(modelfile_json).read(), custom_objects={'ChanNormalization': ChanNormalization, 'ChanDeNormalization': ChanDeNormalization})
+			else:
+				self.vae = model_from_json(open(modelfile_json).read())
 			self.vae.load_weights(weightfile)
 
 		except Exception as e:
@@ -1628,7 +1633,11 @@ class FeatExtractorAE(object):
 		""" Load encoder model and weights from input h5 file """
 
 		try:
-			self.encoder = model_from_json(open(modelfile_json).read())
+			if self.add_channorm_layer:
+				#self.encoder = model_from_json(open(modelfile_json).read(), custom_objects={'encoder_norm_input': ChanNormalization})	
+				self.encoder = model_from_json(open(modelfile_json).read(), custom_objects={'ChanNormalization': ChanNormalization})
+			else:
+				self.encoder = model_from_json(open(modelfile_json).read())
 			self.encoder.load_weights(weightfile)
 
 		except Exception as e:
@@ -1641,7 +1650,10 @@ class FeatExtractorAE(object):
 		""" Load decoder model and weights from input h5 file """
 
 		try:
-			self.decoder = model_from_json(open(modelfile_json).read())
+			if self.add_channorm_layer:
+				self.decoder = model_from_json(open(modelfile_json).read(), custom_objects={'ChanDeNormalization': ChanDeNormalization})
+			else:
+				self.decoder = model_from_json(open(modelfile_json).read())
 			self.decoder.load_weights(weightfile)
 
 		except Exception as e:
