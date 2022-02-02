@@ -283,19 +283,20 @@ class ChanNormalization(layers.Layer):
 		mask= tf.ragged.boolean_mask(data, mask=cond)
 		data_min= tf.reduce_min(mask, axis=(1,2))
 		data_max= tf.reduce_max(mask, axis=(1,2))
-		tf.print("call(): computed data_min", data_min, output_stream=sys.stdout)
-		tf.print("call(): computed data_max", data_max, output_stream=sys.stdout)
 		
 		data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1),axis=1)
 		data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1),axis=1)
 		data_min= data_min.to_tensor()
 		data_max= data_max.to_tensor()
-		tf.print("call(): data_min shape", K.int_shape(data_min), output_stream=sys.stdout)
-		tf.print("call(): data_max shape", K.int_shape(data_max), output_stream=sys.stdout)
+		tf.print("data_min shape", K.int_shape(data_min), output_stream=sys.stdout)
+		tf.print("data_max shape", K.int_shape(data_max), output_stream=sys.stdout)
 		
-		tf.print("data[0,:,:,0]", data[0,:,:,0], output_stream=sys.stdout)
-		tf.print("data_min[0,:,:,0]", data_min[0,:,:,0], output_stream=sys.stdout)
-		tf.print("data_max[0,:,:,0]", data_max[0,:,:,0], output_stream=sys.stdout)
+		tf.print("data_min (before norm)", data_min, output_stream=sys.stdout)
+		tf.print("data_max (before norm)", data_max, output_stream=sys.stdout)
+		
+		tf.print("data[0,31,31,:] (before norm)", data[0,31,31,:], output_stream=sys.stdout)
+		tf.print("data_min[0,31,31,:] (before norm)", data_min[0,31,31,:], output_stream=sys.stdout)
+		tf.print("data_max[0,31,31,:] (before norm)", data_max[0,31,31,:], output_stream=sys.stdout)
 
 		# - Normalize data in range (norm_min, norm_max)
 		#tf.print("call(): Normalize data in range: before", data_min, output_stream=sys.stdout)
@@ -319,12 +320,13 @@ class ChanNormalization(layers.Layer):
 		data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1),axis=1)
 		data_min= data_min.to_tensor()
 		data_max= data_max.to_tensor()
-		tf.print("call(): computed data_min after norm ", data_min, output_stream=sys.stdout)
-		tf.print("call(): computed data_max after norm ", data_max, output_stream=sys.stdout)
 		
-		tf.print("data_norm[0,:,:,0]", data_norm[0,:,:,0], output_stream=sys.stdout)
-		tf.print("data_min[0,:,:,0]", data_min[0,:,:,0], output_stream=sys.stdout)
-		tf.print("data_max[0,:,:,0]", data_max[0,:,:,0], output_stream=sys.stdout)
+		tf.print("data_min (after norm)", data_min, output_stream=sys.stdout)
+		tf.print("data_max (after norm)", data_max, output_stream=sys.stdout)
+		
+		tf.print("data[0,31,31,:] (after norm)", data_norm[0,31,31,:], output_stream=sys.stdout)
+		tf.print("data_min[0,31,31,:] (after norm)", data_min[0,31,31,:], output_stream=sys.stdout)
+		tf.print("data_max[0,31,31,:] (after norm)", data_max[0,31,31,:], output_stream=sys.stdout)
 
 		return tf.reshape(data_norm, self.compute_output_shape(input_shape))
 		#return data_norm
