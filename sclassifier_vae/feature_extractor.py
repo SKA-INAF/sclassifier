@@ -194,12 +194,7 @@ class FeatExtractor(object):
 			return None
 
 		regprop= regprops[0]
-		#bbox= regprop.bbox
-		#ymin= bbox[0]
-		#ymax= bbox[2]
-		#xmin= bbox[1]
-		#xmax= bbox[3]
-
+		
 		# - Compute centroid if not given, otherwise override
 		if centroid is None:
 			try:
@@ -221,8 +216,8 @@ class FeatExtractor(object):
 					logger.error("Failed to get region centroids (check scikit-image API!)")
 					return None
 			
-			print("--> centroid")
-			print(centroid)
+			#print("--> centroid")
+			#print(centroid)
 
 		else:
 			# - Override centroid with passed one
@@ -259,8 +254,8 @@ class FeatExtractor(object):
 
 		if not self.chan_mins:
 			self.chan_mins= [0]*nchans
-		print("--> self.chan_mins")
-		print(self.chan_mins)
+		#print("--> self.chan_mins")
+		#print(self.chan_mins)
 
 		param_dict= collections.OrderedDict()
 		param_dict["sname"]= sname
@@ -279,36 +274,43 @@ class FeatExtractor(object):
 		# - Compute centroid from reference channel (needed for moment calculation)
 		ret= self.__extract_img_moments(data[0,:,:,self.refch])
 		if ret is None:
-			logger.error("Failed to compute ref channel mask centroid!")
+			logger.error("Failed to compute ref channel mask centroid for image %s (id=%s, ch=%d)!" % (sname, label, i+1))
 			return None
 		mask= ret[1]
 		centroid= ret[2]
 		
 		# - Compute Hu moments of intensity images	
 		#   NB: use same mask and centroid from refch for all channels
-		for i in range(nchans):
-			img_i= data[0,:,:,i]
-			ret= self.__extract_img_moments(img_i, mask, centroid)
-			if ret is None:
-				logger.error("Failed to compute moments for image %s (id=%s, ch=%d)!" % (sname, label, i+1))
-				return None
-			moments= ret[0]
-			print("== IMG HU-MOMENTS (CH%d) ==" % (i+1))
-			print(moments)
+		#for i in range(nchans):
+		#	img_i= data[0,:,:,i]
+		#	ret= self.__extract_img_moments(img_i, mask, centroid)
+		#	if ret is None:
+		#		logger.error("Failed to compute moments for image %s (id=%s, ch=%d)!" % (sname, label, i+1))
+		#		return None
+		#	moments= ret[0]
+
+		#	print("== IMG HU-MOMENTS (CH%d) ==" % (i+1))
+		#	print(moments)
 			
-			for j in range(len(moments)):
-				m= moments[j]
-				#parname= "mom" + str(j+1) + "_ch" + str(i+1)
-				#param_dict[parname]= m
+		#	for j in range(len(moments)):
+		#		m= moments[j]
+		#		#parname= "mom" + str(j+1) + "_ch" + str(i+1)
+		#		#param_dict[parname]= m
 			
 
 		# - Loop over images and compute total flux
-		#for i in range(nchans):
-		#	img_i= data[0,:,:,i]
-		#	cond_i= np.logical_and(img_i!=0, np.isfinite(img_i))	
-		#	S= np.nansum(img_i[cond_i])
-		#	parname= "fluxSum_ch" + str(i+1)
-		#	param_dict[parname]= S
+		for i in range(nchans):
+			img_i= data[0,:,:,i]
+			cond_i= np.logical_and(img_i!=0, np.isfinite(img_i))	
+			img_max_i= np.nanmax(img_i[cond_i])
+			img_min_i= np.nanmin(img_i[cond_i])
+			S= np.nansum(img_i[cond_i])
+			parname= "Smin_ch" + str(i+1)
+			param_dict[parname]= img_min_i
+			parname= "Smax_ch" + str(i+1)
+			param_dict[parname]= img_max_i
+			parname= "Ssum_ch" + str(i+1)
+			param_dict[parname]= S
 
 		# - Loop over images and compute params
 		index= 0
@@ -383,9 +385,13 @@ class FeatExtractor(object):
 				
 					ret= self.__extract_img_moments(ssim_2d, mask, centroid)
 					if ret is None:
-						logger.warn("Failed to compute moments for image %s (id=%s, ch=%d-%d)!" % (sname, label, i+1, j+1))
+						logger.warn("Failed to compute SSIM moments for image %s (id=%s, ch=%d-%d)!" % (sname, label, i+1, j+1))
 						
 					moments_ssim= ret[0]
+					badcounts= np.count_nonzero(~np.isfinite(moments_ssim))
+					if badcounts>0:
+						logger.warning("Some SSIM moments for image %s (id=%s, ch=%d-%d) is not-finite (%s), setting all to -999..." % (sname, label, i+1, j+1, str(moments_ssim)))
+						moments_ssim= [-999]*7
 						
 				else:
 					logger.warn("Image %s (chan=%d-%d): SSIM array is empty, setting estimators to -999..." % (sname, i+1, j+1))
@@ -400,7 +406,9 @@ class FeatExtractor(object):
 					ssim_mean_mask= -999
 
 
-				
+				#print("== SSIM HU-MOMENTS CH%d-%d ==" % (i+1, j+1))
+				#print(moments_ssim)
+
 				parname= "ssim_mean_ch{}_{}".format(i+1,j+1)
 				param_dict[parname]= ssim_mean_mask
 				parname= "ssim_min_ch{}_{}".format(i+1,j+1)
@@ -416,9 +424,6 @@ class FeatExtractor(object):
 					parname= "ssim_humom{}_ch{}_{}".format(k+1,i+1,j+1)
 					param_dict[parname]= m
 			
-
-				print("== SSIM HU-MOMENTS CH%d-%d ==" % (i+1, j+1))
-				print(moments_ssim)
 
 				# - Compute flux ratios and moments
 				#cond_colors= np.logical_and(cond_col_ij, ssim_2d>self.ssim_thr)
@@ -503,6 +508,10 @@ class FeatExtractor(object):
 						logger.warn("Failed to compute moments for color index image %s (id=%s, ch=%d-%d)!" % (sname, label, i+1, j+1))
 						
 					moments_colorind= ret[0]
+					badcounts= np.count_nonzero(~np.isfinite(moments_colorind))
+					if badcounts>0:
+						logger.warning("Some color index moments for image %s (id=%s, ch=%d-%d) is not-finite (%s), setting all to -999..." % (sname, label, i+1, j+1, str(moments_colorind)))
+						moments_colorind= [-999]*7
 
 				else:
 					logger.warn("Image %s (chan=%d-%d): color index array is empty, setting estimators to -999..." % (sname, i+1, j+1))
@@ -523,8 +532,8 @@ class FeatExtractor(object):
 				#parname= "cind_std_ch{}_{}".format(i+1,j+1)
 				#param_dict[parname]= colorind_std			
 
-				print("== COLOR HU-MOMENTS CH%d-%d ==" % (i+1, j+1))
-				print(moments_colorind)
+				#print("== COLOR HU-MOMENTS CH%d-%d ==" % (i+1, j+1))
+				#print(moments_colorind)
 
 				#for k in range(len(moments_colorind)):
 				for k in range(self.nmoments_save):
@@ -649,6 +658,7 @@ class FeatExtractor(object):
 		#===========================
 		#==   SAVE PARAM FILE
 		#===========================
+		logger.info("Saving parameter file %s ..." % (self.outfile))
 		parnames = par_dict_list[0].keys()
 		print("parnames")
 		print(parnames)
