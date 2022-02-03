@@ -30,7 +30,7 @@ from sclassifier_vae import logger
 from skimage.metrics import mean_squared_error
 from skimage.metrics import structural_similarity
 from skimage.measure import moments_central, moments_normalized, moments_hu, moments, regionprops
-from scipy.stats import kurtosis, skew
+from scipy.stats import kurtosis, skew, median_absolute_deviation
 
 ## GRAPHICS MODULES
 import matplotlib
@@ -453,6 +453,8 @@ class FeatExtractor(object):
 					ssim_min_mask= np.nanmin(ssim_1d)
 					ssim_max_mask= np.nanmax(ssim_1d)
 					ssim_std_mask= np.nanstd(ssim_1d)
+					ssim_median_mask= np.nanmedian(ssim_1d)
+					ssim_mad_mask= median_absolute_deviation(ssim_1d)
 				
 					ret= self.__extract_img_moments(ssim_2d, mask, centroid)
 					if ret is None:
@@ -470,6 +472,8 @@ class FeatExtractor(object):
 					ssim_min_mask= -999
 					ssim_max_mask= -999
 					ssim_std_mask= -999
+					ssim_median_mask= -999
+					ssim_mad_mask= -999
 					moments_ssim= [-999]*7
 				
 				if not np.isfinite(ssim_mean_mask):
@@ -486,8 +490,12 @@ class FeatExtractor(object):
 				param_dict[parname]= ssim_min_mask
 				parname= "ssim_max_ch{}_{}".format(i+1,j+1)
 				param_dict[parname]= ssim_max_mask
-				#parname= "ssim_std_ch{}_{}".format(i+1,j+1)
-				#param_dict[parname]= ssim_std_mask
+				parname= "ssim_std_ch{}_{}".format(i+1,j+1)
+				param_dict[parname]= ssim_std_mask
+				parname= "ssim_median_ch{}_{}".format(i+1,j+1)
+				param_dict[parname]= ssim_median_mask
+				parname= "ssim_mad_ch{}_{}".format(i+1,j+1)
+				param_dict[parname]= ssim_mad_mask
 
 				#for k in range(len(moments_ssim)):
 				for k in range(self.nmoments_save):
@@ -575,7 +583,9 @@ class FeatExtractor(object):
 					colorind_kurt= kurtosis(colorind_1d)	
 					colorind_min= np.nanmin(colorind_1d)
 					colorind_max= np.nanmax(colorind_1d)
-
+					colorind_median= np.nanmedian(colorind_1d)
+					colorind_mad= median_absolute_deviation(colorind_1d)
+				
 					ret= self.__extract_img_moments(colorind_2d, mask, centroid)
 					if ret is None:
 						logger.warn("Failed to compute moments for color index image %s (id=%s, ch=%d-%d)!" % (sname, label, i+1, j+1))
@@ -594,6 +604,8 @@ class FeatExtractor(object):
 					colorind_kurt= -999
 					colorind_min= -999
 					colorind_max= -999
+					colorind_median= -999
+					colorind_mad= -999
 					moments_colorind= [-999]*7
 
 				parname= "cind_mean_ch{}_{}".format(i+1,j+1)
@@ -602,8 +614,12 @@ class FeatExtractor(object):
 				param_dict[parname]= colorind_min
 				parname= "cind_max_ch{}_{}".format(i+1,j+1)
 				param_dict[parname]= colorind_max
-				#parname= "cind_std_ch{}_{}".format(i+1,j+1)
-				#param_dict[parname]= colorind_std			
+				parname= "cind_std_ch{}_{}".format(i+1,j+1)
+				param_dict[parname]= colorind_std			
+				parname= "cind_median_ch{}_{}".format(i+1,j+1)
+				param_dict[parname]= colorind_median
+				parname= "cind_mad_ch{}_{}".format(i+1,j+1)
+				param_dict[parname]= colorind_mad			
 
 				#print("== COLOR HU-MOMENTS CH%d-%d ==" % (i+1, j+1))
 				#print(moments_colorind)
