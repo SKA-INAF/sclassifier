@@ -60,6 +60,10 @@ def get_args():
 	
 	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize input images in range [0,1]')	
 	parser.set_defaults(normalize=False)
+	parser.add_argument('--scale_to_abs_max', dest='scale_to_abs_max', action='store_true',help='In normalization, if scale_to_max is active, scale to global max across all channels')	
+	parser.set_defaults(scale_to_abs_max=False)
+	parser.add_argument('--scale_to_max', dest='scale_to_max', action='store_true',help='In normalization, scale to max not to min-max range')	
+	parser.set_defaults(scale_to_max=False)
 
 	parser.add_argument('--log_transform', dest='log_transform', action='store_true',help='Apply log transform to images')	
 	parser.set_defaults(log_transform=False)
@@ -68,6 +72,20 @@ def get_args():
 	parser.set_defaults(scale=False)
 
 	parser.add_argument('-scale_factors', '--scale_factors', dest='scale_factors', required=False, type=str, default='', action='store',help='Image scale factors separated by commas (default=empty)')
+
+	parser.add_argument('--standardize', dest='standardize', action='store_true',help='Apply standardization to images')	
+	parser.set_defaults(standardize=False)
+	parser.add_argument('-img_means', '--img_means', dest='img_means', required=False, type=str, default='', action='store',help='Image means (separated by commas) to be used in standardization (default=empty)')
+	parser.add_argument('-img_sigmas', '--img_sigmas', dest='img_sigmas', required=False, type=str, default='', action='store',help='Image sigmas (separated by commas) to be used in standardization (default=empty)')
+
+	parser.add_argument('--chan_divide', dest='chan_divide', action='store_true',help='Apply channel division to images')	
+	parser.set_defaults(chan_divide=False)
+	parser.add_argument('-chan_mins', '--chan_mins', dest='chan_mins', required=False, type=str, default='', action='store',help='Image channel means (separated by commas) to be used in chan divide (default=empty)')
+
+	parser.add_argument('--erode', dest='erode', action='store_true',help='Apply erosion to image sourve mask')	
+	parser.set_defaults(erode=False)	
+	parser.add_argument('-erode_kernel', '--erode_kernel', dest='erode_kernel', required=False, type=int, default=5, action='store',help='Erosion kernel size in pixels (default=5)')	
+
 	
 	parser.add_argument('--augment', dest='augment', action='store_true',help='Augment images')	
 	parser.set_defaults(augment=False)
@@ -114,7 +132,23 @@ def main():
 	nx= args.nx
 	ny= args.ny
 	normalize= args.normalize
+	scale_to_abs_max= args.scale_to_abs_max
+	scale_to_max= args.scale_to_max
 	log_transform= args.log_transform
+	standardize= args.standardize
+	img_means= []
+	img_sigmas= []
+	if args.img_means!="":
+		img_means= [float(x.strip()) for x in args.img_means.split(',')]
+	if args.img_sigmas!="":
+		img_sigmas= [float(x.strip()) for x in args.img_sigmas.split(',')]
+
+	chan_divide= args.chan_divide
+	chan_mins= []
+	if args.chan_mins!="":
+		chan_mins= [float(x.strip()) for x in args.chan_mins.split(',')]
+	erode= args.erode	
+	erode_kernel= args.erode_kernel
 	resize= args.resize
 	augment= args.augment
 	shuffle= args.shuffle
@@ -148,8 +182,17 @@ def main():
 	fe.scale_img_factors= scale_factors
 	fe.nmaximgs= nmax
 	fe.normalize_img= normalize
+	fe.scale_to_abs_max= scale_to_abs_max 
+	fe.scale_to_max= scale_to_max
 	fe.shuffle_data= shuffle
 	fe.log_transform_img= log_transform
+	fe.standardize_img= standardize
+	fe.img_means= img_means
+	fe.img_sigmas= img_sigmas
+	fe.chan_divide= chan_divide
+	fe.chan_mins= chan_mins
+	fe.erode= erode
+	fe.erode_kernel= erode_kernel
 	fe.scale_img= scale
 	fe.scale_img_factors= scale_factors
 	fe.save_imgs= save_plots

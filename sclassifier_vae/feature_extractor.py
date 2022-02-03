@@ -29,12 +29,13 @@ from sclassifier_vae import logger
 ## SCI MODULES
 from skimage.metrics import mean_squared_error
 from skimage.metrics import structural_similarity
+from skimage.measure import moments_central, moments_normalized, moments_hu, moments, regionprops
 from scipy.stats import kurtosis, skew
 
 ## GRAPHICS MODULES
 import matplotlib
 import matplotlib.pyplot as plt
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 
 ## PACKAGE MODULES
 from .utils import Utils
@@ -65,17 +66,37 @@ class FeatExtractor(object):
 		self.source_ids= []
 		
 		# - Data pre-processing options
+		self.refch= 0
 		self.nmaximgs= -1
 		self.data_generator= None
+		self.resize= False
 		self.normalize_img= False
+		self.scale_to_abs_max= False 
+		self.scale_to_max= False
+		self.augmentation= False
 		self.shuffle_data= False
 		self.log_transform_img= False
 		self.scale_img= False
 		self.scale_img_factors= []
 
+		self.standardize_img= False
+		self.img_means= [] 
+		self.img_sigmas= []
+		self.chan_divide= False
+		self.chan_mins= []
+		self.erode= False
+		self.erode_kernel= 5
+
 		# - SSIM options
 		self.winsize= 3
 		self.ssim_thr= 0.
+
+		# - Hu Moment options
+		self.nmoments_save= 4
+		
+		# - Color index options
+		self.colorind_safe= 0
+		self.colorind_thr= 6
 		
 		# - Draw options
 		self.marker_mapping= {
@@ -132,24 +153,101 @@ class FeatExtractor(object):
 		if self.nmaximgs==-1:
 			self.nmaximgs= self.nsamples
 
-		# - Create standard generator (for reconstruction)
+		# - Create standard generator
 		self.data_generator= self.dl.data_generator(
 			batch_size=1, 
 			shuffle=self.shuffle_data,
-			resize=True, nx=self.nx, ny=self.ny, 
-			normalize=self.normalize_img, 
-			augment=False,
+			resize=self.resize, nx=self.nx, ny=self.ny, 
+			normalize=self.normalize_img, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
+			augment=self.augmentation,
 			log_transform=self.log_transform_img,
 			scale=self.scale_img, scale_factors=self.scale_img_factors,
+			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
+			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
+			erode=self.erode, erode_kernel=self.erode_kernel,
 			retsdata=True
 		)
-		
+
 		return 0
 
 		
 	#####################################
 	##     EXTRACT FEATURES
 	#####################################
+	def __extract_img_moments(self, data, mask=None, centroid=None):
+		""" Extract moments from images """
+
+		# - Compute mask if not given 
+		if mask is None:
+			mask= np.copy(data)
+			cond= np.logical_and(data!=0, np.isfinite(data))
+			mask[cond]= 1
+			mask= mask.astype(np.int32)
+
+		# - Compute region
+		regprops= regionprops(label_image=mask, intensity_image=data) 
+		if len(regprops)<=0:
+			logger.error("No region with non-zero pixels detected, please check!")
+			return None
+		if len(regprops)>1:
+			logger.warning("More than 1 region with non-zero pixels detected, please check!")
+			return None
+
+		regprop= regprops[0]
+		#bbox= regprop.bbox
+		#ymin= bbox[0]
+		#ymax= bbox[2]
+		#xmin= bbox[1]
+		#xmax= bbox[3]
+
+		# - Compute centroid if not given, otherwise override
+		if centroid is None:
+			try:
+				# - from scikit API 0.17.2 (last supported for python3.6)
+				centroid= regprop.weighted_local_centroid
+				#centroid= regprop.centroid
+				#centroid_local= regprop.local_centroid
+				#centroid_w= regprop.weighted_centroid
+				#centroid_local_w= regprop.weighted_local_centroid
+			except:
+				try:
+					# - from scikit API >0.17.2
+					centroid= regprop.centroid_weighted_local
+					#centroid= regprop.centroid
+					#centroid_local= regprop.centroid_local
+					#centroid_w= regprop.centroid_weighted
+					#centroid_local_w= regprop.centroid_weighted_local
+				except:
+					logger.error("Failed to get region centroids (check scikit-image API!)")
+					return None
+			
+			print("--> centroid")
+			print(centroid)
+
+		else:
+			# - Override centroid with passed one
+			try:
+				regprop.regprop.weighted_local_centroid= centroid
+			except:
+				try:
+					regprop.centroid_weighted_local= centroid
+				except:
+					logger.error("Failed to get region centroids (check scikit-image API!)")
+					return None
+
+		# - Compute moments
+		try:
+			moments= regprop.weighted_moments_hu
+		except:
+			try:
+				moments= regprop.moments_weighted_hu
+			except:
+				logger.error("Failed to get region centroids (check scikit-image API!)")
+				return None
+
+		return (moments, mask, centroid)
+
+
 	def __extract_features(self, data, sdata, save_imgs=False):
 		""" Extract image features """
 
@@ -158,6 +256,11 @@ class FeatExtractor(object):
 		sname= sdata.sname
 		label= sdata.label
 		classid= sdata.id
+
+		if not self.chan_mins:
+			self.chan_mins= [0]*nchans
+		print("--> self.chan_mins")
+		print(self.chan_mins)
 
 		param_dict= collections.OrderedDict()
 		param_dict["sname"]= sname
@@ -173,14 +276,39 @@ class FeatExtractor(object):
 			plot_nrows= int(nchans*(nchans-1)/2)
 			plot_ncols= 4
 
-		# - Loop over images and compute total flux
+		# - Compute centroid from reference channel (needed for moment calculation)
+		ret= self.__extract_img_moments(data[0,:,:,self.refch])
+		if ret is None:
+			logger.error("Failed to compute ref channel mask centroid!")
+			return None
+		mask= ret[1]
+		centroid= ret[2]
+		
+		# - Compute Hu moments of intensity images	
+		#   NB: use same mask and centroid from refch for all channels
 		for i in range(nchans):
 			img_i= data[0,:,:,i]
-			cond_i= np.logical_and(img_i!=0, np.isfinite(img_i))
+			ret= self.__extract_img_moments(img_i, mask, centroid)
+			if ret is None:
+				logger.error("Failed to compute moments for image %s (id=%s, ch=%d)!" % (sname, label, i+1))
+				return None
+			moments= ret[0]
+			print("== IMG HU-MOMENTS (CH%d) ==" % (i+1))
+			print(moments)
 			
-			S= np.nansum(img_i[cond_i])
-			parname= "fluxSum_ch" + str(i+1)
-			param_dict[parname]= S
+			for j in range(len(moments)):
+				m= moments[j]
+				#parname= "mom" + str(j+1) + "_ch" + str(i+1)
+				#param_dict[parname]= m
+			
+
+		# - Loop over images and compute total flux
+		#for i in range(nchans):
+		#	img_i= data[0,:,:,i]
+		#	cond_i= np.logical_and(img_i!=0, np.isfinite(img_i))	
+		#	S= np.nansum(img_i[cond_i])
+		#	parname= "fluxSum_ch" + str(i+1)
+		#	param_dict[parname]= S
 
 		# - Loop over images and compute params
 		index= 0
@@ -188,54 +316,115 @@ class FeatExtractor(object):
 			img_i= data[0,:,:,i]
 			cond_i= np.logical_and(img_i!=0, np.isfinite(img_i))
 			img_max_i= np.nanmax(img_i[cond_i])
-			cond_col_i= np.logical_and(img_i>0, np.isfinite(img_i))
+			img_min_i= np.nanmin(img_i[cond_i])
+			
+			img_norm_i= (img_i-img_min_i)/(img_max_i-img_min_i)
+			img_norm_i[~cond_i]= 0
+
+			img_posdef_i= img_i - self.chan_mins[i]
+			img_posdef_i[~cond_i]= 0
+
+			#cond_col_i= np.logical_and(img_i>0, np.isfinite(img_i))
+			cond_col_i= np.logical_and(img_posdef_i>0, np.isfinite(img_posdef_i))
+
 
 			# - Compute SSIM and color indices
 			for j in range(i+1,nchans):
 				img_j= data[0,:,:,j]
 				cond_j= np.logical_and(img_j!=0, np.isfinite(img_j))
 				img_max_j= np.nanmax(img_j[cond_j])
-				cond_col_j= np.logical_and(img_j>0, np.isfinite(img_j))
+				img_min_j= np.nanmin(img_j[cond_j])
+				
+				img_norm_j= (img_j-img_min_j)/(img_max_j-img_min_j)
+				img_norm_j[~cond_j]= 0
 
-				cond= np.logical_and(cond_i,cond_j)
+				img_posdef_j= img_j - self.chan_mins[j]
+				img_posdef_j[~cond_j]= 0
+
+				cond= np.logical_and(cond_i, cond_j)
 				img_1d_i= img_i[cond]
 				img_1d_j= img_j[cond]
-				cond_col_ij= np.logical_and(cond_col_i,cond_col_j)
+
+				#cond_col_j= np.logical_and(img_j>0, np.isfinite(img_j))
+				cond_col_j= np.logical_and(img_posdef_j>0, np.isfinite(img_posdef_j))
+				cond_col_ij= np.logical_and(cond_col_i, cond_col_j)
 				
-				# - Compute SSIM
+				# - Compute SSIM moments
 				#   NB: Need to normalize images to max otherwise the returned values are always ~1.
-				#img_max= np.max([inputdata_img,recdata_img])
-				ssim_mean, ssim_2d= structural_similarity(img_i/img_max_i, img_j/img_max_j, full=True, win_size=self.winsize, data_range=1)
+				###img_max= np.max([inputdata_img,recdata_img])
+				#ssim_mean, ssim_2d= structural_similarity(img_i/img_max_i, img_j/img_max_j, full=True, win_size=self.winsize, data_range=1)
+
+				ssim_mean, ssim_2d= structural_similarity(img_norm_i, img_norm_j, full=True, win_size=self.winsize, data_range=1)
+
+				ssim_2d[ssim_2d<0]= 0
+				ssim_2d[~cond]= 0
+
 				ssim_1d= ssim_2d[cond]
+
+				#plt.subplot(1, 3, 1)
+				#plt.imshow(img_norm_i, origin='lower')
+				#plt.colorbar()
+
+				#plt.subplot(1, 3, 2)
+				#plt.imshow(img_norm_j, origin='lower')
+				#plt.colorbar()
+					
+				#plt.subplot(1, 3, 3)
+				#plt.imshow(ssim_2d, origin='lower')
+				#plt.colorbar()
+
+				#plt.show()
 
 				if ssim_1d.size>0:
 					ssim_mean_mask= np.nanmean(ssim_1d)
 					ssim_min_mask= np.nanmin(ssim_1d)
 					ssim_max_mask= np.nanmax(ssim_1d)
 					ssim_std_mask= np.nanstd(ssim_1d)
+				
+					ret= self.__extract_img_moments(ssim_2d, mask, centroid)
+					if ret is None:
+						logger.warn("Failed to compute moments for image %s (id=%s, ch=%d-%d)!" % (sname, label, i+1, j+1))
+						
+					moments_ssim= ret[0]
+						
 				else:
 					logger.warn("Image %s (chan=%d-%d): SSIM array is empty, setting estimators to -999..." % (sname, i+1, j+1))
 					ssim_mean_mask= -999
 					ssim_min_mask= -999
 					ssim_max_mask= -999
 					ssim_std_mask= -999
+					moments_ssim= [-999]*7
 				
 				if not np.isfinite(ssim_mean_mask):
 					logger.warn("Image %s (chan=%d-%d): ssim_mean_mask is nan/inf!" % (sname, i+1, j+1))
 					ssim_mean_mask= -999
 
+
+				
 				parname= "ssim_mean_ch{}_{}".format(i+1,j+1)
 				param_dict[parname]= ssim_mean_mask
 				parname= "ssim_min_ch{}_{}".format(i+1,j+1)
 				param_dict[parname]= ssim_min_mask
 				parname= "ssim_max_ch{}_{}".format(i+1,j+1)
 				param_dict[parname]= ssim_max_mask
-				parname= "ssim_std_ch{}_{}".format(i+1,j+1)
-				param_dict[parname]= ssim_std_mask
+				#parname= "ssim_std_ch{}_{}".format(i+1,j+1)
+				#param_dict[parname]= ssim_std_mask
+
+				#for k in range(len(moments_ssim)):
+				for k in range(self.nmoments_save):
+					m= moments_ssim[k]
+					parname= "ssim_humom{}_ch{}_{}".format(k+1,i+1,j+1)
+					param_dict[parname]= m
+			
+
+				print("== SSIM HU-MOMENTS CH%d-%d ==" % (i+1, j+1))
+				print(moments_ssim)
 
 				# - Compute flux ratios and moments
-				cond_colors= np.logical_and(cond_col_ij, ssim_2d>self.ssim_thr)
-				fluxratio_2d= np.divide(img_i, img_j, where=cond_colors, out=np.ones(img_i.shape)*np.nan)
+				#cond_colors= np.logical_and(cond_col_ij, ssim_2d>self.ssim_thr)
+				cond_colors= cond_col_ij
+				#fluxratio_2d= np.divide(img_i, img_j, where=cond_colors, out=np.ones(img_i.shape)*np.nan)
+				fluxratio_2d= np.divide(img_posdef_i, img_posdef_j, where=cond_colors, out=np.ones(img_posdef_i.shape)*np.nan)
 				cond_fluxratio= np.isfinite(fluxratio_2d)
 				fluxratio_1d= fluxratio_2d[cond_fluxratio]
 				fluxratio_ssim_1d= ssim_2d[cond_fluxratio]
@@ -268,30 +457,94 @@ class FeatExtractor(object):
 					fluxratio_weighted_skew= -999
 					fluxratio_weighted_kurt= -999
 
-				parname= "fratio_mean_ch{}_{}".format(i+1,j+1)
-				param_dict[parname]= fluxratio_mean
-				parname= "fratio_std_ch{}_{}".format(i+1,j+1)
-				param_dict[parname]= fluxratio_std
-				parname= "fratio_skew_ch{}_{}".format(i+1,j+1)
-				param_dict[parname]= fluxratio_skew
-				parname= "fratio_kurt_ch{}_{}".format(i+1,j+1)
-				param_dict[parname]= fluxratio_kurt
-				parname= "fratio_min_ch{}_{}".format(i+1,j+1)
-				param_dict[parname]= fluxratio_min	
-				parname= "fratio_max_ch{}_{}".format(i+1,j+1)
-				param_dict[parname]= fluxratio_max
+				#parname= "fratio_mean_ch{}_{}".format(i+1,j+1)
+				#param_dict[parname]= fluxratio_mean
+				#parname= "fratio_std_ch{}_{}".format(i+1,j+1)
+				#param_dict[parname]= fluxratio_std
+				#parname= "fratio_skew_ch{}_{}".format(i+1,j+1)
+				#param_dict[parname]= fluxratio_skew
+				#parname= "fratio_kurt_ch{}_{}".format(i+1,j+1)
+				#param_dict[parname]= fluxratio_kurt
+				#parname= "fratio_min_ch{}_{}".format(i+1,j+1)
+				#param_dict[parname]= fluxratio_min	
+				#parname= "fratio_max_ch{}_{}".format(i+1,j+1)
+				#param_dict[parname]= fluxratio_max
 
-				parname= "fratio_wmean_ch{}_{}".format(i+1,j+1)
-				param_dict[parname]= fluxratio_weighted_mean
-				parname= "fratio_wstd_ch{}_{}".format(i+1,j+1)
-				param_dict[parname]= fluxratio_weighted_std
-				parname= "fratio_wskew_ch{}_{}".format(i+1,j+1)
-				param_dict[parname]= fluxratio_weighted_skew
-				parname= "fratio_wkurt_ch{}_{}".format(i+1,j+1)
-				param_dict[parname]= fluxratio_weighted_kurt
+				#parname= "fratio_wmean_ch{}_{}".format(i+1,j+1)
+				#param_dict[parname]= fluxratio_weighted_mean
+				#parname= "fratio_wstd_ch{}_{}".format(i+1,j+1)
+				#param_dict[parname]= fluxratio_weighted_std
+				#parname= "fratio_wskew_ch{}_{}".format(i+1,j+1)
+				#param_dict[parname]= fluxratio_weighted_skew
+				#parname= "fratio_wkurt_ch{}_{}".format(i+1,j+1)
+				#param_dict[parname]= fluxratio_weighted_kurt
 
-				# - Compute color index
-				#colorind_2d= 2.5*np.log10(fluxratio_2d)
+				# - Compute color index map
+				colorind_2d= np.log10( np.divide(img_posdef_i, img_posdef_j, where=cond_colors, out=np.ones(img_posdef_i.shape)*1) )
+				cond_colors_safe= np.logical_and(cond_colors, np.fabs(colorind_2d)<self.colorind_thr)
+				colorind_2d+= self.colorind_thr
+				colorind_2d[~cond_colors_safe]= self.colorind_safe
+				
+				
+				#cond_colorind= np.isfinite(colorind_2d)
+				cond_colorind= np.logical_and(np.isfinite(colorind_2d), colorind_2d!=self.colorind_safe)
+				colorind_1d= colorind_2d[cond_colorind]
+
+				if colorind_1d.size>0:
+					colorind_mean= np.nanmean(colorind_1d)
+					colorind_std= np.std(colorind_1d)
+					colorind_skew= skew(colorind_1d)
+					colorind_kurt= kurtosis(colorind_1d)	
+					colorind_min= np.nanmin(colorind_1d)
+					colorind_max= np.nanmax(colorind_1d)
+
+					ret= self.__extract_img_moments(colorind_2d, mask, centroid)
+					if ret is None:
+						logger.warn("Failed to compute moments for color index image %s (id=%s, ch=%d-%d)!" % (sname, label, i+1, j+1))
+						
+					moments_colorind= ret[0]
+
+				else:
+					logger.warn("Image %s (chan=%d-%d): color index array is empty, setting estimators to -999..." % (sname, i+1, j+1))
+					colorind_mean= -999
+					colorind_std= -999
+					colorind_skew= -999
+					colorind_kurt= -999
+					colorind_min= -999
+					colorind_max= -999
+					moments_colorind= [-999]*7
+
+				parname= "cind_mean_ch{}_{}".format(i+1,j+1)
+				param_dict[parname]= colorind_mean
+				parname= "cind_min_ch{}_{}".format(i+1,j+1)
+				param_dict[parname]= colorind_min
+				parname= "cind_max_ch{}_{}".format(i+1,j+1)
+				param_dict[parname]= colorind_max
+				#parname= "cind_std_ch{}_{}".format(i+1,j+1)
+				#param_dict[parname]= colorind_std			
+
+				print("== COLOR HU-MOMENTS CH%d-%d ==" % (i+1, j+1))
+				print(moments_colorind)
+
+				#for k in range(len(moments_colorind)):
+				for k in range(self.nmoments_save):
+					m= moments_colorind[k]
+					parname= "cind_humom{}_ch{}_{}".format(k+1,i+1,j+1)
+					param_dict[parname]= m
+
+				#plt.subplot(1, 3, 1)
+				#plt.imshow(img_posdef_i, origin='lower')
+				#plt.colorbar()
+
+				#plt.subplot(1, 3, 2)
+				#plt.imshow(img_posdef_j, origin='lower')
+				#plt.colorbar()
+					
+				#plt.subplot(1, 3, 3)
+				#plt.imshow(colorind_2d, origin='lower')
+				#plt.colorbar()
+
+				#plt.show()
 
 				# - Save images
 				if save_imgs:
