@@ -87,6 +87,8 @@ class FeatExtractor(object):
 		self.erode= False
 		self.erode_kernel= 5
 
+		self.fthr_zeros= 0.1
+
 		# - SSIM options
 		self.winsize= 3
 		self.ssim_thr= 0.
@@ -170,6 +172,62 @@ class FeatExtractor(object):
 
 		return 0
 
+
+	#####################################
+	##     VALIDATE IMAGE DATA
+	#####################################
+	def __validate_img(self, data, sdata, fthr_zeros=0.1):
+		""" Perform some validation on input image """
+
+		# - Retrieve some data fields
+		nchannels= data.shape[3]
+		sname= sdata.sname
+		label= sdata.label
+		classid= sdata.id
+
+		# - Check for NANs
+		has_naninf= np.any(~np.isfinite(data))
+		if has_naninf:
+			logger.warn("Image (name=%s, label=%s) has some nan/inf, validation failed!" % (sname, label))
+			return False
+
+		# - Check for fraction of zeros in radio mask
+		cond= np.logical_and(data[0,:,:,0]!=0, np.isfinite(data[0,:,:,0]))
+		for i in range(1,nchannels):
+			data_2d= data[0,:,:,i]
+			data_1d= data_2d[cond]
+			n= data_1d.size
+			n_zeros= np.count_nonzero(data_1d==0)
+			f= n_zeros/n
+			if n_zeros>0:
+				logger.debug("Image chan %d (name=%s, label=%s): n=%d, n_zeros=%d, f=%f" % (i+1, sname, label, n, n_zeros, f))
+				
+			if f>=fthr_zeros:
+				logger.warn("Image chan %d (name=%s, label=%s) has a zero fraction %f>%f, validation failed!" % (i+1, sname, label, f, fthr_zeros))
+				#return False
+
+			# - Check if channels have all equal values 
+			for i in range(nchannels):
+				data_min= np.min(data[0,:,:,i])
+				data_max= np.max(data[0,:,:,i])
+				same_values= (data_min==data_max)
+				if same_values:
+					logger.warn("Image chan %d (name=%s, label=%s) has all elements equal to %f, validation failed!" % (i+1, sname, label, data_min))
+					return False
+			
+			# - Check correct norm
+			if self.normalize_img:
+				data_min= np.min(data[0,:,:,:])
+				data_max= np.max(data[0,:,:,:])
+				if self.scale_to_max:
+					correct_norm= (data_max==1)
+				else:
+					correct_norm= (data_min==0 and data_max==1)
+				if not correct_norm:
+					logger.warn("Image chan %d (name=%s, label=%s) has invalid norm (%f,%f), validation failed!" % (i+1, sname, label, data_min, data_max))
+					return False
+
+		return True
 		
 	#####################################
 	##     EXTRACT FEATURES
@@ -185,12 +243,17 @@ class FeatExtractor(object):
 			mask= mask.astype(np.int32)
 
 		# - Compute region
-		regprops= regionprops(label_image=mask, intensity_image=data) 
+		try:
+			regprops= regionprops(label_image=mask, intensity_image=data) 
+		except Exception as e:
+			logger.error("Failed to extract region props (err=%s)" % str(e))
+			return None
+
 		if len(regprops)<=0:
 			logger.error("No region with non-zero pixels detected, please check!")
 			return None
 		if len(regprops)>1:
-			logger.warning("More than 1 region with non-zero pixels detected, please check!")
+			logger.warn("More than 1 region with non-zero pixels detected, please check!")
 			return None
 
 		regprop= regprops[0]
@@ -272,6 +335,7 @@ class FeatExtractor(object):
 			plot_ncols= 4
 
 		# - Compute centroid from reference channel (needed for moment calculation)
+		logger.info("Computing centroid from reference channel (ch=%d) for image %s (id=%s) ..." % (self.refch, sname, label))
 		ret= self.__extract_img_moments(data[0,:,:,self.refch])
 		if ret is None:
 			logger.error("Failed to compute ref channel mask centroid for image %s (id=%s, ch=%d)!" % (sname, label, i+1))
@@ -298,28 +362,34 @@ class FeatExtractor(object):
 		#		#param_dict[parname]= m
 			
 
-		# - Loop over images and compute total flux
+		# - Loop over images and compute total flux	
+		logger.info("Computing image stats (Stot, Smin/Smax) for image %s (id=%s) ..." % (sname, label))
 		for i in range(nchans):
 			img_i= data[0,:,:,i]
 			cond_i= np.logical_and(img_i!=0, np.isfinite(img_i))	
 			img_max_i= np.nanmax(img_i[cond_i])
 			img_min_i= np.nanmin(img_i[cond_i])
+			
 			S= np.nansum(img_i[cond_i])
 			parname= "Smin_ch" + str(i+1)
 			param_dict[parname]= img_min_i
 			parname= "Smax_ch" + str(i+1)
 			param_dict[parname]= img_max_i
-			parname= "Ssum_ch" + str(i+1)
+			parname= "Stot_ch" + str(i+1)
 			param_dict[parname]= S
 
 		# - Loop over images and compute params
 		index= 0
 		for i in range(nchans):
+			
 			img_i= data[0,:,:,i]
 			cond_i= np.logical_and(img_i!=0, np.isfinite(img_i))
+
+			
 			img_max_i= np.nanmax(img_i[cond_i])
 			img_min_i= np.nanmin(img_i[cond_i])
 			
+
 			img_norm_i= (img_i-img_min_i)/(img_max_i-img_min_i)
 			img_norm_i[~cond_i]= 0
 
@@ -356,6 +426,7 @@ class FeatExtractor(object):
 				###img_max= np.max([inputdata_img,recdata_img])
 				#ssim_mean, ssim_2d= structural_similarity(img_i/img_max_i, img_j/img_max_j, full=True, win_size=self.winsize, data_range=1)
 
+				logger.info("Computing SSIM for image %s (id=%s, ch=%d-%d) ..." % (sname, label, i+1, j+1))
 				ssim_mean, ssim_2d= structural_similarity(img_norm_i, img_norm_j, full=True, win_size=self.winsize, data_range=1)
 
 				ssim_2d[ssim_2d<0]= 0
@@ -390,7 +461,7 @@ class FeatExtractor(object):
 					moments_ssim= ret[0]
 					badcounts= np.count_nonzero(~np.isfinite(moments_ssim))
 					if badcounts>0:
-						logger.warning("Some SSIM moments for image %s (id=%s, ch=%d-%d) is not-finite (%s), setting all to -999..." % (sname, label, i+1, j+1, str(moments_ssim)))
+						logger.warn("Some SSIM moments for image %s (id=%s, ch=%d-%d) is not-finite (%s), setting all to -999..." % (sname, label, i+1, j+1, str(moments_ssim)))
 						moments_ssim= [-999]*7
 						
 				else:
@@ -426,41 +497,41 @@ class FeatExtractor(object):
 			
 
 				# - Compute flux ratios and moments
-				#cond_colors= np.logical_and(cond_col_ij, ssim_2d>self.ssim_thr)
-				cond_colors= cond_col_ij
-				#fluxratio_2d= np.divide(img_i, img_j, where=cond_colors, out=np.ones(img_i.shape)*np.nan)
-				fluxratio_2d= np.divide(img_posdef_i, img_posdef_j, where=cond_colors, out=np.ones(img_posdef_i.shape)*np.nan)
-				cond_fluxratio= np.isfinite(fluxratio_2d)
-				fluxratio_1d= fluxratio_2d[cond_fluxratio]
-				fluxratio_ssim_1d= ssim_2d[cond_fluxratio]
+				#####cond_colors= np.logical_and(cond_col_ij, ssim_2d>self.ssim_thr)
+				#cond_colors= cond_col_ij
+				#####fluxratio_2d= np.divide(img_i, img_j, where=cond_colors, out=np.ones(img_i.shape)*np.nan)
+				#fluxratio_2d= np.divide(img_posdef_i, img_posdef_j, where=cond_colors, out=np.ones(img_posdef_i.shape)*np.nan)
+				#cond_fluxratio= np.isfinite(fluxratio_2d)
+				#fluxratio_1d= fluxratio_2d[cond_fluxratio]
+				#fluxratio_ssim_1d= ssim_2d[cond_fluxratio]
 
-				if fluxratio_1d.size>0:
-					fluxratio_mean= np.nanmean(fluxratio_1d)
-					fluxratio_std= np.std(fluxratio_1d)
-					fluxratio_skew= skew(fluxratio_1d)
-					fluxratio_kurt= kurtosis(fluxratio_1d)	
-					fluxratio_min= np.nanmin(fluxratio_1d)
-					fluxratio_max= np.nanmax(fluxratio_1d)
-				else:
-					logger.warn("Image %s (chan=%d-%d): flux ratio array is empty, setting estimators to -999..." % (sname, i+1, j+1))
-					fluxratio_mean= -999
-					fluxratio_std= -999
-					fluxratio_skew= -999
-					fluxratio_kurt= -999
-					fluxratio_min= -999
-					fluxratio_max= -999
+				#if fluxratio_1d.size>0:
+				#	fluxratio_mean= np.nanmean(fluxratio_1d)
+				#	fluxratio_std= np.std(fluxratio_1d)
+				#	fluxratio_skew= skew(fluxratio_1d)
+				#	fluxratio_kurt= kurtosis(fluxratio_1d)	
+				#	fluxratio_min= np.nanmin(fluxratio_1d)
+				#	fluxratio_max= np.nanmax(fluxratio_1d)
+				#else:
+				#	logger.warn("Image %s (chan=%d-%d): flux ratio array is empty, setting estimators to -999..." % (sname, i+1, j+1))
+				#	fluxratio_mean= -999
+				#	fluxratio_std= -999
+				#	fluxratio_skew= -999
+				#	fluxratio_kurt= -999
+				#	fluxratio_min= -999
+				#	fluxratio_max= -999
 
-				if fluxratio_1d.size>0 and fluxratio_ssim_1d.size>0: 
-					fluxratio_weighted_mean= Utils.weighted_mean(fluxratio_1d, fluxratio_ssim_1d)
-					fluxratio_weighted_std= Utils.weighted_std(fluxratio_1d, fluxratio_ssim_1d)
-					fluxratio_weighted_skew= Utils.weighted_skew(fluxratio_1d, fluxratio_ssim_1d)
-					fluxratio_weighted_kurt= Utils.weighted_kurtosis(fluxratio_1d, fluxratio_ssim_1d)
-				else:
-					logger.warn("Image %s (chan=%d-%d): flux ratio or weights array are empty, setting weighted estimators to -999..." % (sname, i+1, j+1))
-					fluxratio_weighted_mean= -999
-					fluxratio_weighted_std= -999
-					fluxratio_weighted_skew= -999
-					fluxratio_weighted_kurt= -999
+				#if fluxratio_1d.size>0 and fluxratio_ssim_1d.size>0: 
+				#	fluxratio_weighted_mean= Utils.weighted_mean(fluxratio_1d, fluxratio_ssim_1d)
+				#	fluxratio_weighted_std= Utils.weighted_std(fluxratio_1d, fluxratio_ssim_1d)
+				#	fluxratio_weighted_skew= Utils.weighted_skew(fluxratio_1d, fluxratio_ssim_1d)
+				#	fluxratio_weighted_kurt= Utils.weighted_kurtosis(fluxratio_1d, fluxratio_ssim_1d)
+				#else:
+				#	logger.warn("Image %s (chan=%d-%d): flux ratio or weights array are empty, setting weighted estimators to -999..." % (sname, i+1, j+1))
+				#	fluxratio_weighted_mean= -999
+				#	fluxratio_weighted_std= -999
+				#	fluxratio_weighted_skew= -999
+				#	fluxratio_weighted_kurt= -999
 
 				#parname= "fratio_mean_ch{}_{}".format(i+1,j+1)
 				#param_dict[parname]= fluxratio_mean
@@ -485,6 +556,8 @@ class FeatExtractor(object):
 				#param_dict[parname]= fluxratio_weighted_kurt
 
 				# - Compute color index map
+				logger.info("Computing color index map for image %s (id=%s, ch=%d-%d) ..." % (sname, label, i+1, j+1))
+				cond_colors= cond_col_ij
 				colorind_2d= np.log10( np.divide(img_posdef_i, img_posdef_j, where=cond_colors, out=np.ones(img_posdef_i.shape)*1) )
 				cond_colors_safe= np.logical_and(cond_colors, np.fabs(colorind_2d)<self.colorind_thr)
 				colorind_2d+= self.colorind_thr
@@ -510,7 +583,7 @@ class FeatExtractor(object):
 					moments_colorind= ret[0]
 					badcounts= np.count_nonzero(~np.isfinite(moments_colorind))
 					if badcounts>0:
-						logger.warning("Some color index moments for image %s (id=%s, ch=%d-%d) is not-finite (%s), setting all to -999..." % (sname, label, i+1, j+1, str(moments_colorind)))
+						logger.warn("Some color index moments for image %s (id=%s, ch=%d-%d) is not-finite (%s), setting all to -999..." % (sname, label, i+1, j+1, str(moments_colorind)))
 						moments_colorind= [-999]*7
 
 				else:
@@ -609,12 +682,14 @@ class FeatExtractor(object):
 		#===========================
 		#==   SET DATA
 		#===========================	
+		# - Read data
 		logger.info("Setting input data from data loader ...")
 		status= self.__set_data()
 		if status<0:
 			logger.error("Input data set failed!")
 			return -1
 
+		
 		#===========================
 		#==   EXTRACT FEATURES
 		#===========================
@@ -624,6 +699,11 @@ class FeatExtractor(object):
 		
 		while True:
 			try:
+				# - Stop generator?
+				if img_counter>=self.nmaximgs:
+					logger.info("Sample size (%d) reached, stop generation..." % self.nmaximgs)
+					break
+
 				# - Get data from generator
 				data, sdata= next(self.data_generator)
 				img_counter+= 1
@@ -633,9 +713,17 @@ class FeatExtractor(object):
 				label= sdata.label
 				classid= sdata.id
 
+				# - Validate data
+				if not self.__validate_img(data, sdata, self.fthr_zeros):
+					logger.warn("Validation failed for image sample no. %d (name=%s, id=%d), skip it ..." % (img_counter, sname, classid))
+					continue
+
 				# - Extracting features
 				logger.info("Extracting features from image sample no. %d (name=%s, id=%d) ..." % (img_counter, sname, classid))
 				par_dict= self.__extract_features(data, sdata, save_imgs=self.save_imgs)
+				if par_dict is None:
+					logger.warn("Failed to extract features from image sample no. %d (name=%s, id=%d), skip it ..." % (img_counter, sname, classid))
+					continue
 				if par_dict:
 					par_dict_list.append(par_dict)
 
@@ -658,17 +746,20 @@ class FeatExtractor(object):
 		#===========================
 		#==   SAVE PARAM FILE
 		#===========================
-		logger.info("Saving parameter file %s ..." % (self.outfile))
-		parnames = par_dict_list[0].keys()
-		print("parnames")
-		print(parnames)
+		if par_dict_list:
+			logger.info("Saving parameter file %s ..." % (self.outfile))
+			parnames = par_dict_list[0].keys()
+			print("parnames")
+			print(parnames)
 		
-		#with open(self.outfile, 'wb') as fp:
-		with open(self.outfile, 'w') as fp:
-			fp.write("# ")
-			dict_writer = csv.DictWriter(fp, parnames)
-			dict_writer.writeheader()
-			dict_writer.writerows(par_dict_list)
+			#with open(self.outfile, 'wb') as fp:
+			with open(self.outfile, 'w') as fp:
+				fp.write("# ")
+				dict_writer = csv.DictWriter(fp, parnames)
+				dict_writer.writeheader()
+				dict_writer.writerows(par_dict_list)
+		else:
+			logger.warn("Parameter dict list is empty, no files will be written!")
 
 		return 0
 

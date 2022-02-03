@@ -880,8 +880,11 @@ class DataLoader(object):
 						yield inputs, inputs
 					nb= 0
 
-			except (GeneratorExit, KeyboardInterrupt):
-				logger.warn("Generator or keyboard exception catched while generating data...")
+			except (GeneratorExit):
+				logger.info("Data generator complete execution ...")
+				raise
+			except (KeyboardInterrupt):
+				logger.warn("Keyboard exception catched while generating data...")
 				raise
 			except Exception as e:
 				logger.warn("Exception catched while generating data (err=%s) ..." % str(e))
