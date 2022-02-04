@@ -1270,8 +1270,8 @@ class FeatExtractorAE(object):
 		#==   BUILD NN
 		#===========================
 		#- Create the network or load it from file?
-		logger.info("modelfile=%s" % (self.modelfile))
-		logger.info("weightfile=%s" % (self.weightfile))
+		logger.debug("modelfile=%s" % (self.modelfile))
+		logger.debug("weightfile=%s" % (self.weightfile))
 
 		if self.modelfile!="" and self.weightfile!="":
 			logger.info("Loading network architecture and weights from files: %s, %s ..." % (self.modelfile, self.weightfile))
