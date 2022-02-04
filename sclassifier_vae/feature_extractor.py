@@ -565,7 +565,8 @@ class FeatExtractor(object):
 
 				# - Compute color index map
 				logger.info("Computing color index map for image %s (id=%s, ch=%d-%d) ..." % (sname, label, i+1, j+1))
-				cond_colors= cond_col_ij
+				#cond_colors= cond_col_ij
+				cond_colors= np.logical_and(cond_col_ij, ssim_2d>self.ssim_thr)
 				colorind_2d= np.log10( np.divide(img_posdef_i, img_posdef_j, where=cond_colors, out=np.ones(img_posdef_i.shape)*1) )
 				cond_colors_safe= np.logical_and(cond_colors, np.fabs(colorind_2d)<self.colorind_thr)
 				colorind_2d+= self.colorind_thr
