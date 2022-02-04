@@ -100,8 +100,10 @@ def get_args():
 	parser.set_defaults(save_plots=False)
 	
 	parser.add_argument('-ssim_winsize','--ssim_winsize', dest='ssim_winsize', required=False, type=int, default=3, help='Filter window size to be used in similarity image calculation (default=3)') 
-	parser.add_argument('-ssim_thr','--ssim_thr', dest='ssim_thr', required=False, type=float, default=0.5, help='ssim threshold used to compute trimmed parameters (default=0.1)') 
-	parser.add_argument('-fthr_zeros', '--fthr_zeros', dest='fthr_zeros', required=False, type=float, default=0.1, action='store',help='Max fraction of zeros above which channel is bad (default=0.1)')	
+	parser.add_argument('-ssim_thr','--ssim_thr', dest='ssim_thr', required=False, type=float, default=0., help='ssim threshold used to compute trimmed parameters (default=0.)') 
+	parser.add_argument('-fthr_zeros', '--fthr_zeros', dest='fthr_zeros', required=False, type=float, default=0.1, action='store',help='Max fraction of zeros above which channel is bad (default=0.1)')
+	parser.add_argument('--weight_colmap_with_ssim', dest='weight_colmap_with_ssim', action='store_true',help='Weight color index map with ssim')	
+	parser.set_defaults(weight_colmap_with_ssim=False)
 
 	args = parser.parse_args()	
 
@@ -162,6 +164,7 @@ def main():
 	ssim_winsize= args.ssim_winsize
 	ssim_thr= args.ssim_thr
 	fthr_zeros= args.fthr_zeros
+	weight_colmap_with_ssim= args.weight_colmap_with_ssim
 
 	#===========================
 	#==   READ DATA

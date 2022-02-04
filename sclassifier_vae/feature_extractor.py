@@ -99,6 +99,7 @@ class FeatExtractor(object):
 		# - Color index options
 		self.colorind_safe= 0
 		self.colorind_thr= 6
+		self.weight_colmap_with_ssim= False
 		
 		# - Draw options
 		self.marker_mapping= {
@@ -279,8 +280,8 @@ class FeatExtractor(object):
 					logger.error("Failed to get region centroids (check scikit-image API!)")
 					return None
 			
-			#print("--> centroid")
-			#print(centroid)
+			print("--> centroid")
+			print(centroid)
 
 		else:
 			# - Override centroid with passed one
@@ -292,16 +293,23 @@ class FeatExtractor(object):
 				except:
 					logger.error("Failed to get region centroids (check scikit-image API!)")
 					return None
+			print("--> overrdden contour")
+			print(regprop.regprop.weighted_local_centroid)
 
-		# - Compute moments
+		# - Compute Hu moments
 		try:
+			#moments= regprop.weighted_moments_hu	
 			moments= regprop.weighted_moments_hu
 		except:
 			try:
+				#moments= regprop.moments_weighted_hu
 				moments= regprop.moments_weighted_hu
 			except:
 				logger.error("Failed to get region centroids (check scikit-image API!)")
 				return None
+
+		# - Compute central moments
+		
 
 		return (moments, mask, centroid)
 
@@ -500,7 +508,7 @@ class FeatExtractor(object):
 				#for k in range(len(moments_ssim)):
 				for k in range(self.nmoments_save):
 					m= moments_ssim[k]
-					parname= "ssim_humom{}_ch{}_{}".format(k+1,i+1,j+1)
+					parname= "ssim_mom{}_ch{}_{}".format(k+1,i+1,j+1)
 					param_dict[parname]= m
 			
 
@@ -570,8 +578,11 @@ class FeatExtractor(object):
 				colorind_2d= np.log10( np.divide(img_posdef_i, img_posdef_j, where=cond_colors, out=np.ones(img_posdef_i.shape)*1) )
 				cond_colors_safe= np.logical_and(cond_colors, np.fabs(colorind_2d)<self.colorind_thr)
 				colorind_2d+= self.colorind_thr
-				colorind_2d[~cond_colors_safe]= self.colorind_safe
 				
+				if self.weight_colmap_with_ssim:
+					colorind_2d*= ssim_2d
+					
+				colorind_2d[~cond_colors_safe]= self.colorind_safe
 				
 				#cond_colorind= np.isfinite(colorind_2d)
 				cond_colorind= np.logical_and(np.isfinite(colorind_2d), colorind_2d!=self.colorind_safe)
@@ -628,22 +639,26 @@ class FeatExtractor(object):
 				#for k in range(len(moments_colorind)):
 				for k in range(self.nmoments_save):
 					m= moments_colorind[k]
-					parname= "cind_humom{}_ch{}_{}".format(k+1,i+1,j+1)
+					parname= "cind_mom{}_ch{}_{}".format(k+1,i+1,j+1)
 					param_dict[parname]= m
 
-				#plt.subplot(1, 3, 1)
-				#plt.imshow(img_posdef_i, origin='lower')
-				#plt.colorbar()
+				plt.subplot(2, 2, 1)
+				plt.imshow(img_posdef_i, origin='lower')
+				plt.colorbar()
 
-				#plt.subplot(1, 3, 2)
-				#plt.imshow(img_posdef_j, origin='lower')
-				#plt.colorbar()
+				plt.subplot(2, 2, 2)
+				plt.imshow(img_posdef_j, origin='lower')
+				plt.colorbar()
+
+				plt.subplot(2, 2, 3)
+				plt.imshow(ssim_2d, origin='lower')
+				plt.colorbar()
 					
-				#plt.subplot(1, 3, 3)
-				#plt.imshow(colorind_2d, origin='lower')
-				#plt.colorbar()
+				plt.subplot(2, 2, 4)
+				plt.imshow(colorind_2d, origin='lower')
+				plt.colorbar()
 
-				#plt.show()
+				plt.show()
 
 				# - Save images
 				if save_imgs:
