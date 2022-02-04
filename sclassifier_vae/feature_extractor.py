@@ -176,7 +176,7 @@ class FeatExtractor(object):
 	#####################################
 	##     VALIDATE IMAGE DATA
 	#####################################
-	def __validate_img(self, data, sdata, fthr_zeros=0.1):
+	def __validate_img(self, data, sdata):
 		""" Perform some validation on input image """
 
 		# - Retrieve some data fields
@@ -202,9 +202,9 @@ class FeatExtractor(object):
 			if n_zeros>0:
 				logger.debug("Image chan %d (name=%s, label=%s): n=%d, n_zeros=%d, f=%f" % (i+1, sname, label, n, n_zeros, f))
 				
-			if f>=fthr_zeros:
-				logger.warn("Image chan %d (name=%s, label=%s) has a zero fraction %f>%f, validation failed!" % (i+1, sname, label, f, fthr_zeros))
-				#return False
+			if f>=self.fthr_zeros:
+				logger.warn("Image chan %d (name=%s, label=%s) has a zero fraction %f>%f, validation failed!" % (i+1, sname, label, f, self.fthr_zeros))
+				return False
 
 			# - Check if channels have all equal values 
 			for i in range(nchannels):
@@ -731,7 +731,7 @@ class FeatExtractor(object):
 				classid= sdata.id
 
 				# - Validate data
-				if not self.__validate_img(data, sdata, self.fthr_zeros):
+				if not self.__validate_img(data, sdata):
 					logger.warn("Validation failed for image sample no. %d (name=%s, id=%d), skip it ..." % (img_counter, sname, classid))
 					continue
 
