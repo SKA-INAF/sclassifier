@@ -1277,7 +1277,6 @@ class FeatExtractorAE(object):
 		
 		if self.modelfile_encoder!="" and self.modelfile_decoder!="":
 			logger.info("Loading network architecture from files: %s, %s ..." % (self.modelfile_encoder, self.modelfile_decoder))
-			logger.info("Loaded weights file: %s, %s" % (self.weightfile_encoder, self.weightfile_decoder))
 			if self.__load_model(self.modelfile_encoder, self.modelfile_decoder, self.weightfile_encoder, self.weightfile_decoder)<0:
 				logger.error("NN loading failed!")
 				return -1
@@ -1685,7 +1684,7 @@ class FeatExtractorAE(object):
 		#==   LOAD ENCODER
 		#==============================
 		#- Load encoder
-		logger.info("Loading encoder model architecture and weights from files %s, %s ..." % (encoder_model, encoder_weights))
+		logger.info("Loading encoder model architecture and weights from files %s, %s ..." % (modelfile_encoder_json, weightfile_encoder))
 		if self.__load_encoder(modelfile_encoder_json, weightfile_encoder)<0:
 			logger.warn("Failed to load encoder model!")
 			return -1
@@ -1698,7 +1697,7 @@ class FeatExtractorAE(object):
 		#==   LOAD DECODER
 		#==============================
 		#- Load decoder
-		logger.info("Loading decoder model architecture and weights from files %s, %s ..." % (decoder_model, decoder_weights))
+		logger.info("Loading decoder model architecture and weights from files %s, %s ..." % (modelfile_decoder_json, weightfile_decoder))
 		if self.__load_decoder(modelfile_decoder_json, weightfile_decoder)<0:
 			logger.warn("Failed to load decoder model!")
 			return -1
