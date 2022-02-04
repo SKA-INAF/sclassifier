@@ -94,7 +94,10 @@ def get_args():
 	parser.add_argument('-erode_kernel', '--erode_kernel', dest='erode_kernel', required=False, type=int, default=5, action='store',help='Erosion kernel size in pixels (default=5)')	
 
 	# - Network training options
-	parser.add_argument('-weightfile', '--weightfile', dest='weightfile', required=False, type=str, default="", action='store',help='Weight file (hd5) to be loaded (default=no)')	
+	#parser.add_argument('-weightfile', '--weightfile', dest='weightfile', required=False, type=str, default="", action='store',help='Weight file (hd5) to be loaded (default=no)')	
+	parser.add_argument('-weightfile_encoder', '--weightfile_encoder', dest='weightfile_encoder', required=False, type=str, default="", action='store',help='Encoder weights file (hd5) to be loaded (default=no)')	
+	parser.add_argument('-weightfile_decoder', '--weightfile_decoder', dest='weightfile_decoder', required=False, type=str, default="", action='store',help='Decoder weights file (hd5) to be loaded (default=no)')	
+	
 	parser.add_argument('-latentdim', '--latentdim', dest='latentdim', required=False, type=int, default=2, action='store',help='Dimension of latent vector (default=2)')	
 	parser.add_argument('-nepochs', '--nepochs', dest='nepochs', required=False, type=int, default=100, action='store',help='Number of epochs used in network training (default=100)')	
 	parser.add_argument('-optimizer', '--optimizer', dest='optimizer', required=False, type=str, default='rmsprop', action='store',help='Optimizer used (default=rmsprop)')
@@ -108,7 +111,9 @@ def get_args():
 	# - Network architecture options
 	parser.add_argument('--use_vae', dest='use_vae', action='store_true',help='Use variational autoencoders')	
 	parser.set_defaults(use_vae=False)
-	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=False, type=str, default="", action='store',help='Model architecture file (json) to be loaded (default=no)')	
+	#parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=False, type=str, default="", action='store',help='Model architecture file (json) to be loaded (default=no)')
+	parser.add_argument('-modelfile_encoder', '--modelfile_encoder', dest='modelfile_encoder', required=False, type=str, default="", action='store',help='Model architecture file (json) to be loaded for encoder (default=no)')
+	parser.add_argument('-modelfile_decoder', '--modelfile_decoder', dest='modelfile_decoder', required=False, type=str, default="", action='store',help='Model architecture file (json) to be loaded for decoder (default=no)')	
 	parser.add_argument('--add_maxpooling_layer', dest='add_maxpooling_layer', action='store_true',help='Add max pooling layer after conv layers ')	
 	parser.set_defaults(add_maxpooling_layer=False)	
 	parser.add_argument('--add_batchnorm_layer', dest='add_batchnorm_layer', action='store_true',help='Add batch normalization layer after conv layers ')	
@@ -226,7 +231,9 @@ def main():
 
 	# - NN architecture
 	use_vae= args.use_vae
-	modelfile= args.modelfile
+	#modelfile= args.modelfile
+	modelfile_encoder= args.modelfile_encoder
+	modelfile_decoder= args.modelfile_decoder
 	add_maxpooling_layer= args.add_maxpooling_layer
 	add_batchnorm_layer= args.add_batchnorm_layer
 	add_leakyrelu= args.add_leakyrelu
@@ -250,7 +257,9 @@ def main():
 
 	
 	# - Train options
-	weightfile= args.weightfile
+	#weightfile= args.weightfile
+	weightfile_encoder= args.weightfile_encoder
+	weightfile_decoder= args.weightfile_decoder
 	latentdim= args.latentdim
 	optimizer= args.optimizer
 	learning_rate= args.learning_rate
@@ -304,8 +313,12 @@ def main():
 	vae_class= FeatExtractorAE(dl)
 
 	vae_class.use_vae= use_vae
-	vae_class.modelfile= modelfile
-	vae_class.weightfile= weightfile
+	#vae_class.modelfile= modelfile
+	vae_class.modelfile_encoder= modelfile_encoder
+	vae_class.modelfile_decoder= modelfile_decoder
+	#vae_class.weightfile= weightfile
+	vae_class.weightfile_encoder= weightfile_encoder
+	vae_class.weightfile_decoder= weightfile_decoder
 	vae_class.latent_dim= latentdim
 	vae_class.set_image_size(nx, ny)
 	vae_class.augmentation= augment

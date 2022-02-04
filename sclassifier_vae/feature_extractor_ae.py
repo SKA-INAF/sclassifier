@@ -450,8 +450,12 @@ class FeatExtractorAE(object):
 		
 		# - NN architecture
 		self.use_vae= False # create variational autoencoder, otherwise standard autoencoder
-		self.modelfile= ""	
-		self.weightfile= ""
+		#self.modelfile= ""
+		self.modelfile_encoder= ""
+		self.modelfile_decoder= ""
+		#self.weightfile= ""
+		self.weightfile_encoder= ""
+		self.weightfile_decoder= ""
 		self.fitout= None		
 		self.vae= None
 		self.encoder= None
@@ -1270,12 +1274,11 @@ class FeatExtractorAE(object):
 		#==   BUILD NN
 		#===========================
 		#- Create the network or load it from file?
-		logger.debug("modelfile=%s" % (self.modelfile))
-		logger.debug("weightfile=%s" % (self.weightfile))
-
-		if self.modelfile!="" and self.weightfile!="":
-			logger.info("Loading network architecture and weights from files: %s, %s ..." % (self.modelfile, self.weightfile))
-			if self.__load_model(self.modelfile, self.weightfile)<0:
+		
+		if self.modelfile_encoder!="" and self.modelfile_decoder!="":
+			logger.info("Loading network architecture from files: %s, %s ..." % (self.modelfile_encoder, self.modelfile_decoder))
+			logger.info("Loaded weights file: %s, %s" % (self.weightfile_encoder, self.weightfile_decoder))
+			if self.__load_model(self.modelfile_encoder, self.modelfile_decoder, self.weightfile_encoder, self.weightfile_decoder)<0:
 				logger.error("NN loading failed!")
 				return -1
 		else:
@@ -1631,14 +1634,11 @@ class FeatExtractorAE(object):
 			logger.error("vae object is None, loading failed!")
 			return -1
 
+		
 		#===========================
 		#==   SET LOSS & METRICS
 		#===========================	
-		###self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
-		##if not tf.executing_eagerly():
 		self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True) ### CORRECT
-		#self.vae.compile(optimizer=self.optimizer, loss=self.loss)
-		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=False)
 		
 		# - Print and draw model
 		self.vae.summary()
@@ -1670,19 +1670,65 @@ class FeatExtractorAE(object):
 			logger.error("vae object is None, loading failed!")
 			return -1
 
-		# - Build encoder & decoder
-		#encoder = Model(autoencoder.input, autoencoder.layers[-2].output)
-		#decoder_input = Input(shape=(encoding_dim,))
-		#decoder = Model(decoder_input, autoencoder.layers[-1](decoder_input))
-
 		#===========================
 		#==   SET LOSS & METRICS
 		#===========================	
-		###self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
-		##if not tf.executing_eagerly():
 		self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True) ### CORRECT
-		#self.vae.compile(optimizer=self.optimizer, loss=self.loss)
-		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=False)
+		
+		return 0
+
+
+	def __load_model(self, modelfile_encoder_json, modelfile_decoder_json, weightfile_encoder="", weightfile_decoder=""):
+		""" Load model from encoder/decoder model """
+
+		#==============================
+		#==   LOAD ENCODER
+		#==============================
+		#- Load encoder
+		logger.info("Loading encoder model architecture and weights from files %s, %s ..." % (encoder_model, encoder_weights))
+		if self.__load_encoder(modelfile_encoder_json, weightfile_encoder)<0:
+			logger.warn("Failed to load encoder model!")
+			return -1
+
+		if self.encoder is None:
+			logger.error("Loaded encoder model is None!")
+			return -1
+
+		#==============================
+		#==   LOAD DECODER
+		#==============================
+		#- Load decoder
+		logger.info("Loading decoder model architecture and weights from files %s, %s ..." % (decoder_model, decoder_weights))
+		if self.__load_decoder(modelfile_decoder_json, weightfile_decoder)<0:
+			logger.warn("Failed to load decoder model!")
+			return -1
+
+		if self.decoder is None:
+			logger.error("Loaded decoder model is None!")
+			return -1
+
+		#==============================
+		#==   RECREATE VAE MODEL
+		#==============================
+		# - Build model
+		logger.info("Recreating autoencoder model from loaded encoder/decoder ...")
+
+		self.inputs= self.encoder.get_layer('encoder_input')
+
+		if self.use_vae:
+			self.outputs= self.decoder(self.encoder(self.inputs)[2])
+		else:
+			if self.add_channorm_layer:
+				self.outputs= self.decoder([self.encoder(self.inputs), self.inputs])
+			else:
+				self.outputs= self.decoder(self.encoder(self.inputs))
+	
+		self.vae = Model(inputs=self.inputs, outputs=self.outputs, name='vae')
+		
+		#===========================
+		#==   SET LOSS & METRICS
+		#===========================	
+		self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True) ### CORRECT
 		
 		# - Print and draw model
 		self.vae.summary()
@@ -1690,7 +1736,8 @@ class FeatExtractorAE(object):
 
 		return 0
 
-	def __load_encoder(self, modelfile_json, weightfile):
+
+	def __load_encoder(self, modelfile_json, weightfile=""):
 		""" Load encoder model and weights from input h5 file """
 
 		try:
@@ -1699,7 +1746,9 @@ class FeatExtractorAE(object):
 				self.encoder = model_from_json(open(modelfile_json).read(), custom_objects={'ChanNormalization': ChanNormalization})
 			else:
 				self.encoder = model_from_json(open(modelfile_json).read())
-			self.encoder.load_weights(weightfile)
+
+			if weightfile!="":
+				self.encoder.load_weights(weightfile)
 
 		except Exception as e:
 			logger.warn("Failed to load encoder model from file %s (err=%s)!" % (modelfile_json, str(e)))
@@ -1707,7 +1756,7 @@ class FeatExtractorAE(object):
 
 		return 0
 
-	def __load_decoder(self, modelfile_json, weightfile):
+	def __load_decoder(self, modelfile_json, weightfile=""):
 		""" Load decoder model and weights from input h5 file """
 
 		try:
@@ -1715,7 +1764,9 @@ class FeatExtractorAE(object):
 				self.decoder = model_from_json(open(modelfile_json).read(), custom_objects={'ChanDeNormalization': ChanDeNormalization})
 			else:
 				self.decoder = model_from_json(open(modelfile_json).read())
-			self.decoder.load_weights(weightfile)
+
+			if weightfile!="":
+				self.decoder.load_weights(weightfile)
 
 		except Exception as e:
 			logger.warn("Failed to load decoder model from file %s (err=%s)!" % (modelfile_json, str(e)))
