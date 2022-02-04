@@ -280,38 +280,43 @@ class FeatExtractor(object):
 					logger.error("Failed to get region centroids (check scikit-image API!)")
 					return None
 			
-			print("--> centroid")
-			print(centroid)
+			#print("--> centroid")
+			#print(centroid)
 
-		else:
-			# - Override centroid with passed one
-			try:
-				regprop.regprop.weighted_local_centroid= centroid
-			except:
-				try:
-					regprop.centroid_weighted_local= centroid
-				except:
-					logger.error("Failed to get region centroids (check scikit-image API!)")
-					return None
-			print("--> overrdden contour")
-			print(regprop.regprop.weighted_local_centroid)
-
-		# - Compute Hu moments
+		# - Compute moments
 		try:
-			#moments= regprop.weighted_moments_hu	
-			moments= regprop.weighted_moments_hu
+			M= regprop.weighted_moments
 		except:
 			try:
-				#moments= regprop.moments_weighted_hu
-				moments= regprop.moments_weighted_hu
+				M= regprop.moments_weighted
 			except:
-				logger.error("Failed to get region centroids (check scikit-image API!)")
+				logger.error("Failed to get moments (check scikit-image API!)")
 				return None
 
-		# - Compute central moments
-		
+		centroid_thisdata= (M[1, 0] / M[0, 0], M[0, 1] / M[0, 0])
 
-		return (moments, mask, centroid)
+		#print("--> centroid_thisdata")
+		#print(centroid_thisdata)
+	
+		
+		# - Compute central moments
+		#   NB: Do not use class method as this will use the automatically computed centroid. We want to override centroid here
+		img= regprop.intensity_image.astype(np.double)
+		mom_c= moments_central(img, center=centroid, order=3)
+		
+		
+		# - Compute normalized moments
+		#   NB: Do not use class method as this will use the automatically computed centroid. We want to override centroid here
+		mom_norm= moments_normalized(mom_c, 3)
+
+		# - Compute Hu moments
+		#   NB: Do not use class method as this will use the automatically computed centroid. We want to override centroid here
+		mom_hu= moments_hu(mom_norm)
+
+		# - Flatten moments
+		mom_c= mom_c.flatten()
+
+		return (mom_c, mom_hu, mask, centroid)
 
 
 	def __extract_features(self, data, sdata, save_imgs=False):
@@ -348,8 +353,8 @@ class FeatExtractor(object):
 		if ret is None:
 			logger.error("Failed to compute ref channel mask centroid for image %s (id=%s, ch=%d)!" % (sname, label, i+1))
 			return None
-		mask= ret[1]
-		centroid= ret[2]
+		mask= ret[2]
+		centroid= ret[3]
 		
 		# - Compute Hu moments of intensity images	
 		#   NB: use same mask and centroid from refch for all channels
@@ -359,7 +364,7 @@ class FeatExtractor(object):
 		#	if ret is None:
 		#		logger.error("Failed to compute moments for image %s (id=%s, ch=%d)!" % (sname, label, i+1))
 		#		return None
-		#	moments= ret[0]
+		#	moments= ret[1]
 
 		#	print("== IMG HU-MOMENTS (CH%d) ==" % (i+1))
 		#	print(moments)
@@ -472,7 +477,13 @@ class FeatExtractor(object):
 					badcounts= np.count_nonzero(~np.isfinite(moments_ssim))
 					if badcounts>0:
 						logger.warn("Some SSIM moments for image %s (id=%s, ch=%d-%d) is not-finite (%s), setting all to -999..." % (sname, label, i+1, j+1, str(moments_ssim)))
-						moments_ssim= [-999]*7
+						moments_ssim= [-999]*16
+
+					moments_hu_ssim= ret[1]
+					badcounts= np.count_nonzero(~np.isfinite(moments_hu_ssim))
+					if badcounts>0:
+						logger.warn("Some SSIM hu moments for image %s (id=%s, ch=%d-%d) is not-finite (%s), setting all to -999..." % (sname, label, i+1, j+1, str(moments_hu_ssim)))
+						moments_hu_ssim= [-999]*7
 						
 				else:
 					logger.warn("Image %s (chan=%d-%d): SSIM array is empty, setting estimators to -999..." % (sname, i+1, j+1))
@@ -482,7 +493,8 @@ class FeatExtractor(object):
 					ssim_std_mask= -999
 					ssim_median_mask= -999
 					ssim_mad_mask= -999
-					moments_ssim= [-999]*7
+					moments_ssim= [-999]*16		
+					moments_hu_ssim= [-999]*7
 				
 				if not np.isfinite(ssim_mean_mask):
 					logger.warn("Image %s (chan=%d-%d): ssim_mean_mask is nan/inf!" % (sname, i+1, j+1))
@@ -505,10 +517,15 @@ class FeatExtractor(object):
 				parname= "ssim_mad_ch{}_{}".format(i+1,j+1)
 				param_dict[parname]= ssim_mad_mask
 
-				#for k in range(len(moments_ssim)):
-				for k in range(self.nmoments_save):
+				for k in range(len(moments_ssim)):
 					m= moments_ssim[k]
 					parname= "ssim_mom{}_ch{}_{}".format(k+1,i+1,j+1)
+					param_dict[parname]= m
+
+				#for k in range(len(moments_hu_ssim)):
+				for k in range(self.nmoments_save):
+					m= moments_hu_ssim[k]
+					parname= "ssim_humom{}_ch{}_{}".format(k+1,i+1,j+1)
 					param_dict[parname]= m
 			
 
@@ -606,7 +623,13 @@ class FeatExtractor(object):
 					badcounts= np.count_nonzero(~np.isfinite(moments_colorind))
 					if badcounts>0:
 						logger.warn("Some color index moments for image %s (id=%s, ch=%d-%d) is not-finite (%s), setting all to -999..." % (sname, label, i+1, j+1, str(moments_colorind)))
-						moments_colorind= [-999]*7
+						moments_colorind= [-999]*16
+
+					moments_hu_colorind= ret[1]
+					badcounts= np.count_nonzero(~np.isfinite(moments_colorind))
+					if badcounts>0:
+						logger.warn("Some color index hu moments for image %s (id=%s, ch=%d-%d) is not-finite (%s), setting all to -999..." % (sname, label, i+1, j+1, str(moments_hu_colorind)))
+						moments_hu_colorind= [-999]*7
 
 				else:
 					logger.warn("Image %s (chan=%d-%d): color index array is empty, setting estimators to -999..." % (sname, i+1, j+1))
@@ -618,7 +641,8 @@ class FeatExtractor(object):
 					colorind_max= -999
 					colorind_median= -999
 					colorind_mad= -999
-					moments_colorind= [-999]*7
+					moments_colorind= [-999]*16
+					moments_hu_colorind= [-999]*7
 
 				parname= "cind_mean_ch{}_{}".format(i+1,j+1)
 				param_dict[parname]= colorind_mean
@@ -636,29 +660,34 @@ class FeatExtractor(object):
 				#print("== COLOR HU-MOMENTS CH%d-%d ==" % (i+1, j+1))
 				#print(moments_colorind)
 
-				#for k in range(len(moments_colorind)):
-				for k in range(self.nmoments_save):
+				for k in range(len(moments_colorind)):
 					m= moments_colorind[k]
 					parname= "cind_mom{}_ch{}_{}".format(k+1,i+1,j+1)
 					param_dict[parname]= m
 
-				plt.subplot(2, 2, 1)
-				plt.imshow(img_posdef_i, origin='lower')
-				plt.colorbar()
+				#for k in range(len(moments_hu_colorind)):
+				for k in range(self.nmoments_save):
+					m= moments_hu_colorind[k]
+					parname= "cind_humom{}_ch{}_{}".format(k+1,i+1,j+1)
+					param_dict[parname]= m
 
-				plt.subplot(2, 2, 2)
-				plt.imshow(img_posdef_j, origin='lower')
-				plt.colorbar()
+				#plt.subplot(2, 2, 1)
+				#plt.imshow(img_posdef_i, origin='lower')
+				#plt.colorbar()
 
-				plt.subplot(2, 2, 3)
-				plt.imshow(ssim_2d, origin='lower')
-				plt.colorbar()
+				#plt.subplot(2, 2, 2)
+				#plt.imshow(img_posdef_j, origin='lower')
+				#plt.colorbar()
+
+				#plt.subplot(2, 2, 3)
+				#plt.imshow(ssim_2d, origin='lower')
+				#plt.colorbar()
 					
-				plt.subplot(2, 2, 4)
-				plt.imshow(colorind_2d, origin='lower')
-				plt.colorbar()
+				#plt.subplot(2, 2, 4)
+				#plt.imshow(colorind_2d, origin='lower')
+				#plt.colorbar()
 
-				plt.show()
+				#plt.show()
 
 				# - Save images
 				if save_imgs:
