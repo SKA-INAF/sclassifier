@@ -1712,7 +1712,8 @@ class FeatExtractorAE(object):
 		# - Build model
 		logger.info("Recreating autoencoder model from loaded encoder/decoder ...")
 
-		self.inputs= self.encoder.get_layer('encoder_input')
+		#self.inputs= self.encoder.get_layer('encoder_input')
+		self.inputs= self.encoder.inputs
 
 		if self.use_vae:
 			self.outputs= self.decoder(self.encoder(self.inputs)[2])
