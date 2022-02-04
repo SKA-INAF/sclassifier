@@ -450,6 +450,8 @@ class FeatExtractorAE(object):
 		
 		# - NN architecture
 		self.use_vae= False # create variational autoencoder, otherwise standard autoencoder
+		self.modelfile= ""	
+		self.weightfile= ""
 		self.fitout= None		
 		self.vae= None
 		self.encoder= None
@@ -753,6 +755,7 @@ class FeatExtractorAE(object):
 		plot_model(self.vae,to_file='vae.png',show_shapes=True)
 
 		return 0
+
 
 	def __build_parametrized_encoder(self):
 		""" Build encoder parametrized network """
@@ -1266,11 +1269,20 @@ class FeatExtractorAE(object):
 		#===========================
 		#==   BUILD NN
 		#===========================
-		#- Create the network
-		logger.info("Building network architecture ...")
-		if self.__build_parametrized_network()<0:
-			logger.error("NN build failed!")
-			return -1
+		#- Create the network or load it from file?
+		logger.info("modelfile=%s" % (self.modelfile))
+		logger.info("weightfile=%s" % (self.weightfile))
+
+		if self.modelfile!="" and self.weightfile!="":
+			logger.info("Loading network architecture and weights from files: %s, %s ..." % (self.modelfile, self.weightfile))
+			if self.__load_model(self.modelfile, self.weightfile)<0:
+				logger.error("NN loading failed!")
+				return -1
+		else:
+			logger.info("Building network architecture ...")
+			if self.__build_parametrized_network()<0:
+				logger.error("NN build failed!")
+				return -1
 
 		#===========================
 		#==   TRAIN NN
@@ -1601,6 +1613,9 @@ class FeatExtractorAE(object):
 	def __load_model(self, modelfile):
 		""" Load model and weights from input h5 file """
 
+		#==============================
+		#==   LOAD MODEL ARCHITECTURE
+		#==============================
 		try:
 			if self.add_channorm_layer:
 				#self.vae= load_model(modelfile,	custom_objects={'encoder_norm_input': ChanNormalization, 'denorm_output': ChanDeNormalization})
@@ -1612,12 +1627,32 @@ class FeatExtractorAE(object):
 			logger.warn("Failed to load model from file %s (err=%s)!" % (modelfile, str(e)))
 			return -1
 
+		if not self.vae or self.vae is None:
+			logger.error("vae object is None, loading failed!")
+			return -1
+
+		#===========================
+		#==   SET LOSS & METRICS
+		#===========================	
+		###self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
+		##if not tf.executing_eagerly():
+		self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True) ### CORRECT
+		#self.vae.compile(optimizer=self.optimizer, loss=self.loss)
+		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=False)
+		
+		# - Print and draw model
+		self.vae.summary()
+		plot_model(self.vae,to_file='vae.png',show_shapes=True)
+
 		return 0
 
 
 	def __load_model(self, modelfile_json, weightfile):
 		""" Load model and weights from input h5 file """
 
+		#==============================
+		#==   LOAD MODEL ARCHITECTURE
+		#==============================
 		# - Load model
 		try:
 			if self.add_channorm_layer:
@@ -1631,10 +1666,27 @@ class FeatExtractorAE(object):
 			logger.warn("Failed to load model from file %s (err=%s)!" % (modelfile_json, str(e)))
 			return -1
 
+		if not self.vae or self.vae is None:
+			logger.error("vae object is None, loading failed!")
+			return -1
+
 		# - Build encoder & decoder
 		#encoder = Model(autoencoder.input, autoencoder.layers[-2].output)
 		#decoder_input = Input(shape=(encoding_dim,))
 		#decoder = Model(decoder_input, autoencoder.layers[-1](decoder_input))
+
+		#===========================
+		#==   SET LOSS & METRICS
+		#===========================	
+		###self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
+		##if not tf.executing_eagerly():
+		self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True) ### CORRECT
+		#self.vae.compile(optimizer=self.optimizer, loss=self.loss)
+		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=False)
+		
+		# - Print and draw model
+		self.vae.summary()
+		plot_model(self.vae,to_file='vae.png',show_shapes=True)
 
 		return 0
 
