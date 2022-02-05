@@ -139,7 +139,7 @@ def get_args():
 	parser.add_argument('--mse_loss', dest='mse_loss', action='store_true',help='Compute and include MSE reco loss in total loss')
 	parser.add_argument('--no-mse_loss', dest='mse_loss', action='store_false',help='Skip MSE calculation and exclude MSE reco loss from total loss')
 	parser.set_defaults(mse_loss=True)
-	parser.add_argument('--scale_chan_mse_loss', dest='scale_chan_mse_loss', action='store_true',help='Scale MSE loss per channel by abs_max/max')
+	parser.add_argument('--scale_chan_mse_loss', dest='scale_chan_mse_loss', action='store_true',help='Scale MSE loss per channel by max(mean(ch))/mean(ch)')
 	parser.set_defaults(scale_chan_mse_loss=False)
 	
 	parser.add_argument('--ssim_loss', dest='ssim_loss', action='store_true',help='Compute and include SSIM reco loss in total loss')
