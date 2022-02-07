@@ -93,7 +93,8 @@ def get_args():
 	# - Autoencoder model options
 	parser.add_argument('-modelfile_encoder', '--modelfile_encoder', dest='modelfile_encoder', required=True, type=str, action='store',help='Encoder model architecture filename (.json)')
 	parser.add_argument('-weightfile_encoder', '--weightfile_encoder', dest='weightfile_encoder', required=True, type=str, action='store',help='Encoder model weights filename (.h5)')
-	
+	#parser.add_argument('--add_channorm_layer', dest='add_channorm_layer', action='store_true',help='Add norm layer before encoder input and denorm layer before decoder output')	
+	#parser.set_defaults(add_channorm_layer=False)
 
 	# - UMAP classifier options
 	parser.add_argument('--run_umap', dest='run_umap', action='store_true',help='Run UMAP on autoencoder latent vector')	
@@ -166,6 +167,8 @@ def main():
 	# - Autoencoder options
 	modelfile_encoder= args.modelfile_encoder
 	weightfile_encoder= args.weightfile_encoder
+	#add_channorm_layer= args.add_channorm_layer
+
 	
 	# - UMAP options
 	run_umap= args.run_umap
@@ -210,7 +213,7 @@ def main():
 	vae_class.chan_mins= chan_mins
 	vae_class.erode= erode
 	vae_class.erode_kernel= erode_kernel
-	vae_class.add_channorm_layer= add_channorm_layer
+	#vae_class.add_channorm_layer= add_channorm_layer
 	
 	if vae_class.predict_model(modelfile_encoder, weightfile_encoder)<0:
 		logger.error("VAE predict failed!")
