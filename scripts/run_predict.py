@@ -98,7 +98,7 @@ def get_args():
 	# - UMAP classifier options
 	parser.add_argument('--run_umap', dest='run_umap', action='store_true',help='Run UMAP on autoencoder latent vector')	
 	parser.set_defaults(run_umap=False)
-	parser.add_argument('-modelfile_umap', '--modelfile_umap', dest='modelfile_umap', required=True, type=str, action='store',help='UMAP model filename (.h5)')
+	parser.add_argument('-modelfile_umap', '--modelfile_umap', dest='modelfile_umap', required=False, type=str, action='store',help='UMAP model filename (.h5)')
 	parser.add_argument('-outfile_umap_unsupervised', '--outfile_umap_unsupervised', dest='outfile_umap_unsupervised', required=False, type=str, default='latent_data_umap_unsupervised.dat', action='store',help='Name of UMAP encoded data output file')
 
 	# - Clustering options
