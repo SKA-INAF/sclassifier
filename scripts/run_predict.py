@@ -169,7 +169,7 @@ def main():
 	
 	# - UMAP options
 	run_umap= args.run_umap
-  modelfile_umap= args.modelfile_umap
+	modelfile_umap= args.modelfile_umap
 	outfile_umap_unsupervised= args.outfile_umap_unsupervised
 		
 	# - Clustering options
