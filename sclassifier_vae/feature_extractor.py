@@ -366,7 +366,7 @@ class FeatExtractor(object):
 			if ret is None:
 				logger.error("Failed to compute moments for image %s (id=%s, ch=%d)!" % (sname, label, i+1))
 				return None
-		 	moments_img= ret[0]
+			moments_img= ret[0]
 			hu_moments_img= ret[1]
 
 			#print("== IMG MOMENTS (CH%d) ==" % (i+1))
