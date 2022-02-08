@@ -304,7 +304,9 @@ class FeatExtractor(object):
 		img= regprop.intensity_image.astype(np.double)
 		mom_c= moments_central(img, center=centroid, order=3)
 		
-		
+		#print("moments centralized")
+		#print(mom_c)
+
 		# - Compute normalized moments
 		#   NB: Do not use class method as this will use the automatically computed centroid. We want to override centroid here
 		mom_norm= moments_normalized(mom_c, 3)
@@ -356,23 +358,24 @@ class FeatExtractor(object):
 		mask= ret[2]
 		centroid= ret[3]
 		
-		# - Compute Hu moments of intensity images	
+		# - Compute Hu and central moments of intensity images	
 		#   NB: use same mask and centroid from refch for all channels
-		#for i in range(nchans):
-		#	img_i= data[0,:,:,i]
-		#	ret= self.__extract_img_moments(img_i, mask, centroid)
-		#	if ret is None:
-		#		logger.error("Failed to compute moments for image %s (id=%s, ch=%d)!" % (sname, label, i+1))
-		#		return None
-		#	moments= ret[1]
+		for i in range(nchans):
+			img_i= data[0,:,:,i]
+			ret= self.__extract_img_moments(img_i, mask, centroid)
+			if ret is None:
+				logger.error("Failed to compute moments for image %s (id=%s, ch=%d)!" % (sname, label, i+1))
+				return None
+		 	moments_img= ret[0]
+			hu_moments_img= ret[1]
 
-		#	print("== IMG HU-MOMENTS (CH%d) ==" % (i+1))
-		#	print(moments)
+			#print("== IMG MOMENTS (CH%d) ==" % (i+1))
+			#print(moments_img)
 			
-		#	for j in range(len(moments)):
-		#		m= moments[j]
-		#		#parname= "mom" + str(j+1) + "_ch" + str(i+1)
-		#		#param_dict[parname]= m
+			for j in range(len(moments_img)):
+				m= moments_img[j]
+				parname= "mom" + str(j+1) + "_ch" + str(i+1)
+				param_dict[parname]= m
 			
 
 		# - Loop over images and compute total flux	
@@ -692,6 +695,7 @@ class FeatExtractor(object):
 				# - Save images
 				if save_imgs:
 					
+		
 					# - Save ssim map
 					plot_index= plot_ncols*index + 1
 					logger.info("Adding subplot (%d,%d,%d) ..." % (plot_nrows,plot_ncols,plot_index))
@@ -700,27 +704,60 @@ class FeatExtractor(object):
 					plt.imshow(ssim_2d, origin='lower')
 					plt.colorbar()
 
+					outfile_fits= 'ssim_' + sname + '_id' + str(classid) + '_ch' + str(i+1) + '_ch' + str(j+1) + '.fits'
+					Utils.write_fits(ssim_2d, outfile_fits)
+
 					# - Save flux ratio map
 					plot_index= plot_ncols*index + 2
 					logger.info("Adding subplot (%d,%d,%d) ..." % (plot_nrows,plot_ncols,plot_index))
 					
 					plt.subplot(plot_nrows, plot_ncols, plot_index)
-					plt.imshow(fluxratio_2d, origin='lower')
+					plt.imshow(colorind_2d, origin='lower')
 					plt.colorbar()
 
-					# - Save flux ratio histogram
+					outfile_fits= 'cind_' + sname + '_id' + str(classid) + '_ch' + str(i+1) + '_ch' + str(j+1) + '.fits'
+					Utils.write_fits(colorind_2d, outfile_fits)
+
+					# - Save channel i
 					plot_index= plot_ncols*index + 3
 					logger.info("Adding subplot (%d,%d,%d) ..." % (plot_nrows,plot_ncols,plot_index))
 					
 					plt.subplot(plot_nrows, plot_ncols, plot_index)
-					plt.hist(fluxratio_1d, bins='auto')
+					plt.imshow(img_norm_i, origin='lower')
+					plt.colorbar()
 
-					# - Save weighted flux ratio histogram
+					outfile_fits= 'map_' + sname + '_id' + str(classid) + '_ch' + str(i+1) + '.fits'
+					Utils.write_fits(img_norm_i, outfile_fits)
+
+					
+					
+
+					# - Save channel j
 					plot_index= plot_ncols*index + 4
 					logger.info("Adding subplot (%d,%d,%d) ..." % (plot_nrows,plot_ncols,plot_index))
 					
 					plt.subplot(plot_nrows, plot_ncols, plot_index)
-					plt.hist(fluxratio_1d, weights=fluxratio_ssim_1d, bins=20)
+					plt.imshow(img_norm_j, origin='lower')
+					plt.colorbar()
+
+					outfile_fits= 'map_' + sname + '_id' + str(classid) + '_ch' + str(j+1) + '.fits'
+					Utils.write_fits(img_norm_j, outfile_fits)
+
+
+
+					# - Save flux ratio histogram
+					#plot_index= plot_ncols*index + 3
+					#logger.info("Adding subplot (%d,%d,%d) ..." % (plot_nrows,plot_ncols,plot_index))
+					
+					#plt.subplot(plot_nrows, plot_ncols, plot_index)
+					#plt.hist(fluxratio_1d, bins='auto')
+
+					# - Save weighted flux ratio histogram
+					#plot_index= plot_ncols*index + 4
+					#logger.info("Adding subplot (%d,%d,%d) ..." % (plot_nrows,plot_ncols,plot_index))
+					
+					#plt.subplot(plot_nrows, plot_ncols, plot_index)
+					#plt.hist(fluxratio_1d, weights=fluxratio_ssim_1d, bins=20)
 
 					
 				index+= 1	
