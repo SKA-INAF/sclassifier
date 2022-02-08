@@ -517,10 +517,10 @@ class FeatExtractor(object):
 				parname= "ssim_mad_ch{}_{}".format(i+1,j+1)
 				param_dict[parname]= ssim_mad_mask
 
-				for k in range(len(moments_ssim)):
-					m= moments_ssim[k]
-					parname= "ssim_mom{}_ch{}_{}".format(k+1,i+1,j+1)
-					param_dict[parname]= m
+				#for k in range(len(moments_ssim)):
+				#	m= moments_ssim[k]
+				#	parname= "ssim_mom{}_ch{}_{}".format(k+1,i+1,j+1)
+				#	param_dict[parname]= m
 
 				#for k in range(len(moments_hu_ssim)):
 				for k in range(self.nmoments_save):
@@ -660,10 +660,10 @@ class FeatExtractor(object):
 				#print("== COLOR HU-MOMENTS CH%d-%d ==" % (i+1, j+1))
 				#print(moments_colorind)
 
-				for k in range(len(moments_colorind)):
-					m= moments_colorind[k]
-					parname= "cind_mom{}_ch{}_{}".format(k+1,i+1,j+1)
-					param_dict[parname]= m
+				#for k in range(len(moments_colorind)):
+				#	m= moments_colorind[k]
+				#	parname= "cind_mom{}_ch{}_{}".format(k+1,i+1,j+1)
+				#	param_dict[parname]= m
 
 				#for k in range(len(moments_hu_colorind)):
 				for k in range(self.nmoments_save):
