@@ -326,7 +326,9 @@ class FeatExtractor(object):
 		if radius is None:
 			contours= []
 			try:
-				contours= cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+				mask_uint8= mask.copy() # copy as OpenCV internally modify origin mask
+				mask_uint8= mask_uint8.astype(np.uint8)
+				contours= cv2.findContours(mask_uint8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 				contours= imutils.grab_contours(contours)
 			except Exception as e:
 				logger.warn("Failed to compute mask contour (err=%s)!" % (str(e)))
