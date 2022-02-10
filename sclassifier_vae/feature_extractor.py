@@ -31,10 +31,12 @@ from sclassifier_vae import logger
 from skimage.metrics import mean_squared_error
 from skimage.metrics import structural_similarity
 from skimage.measure import moments_central, moments_normalized, moments_hu, moments, regionprops
+from skimage.feature import peak_local_max
 from scipy.stats import kurtosis, skew, median_absolute_deviation
 import mahotas
 import cv2
 import imutils
+
 
 ## GRAPHICS MODULES
 import matplotlib
@@ -237,7 +239,113 @@ class FeatExtractor(object):
 	#####################################
 	##     EXTRACT FEATURES
 	#####################################
-	def __extract_img_moments(self, data, mask=None, centroid=None, radius=None):
+	def __extract_img_moments(self, data, mask=None, centroid=None, radius=None, cm_peak_thr=5):
+
+		# - Compute mask if not given 
+		if mask is None:
+			mask= np.copy(data)
+			cond= np.logical_and(data!=0, np.isfinite(data))
+			mask[cond]= 1
+			mask= mask.astype(np.int32)
+
+		plt.imshow(data)
+		plt.show()
+		plt.imshow(mask)
+		plt.show()
+
+		# - Compute raw moments of flux image
+		M= moments(data)
+		centroid_this= M[1, 0] / M[0, 0], M[0, 1] / M[0, 0]
+		#print("--> centroid_this")
+		#print(centroid_this)
+	
+		
+		# - Compute peaks
+		peaks= peak_local_max(np.copy(data), min_distance=2, exclude_border=True)
+		#print("peaks")
+		#print(peaks)
+	
+		d_best= 1.e+99
+		peak_best= None
+		for peak in peaks:
+			d= np.sqrt((peak[0]-centroid_this[0])**2+(peak[1]-centroid_this[1])**2)
+			if d<d_best and d<=cm_peak_thr:
+				d_best= d
+				peak_best= peak
+		
+		if peak_best is None:
+			centroid_best= centroid_this
+		else:
+			centroid_best= tuple(peak_best)			
+
+		#print("-> centroid_best")
+		#print(centroid_best)
+
+		# - Compute centroid if not given, otherwise override
+		if centroid is None:
+			centroid= centroid_best
+
+		#print("-> centroid")
+		#print(centroid)
+
+
+		# - Compute central moments
+		mom_c= moments_central(data, center=centroid, order=3)
+
+		# - Compute normalized moments
+		#   NB: Do not use class method as this will use the automatically computed centroid. We want to override centroid here
+		mom_norm= moments_normalized(mom_c, 3)
+
+		# - Compute Hu moments
+		#   NB: Do not use class method as this will use the automatically computed centroid. We want to override centroid here
+		mom_hu= moments_hu(mom_norm)
+
+		# - Flatten moments
+		mom_c= mom_c.flatten()
+
+		# - Compute min enclosing circle if not given
+		if radius is None:
+			contours= []
+			try:
+				mask_uint8= mask.copy() # copy as OpenCV internally modify origin mask
+				mask_uint8= mask_uint8.astype(np.uint8)
+				contours= cv2.findContours(mask_uint8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+				contours= imutils.grab_contours(contours)
+			except Exception as e:
+				logger.warn("Failed to compute mask contour (err=%s)!" % (str(e)))
+			
+			if len(contours)>0:
+				try:
+					(xc,yc), radius= cv2.minEnclosingCircle(contours[0])
+				except:
+					logger.warn("Failed to compute min enclosing circle (err=%s)!" % (str(e)))
+					
+			#logger.info("Computed radius & centroid: %f" % (radius))
+			#print("centroid")
+			#print(centroid)
+			
+
+		# - Compute Zernike moments
+		#   NB: mahotas takes only positive pixels and rescale image by sum(pix) internally
+		poldeg= 4
+		nmom_zernike= 9
+		mom_zernike= [-999]*nmom_zernike
+		if centroid is not None and radius is not None:
+			try:
+				mom_zernike = mahotas.features.zernike_moments(data, radius, degree=poldeg, cm=centroid)
+				##mom_zernike = mahotas.features.zernike_moments(mask, radius, degree=poldeg, cm=centroid)
+			except Exception as e:
+				logger.warn("Failed to compute Zernike moments (err=%s)!" % (str(e)))
+
+		print("--> mom_zernike")
+		print(mom_zernike)
+		
+	
+		return (mom_c, mom_hu, mom_zernike, mask, centroid, radius)
+
+
+
+	def __extract_img_moments_old(self, data, mask=None, centroid=None, radius=None):
 		""" Extract moments from images """
 
 		# - Compute mask if not given 
@@ -246,6 +354,16 @@ class FeatExtractor(object):
 			cond= np.logical_and(data!=0, np.isfinite(data))
 			mask[cond]= 1
 			mask= mask.astype(np.int32)
+
+		#plt.subplots(1,2)
+		#plt.subplot(1,2,1)
+		plt.imshow(data)
+		#plt.subplot(1,2,2)
+		plt.imshow(mask)
+		plt.show()
+		
+		print("--> data shape")
+		print(data.shape)
 
 		# - Compute region
 		try:
@@ -287,6 +405,11 @@ class FeatExtractor(object):
 			#print("--> centroid")
 			#print(centroid)
 
+			print("--> regprop.weighted_centroid")
+			print(regprop.weighted_centroid)
+			print((0,) * data.ndim)
+			
+
 		# - Compute moments
 		try:
 			M= regprop.weighted_moments
@@ -299,8 +422,16 @@ class FeatExtractor(object):
 
 		centroid_thisdata= (M[1, 0] / M[0, 0], M[0, 1] / M[0, 0])
 
-		#print("--> centroid_thisdata")
-		#print(centroid_thisdata)
+		print("--> M")
+		print(M)
+		print("--> centroid_thisdata")
+		print(centroid_thisdata)
+		print("--> raw moments")
+		M_raw= moments(mask)
+		print(M_raw)
+		centroid_raw= (M_raw[1, 0] / M_raw[0, 0], M_raw[0, 1] / M_raw[0, 0])
+
+		
 	
 		
 		# - Compute central moments
@@ -339,6 +470,11 @@ class FeatExtractor(object):
 				except:
 					logger.warn("Failed to compute min enclosing circle (err=%s)!" % (str(e)))
 					
+			logger.info("Computed radius & centroid: %f" % (radius))
+			print("centroid")
+			print(centroid)
+			
+
 		# - Compute Zernike moments
 		#   NB: mahotas takes only positive pixels and rescale image by sum(pix) internally
 		poldeg= 4
@@ -346,9 +482,14 @@ class FeatExtractor(object):
 		mom_zernike= [-999]*nmom_zernike
 		if centroid is not None and radius is not None:
 			try:
-				mom_zernike = mahotas.features.zernike_moments(data, radius, degree=poldeg, cm=centroid)
+				#mom_zernike = mahotas.features.zernike_moments(data, radius, degree=poldeg, cm=centroid)
+				mom_zernike = mahotas.features.zernike_moments(mask, radius, degree=poldeg, cm=centroid)
 			except Exception as e:
 				logger.warn("Failed to compute Zernike moments (err=%s)!" % (str(e)))
+
+		print("--> mom_zernike")
+		print(mom_zernike)
+		
 				
 	
 		return (mom_c, mom_hu, mom_zernike, mask, centroid, radius)
