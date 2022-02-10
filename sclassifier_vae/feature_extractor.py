@@ -21,6 +21,7 @@ import logging
 import collections
 import csv
 
+
 ##############################
 ##     GLOBAL VARS
 ##############################
@@ -31,6 +32,9 @@ from skimage.metrics import mean_squared_error
 from skimage.metrics import structural_similarity
 from skimage.measure import moments_central, moments_normalized, moments_hu, moments, regionprops
 from scipy.stats import kurtosis, skew, median_absolute_deviation
+import mahotas
+import cv2
+import imutils
 
 ## GRAPHICS MODULES
 import matplotlib
@@ -233,7 +237,7 @@ class FeatExtractor(object):
 	#####################################
 	##     EXTRACT FEATURES
 	#####################################
-	def __extract_img_moments(self, data, mask=None, centroid=None):
+	def __extract_img_moments(self, data, mask=None, centroid=None, radius=None):
 		""" Extract moments from images """
 
 		# - Compute mask if not given 
@@ -318,7 +322,34 @@ class FeatExtractor(object):
 		# - Flatten moments
 		mom_c= mom_c.flatten()
 
-		return (mom_c, mom_hu, mask, centroid)
+		# - Compute min enclosing circle if not given
+		if radius is None:
+			contours= []
+			try:
+				contours= cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+				contours= imutils.grab_contours(contours)
+			except Exception as e:
+				logger.warn("Failed to compute mask contour (err=%s)!" % (str(e)))
+			
+			if len(contours)>0:
+				try:
+					(xc,yc), radius= cv2.minEnclosingCircle(contours[0])
+				except:
+					logger.warn("Failed to compute min enclosing circle (err=%s)!" % (str(e)))
+					
+		# - Compute Zernike moments
+		#   NB: mahotas takes only positive pixels and rescale image by sum(pix) internally
+		poldeg= 4
+		nmom_zernike= 9
+		mom_zernike= [-999]*nmom_zernike
+		if centroid is not None and radius is not None:
+			try:
+				mom_zernike = mahotas.features.zernike_moments(data, radius, degree=poldeg, cm=centroid)
+			except Exception as e:
+				logger.warn("Failed to compute Zernike moments (err=%s)!" % (str(e)))
+				
+	
+		return (mom_c, mom_hu, mom_zernike, mask, centroid, radius)
 
 
 	def __extract_features(self, data, sdata, save_imgs=False):
@@ -355,19 +386,21 @@ class FeatExtractor(object):
 		if ret is None:
 			logger.error("Failed to compute ref channel mask centroid for image %s (id=%s, ch=%d)!" % (sname, label, i+1))
 			return None
-		mask= ret[2]
-		centroid= ret[3]
+		mask= ret[3]
+		centroid= ret[4]
+		radius= ret[5]
 		
 		# - Compute Hu and central moments of intensity images	
 		#   NB: use same mask and centroid from refch for all channels
 		for i in range(nchans):
 			img_i= data[0,:,:,i]
-			ret= self.__extract_img_moments(img_i, mask, centroid)
+			ret= self.__extract_img_moments(img_i, mask, centroid, radius)
 			if ret is None:
 				logger.error("Failed to compute moments for image %s (id=%s, ch=%d)!" % (sname, label, i+1))
 				return None
 			moments_img= ret[0]
 			hu_moments_img= ret[1]
+			zern_moments_img= ret[2]
 
 			#print("== IMG MOMENTS (CH%d) ==" % (i+1))
 			#print(moments_img)
@@ -375,6 +408,11 @@ class FeatExtractor(object):
 			for j in range(len(moments_img)):
 				m= moments_img[j]
 				parname= "mom" + str(j+1) + "_ch" + str(i+1)
+				param_dict[parname]= m
+
+			for j in range(len(zern_moments_img)):
+				m= zern_moments_img[j]
+				parname= "mom_zern" + str(j+1) + "_ch" + str(i+1)
 				param_dict[parname]= m
 			
 
@@ -487,6 +525,7 @@ class FeatExtractor(object):
 					if badcounts>0:
 						logger.warn("Some SSIM hu moments for image %s (id=%s, ch=%d-%d) is not-finite (%s), setting all to -999..." % (sname, label, i+1, j+1, str(moments_hu_ssim)))
 						moments_hu_ssim= [-999]*7
+
 						
 				else:
 					logger.warn("Image %s (chan=%d-%d): SSIM array is empty, setting estimators to -999..." % (sname, i+1, j+1))
@@ -498,6 +537,7 @@ class FeatExtractor(object):
 					ssim_mad_mask= -999
 					moments_ssim= [-999]*16		
 					moments_hu_ssim= [-999]*7
+					moments_zern_ssim= [-999]*9
 				
 				if not np.isfinite(ssim_mean_mask):
 					logger.warn("Image %s (chan=%d-%d): ssim_mean_mask is nan/inf!" % (sname, i+1, j+1))

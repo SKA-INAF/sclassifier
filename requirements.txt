@@ -18,3 +18,5 @@ pydot
 graphviz
 lightgbm
 opencv-python
+mahotas
+imutils

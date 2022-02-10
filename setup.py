@@ -67,6 +67,8 @@ reqs.append('seaborn')
 reqs.append('scikit-image')
 reqs.append('lightgbm')
 reqs.append('opencv-python')
+reqs.append('mahotas')
+reqs.append('imutils')
 
 data_dir = 'data'
 
