@@ -248,10 +248,10 @@ class FeatExtractor(object):
 			mask[cond]= 1
 			mask= mask.astype(np.int32)
 
-		plt.imshow(data)
-		plt.show()
-		plt.imshow(mask)
-		plt.show()
+		#plt.imshow(data)
+		#plt.show()
+		#plt.imshow(mask)
+		#plt.show()
 
 		# - Compute raw moments of flux image
 		M= moments(data)
