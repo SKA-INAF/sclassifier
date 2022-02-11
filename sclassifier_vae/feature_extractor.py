@@ -668,7 +668,8 @@ class FeatExtractor(object):
 					if badcounts>0:
 						logger.warn("Some SSIM hu moments for image %s (id=%s, ch=%d-%d) is not-finite (%s), setting all to -999..." % (sname, label, i+1, j+1, str(moments_hu_ssim)))
 						moments_hu_ssim= [-999]*7
-
+		
+					moments_zern_ssim= ret[2]
 						
 				else:
 					logger.warn("Image %s (chan=%d-%d): SSIM array is empty, setting estimators to -999..." % (sname, i+1, j+1))
@@ -714,6 +715,11 @@ class FeatExtractor(object):
 					parname= "ssim_humom{}_ch{}_{}".format(k+1,i+1,j+1)
 					param_dict[parname]= m
 			
+				for j in range(len(moments_zern_ssim)):
+					m= moments_zern_ssim[j]
+					parname= "ssim_zernmom{}_ch{}_{}".format(k+1,i+1,j+1)
+					param_dict[parname]= m
+	
 
 				# - Compute flux ratios and moments
 				#####cond_colors= np.logical_and(cond_col_ij, ssim_2d>self.ssim_thr)
@@ -817,6 +823,8 @@ class FeatExtractor(object):
 						logger.warn("Some color index hu moments for image %s (id=%s, ch=%d-%d) is not-finite (%s), setting all to -999..." % (sname, label, i+1, j+1, str(moments_hu_colorind)))
 						moments_hu_colorind= [-999]*7
 
+					moments_zern_colorind= ret[2]
+
 				else:
 					logger.warn("Image %s (chan=%d-%d): color index array is empty, setting estimators to -999..." % (sname, i+1, j+1))
 					colorind_mean= -999
@@ -829,6 +837,7 @@ class FeatExtractor(object):
 					colorind_mad= -999
 					moments_colorind= [-999]*16
 					moments_hu_colorind= [-999]*7
+					moments_zern_colorind= [-999]*9
 
 				parname= "cind_mean_ch{}_{}".format(i+1,j+1)
 				param_dict[parname]= colorind_mean
@@ -855,6 +864,11 @@ class FeatExtractor(object):
 				for k in range(self.nmoments_save):
 					m= moments_hu_colorind[k]
 					parname= "cind_humom{}_ch{}_{}".format(k+1,i+1,j+1)
+					param_dict[parname]= m
+
+				for k in range(len(moments_zern_colorind)):
+					m= moments_zern_colorind[k]
+					parname= "cind_zernmom{}_ch{}_{}".format(k+1,i+1,j+1)
 					param_dict[parname]= m
 
 				#plt.subplot(2, 2, 1)
