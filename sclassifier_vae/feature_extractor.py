@@ -715,8 +715,8 @@ class FeatExtractor(object):
 					parname= "ssim_humom{}_ch{}_{}".format(k+1,i+1,j+1)
 					param_dict[parname]= m
 			
-				for j in range(len(moments_zern_ssim)):
-					m= moments_zern_ssim[j]
+				for k in range(len(moments_zern_ssim)):
+					m= moments_zern_ssim[k]
 					parname= "ssim_zernmom{}_ch{}_{}".format(k+1,i+1,j+1)
 					param_dict[parname]= m
 	
