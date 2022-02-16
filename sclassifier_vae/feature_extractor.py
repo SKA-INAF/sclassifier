@@ -301,13 +301,13 @@ class FeatExtractorHelper(object):
 					self.param_dict[parname]= m
 
 		if self.save_zern_mom_pars:
-			for j in range(len(self.zern_moments_img)):
-				if j==0:
-					continue # Skip as mom0 is always the same
-				m= self.zern_moments_img[j]
-				ch= int(j/self.nmoments) + 1
-				parname= "zernmom" + str(j+1) + "_ch" + str(ch)
-				self.param_dict[parname]= m
+			for i in range(len(self.zern_moments_img)):
+				for j in range(len(self.zern_moments_img[i])):
+					if j==0:
+						continue # Skip as mom0 is always the same
+					m= self.zern_moments_img[i][j]
+					parname= "zernmom" + str(j+1) + "_ch" + str(i+1)
+					self.param_dict[parname]= m
 
 		# - Save ssim parameters
 		if self.save_ssim_pars:
