@@ -83,13 +83,13 @@ class FeatExtractorHelper(object):
 		self.dilatemask= False
 		self.kernsize= 5
 		self.dist_thr= -1
-		self.scale_peak_dist= True # scale peak dist by (R1+R2)
 		self.speaks= []
 		self.scircles= []
 		self.smasks= []
 		self.sfluxes= []
 		self.sious= []
 		self.speaks_dists= []
+		self.sseparations= []
 
 		# - Validation options
 		self.fthr_zeros= 0.1
@@ -162,6 +162,7 @@ class FeatExtractorHelper(object):
 		self.sfluxes= []
 		self.sious= []
 		self.speaks_dists= []
+		self.sseparations= []
 
 		self.ssim_maps= []
 		self.ssim_mean= []
@@ -285,11 +286,18 @@ class FeatExtractorHelper(object):
 			self.param_dict[parname]= iou
 			
 		# - Save source peak dist
-		for j in range(len(self.sious)):
+		for j in range(len(self.speaks_dists)):
 			ch_i, ch_j= self.__get_triu_indices(j, self.nchans)
 			peak_dist= self.speaks_dists[j]
 			parname= "dpeak_ch" + str(ch_i) + "_" + str(ch_j)
 			self.param_dict[parname]= peak_dist
+
+		# - Save source separation
+		for j in range(len(self.sseparations)):
+			ch_i, ch_j= self.__get_triu_indices(j, self.nchans)
+			sep= self.sseparations[j]
+			parname= "sep_ch" + str(ch_i) + "_" + str(ch_j)
+			self.param_dict[parname]= sep
 			
 		# - Save img moments
 		if self.save_mom_pars:
@@ -706,19 +714,22 @@ class FeatExtractorHelper(object):
 				if has_speaks:
 					speak_dist= np.sqrt( (speak_i[1]-speak_j[1])**2 + (speak_i[0]-speak_j[0])**2 )
 						
-					if self.scale_peak_dist:
-						if has_radius:
-							r_i= circle_i[2]
-							r_j= circle_j[2]
-							speak_dist_scaled= speak_dist/(r_i + r_j)
-							#print("speak_dist=%f, %f (scaled)" % (speak_dist, speak_dist_scaled))
-							speak_dist= speak_dist_scaled
-						else:
-							logger.info("Cannot scale peak distance by enclosing circle radii sum as they are not both measured for image %s (id=%s, ch=%d-%d), setting speak_dist=-1 ..." % (self.sname, self.label, i+1, j+1))
-							speak_dist= -1
+				if has_radius:
+					x_i= circle_i[0]
+					x_j= circle_j[0]
+					y_i= circle_i[1]
+					y_j= circle_j[1]
+					r_i= circle_i[2]
+					r_j= circle_j[2]
+					d= np.sqrt( (x_i-x_j)**2 + (y_i-y_j)**2 )
+					sep= d/(r_i + r_j)			
+				else:
+					logger.info("Cannot scale peak distance by enclosing circle radii sum as they are not both measured for image %s (id=%s, ch=%d-%d), setting speak_dist=-1 ..." % (self.sname, self.label, i+1, j+1))
+					sep= -1
 
 				self.sious.append(iou)
 				self.speaks_dists.append(speak_dist)
+				self.sseparations.append(sep)
 
 				#print("--> iou")
 				#print(iou)
