@@ -640,7 +640,7 @@ class FeatExtractorHelper(object):
 			if len(contours)>0:
 				try:
 					(xc,yc), radius= cv2.minEnclosingCircle(contours[0])
-				except:
+				except Exception as e:
 					logger.warn("Failed to compute min enclosing circle (err=%s)!" % (str(e)))
 					
 			#logger.info("Computed radius & centroid: %f" % (radius))
