@@ -278,6 +278,33 @@ class FeatExtractorHelper(object):
 			parname= "flux_ch" + str(j+1)
 			self.param_dict[parname]= flux
 
+		# - Save source flux log ratios Fj/F_radio (i.e. colors)
+		flux_ref= self.sfluxes[self.refch]
+		cind_safe= 0
+		is_good_flux_ref= (flux_ref>0) and (np.isfinite(flux_ref))
+		if not is_good_flux_ref:
+			logger.warn("Flux for ref chan (%d) is <=0 or nan for image %s (id=%s),  will set all color index to %d..." % (self.refch, self.sname, self.label, cind_safe))
+
+		for j in range(len(self.sfluxes)):
+			if j==self.refch:
+				continue
+			flux= self.sfluxes[j]
+			is_good_flux= (flux>0) and (np.isfinite(flux))
+			
+			cind= 0
+			if is_good_flux_ref:
+				if is_good_flux:
+					cind= np.log10(flux/flux_ref)
+				else:
+					logger.warn("Flux for chan %d is <=0 or nan for image %s (id=%s),  will set this color index to %d..." % (self.refch, self.sname, self.label, cind_safe))
+					cind= cind_safe
+			else:
+				cind= cind_safe
+			 
+			parname= "color_ch" + str(i+1) + "_" + str(j+1)
+			self.param_dict[parname]= cind
+
+
 		# - Save source IOU
 		for j in range(len(self.sious)):
 			ch_i, ch_j= self.__get_triu_indices(j, self.nchans)
