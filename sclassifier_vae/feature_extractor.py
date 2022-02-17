@@ -703,6 +703,9 @@ class FeatExtractorHelper(object):
 					logger.warn("None enclosing circle computed in 1st channel for image %s (id=%s), skip this source ..." % (self.sname, self.label))
 					return -1
 
+				#print("circle")
+				#print(circle)
+
 				self.speaks.append(peak)
 				self.smasks.append(bmap)
 				self.scircles.append(circle)
@@ -731,6 +734,7 @@ class FeatExtractorHelper(object):
 				circle_j= self.scircles[j]
 				iou= 0
 				speak_dist= 0
+				sep= -1
 				has_smasks= (smask_i is not None) and (smask_j is not None)
 				has_speaks= (speak_i is not None) and (speak_j is not None)
 				has_circle= (circle_i is not None) and (circle_j is not None)
@@ -750,6 +754,15 @@ class FeatExtractorHelper(object):
 					r_j= circle_j[2]
 					d= np.sqrt( (x_i-x_j)**2 + (y_i-y_j)**2 )
 					sep= d/(r_i + r_j)			
+					#print("x_i=%f" % (x_i))
+					#print("y_i=%f" % (y_i))
+					#print("x_j=%f" % (x_j))
+					#print("y_j=%f" % (y_j))
+					#print("r_i=%f" % (r_i))
+					#print("r_j=%f" % (r_j))
+					#print("d=%f" % (d))
+					#print("sep=%f" % (sep))
+
 				else:
 					logger.info("Cannot scale peak distance by enclosing circle radii sum as they are not both measured for image %s (id=%s, ch=%d-%d), setting speak_dist=-1 ..." % (self.sname, self.label, i+1, j+1))
 					sep= -1
