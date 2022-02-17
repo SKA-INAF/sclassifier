@@ -80,9 +80,10 @@ class FeatExtractorHelper(object):
 		self.merge_thr= 3
 		self.sigma_clip= 3
 		self.subtract_bkg= True
-		self.dilatemask= False	
+		self.dilatemask= False
 		self.kernsize= 5
 		self.dist_thr= -1
+		self.scale_peak_dist= True # scale peak dist by (R1+R2)
 		self.speaks= []
 		self.scircles= []
 		self.smasks= []
@@ -644,11 +645,17 @@ class FeatExtractorHelper(object):
 		for i in range(self.nchans):
 			img_i= self.data[0,:,:,i]
 			ret= self.__extract_sources(img_i)
-			if ret is None:
+			peak= ret[0]
+			bmap= ret[1]
+			regprop= ret[2]
+			bkg_level= ret[3]
+			circle= ret[4]
+
+			if regprop is None:
 				self.speaks.append(None)
 				self.smasks.append(None)
 				regprops.append(None)
-				self.sfluxes.append(0)
+				self.sfluxes.append(bkg_level)
 				self.scircles.append(None)
 
 				if i==0:
@@ -656,11 +663,11 @@ class FeatExtractorHelper(object):
 					return -1
 
 			else:
-				peak= ret[0]
-				bmap= ret[1]
-				regprop= ret[2]
-				bkg_level= ret[3]
-				circle= ret[4]
+
+				if circle is None and i==0:
+					logger.warn("None enclosing circle computed in 1st channel for image %s (id=%s), skip this source ..." % (self.sname, self.label))
+					return -1
+
 				self.speaks.append(peak)
 				self.smasks.append(bmap)
 				self.scircles.append(circle)
@@ -669,30 +676,46 @@ class FeatExtractorHelper(object):
 				npix= np.count_nonzero(bmap)
 				S= Stot
 				if self.subtract_bkg:
-					S= Stot-bkg_level*npix	
+					S= Stot-bkg_level*npix
 				self.sfluxes.append(S)
 
-				print("--> Stot=%f" % (Stot))
-				print("--> npix=%f" % (npix))
-				print("--> bkg_level=%f" % (bkg_level))
-				print("--> S=%f" % (S))
+				#print("--> Stot=%f" % (Stot))
+				#print("--> npix=%f" % (npix))
+				#print("--> bkg_level=%f" % (bkg_level))
+				#print("--> S=%f" % (S))
 
 		# - Compute IOU and other pars
 		for i in range(self.nchans-1):
 			smask_i= self.smasks[i]
 			speak_i= self.speaks[i]
+			circle_i= self.scircles[i]
 
 			for j in range(i+1,self.nchans):
 				smask_j= self.smasks[j]
 				speak_j= self.speaks[j]
+				circle_j= self.scircles[j]
 				iou= 0
 				speak_dist= 0
 				has_smasks= (smask_i is not None) and (smask_j is not None)
 				has_speaks= (speak_i is not None) and (speak_j is not None)
+				has_circle= (circle_i is not None) and (circle_j is not None)
+				has_radius= has_circle and circle_i[2]>0 and circle_j[2]>0
+
 				if has_smasks:
 					iou= self.__compute_iou(smask_i, smask_j)
 				if has_speaks:
 					speak_dist= np.sqrt( (speak_i[1]-speak_j[1])**2 + (speak_i[0]-speak_j[0])**2 )
+						
+					if self.scale_peak_dist:
+						if has_radius:
+							r_i= circle_i[2]
+							r_j= circle_j[2]
+							speak_dist_scaled= speak_dist/(r_i + r_j)
+							#print("speak_dist=%f, %f (scaled)" % (speak_dist, speak_dist_scaled))
+							speak_dist= speak_dist_scaled
+						else:
+							logger.info("Cannot scale peak distance by enclosing circle radii sum as they are not both measured for image %s (id=%s, ch=%d-%d), setting speak_dist=-1 ..." % (self.sname, self.label, i+1, j+1))
+							speak_dist= -1
 
 				self.sious.append(iou)
 				self.speaks_dists.append(speak_dist)
@@ -722,6 +745,9 @@ class FeatExtractorHelper(object):
 		logger.info("Computing image clipped stats of non-masked pixels ...")
 		mean, median, stddev= sigma_clipped_stats(data_1d, sigma=self.sigma_clip)
 
+		# - Set bkg level
+		bkg_level= median
+
 		# - Threshold image at seed_thr
 		zmap= (data-median)/stddev
 		binary_map= (zmap>self.merge_thr).astype(np.int32)
@@ -743,7 +769,7 @@ class FeatExtractorHelper(object):
 		
 		if peaks.shape[0]<=0:
 			logger.info("No peaks detected in this image, return None ...")
-			return None
+			return (None, None, None, bkg_level, None)
 		
 		#if self.draw:
 		#	fig, ax = plt.subplots()
@@ -858,7 +884,7 @@ class FeatExtractorHelper(object):
 		nsources_sel= len(regprops_sel)
 		if nsources_sel<=0:
 			logger.info("No sources selected for this image ...")
-			return None
+			return (None, None, None, bkg_level, None)
 
 		# - If more than 1 source is selected, take the one with peak closer to image center
 		peak_final= peaks_sel[0]
@@ -895,11 +921,10 @@ class FeatExtractorHelper(object):
 		# - Compute enclosing circle radius 
 		try:
 			(xc, yc), radius= cv2.minEnclosingCircle(contour_final)
+			enclosing_circle= (xc,yc,radius)
 		except Exception as e:
 			logger.warn("Failed to compute min enclosing circle (err=%s)!" % (str(e)))
-
-		# - Set bkg level
-		bkg_level= median
+			enclosing_circle= None
 
 		# - Draw figure
 		if self.draw:
@@ -938,7 +963,7 @@ class FeatExtractorHelper(object):
 			plt.show()
 
 
-		return (peak_final, bmap_final, regprop_final, bkg_level, (xc,yc,radius))
+		return (peak_final, bmap_final, regprop_final, bkg_level, enclosing_circle)
 
 
 	def __compute_iou(self, mask1, mask2):
