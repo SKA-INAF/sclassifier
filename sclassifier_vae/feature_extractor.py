@@ -301,7 +301,7 @@ class FeatExtractorHelper(object):
 			else:
 				cind= cind_safe
 			 
-			parname= "color_ch" + str(i+1) + "_" + str(j+1)
+			parname= "color_ch" + str(self.refch+1) + "_" + str(j+1)
 			self.param_dict[parname]= cind
 
 
