@@ -516,15 +516,15 @@ class FeatExtractorHelper(object):
 				logger.error("Failed to compute moments for image %s (id=%s, ch=%d)!" % (self.sname, self.label, i+1))
 				return None
 
-			print("--> Mom0 (orig)")
-			print(ret[0][0])			
+			#print("--> Mom0 (orig)")
+			#print(ret[0][0])			
 
 			# - Override Moment 0 (excluding masked pixels)
 			cond_i= np.logical_and(img_i!=0, np.isfinite(img_i))
 			S= np.nansum(img_i[cond_i])
 			ret[0][0]= S
-			print("--> Mom0 (mod)")
-			print(ret[0][0])			
+			#print("--> Mom0 (mod)")
+			#print(ret[0][0])			
 
 			self.moments_img.append(ret[0])
 			self.hu_moments_img.append(ret[1])
