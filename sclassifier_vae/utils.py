@@ -10,7 +10,7 @@ import string
 import logging
 import numpy as np
 from distutils.version import LooseVersion
-
+from collections import OrderedDict
 
 ## ASTRO MODULES
 from astropy.io import fits
@@ -146,6 +146,44 @@ class Utils(object):
 		data= x[:,1:1+nvars].astype(np.float32)
 
 		return (data, snames, classids)
+
+	@classmethod
+	def read_feature_data_dict(cls, filename, colprefix=""):
+		""" Read data table and return dict. Format: sname data classid """	
+
+		# - Read table
+		row_start= 0
+		table= ascii.read(filename, data_start=row_start)
+		colnames= table.colnames
+		print(colnames)
+
+		ndim= len(colnames)
+		nvars= ndim-2
+		if nvars<=0:
+			logger.error("Too few cols present in file (ndim=%d)!" % (ndim))
+			return ()
+
+		# - Check if prefix has to be given to vars
+		colnames_mod= colnames
+		if colprefix!="":
+			colnames_mod= [colprefix + item for item in colnames]
+
+		# - Iterate over table and create dict
+		d= OrderedDict()
+
+		for row in table:
+			sname= row[0]
+			classid= row[ndim-1]
+			d[sname]= OrderedDict()
+			d[sname][colnames[0]]= sname
+			for	col in range(1, nvars+1):
+				colname= colnames_mod[col]
+				var= row[col]
+				d[sname][colname]= var
+			d[sname][colnames[ndim-1]]= classid
+
+		return d
+
 
 	@classmethod
 	def write_fits(cls,data,filename):
