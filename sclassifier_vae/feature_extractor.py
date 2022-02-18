@@ -280,6 +280,8 @@ class FeatExtractorHelper(object):
 
 		# - Save source flux log ratios Fj/F_radio (i.e. colors)
 		flux_ref= self.sfluxes[self.refch]
+		smask_ref= self.smasks[self.refch]
+		npix_ref= np.count_nonzero(smask_ref)
 		cind_safe= 0
 		is_good_flux_ref= (flux_ref>0) and (np.isfinite(flux_ref))
 		if not is_good_flux_ref:
@@ -288,7 +290,13 @@ class FeatExtractorHelper(object):
 		for j in range(len(self.sfluxes)):
 			if j==self.refch:
 				continue
-			flux= self.sfluxes[j]
+			flux= self.sfluxes[j] # if source is not detected this is the background level
+			if flux is None: # source is not detected, take sum of pixel fluxes inside ref source aperture
+				logger.info("Source is not detected in chan %d, taking pixel sum over ref source aperture ..." % (j+1))
+				data= self.data[0,:,:,j]
+				data_1d= data[smask_ref==1]		
+				flux= np.nansum(data_1d)	
+
 			is_good_flux= (flux>0) and (np.isfinite(flux))
 			
 			cind= 0
@@ -690,7 +698,8 @@ class FeatExtractorHelper(object):
 				self.speaks.append(None)
 				self.smasks.append(None)
 				regprops.append(None)
-				self.sfluxes.append(bkg_level)
+				##self.sfluxes.append(bkg_level)
+				self.sfluxes.append(None)
 				self.scircles.append(None)
 
 				if i==0:
