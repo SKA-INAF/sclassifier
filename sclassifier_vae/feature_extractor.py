@@ -273,15 +273,21 @@ class FeatExtractorHelper(object):
 		self.param_dict["sname"]= self.sname
 
 		# - Save source flux
+		flux_ref= self.sfluxes[self.refch]
+		smask_ref= self.smasks[self.refch]
+		npix_ref= np.count_nonzero(smask_ref)
+
 		for j in range(len(self.sfluxes)):
 			flux= self.sfluxes[j]
+			if flux is None: # source is not detected, take sum of pixel fluxes inside ref source aperture
+				data= self.data[0,:,:,j]
+				data_1d= data[smask_ref==1]		
+				flux= np.nansum(data_1d)
+
 			parname= "flux_ch" + str(j+1)
 			self.param_dict[parname]= flux
 
 		# - Save source flux log ratios Fj/F_radio (i.e. colors)
-		flux_ref= self.sfluxes[self.refch]
-		smask_ref= self.smasks[self.refch]
-		npix_ref= np.count_nonzero(smask_ref)
 		cind_safe= 0
 		is_good_flux_ref= (flux_ref>0) and (np.isfinite(flux_ref))
 		if not is_good_flux_ref:
