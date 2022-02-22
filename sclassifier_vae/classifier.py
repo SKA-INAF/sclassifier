@@ -617,12 +617,18 @@ class SClassifier(object):
 		#================================
 		#==   RUN PREDICT
 		#================================
-		# ...
+		logger.info("Run model predict ...")
+		if self.__predict()<0:
+			logger.warn("Failed to run model predict on input data!")
+			return -1
 
 		#================================
 		#==   SAVE
 		#================================
-		# ...
+		logger.info("Saving results ...")
+		if self.__save_train()<0:
+			logger.error("Failed to save results!")
+			return -1
 
 		return 0
 
@@ -661,12 +667,18 @@ class SClassifier(object):
 		#================================
 		#==   RUN PREDICT
 		#================================
-		# ...
+		logger.info("Run model predict ...")
+		if self.__predict()<0:
+			logger.warn("Failed to run model predict on input data!")
+			return -1
 
 		#================================
 		#==   SAVE
 		#================================
-		# ...
+		logger.info("Saving results ...")
+		if self.__save_train()<0:
+			logger.error("Failed to save results!")
+			return -1
 
 		return 0
 
