@@ -670,6 +670,88 @@ class SClassifier(object):
 
 		return 0
 
+
+	def __predict(self):
+		""" Predict model """
+		
+		# - Check if data are set
+		if self.data is None:
+			logger.error("Input data is None!")
+			return -1
+
+		# - Check if model is set
+		if self.model is None:
+			logger.error("Model is not set!")
+			return -1
+
+		# - Predict model on data
+		logger.info("Predicting class and probabilities on input data ...")
+		try:
+			self.targets_pred= self.model.predict(self.data)
+			class_probs_pred= self.model.predict_proba(self.data)
+			print("== class_probs_pred ==")
+			print(class_probs_pred.shape)
+			self.probs_pred= np.max(class_probs_pred, axis=1)
+
+		except Exception as e:
+			logger.error("Failed to predict model on data (err=%s)!" % (str(e)))
+			return -1
+
+		# - Convert targets to obj ids
+		logger.info("Converting predicted targets to class ids ...")
+		self.classids_pred= [self.classid_remap_inv[item] for item in self.targets_pred]
+
+
+		# - Predict model on pre-classified data (if any)
+		if self.data_preclassified is not None:
+			logger.info("Predicting class and probabilities on input pre-classified data ...")
+			try:
+				targets_pred_preclass= self.model.predict(self.data_preclassified)
+				class_probs_pred_preclass= self.model.predict_proba(self.data_preclassified)
+				print("== class_probs_pred (preclass data) ==")
+				print(class_probs_pred_preclass.shape)
+				probs_pred_preclass= np.max(class_probs_pred_preclass, axis=1)
+
+			except Exception as e:
+				logger.error("Failed to predict model on pre-classified data (err=%s)!" % (str(e)))
+				return -1
+
+
+			# - Retrieve metrics
+			logger.info("Computing classification metrics on pre-classified data ...")
+			report= classification_report(self.data_preclassified_targets, targets_pred_preclass, target_names=self.data_preclassified_classnames, output_dict=True)
+			self.accuracy= report['accuracy']
+			self.precision= report['weighted avg']['precision']
+			self.recall= report['weighted avg']['recall']    
+			self.f1score= report['weighted avg']['f1-score']
+
+			self.class_precisions= []
+			self.class_recalls= []  
+			self.class_f1scores= []
+			for class_name in self.data_preclassified_classnames:
+				class_precision= report[class_name]['precision']
+				class_recall= report[class_name]['recall']    
+				class_f1score= report[class_name]['f1-score']
+				self.class_precisions.append(class_precision)
+				self.class_recalls.append(class_recall)
+				self.class_f1scores.append(class_f1score)
+			
+			logger.info("accuracy=%f" % (self.accuracy))
+			logger.info("precision=%f" % (self.precision))
+			logger.info("recall=%f" % (self.recall))
+			logger.info("f1score=%f" % (self.f1score))
+			logger.info("--> Metrics per class")
+			print("classnames")
+			print(self.data_preclassified_classnames)
+			print("precisions")
+			print(self.class_precisions)
+			print("recall")
+			print(self.class_recalls)
+			print("f1score")
+			print(self.class_f1scores)
+
+		return 0
+
 	#####################################
 	##     SAVE
 	#####################################
