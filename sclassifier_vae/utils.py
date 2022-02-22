@@ -148,7 +148,7 @@ class Utils(object):
 		return (data, snames, classids)
 
 	@classmethod
-	def read_feature_data_dict(cls, filename, colprefix=""):
+	def read_feature_data_dict(cls, filename, colprefix="", allow_novars=False):
 		""" Read data table and return dict. Format: sname data classid """	
 
 		# - Read table
@@ -160,8 +160,11 @@ class Utils(object):
 		ndim= len(colnames)
 		nvars= ndim-2
 		if nvars<=0:
-			logger.error("Too few cols present in file (ndim=%d)!" % (ndim))
-			return ()
+			if allow_novars:
+				logger.warn("No var columns present in file (ndim=%d) ..." % (ndim))
+			else:
+				logger.error("Too few cols present in file (ndim=%d)!" % (ndim))
+				return ()
 
 		# - Check if prefix has to be given to vars
 		colnames_mod= colnames
@@ -176,10 +179,11 @@ class Utils(object):
 			classid= row[ndim-1]
 			d[sname]= OrderedDict()
 			d[sname][colnames[0]]= sname
-			for	col in range(1, nvars+1):
-				colname= colnames_mod[col]
-				var= row[col]
-				d[sname][colname]= var
+			if nvars>0:
+				for	col in range(1, nvars+1):
+					colname= colnames_mod[col]
+					var= row[col]
+					d[sname][colname]= var
 			d[sname][colnames[ndim-1]]= classid
 
 		return d

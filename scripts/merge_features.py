@@ -58,6 +58,9 @@ def get_args():
 	# - Input options
 	parser.add_argument('-inputfiles','--inputfiles', dest='inputfiles', required=True, type=str, help='Input feature data table filenames, separated by commas') 
 	
+	parser.add_argument('--allow_novars', dest='allow_novars', action='store_true',help='Allow merging of files with no features (e.g. only sname & id)')	
+	parser.set_defaults(allow_zerovars=False)
+
 	# - Output options
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='featdata_merged.dat', help='Output filename (.dat) with selected feature data') 
 
@@ -89,6 +92,8 @@ def main():
 		return 1
 	inputfiles= [str(x.strip()) for x in args.inputfiles.split(',')]
 
+	allow_novars= args.allow_novars
+
 	# - Output options
 	outfile= args.outfile
 
@@ -101,7 +106,7 @@ def main():
 	for i in range(len(inputfiles)):
 		inputfile= inputfiles[i]
 		colprefix= "featset" + str(i+1) + "_"
-		d= Utils.read_feature_data_dict(inputfile, colprefix=colprefix)
+		d= Utils.read_feature_data_dict(inputfile, colprefix=colprefix, allow_novars=allow_novars)
 		if not d or d is None:
 			logger.error("Failed to read data from file %s!" % (inputfile))
 			return 1
