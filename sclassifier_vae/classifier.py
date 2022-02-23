@@ -140,6 +140,8 @@ class SClassifier(object):
 		""" Create class labels """
 
 		if multiclass:
+			logger.info("Setting multi class targets ...")
+
 			self.classid_remap= {
 				0: -1,
 				1: 4,
@@ -174,6 +176,8 @@ class SClassifier(object):
 			}
 	
 		else: # binary (GAL vs EGAL)
+
+			logger.info("Setting binary class targets ...")
 			self.classid_remap= {
 				0: -1,
 				1: 1,
@@ -365,6 +369,9 @@ class SClassifier(object):
 			
 			print("data_preclassified_targetnames")
 			print(self.data_preclassified_targetnames)
+
+			print("self.data_preclassified_targets")
+			print(self.data_preclassified_targets)
 
 		if self.data_preclassified is not None:
 			logger.info("#nsamples_preclass=%d" % (len(self.data_preclassified_labels)))
