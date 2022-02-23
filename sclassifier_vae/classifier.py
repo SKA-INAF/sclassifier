@@ -245,7 +245,7 @@ class SClassifier(object):
 		x_min= x.min(axis=0)
 		x_max= x.max(axis=0)
 
-		print("== TRANSFORM DATA MIN/MAX ==")
+		print("== INPUT DATA MIN/MAX ==")
 		print(x_min)
 		print(x_max)
 
