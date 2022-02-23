@@ -145,6 +145,9 @@ class SClassifier(object):
 			24: "YSO",			
 			6000: "QSO",
 		}
+		
+		self.classid_remap_inv= {v: k for k, v in self.classid_remap.items()}
+		self.classid_label_map_inv= {v: k for k, v in self.classid_label_map.items()}
 
 		#self.__set_target_labels(multiclass)
 
