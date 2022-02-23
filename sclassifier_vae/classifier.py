@@ -112,6 +112,7 @@ class SClassifier(object):
 		self.class_recalls= []  
 		self.class_f1scores= []
 		self.nclasses= 7
+		self.multiclass= multiclass
 
 		# - Set class label names
 		#self.classid_remap= {
@@ -265,6 +266,10 @@ class SClassifier(object):
 		if max_depth_lgbm is None:
 			max_depth_lgbm= -1
 
+		objective_lgbm= 'binary'
+		if self.multiclass:
+			objective_lgbm= 'multiclass'
+
 		lgbm= LGBMClassifier(
 			n_estimators=self.n_estimators, 
 			max_depth=max_depth_lgbm, 
@@ -272,9 +277,9 @@ class SClassifier(object):
 			num_leaves=self.num_leaves,
 			learning_rate=self.learning_rate,
 			num_iterations=self.niters,
-			objective='multiclass',
+			objective=objective_lgbm,
 			boosting_type='gbdt',
-			num_class=self.nclasses
+			#num_class=self.nclasses
 		)
 
 		# - Set DecisionTree classifier
