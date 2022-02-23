@@ -746,7 +746,7 @@ class SClassifier(object):
 
 		return 0
 
-	def run_predict(self, data, class_ids=[], snames=[], modelfile='', scalerfile):
+	def run_predict(self, data, class_ids=[], snames=[], modelfile='', scalerfile=''):
 		""" Run model prediction using input dataset """
 
 		#================================
