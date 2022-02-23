@@ -912,7 +912,7 @@ class SClassifier(object):
 			print(self.class_f1scores)
 
 			# - Retrieving confusion matrix
-			logger.info("Retrieving confusion matrix on train data ...")
+			logger.info("Retrieving confusion matrix on pre-classified data ...")
 			cm= confusion_matrix(self.data_preclassified_targets, targets_pred_preclass)
 
 			print("confusion matrix")
