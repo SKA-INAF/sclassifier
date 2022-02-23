@@ -111,6 +111,7 @@ class SClassifier(object):
 		self.class_precisions= []
 		self.class_recalls= []  
 		self.class_f1scores= []
+		self.nclasses= 7
 
 		# - Set class label names
 		#self.classid_remap= {
@@ -178,6 +179,8 @@ class SClassifier(object):
 		if multiclass:
 			logger.info("Setting multi class targets ...")
 
+			self.nclasses= 7
+
 			self.classid_remap= {
 				0: -1,
 				1: 4,
@@ -212,6 +215,8 @@ class SClassifier(object):
 			}
 	
 		else: # binary (GAL vs EGAL)
+
+			self.nclasses= 2
 
 			logger.info("Setting binary class targets ...")
 			self.classid_remap= {
@@ -268,7 +273,8 @@ class SClassifier(object):
 			learning_rate=self.learning_rate,
 			num_iterations=self.niters,
 			objective='multiclass',
-			boosting_type='gbdt'
+			boosting_type='gbdt',
+			num_class=self.nclasses
 		)
 
 		# - Set DecisionTree classifier
