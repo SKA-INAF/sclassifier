@@ -111,6 +111,7 @@ class SClassifier(object):
 		self.class_precisions= []
 		self.class_recalls= []  
 		self.class_f1scores= []
+		self.feat_ranks= []
 		self.nclasses= 7
 		self.multiclass= multiclass
 
@@ -791,6 +792,12 @@ class SClassifier(object):
 		print("confusion matrix")
 		print(cm)
 
+		# - Retrieving the feature importances
+		self.feat_ranks= self.model.feature_importances_
+	
+		print("feat ranks")
+		print(self.feat_ranks)
+	
 		return 0
 
 
