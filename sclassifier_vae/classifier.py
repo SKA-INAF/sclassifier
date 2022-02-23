@@ -516,6 +516,10 @@ class SClassifier(object):
 				logger.error("Failed to load model from file %s!" % (modelfile))
 				return -1
 
+			# - Retrieve classifier name from loaded object
+			self.classifier= self.model.__class__.__name__
+			logger.info("Loaded model classifier is: %s" % (self.classifier))
+
 		else:
 			logger.info("Creating the clustering model ...")
 			self.model= self.__create_model()
@@ -578,6 +582,10 @@ class SClassifier(object):
 			except Exception as e:
 				logger.error("Failed to load model from file %s!" % (modelfile))
 				return -1
+
+			# - Retrieve classifier name from loaded object
+			self.classifier= self.model.__class__.__name__
+			logger.info("Loaded model classifier is: %s" % (self.classifier))
 
 		else:
 			logger.info("Creating the model ...")
@@ -723,6 +731,10 @@ class SClassifier(object):
 				logger.error("Failed to load model from file %s!" % (modelfile))
 				return -1
 
+			# - Retrieve classifier name from loaded object
+			self.classifier= self.model.__class__.__name__
+			logger.info("Loaded model classifier is: %s" % (self.classifier))
+
 		else:
 			logger.info("Creating the clustering model ...")
 			self.model= self.__create_model()
@@ -784,6 +796,10 @@ class SClassifier(object):
 			except Exception as e:
 				logger.error("Failed to load model from file %s!" % (modelfile))
 				return -1
+
+			# - Retrieve classifier name from loaded object
+			self.classifier= self.model.__class__.__name__
+			logger.info("Loaded model classifier is: %s" % (self.classifier))
 
 		else:
 			logger.info("Creating the model ...")
