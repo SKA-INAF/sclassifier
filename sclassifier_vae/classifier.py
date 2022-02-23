@@ -214,6 +214,8 @@ class SClassifier(object):
 				24: "YSO",			
 				6000: "QSO",
 			}
+
+			self.target_names= ["PN","HII","PULSAR","YSO","STAR","GALAXY","QSO"]
 	
 		else: # binary (GAL vs EGAL)
 
@@ -247,6 +249,8 @@ class SClassifier(object):
 				24: "GAL",			
 				6000: "EGAL",
 			}
+
+			self.target_names= ["EGAL","GAL"]
 				
 
 		self.classid_remap_inv= {v: k for k, v in self.classid_remap.items()}
@@ -749,7 +753,7 @@ class SClassifier(object):
 
 		# - Retrieve metrics
 		logger.info("Computing classification metrics on train data ...")
-		report= classification_report(self.data_preclassified_targets, self.targets_pred, target_names=self.data_preclassified_targetnames, output_dict=True)
+		report= classification_report(self.data_preclassified_targets, self.targets_pred, target_names=self.target_names, output_dict=True)
 		self.accuracy= report['accuracy']
 		self.precision= report['weighted avg']['precision']
 		self.recall= report['weighted avg']['recall']    
@@ -974,7 +978,7 @@ class SClassifier(object):
 
 			# - Retrieve metrics
 			logger.info("Computing classification metrics on pre-classified data ...")
-			report= classification_report(self.data_preclassified_targets, targets_pred_preclass, target_names=self.data_preclassified_targetnames, output_dict=True)
+			report= classification_report(self.data_preclassified_targets, targets_pred_preclass, target_names=self.target_names, output_dict=True)
 			self.accuracy= report['accuracy']
 			self.precision= report['weighted avg']['precision']
 			self.recall= report['weighted avg']['recall']    
