@@ -80,6 +80,7 @@ class SClassifier(object):
 		self.data_preclassified_classids= None
 		self.data_preclassified_targets= None
 		self.data_preclassified_classnames= None
+		self.data_preclassified_targetnames= None
 		self.source_names= []
 		self.source_names_preclassified= []
 
@@ -126,6 +127,18 @@ class SClassifier(object):
 			6000: 6,
 		}
 
+		self.target_label_map= {
+			-1: "UNKNOWN",
+			0: "PN",
+			1: "HII",
+			2: "PULSAR",
+			3: "YSO",
+			4: "STAR",
+			5: "GALAXY",
+			6: "QSO",
+		}
+
+
 		self.classid_label_map= {
 			0: "UNKNOWN",
 			1: "STAR",
@@ -139,6 +152,8 @@ class SClassifier(object):
 
 		self.classid_remap_inv= {v: k for k, v in self.classid_remap.items()}
 		self.classid_label_map_inv= {v: k for k, v in self.classid_label_map.items()}
+
+		#print("")
 
 		# *****************************
 		# ** Output
@@ -256,6 +271,10 @@ class SClassifier(object):
 			self.data_preclassified_classids= np.array(classid_list)
 			self.data_preclassified_targets= np.array(targetid_list)
 			self.data_preclassified_classnames= list(set(label_list))
+			self.data_preclassified_targetnames= [self.target_label_map[item] for item in set(sorted(targetid_list))]
+			
+			print("data_preclassified_targetnames")
+			print(self.data_preclassified_targetnames)
 
 		if self.data_preclassified is not None:
 			logger.info("#nsamples_preclass=%d" % (len(self.data_preclassified_labels)))
@@ -542,10 +561,11 @@ class SClassifier(object):
 		# - Convert targets to obj ids
 		logger.info("Converting predicted targets to class ids ...")
 		self.classids_pred= [self.classid_remap_inv[item] for item in self.targets_pred]
+		
 
 		# - Retrieve metrics
 		logger.info("Computing classification metrics on train data ...")
-		report= classification_report(self.data_preclassified_targets, self.targets_pred, target_names=self.data_preclassified_classnames, output_dict=True)
+		report= classification_report(self.data_preclassified_targets, self.targets_pred, target_names=self.data_preclassified_targetnames, output_dict=True)
 		self.accuracy= report['accuracy']
 		self.precision= report['weighted avg']['precision']
 		self.recall= report['weighted avg']['recall']    
@@ -554,7 +574,7 @@ class SClassifier(object):
 		self.class_precisions= []
 		self.class_recalls= []  
 		self.class_f1scores= []
-		for class_name in self.data_preclassified_classnames:
+		for class_name in self.data_preclassified_targetnames:
 			class_precision= report[class_name]['precision']
 			class_recall= report[class_name]['recall']    
 			class_f1score= report[class_name]['f1-score']
@@ -568,7 +588,7 @@ class SClassifier(object):
 		logger.info("f1score=%f" % (self.f1score))
 		logger.info("--> Metrics per class")
 		print("classnames")
-		print(self.data_preclassified_classnames)
+		print(self.data_preclassified_targetnames)
 		print("precisions")
 		print(self.class_precisions)
 		print("recall")
@@ -731,7 +751,7 @@ class SClassifier(object):
 
 			# - Retrieve metrics
 			logger.info("Computing classification metrics on pre-classified data ...")
-			report= classification_report(self.data_preclassified_targets, targets_pred_preclass, target_names=self.data_preclassified_classnames, output_dict=True)
+			report= classification_report(self.data_preclassified_targets, targets_pred_preclass, target_names=self.data_preclassified_targetnames, output_dict=True)
 			self.accuracy= report['accuracy']
 			self.precision= report['weighted avg']['precision']
 			self.recall= report['weighted avg']['recall']    
@@ -740,7 +760,7 @@ class SClassifier(object):
 			self.class_precisions= []
 			self.class_recalls= []  
 			self.class_f1scores= []
-			for class_name in self.data_preclassified_classnames:
+			for class_name in self.data_preclassified_targetnames:
 				class_precision= report[class_name]['precision']
 				class_recall= report[class_name]['recall']    
 				class_f1score= report[class_name]['f1-score']
@@ -754,7 +774,7 @@ class SClassifier(object):
 			logger.info("f1score=%f" % (self.f1score))
 			logger.info("--> Metrics per class")
 			print("classnames")
-			print(self.data_preclassified_classnames)
+			print(self.data_preclassified_targetnames)
 			print("precisions")
 			print(self.class_precisions)
 			print("recall")
@@ -793,8 +813,8 @@ class SClassifier(object):
 		metrics= [self.accuracy, self.precision, self.recall, self.f1score]
 		metric_names= ["accuracy","precision","recall","f1score"]
 		
-		for i in range(len(self.data_preclassified_classnames)):
-			classname= self.data_preclassified_classnames[i]
+		for i in range(len(self.data_preclassified_targetnames)):
+			classname= self.data_preclassified_targetnames[i]
 			precision= self.class_precisions[i]
 			recall= self.class_recalls[i]
 			f1score= self.class_f1scores[i]
@@ -848,7 +868,7 @@ class SClassifier(object):
 
 		# - Set class names
 		if not class_names:
-			class_names= self.data_preclassified_classnames
+			class_names= self.data_preclassified_targetnames
 
 		# - Set feature names
 		feat_counter= list(range(1,self.nfeatures+1))
