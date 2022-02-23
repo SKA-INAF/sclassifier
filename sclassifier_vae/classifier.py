@@ -240,9 +240,9 @@ class SClassifier(object):
 		x_min= x.min(axis=0)
 		x_max= x.max(axis=0)
 		print("x_min")
-		print(xmin)
+		print(x_min)
 		print("x_max")
-		print(xmax)
+		print(x_max)
 	
 		x_norm = norm_min + (x-x_min)/(x_max-x_min) * (norm_max-norm_min)
 		return x_norm
