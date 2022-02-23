@@ -686,6 +686,13 @@ class SClassifier(object):
 		print("f1score")
 		print(self.class_f1scores)
 
+		# - Retrieving confusion matrix
+		logger.info("Retrieving confusion matrix on train data ...")
+		cm= confusion_matrix(self.data_preclassified_targets, self.targets_pred, target_names=self.data_preclassified_targetnames)
+
+		print("confusion matrix")
+		print(cm)
+
 		return 0
 
 
@@ -903,6 +910,13 @@ class SClassifier(object):
 			print(self.class_recalls)
 			print("f1score")
 			print(self.class_f1scores)
+
+			# - Retrieving confusion matrix
+			logger.info("Retrieving confusion matrix on train data ...")
+			cm= confusion_matrix(self.data_preclassified_targets, targets_pred_preclass, target_names=self.data_preclassified_targetnames)
+
+			print("confusion matrix")
+			print(cm)
 
 		return 0
 
