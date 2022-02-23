@@ -45,6 +45,8 @@ from sklearn.metrics import confusion_matrix
 from sklearn import tree
 from sklearn.tree import export_text
 
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
+
 from lightgbm import LGBMClassifier
 
 ## GRAPHICS MODULES
@@ -87,6 +89,7 @@ class SClassifier(object):
 		# *****************************
 		# ** Model
 		# *****************************
+		self.data_scaler= None
 		self.max_depth= None
 		self.min_samples_split= 2
 		self.min_samples_leaf= 1
@@ -159,6 +162,7 @@ class SClassifier(object):
 		# ** Output
 		# *****************************
 		self.dump_model= True
+		self.outfile_scaler = 'datascaler.sav'
 		self.outfile_model= "classifier.sav"
 		self.outfile_metrics= "metrics.dat"
 		self.outfile= 'classified_data.dat'
@@ -234,6 +238,47 @@ class SClassifier(object):
 	#####################################
 	##     PRE-PROCESSING
 	#####################################
+	def __transform_data(self, x, norm_min=0, norm_max=1):
+		""" Transform input data here or using a loaded scaler """
+
+		# - Print input data min/max
+		x_min= x.min(axis=0)
+		x_max= x.max(axis=0)
+
+		print("== TRANSFORM DATA MIN/MAX ==")
+		print(x_min)
+		print(x_max)
+
+		if self.data_scaler is None:
+			# - Define and run scaler
+			logger.info("Define and running data scaler ...")
+			self.data_scaler= MinMaxScaler(feature_range=(norm_min, norm_max))
+			x_transf= self.data_scaler.fit_transform(x)
+
+			print("== TRANSFORM DATA MIN/MAX ==")
+			print(self.data_scaler.data_min_)
+			print(self.data_scaler.data_max_)
+
+			# - Save scaler to file
+			logger.info("Saving data scaler to file %s ..." % (self.outfile_scaler))
+			pickle.dump(self.data_scaler, open(self.outfile_scaler, 'wb'))
+			
+		else:
+			# - Transform data
+			logger.info("Transforming input data using loaded scaler ...")
+			x_transf = self.data_scaler.transform(x)
+
+		# - Print transformed data min/max
+		print("== TRANSFORMED DATA MIN/MAX ==")
+		x_transf_min= x_transf.min(axis=0)
+		x_transf_max= x_transf.max(axis=0)
+		print(x_transf_min)
+		print(x_transf_max)
+
+		
+		return x_transf
+
+
 	def __normalize_data(self, x, norm_min, norm_max):
 		""" Normalize input data to desired range """
 		
@@ -342,7 +387,11 @@ class SClassifier(object):
 		# - Normalize feature data?
 		if self.normalize:
 			logger.info("Normalizing feature data ...")
-			data_norm= self.__normalize_data(self.data, self.norm_min, self.norm_max)
+			#data_norm= self.__normalize_data(self.data, self.norm_min, self.norm_max)
+			data_norm= self.__transform_data(self.data, self.norm_min, self.norm_max)
+			if data_norm is None:
+				logger.error("Data transformation failed!")
+				return -1
 			self.data= data_norm
 
 		# - Set pre-classified data
@@ -411,7 +460,11 @@ class SClassifier(object):
 		# - Normalize feature data?
 		if self.normalize:
 			logger.info("Normalizing feature data ...")
-			data_norm= self.__normalize_data(self.data, self.norm_min, self.norm_max)
+			#data_norm= self.__normalize_data(self.data, self.norm_min, self.norm_max)
+			data_norm= self.__transform_data(self.data, self.norm_min, self.norm_max)
+			if data_norm is None:
+				logger.error("Data transformation failed!")
+				return -1
 			self.data= data_norm
 
 		# - Set pre-classified data
@@ -424,8 +477,20 @@ class SClassifier(object):
 	#####################################
 	##     RUN TRAIN
 	#####################################
-	def run_train(self, datafile, modelfile=''):
+	def run_train(self, datafile, modelfile='', scalerfile=''):
 		""" Run train using input dataset """
+
+		#================================
+		#==   LOAD DATA SCALER
+		#================================
+		# - Load scaler from file?
+		if scalerfile!="":
+			logger.info("Loading data scaler from file %s ..." % (scalerfile))
+			try:
+				self.data_scaler= pickle.load(open(scalerfile, 'rb'))
+			except Exception as e:
+				logger.error("Failed to load data scaler from file %s!" % (scalerfile))
+				return -1
 
 		#================================
 		#==   LOAD DATA
@@ -475,8 +540,20 @@ class SClassifier(object):
 		return 0
 
 
-	def run_train(self, data, class_ids=[], snames=[], modelfile=''):
+	def run_train(self, data, class_ids=[], snames=[], modelfile='', scalerfile=''):
 		""" Run train using input dataset """
+
+		#================================
+		#==   LOAD DATA SCALER
+		#================================
+		# - Load scaler from file?
+		if scalerfile!="":
+			logger.info("Loading data scaler from file %s ..." % (scalerfile))
+			try:
+				self.data_scaler= pickle.load(open(scalerfile, 'rb'))
+			except Exception as e:
+				logger.error("Failed to load data scaler from file %s!" % (scalerfile))
+				return -1
 
 		#================================
 		#==   LOAD DATA
@@ -607,8 +684,20 @@ class SClassifier(object):
 	#####################################
 	##     RUN PREDICT
 	#####################################
-	def run_predict(self, datafile, modelfile=''):
+	def run_predict(self, datafile, modelfile='', scalerfile=''):
 		""" Run model prediction using input dataset """
+
+		#================================
+		#==   LOAD DATA SCALER
+		#================================
+		# - Load scaler from file?
+		if scalerfile!="":
+			logger.info("Loading data scaler from file %s ..." % (scalerfile))
+			try:
+				self.data_scaler= pickle.load(open(scalerfile, 'rb'))
+			except Exception as e:
+				logger.error("Failed to load data scaler from file %s!" % (scalerfile))
+				return -1
 
 		#================================
 		#==   LOAD DATA
@@ -657,8 +746,20 @@ class SClassifier(object):
 
 		return 0
 
-	def run_predict(self, data, class_ids=[], snames=[], modelfile=''):
+	def run_predict(self, data, class_ids=[], snames=[], modelfile='', scalerfile):
 		""" Run model prediction using input dataset """
+
+		#================================
+		#==   LOAD DATA SCALER
+		#================================
+		# - Load scaler from file?
+		if scalerfile!="":
+			logger.info("Loading data scaler from file %s ..." % (scalerfile))
+			try:
+				self.data_scaler= pickle.load(open(scalerfile, 'rb'))
+			except Exception as e:
+				logger.error("Failed to load data scaler from file %s!" % (scalerfile))
+				return -1
 
 		#================================
 		#==   LOAD DATA

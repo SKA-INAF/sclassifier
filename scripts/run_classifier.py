@@ -56,7 +56,8 @@ def get_args():
 	# - Pre-processing options
 	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize feature data in range [0,1] before applying models (default=false)')	
 	parser.set_defaults(normalize=False)
-
+	parser.add_argument('-scalerfile', '--scalerfile', dest='scalerfile', required=False, type=str, default='', action='store',help='Load and use data transform stored in this file (.sav)')
+	
 	# - Model options
 	parser.add_argument('-classifier','--classifier', dest='classifier', required=False, type=str, default='DecisionTreeClassifier', help='Classifier to be used.') 
 	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=False, type=str, default='', action='store',help='Classifier model filename (.sav)')
@@ -102,6 +103,7 @@ def main():
 
 	# - Data pre-processing
 	normalize= args.normalize
+	scalerfile= args.scalerfile
 
 	# - Model options
 	classifier= args.classifier
@@ -149,9 +151,9 @@ def main():
 	sclass.niters= niters
 
 	if predict:
-		status= sclass.run_predict(data, classids, snames, modelfile)
+		status= sclass.run_predict(data, classids, snames, modelfile, scalerfile)
 	else:
-		status= sclass.run_train(data, classids, snames, modelfile)
+		status= sclass.run_train(data, classids, snames, modelfile, scalerfile)
 	
 	if status<0:
 		logger.error("Classifier run failed!")
