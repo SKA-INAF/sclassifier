@@ -113,7 +113,40 @@ class SClassifier(object):
 		self.class_f1scores= []
 
 		# - Set class label names
-		self.__set_target_labels(multiclass)
+		self.classid_remap= {
+			0: -1,
+			1: 4,
+			2: 5,
+			3: 0,
+			6: 1,
+			23: 2,
+			24: 3,			
+			6000: 6,
+		}
+
+		self.target_label_map= {
+			-1: "UNKNOWN",
+			0: "PN",
+			1: "HII",
+			2: "PULSAR",
+			3: "YSO",
+			4: "STAR",
+			5: "GALAXY",
+			6: "QSO",
+		}
+
+		self.classid_label_map= {
+			0: "UNKNOWN",
+			1: "STAR",
+			2: "GALAXY",
+			3: "PN",
+			6: "HII",
+			23: "PULSAR",
+			24: "YSO",			
+			6000: "QSO",
+		}
+
+		#self.__set_target_labels(multiclass)
 
 		# *****************************
 		# ** Pre-processing
