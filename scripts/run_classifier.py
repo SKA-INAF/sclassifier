@@ -63,6 +63,8 @@ def get_args():
 	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=False, type=str, default='', action='store',help='Classifier model filename (.sav)')
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
 	parser.set_defaults(predict=False)
+	parser.add_argument('--binary_class', dest='binary_class', action='store_true',help='Perform a binary classification {0=EGAL,1=GAL} (default=multiclass)')	
+	parser.set_defaults(binary_class=False)
 
 	# - Tree options
 	parser.add_argument('-max_depth','--max_depth', dest='max_depth', required=False, type=int, default=None, help='Max depth for decision tree, random forest and LGBM')
@@ -109,6 +111,9 @@ def main():
 	classifier= args.classifier
 	modelfile= args.modelfile
 	predict= args.predict
+	multiclass= True
+	if args.binary_class:
+		multiclass= False
 
 	# - Tree options
 	max_depth= args.max_depth
@@ -138,7 +143,7 @@ def main():
 	#==   CLASSIFY DATA
 	#===========================
 	logger.info("Running classifier on input feature data ...")
-	sclass= SClassifier()
+	sclass= SClassifier(multiclass=multiclass)
 	sclass.normalize= normalize
 	sclass.classifier= classifier
 	sclass.outfile= outfile

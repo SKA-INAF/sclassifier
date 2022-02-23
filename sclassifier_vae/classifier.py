@@ -67,7 +67,7 @@ from .data_loader import SourceData
 class SClassifier(object):
 	""" Source classifier class """
 	
-	def __init__(self):
+	def __init__(self, multiclass=True):
 		""" Return a SClassifier object """
 
 		# - Input data
@@ -111,7 +111,10 @@ class SClassifier(object):
 		self.class_precisions= []
 		self.class_recalls= []  
 		self.class_f1scores= []
-		
+
+		# - Set class label names
+		self.__set_target_labels(multiclass)
+
 		# *****************************
 		# ** Pre-processing
 		# *****************************
@@ -119,44 +122,6 @@ class SClassifier(object):
 		self.norm_min= 0
 		self.norm_max= 1
 
-		self.classid_remap= {
-			0: -1,
-			1: 4,
-			2: 5,
-			3: 0,
-			6: 1,
-			23: 2,
-			24: 3,			
-			6000: 6,
-		}
-
-		self.target_label_map= {
-			-1: "UNKNOWN",
-			0: "PN",
-			1: "HII",
-			2: "PULSAR",
-			3: "YSO",
-			4: "STAR",
-			5: "GALAXY",
-			6: "QSO",
-		}
-
-
-		self.classid_label_map= {
-			0: "UNKNOWN",
-			1: "STAR",
-			2: "GALAXY",
-			3: "PN",
-			6: "HII",
-			23: "PULSAR",
-			24: "YSO",			
-			6000: "QSO",
-		}
-
-		self.classid_remap_inv= {v: k for k, v in self.classid_remap.items()}
-		self.classid_label_map_inv= {v: k for k, v in self.classid_label_map.items()}
-
-		#print("")
 
 		# *****************************
 		# ** Output
@@ -167,6 +132,81 @@ class SClassifier(object):
 		self.outfile_metrics= "metrics.dat"
 		self.outfile= 'classified_data.dat'
 		self.plotfile_decisiontree= 'decision_tree.png'
+
+	#####################################
+	##     CREATE CLASS LABELS
+	#####################################
+	def __set_target_labels(self, multiclass=True):
+		""" Create class labels """
+
+		if multiclass:
+			self.classid_remap= {
+				0: -1,
+				1: 4,
+				2: 5,
+				3: 0,
+				6: 1,
+				23: 2,
+				24: 3,			
+				6000: 6,
+			}
+
+			self.target_label_map= {
+				-1: "UNKNOWN",
+				0: "PN",
+				1: "HII",
+				2: "PULSAR",
+				3: "YSO",
+				4: "STAR",
+				5: "GALAXY",
+				6: "QSO",
+			}
+
+			self.classid_label_map= {
+				0: "UNKNOWN",
+				1: "STAR",
+				2: "GALAXY",
+				3: "PN",
+				6: "HII",
+				23: "PULSAR",
+				24: "YSO",			
+				6000: "QSO",
+			}
+	
+		else: # binary (GAL vs EGAL)
+			self.classid_remap= {
+				0: -1,
+				1: 1,
+				2: 0,
+				3: 1,
+				6: 1,
+				23: 1,
+				24: 1,			
+				6000: 0,
+			}
+
+			self.target_label_map= {
+				-1: "UNKNOWN",
+				0: "EGAL",
+				1: "GAL",
+			}
+
+			self.classid_label_map= {
+				0: "UNKNOWN",
+				1: "GAL",
+				2: "EGAL",
+				3: "GAL",
+				6: "GAL",
+				23: "GAL",
+				24: "GAL",			
+				6000: "EGAL",
+			}
+				
+
+		self.classid_remap_inv= {v: k for k, v in self.classid_remap.items()}
+		self.classid_label_map_inv= {v: k for k, v in self.classid_label_map.items()}
+
+		
 
 
 	#####################################
