@@ -648,6 +648,10 @@ class SClassifierNN(object):
 		self.input_data_dim= K.int_shape(self.inputs)
 		self.model.add(self.inputs)
 
+		print("Input data dim=", self.input_data_dim)
+		print("inputs shape")
+		print(K.int_shape(self.inputs))
+
 		# - Add a number of CNN layers
 		for k in range(len(self.nfilters_cnn)):
 
@@ -697,11 +701,9 @@ class SClassifierNN(object):
 		self.outputs = layers.Dense(self.nclasses, name='outputs', activation='softmax')
 		self.model.add(self.outputs)
 		
-		print("Input data dim=", self.input_data_dim)
-		print("inputs shape")
-		print(K.int_shape(self.inputs))
-		print("outputs shape")
-		print(K.int_shape(self.outputs))
+		
+		#print("outputs shape")
+		#print(K.int_shape(self.outputs))
 		
 		#===========================
 		#==   BUILD MODEL
