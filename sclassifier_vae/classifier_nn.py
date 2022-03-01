@@ -428,7 +428,9 @@ class SClassifierNN(object):
 			scale=self.scale_img, scale_factors=self.scale_img_factors,
 			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
 			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
-			erode=self.erode, erode_kernel=self.erode_kernel
+			erode=self.erode, erode_kernel=self.erode_kernel,
+			retsdata=False, 
+			ret_classtargets=True, classtarget_map=self.classid_remap, nclasses=self.nclasses
 		)
 
 		# - Create cross validation data generator
@@ -442,7 +444,9 @@ class SClassifierNN(object):
 			scale=self.scale_img, scale_factors=self.scale_img_factors,
 			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
 			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
-			erode=self.erode, erode_kernel=self.erode_kernel	
+			erode=self.erode, erode_kernel=self.erode_kernel,
+			retsdata=False, 
+			ret_classtargets=True, classtarget_map=self.classid_remap, nclasses=self.nclasses	
 		)	
 
 		# - Create test data generator
@@ -456,7 +460,9 @@ class SClassifierNN(object):
 			scale=self.scale_img, scale_factors=self.scale_img_factors,
 			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
 			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
-			erode=self.erode, erode_kernel=self.erode_kernel
+			erode=self.erode, erode_kernel=self.erode_kernel,
+			retsdata=False, 
+			ret_classtargets=True, classtarget_map=self.classid_remap, nclasses=self.nclasses
 		)
 
 		return 0
@@ -709,7 +715,8 @@ class SClassifierNN(object):
 		#==   BUILD MODEL
 		#===========================
 		# - Define and compile model
-		self.model = Model(inputs=self.inputs, outputs=self.output_targets, name='classifier')
+		#self.model = Model(inputs=self.inputs, outputs=self.output_targets, name='classifier')
+		#self.model = Model(inputs=self.inputs, outputs=self.outputs, name='classifier')
 		self.model.compile(optimizer=self.optimizer, loss=self.loss_type, metrics=['accuracy', f1_score, precision, recall], run_eagerly=True)
 		
 		# - Print model summary
