@@ -599,18 +599,18 @@ class SClassifierNN(object):
 		print(targetids_pred.shape)
 
 		# - Get predicted output class id
-		logger.info("Predicting output classid ...")
-		predclasses= self.model.predict_classes(
-			x=self.test_data_generator,	
-			steps=1,
-    	verbose=2,
-    	workers=self.nworkers,
-    	use_multiprocessing=self.use_multiprocessing
-		)
+		#logger.info("Predicting output classid ...")
+		#predclasses= self.model.predict_classes(
+		#	x=self.test_data_generator,	
+		#	steps=1,
+    #	verbose=2,
+    #	workers=self.nworkers,
+    #	use_multiprocessing=self.use_multiprocessing
+		#)
 
-		print("predclasses")
-		print(type(predclasses))
-		print(predclasses.shape)
+		#print("predclasses")
+		#print(type(predclasses))
+		#print(predclasses.shape)
 		
 		# - Get predicted output class prob
 		logger.info("Predicting output classid ...")
