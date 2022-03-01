@@ -46,6 +46,7 @@ from sklearn import tree
 from sklearn.tree import export_text
 
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
+from sklearn.metrics import recall_score, precision_score, f1_score
 
 from lightgbm import LGBMClassifier
 
@@ -104,26 +105,56 @@ from .data_loader import DataLoader
 from .data_loader import SourceData
 
 
-def recall(y_true, y_pred):
-	y_true = K.ones_like(y_true) 
-	true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-	all_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
-    
-	recall = true_positives / (all_positives + K.epsilon())
+def recall_metric(y_true, y_pred):
+	""" Compute recall=TP/(TP+FN) """
+	#y_true = K.ones_like(y_true) 
+	#true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+	#all_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+  #recall = true_positives / (all_positives + K.epsilon())
+	
+	# - Convert one-hot encoding to labels 
+	l_true= tf.argmax(y_true, axis = 1)
+	l_pred= tf.argmax(y_pred, axis = 1)
+
+	# - Compute recall=TP/all
+	#TP= tf.math.count_nonzero(l_true==l_pred)
+	#TP_FN= tf.size(l_true)
+	#recall= tf.math.divide(tf.cast(TP,tf.float32), tf.cast(TP_FN,tf.float32))	
+ 
+	recall_score(l_true, l_pred, average='micro')
+
 	return recall
 
-def precision(y_true, y_pred):
-	y_true = K.ones_like(y_true) 
-	true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-    
-	predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
-	precision = true_positives / (predicted_positives + K.epsilon())
+def precision_metric(y_true, y_pred):
+	""" Compute precision=TP/(TP+FN) """
+	#y_true = K.ones_like(y_true) 
+	#true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+	#predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
+	#precision = true_positives / (predicted_positives + K.epsilon())
+
+	# - Convert one-hot encoding to labels 
+	l_true= tf.argmax(y_true, axis = 1)
+	l_pred= tf.argmax(y_pred, axis = 1)
+	
+	# - Compute precision=TP/(TP+FN)
+	precision_score(l_true, l_pred, average='micro')
+
 	return precision
 
-def f1_score(y_true, y_pred):
-	prec = precision(y_true, y_pred)
-	rec = recall(y_true, y_pred)
-	return 2*((prec*rec)/(prec+rec+K.epsilon()))
+def f1score_metric(y_true, y_pred):
+	""" Compute F1-score metric"""
+	#prec = precision_metric(y_true, y_pred)
+	#rec = recall_metric(y_true, y_pred)
+	#f1score= 2*((prec*rec)/(prec+rec+K.epsilon()))
+
+	# - Convert one-hot encoding to labels 
+	l_true= tf.argmax(y_true, axis = 1)
+	l_pred= tf.argmax(y_pred, axis = 1)
+
+	# - Compute F1-score
+	f1score= f1_score(l_true, l_pred, average='weighted')
+
+	return f1score
 
 ##################################
 ##     SClassifierNN CLASS
