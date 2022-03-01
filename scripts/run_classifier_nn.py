@@ -189,13 +189,11 @@ def main():
 	add_batchnorm_layer= args.add_batchnorm_layer
 	add_leakyrelu= args.add_leakyrelu
 	add_dense_layer= args.add_dense_layer	
-	add_channorm_layer= args.add_channorm_layer
 	nfilters_cnn= [int(x.strip()) for x in args.nfilters_cnn.split(',')]
 	kernsizes_cnn= [int(x.strip()) for x in args.kernsizes_cnn.split(',')]	
 	strides_cnn= [int(x.strip()) for x in args.strides_cnn.split(',')]
 	dense_layer_sizes= [int(x.strip()) for x in args.dense_layer_sizes.split(',')]
 	dense_layer_activation= args.dense_layer_activation
-	decoder_output_layer_activation= args.decoder_output_layer_activation
 	
 	# - Train options
 	predict= args.predict
@@ -276,7 +274,6 @@ def main():
 	sclass.add_batchnorm= add_batchnorm_layer
 	sclass.add_leakyrelu= add_leakyrelu
 	sclass.add_dense= add_dense_layer
-	sclass.add_channorm_layer= add_channorm_layer
 	sclass.nfilters_cnn= nfilters_cnn
 	sclass.kernsizes_cnn= kernsizes_cnn
 	sclass.strides_cnn= strides_cnn
