@@ -184,10 +184,7 @@ def main():
 	erode_kernel= args.erode_kernel
 
 	# - NN architecture
-	use_vae= args.use_vae
-	#modelfile= args.modelfile
-	modelfile_encoder= args.modelfile_encoder
-	modelfile_decoder= args.modelfile_decoder
+	modelfile= args.modelfile
 	add_maxpooling_layer= args.add_maxpooling_layer
 	add_batchnorm_layer= args.add_batchnorm_layer
 	add_leakyrelu= args.add_leakyrelu
