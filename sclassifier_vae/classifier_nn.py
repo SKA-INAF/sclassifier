@@ -748,7 +748,7 @@ class SClassifierNN(object):
 		# - Define and compile model
 		#self.model = Model(inputs=self.inputs, outputs=self.output_targets, name='classifier')
 		#self.model = Model(inputs=self.inputs, outputs=self.outputs, name='classifier')
-		self.model.compile(optimizer=self.optimizer, loss=self.loss_type, metrics=['accuracy', f1_score, precision, recall], run_eagerly=True)
+		self.model.compile(optimizer=self.optimizer, loss=self.loss_type, metrics=['accuracy', f1score_metric, precision_metric, recall_metric], run_eagerly=True)
 		
 		# - Print model summary
 		self.model.summary()
