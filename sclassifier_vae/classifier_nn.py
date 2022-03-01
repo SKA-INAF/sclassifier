@@ -762,7 +762,7 @@ class SClassifierNN(object):
 		
 		# - Save the network architecture diagram
 		logger.info("Saving network model architecture to file ...")
-		plot_model(self.model, to_file=self.outfile_model, show_shapes=True))
+		plot_model(self.model, to_file=self.outfile_model, show_shapes=True)
 		
 
 		#================================
