@@ -630,7 +630,7 @@ class SClassifierNN(object):
 			axis=1
 		)
 
-		head= "# sname id id_pred prob")
+		head= "# sname id id_pred prob"
 		Utils.write_ascii(outdata, self.outfile, head)
 
 
