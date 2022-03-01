@@ -591,10 +591,12 @@ class SClassifierNN(object):
 		print(type(predout))
 		print(predout.shape)
 
-		logger.info("Retriving target ids from predicted output ...")
-		targetids_pred= np.argmax(predout, axis=None, out=None)
+		logger.info("Retrieving target ids from predicted output ...")
+		#targetids_pred= np.argmax(predout, axis=None, out=None)
+		targetids_pred= np.argmax(predout, axis=1)
 
 		print("targetids_pred")
+		print(targetids_pred)
 		print(type(targetids_pred))
 		print(targetids_pred.shape)
 
@@ -613,18 +615,18 @@ class SClassifierNN(object):
 		#print(predclasses.shape)
 		
 		# - Get predicted output class prob
-		logger.info("Predicting output classid ...")
-		predprobs= self.model.predict_proba(
-			x=self.test_data_generator,	
-			steps=1,
-    	verbose=2,
-    	workers=self.nworkers,
-    	use_multiprocessing=self.use_multiprocessing
-		)
+		#logger.info("Predicting output classid ...")
+		#predprobs= self.model.predict_proba(
+		#	x=self.test_data_generator,	
+		#	steps=1,
+    #	verbose=2,
+    #	workers=self.nworkers,
+    #	use_multiprocessing=self.use_multiprocessing
+		#)
 
-		print("predprobs")
-		print(type(predprobs))
-		print(predprobs.shape)
+		#print("predprobs")
+		#print(type(predprobs))
+		#print(predprobs.shape)
 		
 
 		if type(predout)==tuple and len(predout)>0:
