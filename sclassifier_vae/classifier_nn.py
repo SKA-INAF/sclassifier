@@ -121,7 +121,7 @@ def recall_metric(y_true, y_pred):
 	#TP_FN= tf.size(l_true)
 	#recall= tf.math.divide(tf.cast(TP,tf.float32), tf.cast(TP_FN,tf.float32))	
  
-	recall_score(l_true, l_pred, average='micro')
+	recall= recall_score(l_true, l_pred, average='micro')
 
 	return recall
 
@@ -137,7 +137,7 @@ def precision_metric(y_true, y_pred):
 	l_pred= tf.argmax(y_pred, axis = 1)
 	
 	# - Compute precision=TP/(TP+FN)
-	precision_score(l_true, l_pred, average='micro')
+	precision= precision_score(l_true, l_pred, average='micro')
 
 	return precision
 
