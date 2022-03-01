@@ -290,7 +290,7 @@ def main():
 
 
 	if predict:
-		#status= sclass.run_predict(data, classids, snames, modelfile, scalerfile)
+		status= sclass.run_predict(modelfile, weightfile)
 	else:
 		status= sclass.run_train()
 	
