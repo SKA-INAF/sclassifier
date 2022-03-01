@@ -83,5 +83,5 @@ setup(
 	long_description=read('README.md'),
 	packages=['sclassifier_vae'],
 	install_requires=reqs,
-	scripts=['scripts/check_data.py','scripts/run_train.py','scripts/run_predict.py','scripts/run_clustering.py','scripts/reconstruct_data.py','scripts/extract_features.py','scripts/select_features.py','scripts/run_classifier.py','scripts/merge_features.py'],
+	scripts=['scripts/check_data.py','scripts/run_train.py','scripts/run_predict.py','scripts/run_clustering.py','scripts/reconstruct_data.py','scripts/extract_features.py','scripts/select_features.py','scripts/run_classifier.py','scripts/merge_features.py','scripts/run_classifier_nn.py'],
 )

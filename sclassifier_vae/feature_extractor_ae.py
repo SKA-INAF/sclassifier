@@ -545,7 +545,6 @@ class FeatExtractorAE(object):
 
 		# - Output data
 		self.outfile_loss= 'losses.png'
-		self.outfile_accuracy= 'accuracy.png'
 		self.outfile_model= 'model.png'
 		self.outfile_nnout_metrics= 'losses.dat'
 		self.outfile_encoded_data= 'latent_data.dat'
