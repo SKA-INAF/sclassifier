@@ -21,6 +21,9 @@ import logging
 from collections import Counter
 import json
 
+## KERAS MODULES
+from tensorflow.keras.utils import to_categorical
+
 ## ASTROPY MODULES 
 from astropy.io import ascii
 
@@ -782,12 +785,14 @@ class DataLoader(object):
 	###################################
 	##     GENERATE DATA FOR TRAINING
 	###################################
-	def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=64, ny=64, normalize=True, scale_to_abs_max=False, scale_to_max=False, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5, retsdata=False):	
+	def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=64, ny=64, normalize=True, scale_to_abs_max=False, scale_to_max=False, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5, retsdata=False, ret_classtargets=False, classtarget_map={}, nclasses=7):	
 		""" Generator function reading nsamples images from disk and returning to caller """
 	
 		nb= 0
 		data_index= -1
 		data_indexes= np.arange(0,self.datasize)
+		target_ids= []
+
 		logger.info("Starting data generator ...")
 
 		while True:
@@ -828,13 +833,25 @@ class DataLoader(object):
 				#print(inputs_shape)
 				logger.debug("Data %d shape=(%d,%d,%d)" % (data_index,data_shape[0],data_shape[1],data_shape[2]))
 				
+				# - Set class targets
+				class_id= sdata.id
+				target_id= class_id
+				if classtarget_map:
+					target_id= classtarget_map[class_id]
+					
+				print("--> class_id")
+				print(class_id)
+				print("--> target_id")
+				print(target_id)
 
 				# - Initialize return data
 				if nb==0:
 					inputs= np.zeros(inputs_shape, dtype=np.float32)
+					target_ids= []
 				
 				# - Update inputs
 				inputs[nb]= sdata.img_cube
+				target_ids.append(target_id)
 				nb+= 1
 
 
@@ -873,11 +890,19 @@ class DataLoader(object):
 				if nb>=batch_size:
 					#print("inputs.shape")
 					#print(inputs.shape)
+
 					logger.debug("Batch size (%d) reached, yielding generated data of size (%d,%d,%d,%d) ..." % (nb,inputs.shape[0],inputs.shape[1],inputs.shape[2],inputs.shape[3]))
 					if retsdata:
 						yield inputs, sdata
 					else:
-						yield inputs, inputs
+						if ret_classtargets:
+							output_targets= to_categorical(np.array(target_ids), num_classes=nclasses)
+							print("--> output_targets")
+							print(output_targets)
+
+							yield inputs, output_targets
+						else:
+							yield inputs, inputs
 					nb= 0
 
 			except (GeneratorExit):
