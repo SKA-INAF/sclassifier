@@ -606,7 +606,6 @@ class SClassifierNN(object):
 		print("classids_pred")
 		print(self.classids_pred)
 		print(type(self.classids_pred))
-		print(self.classids_pred.shape)
 		
 		# - Get predicted output class prob
 		logger.info("Predicting output classid ...")
@@ -615,7 +614,6 @@ class SClassifierNN(object):
 		print("probs_pred")
 		print(self.probs_pred)
 		print(type(self.probs_pred))
-		print(self.probs_pred.shape)
 		
 		# - Save predicted data to file
 		logger.info("Saving prediction data to file %s ..." % (self.outfile))
