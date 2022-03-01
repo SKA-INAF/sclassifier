@@ -182,7 +182,6 @@ class SClassifierNN(object):
 		self.source_names= []
 		self.flattened_inputs= None	
 		self.input_data_dim= 0
-		self.encoded_data= None
 		self.train_data_generator= None
 		self.crossval_data_generator= None
 		self.test_data_generator= None
@@ -591,70 +590,123 @@ class SClassifierNN(object):
 		print(type(predout))
 		print(predout.shape)
 
+		# - Convert one-hot encoding to target ids
 		logger.info("Retrieving target ids from predicted output ...")
-		#targetids_pred= np.argmax(predout, axis=None, out=None)
-		targetids_pred= np.argmax(predout, axis=1)
+		self.targets_pred= np.argmax(predout, axis=1)
 
-		print("targetids_pred")
-		print(targetids_pred)
-		print(type(targetids_pred))
-		print(targetids_pred.shape)
+		print("targets_pred")
+		print(self.targets_pred)
+		print(type(self.targets_pred))
+		print(self.targets_pred.shape)
 
 		# - Get predicted output class id
-		#logger.info("Predicting output classid ...")
-		#predclasses= self.model.predict_classes(
-		#	x=self.test_data_generator,	
-		#	steps=1,
-    #	verbose=2,
-    #	workers=self.nworkers,
-    #	use_multiprocessing=self.use_multiprocessing
-		#)
-
-		#print("predclasses")
-		#print(type(predclasses))
-		#print(predclasses.shape)
+		logger.info("Computing predicted class ids from targets ...")
+		self.classids_pred= [self.classid_remap_inv[item] for item in self.targets_pred]
+		
+		print("classids_pred")
+		print(self.classids_pred)
+		print(type(self.classids_pred))
+		print(self.classids_pred.shape)
 		
 		# - Get predicted output class prob
-		#logger.info("Predicting output classid ...")
-		#predprobs= self.model.predict_proba(
-		#	x=self.test_data_generator,	
-		#	steps=1,
-    #	verbose=2,
-    #	workers=self.nworkers,
-    #	use_multiprocessing=self.use_multiprocessing
-		#)
+		logger.info("Predicting output classid ...")
+		self.probs_pred= [predout[i,targetids_pred[i]] for i in range(predout.shape[0])]
 
-		#print("predprobs")
-		#print(type(predprobs))
-		#print(predprobs.shape)
+		print("probs_pred")
+		print(self.probs_pred)
+		print(type(self.probs_pred))
+		print(self.probs_pred.shape)
 		
+		# - Save predicted data to file
+		logger.info("Saving prediction data to file %s ..." % (self.outfile))
+		N= predout.shape[0]
+		snames= np.array(self.source_names).reshape(N,1)
+		objids= np.array(self.source_ids).reshape(N,1)
+		objids_pred= np.array(self.classids_pred).reshape(N,1)
+		probs_pred= np.array(self.probs_pred).reshape(N,1)
 
-		if type(predout)==tuple and len(predout)>0:
-			self.output_data= predout[0]
-		else:
-			self.output_data= predout
-
-		print("output_data shape")
-		print(self.output_data.shape)	
-		print(self.output_data)
-		N= self.output_data.shape[0]
-		Nvar= self.output_data.shape[1]
-		
-		
-		# - Merge output data
-		obj_names= np.array(self.source_names).reshape(N,1)
-		obj_ids= np.array(self.source_ids).reshape(N,1)
-		out_data= np.concatenate(
-			(obj_names, self.output_data, obj_ids),
+		outdata= np.concatenate(
+			(snames, objids, objids_pred, probs_pred),
 			axis=1
 		)
 
-		# - Save output data to file
-		logger.info("Saving predicted output data to file %s ..." % (self.outfile))
-		znames_counter= list(range(1, Nvar+1))
-		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
-		head= '{} {} {}'.format("# sname", znames, "id")
-		Utils.write_ascii(out_data, self.outfile, head)	
+		head= "# sname id id_pred prob")
+		Utils.write_ascii(outdata, self.outfile, head)
+
+
+		#================================
+		#==   COMPUTE AND SAVE METRICS
+		#================================
+		# - Retrieve metrics
+		logger.info("Computing classification metrics on predicted data ...")
+		report= classification_report(self.target_ids, self.targets_pred, target_names=self.target_names, output_dict=True)
+		self.accuracy= report['accuracy']
+		self.precision= report['weighted avg']['precision']
+		self.recall= report['weighted avg']['recall']    
+		self.f1score= report['weighted avg']['f1-score']
+
+		self.class_precisions= []
+		self.class_recalls= []  
+		self.class_f1scores= []
+		for class_name in self.target_names:
+			class_precision= report[class_name]['precision']
+			class_recall= report[class_name]['recall']    
+			class_f1score= report[class_name]['f1-score']
+			self.class_precisions.append(class_precision)
+			self.class_recalls.append(class_recall)
+			self.class_f1scores.append(class_f1score)
+			
+		logger.info("accuracy=%f" % (self.accuracy))
+		logger.info("precision=%f" % (self.precision))
+		logger.info("recall=%f" % (self.recall))
+		logger.info("f1score=%f" % (self.f1score))
+		logger.info("--> Metrics per class")
+		print("classnames")
+		print(self.target_names)
+		print("precisions")
+		print(self.class_precisions)
+		print("recall")
+		print(self.class_recalls)
+		print("f1score")
+		print(self.class_f1scores)
+
+		# - Retrieving confusion matrix
+		logger.info("Retrieving confusion matrix ...")
+		cm= confusion_matrix(self.target_ids, self.targets_pred)
+
+		print("confusion matrix")
+		print(cm)
+
+		# - Saving metrics to file
+		logger.info("Saving metrics to file %s ..." % (self.outfile_metrics))
+		metrics= [self.accuracy, self.precision, self.recall, self.f1score]
+		metric_names= ["accuracy","precision","recall","f1score"]
+		
+		for i in range(len(self.target_names)):
+			classname= self.target_names[i]
+			precision= self.class_precisions[i]
+			recall= self.class_recalls[i]
+			f1score= self.class_f1scores[i]
+			metrics.append(precision)
+			metrics.append(recall)
+			metrics.append(f1score)
+			metric_names.append("precision_" + classname)
+			metric_names.append("recall_" + classname)
+			metric_names.append("f1score_" + classname)
+			
+		Nmetrics= len(metrics)
+		metric_data= np.array(metrics).reshape(1,Nmetrics)
+
+		metric_names_str= ' '.join(str(item) for item in metric_names)
+		head= '{} {}'.format("# ",metric_names_str)
+
+		print("metric_data")
+		print(metrics)
+		print(len(metrics))
+		print(metric_data.shape)
+		
+		Utils.write_ascii(metric_data, self.outfile_metrics, head)
+
 
 		return 0
 
