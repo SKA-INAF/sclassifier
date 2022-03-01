@@ -840,10 +840,10 @@ class DataLoader(object):
 				if classtarget_map:
 					target_id= classtarget_map[class_id]
 				
-				print("--> class_id")
-				print(class_id)
-				print("--> target_id")
-				print(target_id)
+				#print("--> class_id")
+				#print(class_id)
+				#print("--> target_id")
+				#print(target_id)
 
 				# - Initialize return data
 				if nb==0:
@@ -898,10 +898,10 @@ class DataLoader(object):
 					else:
 						if ret_classtargets:
 							output_targets= to_categorical(np.array(target_ids), num_classes=nclasses)
-							print("--> output_targets")
-							print(output_targets)
-							print("--> output_targets_shape")
-							print(output_targets.shape)
+							#print("--> output_targets")
+							#print(output_targets)
+							#print("--> output_targets_shape")
+							#print(output_targets.shape)
 
 							yield inputs, output_targets
 						else:
