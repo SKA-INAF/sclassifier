@@ -609,7 +609,7 @@ class SClassifierNN(object):
 		
 		# - Get predicted output class prob
 		logger.info("Predicting output classid ...")
-		self.probs_pred= [predout[i,targetids_pred[i]] for i in range(predout.shape[0])]
+		self.probs_pred= [predout[i,self.targetids_pred[i]] for i in range(predout.shape[0])]
 
 		print("probs_pred")
 		print(self.probs_pred)
