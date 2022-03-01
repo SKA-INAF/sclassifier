@@ -911,7 +911,7 @@ class SClassifierNN(object):
 		#===========================
 		#==   SET LOSS & METRICS
 		#===========================	
-		self.model.compile(optimizer=self.optimizer, loss=self.loss_type, run_eagerly=True)
+		self.model.compile(optimizer=self.optimizer, loss=self.loss_type, metrics=['accuracy', f1score_metric, precision_metric, recall_metric], run_eagerly=True)
 		
 		# - Print and draw model
 		self.model.summary()
@@ -943,7 +943,7 @@ class SClassifierNN(object):
 		#===========================
 		#==   SET LOSS & METRICS
 		#===========================	
-		self.model.compile(optimizer=self.optimizer, loss=self.loss_type, run_eagerly=True)
+		self.model.compile(optimizer=self.optimizer, loss=self.loss_type, metrics=['accuracy', f1score_metric, precision_metric, recall_metric], run_eagerly=True)
 		
 		return 0
 
