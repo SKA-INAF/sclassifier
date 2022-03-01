@@ -519,7 +519,7 @@ class SClassifierNN(object):
 		#===========================
 		#- Create the network or load it from file?
 		if self.modelfile!="":
-			logger.info("Loading network architecture from file: %s, %s ..." % (self.modelfile))
+			logger.info("Loading network architecture from file: %s, %s ..." % (self.modelfile, self.weightfile))
 			if self.__load_model(self.modelfile, self.weightfile)<0:
 				logger.error("NN loading failed!")
 				return -1
