@@ -210,21 +210,6 @@ def main():
 	reproducible= args.reproducible
 	validation_steps= args.validation_steps
 
-	# - UMAP options
-	run_umap= args.run_umap
-	latentdim_umap= args.latentdim_umap
-	mindist_umap= args.mindist_umap
-	nneighbors_umap= args.nneighbors_umap
-	outfile_umap_unsupervised= args.outfile_umap_unsupervised
-	outfile_umap_supervised= args.outfile_umap_supervised
-	outfile_umap_preclassified= args.outfile_umap_preclassified
-		
-	# - Clustering options
-	run_clustering= args.run_clustering
-	min_cluster_size= args.min_cluster_size
-	min_samples= args.min_samples	
-	modelfile_clust= args.modelfile_clust
-	predict_clust= args.predict_clust
 
 	#===========================
 	#==   READ DATALIST
