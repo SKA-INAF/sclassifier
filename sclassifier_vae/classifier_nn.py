@@ -920,7 +920,7 @@ class SClassifierNN(object):
 		return 0
 
 
-	def __load_model(self, modelfile_json, weightfile):
+	def __load_model(self, modelfile, weightfile):
 		""" Load model and weights from input h5 file """
 
 		#==============================
@@ -928,11 +928,12 @@ class SClassifierNN(object):
 		#==============================
 		# - Load model
 		try:
-			self.model = model_from_json(open(modelfile_json).read())
+			#self.model = model_from_json(open(modelfile_json).read())
+			self.model = load_model(modelfile)
 			self.model.load_weights(weightfile)
 
 		except Exception as e:
-			logger.warn("Failed to load model from file %s (err=%s)!" % (modelfile_json, str(e)))
+			logger.warn("Failed to load model from file %s (err=%s)!" % (modelfile, str(e)))
 			return -1
 
 		if not self.model or self.model is None:
