@@ -134,6 +134,10 @@ class SClassifierNN(object):
 	def __init__(self, data_loader, multiclass=True):
 		""" Return a SClassifierNN object """
 
+
+		self.dl= data_loader
+		self.multiclass= multiclass
+
 		# *****************************
 		# ** Input data
 		# *****************************
@@ -174,7 +178,7 @@ class SClassifierNN(object):
 		self.class_f1scores= []
 		self.feat_ranks= []
 		self.nclasses= 7
-		self.multiclass= multiclass
+		
 
 		# - NN architecture
 		self.modelfile= ""
