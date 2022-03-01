@@ -829,6 +829,7 @@ class DataLoader(object):
 
 				data_shape= sdata.img_cube.shape
 				inputs_shape= (batch_size,) + data_shape
+				
 				#print("Generating batch %d/%d ..." % (nb, batch_size))
 				#print(inputs_shape)
 				logger.debug("Data %d shape=(%d,%d,%d)" % (data_index,data_shape[0],data_shape[1],data_shape[2]))
@@ -838,7 +839,7 @@ class DataLoader(object):
 				target_id= class_id
 				if classtarget_map:
 					target_id= classtarget_map[class_id]
-					
+				
 				print("--> class_id")
 				print(class_id)
 				print("--> target_id")
@@ -899,6 +900,8 @@ class DataLoader(object):
 							output_targets= to_categorical(np.array(target_ids), num_classes=nclasses)
 							print("--> output_targets")
 							print(output_targets)
+							print("--> output_targets_shape")
+							print(output_targets.shape)
 
 							yield inputs, output_targets
 						else:
