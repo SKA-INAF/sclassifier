@@ -121,9 +121,9 @@ def precision(y_true, y_pred):
 	return precision
 
 def f1_score(y_true, y_pred):
-	precision = precision(y_true, y_pred)
-	recall = recall(y_true, y_pred)
-	return 2*((precision*recall)/(precision+recall+K.epsilon()))
+	prec = precision(y_true, y_pred)
+	rec = recall(y_true, y_pred)
+	return 2*((prec*rec)/(prec+rec+K.epsilon()))
 
 ##################################
 ##     SClassifierNN CLASS
