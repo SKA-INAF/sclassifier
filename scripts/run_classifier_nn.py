@@ -228,7 +228,7 @@ def main():
 	#==   TRAIN VAE
 	#===========================
 	logger.info("Running VAE classifier training ...")
-	sclass= SClassifierNN(multiclass=multiclass)
+	sclass= SClassifierNN(dl, multiclass=multiclass)
 	sclass.modelfile= modelfile
 	sclass.weightfile= weightfile
 	sclass.set_image_size(nx, ny)
