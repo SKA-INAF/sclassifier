@@ -560,7 +560,7 @@ class SClassifierNN(object):
 		# - Get predicted output class id
 		logger.info("Predicting output classid ...")
 		predclasses= self.model.predict_classes(
-			x=, self.test_data_generator,	
+			x=self.test_data_generator,	
 			steps=1,
     	verbose=2,
     	workers=self.nworkers,
@@ -574,7 +574,7 @@ class SClassifierNN(object):
 		# - Get predicted output class prob
 		logger.info("Predicting output classid ...")
 		predprobs= self.model.predict_proba(
-			x=, self.test_data_generator,	
+			x=self.test_data_generator,	
 			steps=1,
     	verbose=2,
     	workers=self.nworkers,
