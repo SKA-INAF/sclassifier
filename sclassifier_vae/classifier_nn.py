@@ -476,7 +476,7 @@ class SClassifierNN(object):
 			self.nsamples_cv= 0
 		else:
 			self.has_cvdata= True
-			self.nsamples_cv= len(self.dl_cv.snames.source_labels)
+			self.nsamples_cv= len(self.dl_cv.labels)
 
 		self.crossval_data_generator= self.dl_cv.data_generator(
 			batch_size=self.batch_size, 
