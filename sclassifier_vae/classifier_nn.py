@@ -167,12 +167,15 @@ class SClassifierNN(object):
 
 
 		self.dl= data_loader
+		self.dl_cv= None
+		self.has_cvdata= False
 		self.multiclass= multiclass
 
 		# *****************************
 		# ** Input data
 		# *****************************
 		self.nsamples= 0
+		self.nsamples_cv= 0
 		self.nx= 64 
 		self.ny= 64
 		self.nchannels= 0
@@ -414,6 +417,7 @@ class SClassifierNN(object):
 		self.source_names= self.dl.snames
 		self.nsamples= len(self.source_labels)
 
+		
 		# - Set model targets
 		self.target_ids= []
 
@@ -466,7 +470,15 @@ class SClassifierNN(object):
 		)
 
 		# - Create cross validation data generator
-		self.crossval_data_generator= self.dl.data_generator(
+		if self.dl_cv is None:
+			self.dl_cv= dl
+			self.has_cvdata= False
+			self.nsamples_cv= 0
+		else:
+			self.has_cvdata= True
+			self.nsamples_cv= len(self.dl_cv.snames.source_labels)
+
+		self.crossval_data_generator= self.dl_cv.data_generator(
 			batch_size=self.batch_size, 
 			shuffle=self.shuffle_train_data,
 			resize=self.resize, nx=self.nx, ny=self.ny, 
@@ -829,22 +841,26 @@ class SClassifierNN(object):
 			scale= self.augment_scale_factor
 		steps_per_epoch= scale*self.nsamples // self.batch_size
 
+		# - Set validation steps
+		val_steps_per_epoch= self.validation_steps
+		if self.has_cvdata:
+			self.nsamples_cv // self.batch_size
+
 		#===========================
-		#==   TRAIN VAE
+		#==   TRAIN MODEL
 		#===========================
-		logger.info("Start model training (dataset_size=%d, batch_size=%d, steps_per_epoch=%d) ..." % (self.nsamples, self.batch_size, steps_per_epoch))
+		logger.info("Start model training (dataset_size=%d, batch_size=%d, steps_per_epoch=%d, val_steps_per_epoch=%d) ..." % (self.nsamples, self.batch_size, steps_per_epoch, val_steps_per_epoch))
 
 		self.fitout= self.model.fit(
 			x=self.train_data_generator,
 			epochs=self.nepochs,
 			steps_per_epoch=steps_per_epoch,
 			validation_data=self.crossval_data_generator,
-			validation_steps=self.validation_steps,
+			validation_steps=val_steps_per_epoch,
 			use_multiprocessing=self.use_multiprocessing,
 			workers=self.nworkers,
 			verbose=2
 		)
-
 		
 		#===========================
 		#==   SAVE NN

@@ -56,6 +56,7 @@ def get_args():
 
 	# - Input options
 	parser.add_argument('-datalist','--datalist', dest='datalist', required=True, type=str, help='Input data json filelist') 
+	parser.add_argument('-datalist_cv','--datalist_cv', dest='datalist_cv', required=False, default="", type=str, help='Input data json filelist for validation') 
 	
 	# - Data pre-processing options
 	parser.add_argument('-nx', '--nx', dest='nx', required=False, type=int, default=64, action='store',help='Image resize width in pixels (default=64)')
@@ -156,6 +157,7 @@ def main():
 
 	# - Input filelist
 	datalist= args.datalist
+	datalist_cv= args.datalist_cv
 	
 	# - Data process options	
 	nx= args.nx
@@ -227,8 +229,15 @@ def main():
 	if dl.read_datalist()<0:
 		logger.error("Failed to read input datalist!")
 		return 1
-	
 
+	# - Create data loader for validation
+	dl_cv= None
+	if datalist_cv!="":
+		dl_cv= DataLoader(filename=datalist_cv)
+		if dl_cv.read_datalist()<0:
+			logger.error("Failed to read input datalist for validation!")
+			return 1
+	
 	#===========================
 	#==   TRAIN VAE
 	#===========================
@@ -273,6 +282,7 @@ def main():
 	sclass.dropout_rate= dropout_rate
 	sclass.weight_seed= weight_seed
 
+	sclass.dl_cv= dl_cv
 
 	if predict:
 		status= sclass.run_predict(modelfile, weightfile)
