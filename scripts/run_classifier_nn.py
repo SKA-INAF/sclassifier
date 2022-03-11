@@ -233,6 +233,7 @@ def main():
 	# - Create data loader for validation
 	dl_cv= None
 	if datalist_cv!="":
+		logger.info("Reading datalist_cv %s ..." % datalist_cv)
 		dl_cv= DataLoader(filename=datalist_cv)
 		if dl_cv.read_datalist()<0:
 			logger.error("Failed to read input datalist for validation!")
