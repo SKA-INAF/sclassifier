@@ -477,6 +477,7 @@ class SClassifierNN(object):
 		else:
 			self.has_cvdata= True
 			self.nsamples_cv= len(self.dl_cv.labels)
+			logger.info("#nsamples_cv=%d" % (self.nsamples_cv))
 
 		self.crossval_data_generator= self.dl_cv.data_generator(
 			batch_size=self.batch_size, 
@@ -844,7 +845,7 @@ class SClassifierNN(object):
 		# - Set validation steps
 		val_steps_per_epoch= self.validation_steps
 		if self.has_cvdata:
-			self.nsamples_cv // self.batch_size
+			val_steps_per_epoch= self.nsamples_cv // self.batch_size
 
 		#===========================
 		#==   TRAIN MODEL
