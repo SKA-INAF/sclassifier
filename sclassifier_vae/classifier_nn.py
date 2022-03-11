@@ -229,6 +229,8 @@ class SClassifierNN(object):
 		self.add_dense= False
 		self.dense_layer_sizes= [16] 
 		self.dense_layer_activation= 'relu'
+		self.add_dropout_layer= False
+		self.dropout_rate= 0.5
 
 		# - Training options
 		self.batch_size= 32
@@ -785,7 +787,11 @@ class SClassifierNN(object):
 			for layer_size in self.dense_layer_sizes:
 				x = layers.Dense(layer_size, activation=self.dense_layer_activation)
 				self.model.add(x)
-		
+
+				if self.add_dropout_layer:
+					x= layers.Dropout(self.dropout_rate)
+					self.model.add(x)
+			
 		# - Output layer
 		self.outputs = layers.Dense(self.nclasses, name='outputs', activation='softmax')
 		self.model.add(self.outputs)

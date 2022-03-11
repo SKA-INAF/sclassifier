@@ -118,6 +118,9 @@ def get_args():
 	parser.set_defaults(add_leakyrelu=False)
 	parser.add_argument('--add_dense_layer', dest='add_dense_layer', action='store_true',help='Add dense layers in encoder after flattening layers ')	
 	parser.set_defaults(add_dense_layer=False)
+	parser.add_argument('--add_dropout_layer', dest='add_dropout_layer', action='store_true',help='Add dropout layers before dense layers')	
+	parser.set_defaults(add_dropout_layer=False)
+	parser.add_argument('-dropout_rate', '--dropout_rate', dest='dropout_rate', required=False, type=float, default=0.5, action='store',help='Dropout rate (default=0.5)')
 
 	parser.add_argument('-nfilters_cnn', '--nfilters_cnn', dest='nfilters_cnn', required=False, type=str, default='32,64,128', action='store',help='Number of convolution filters per each layer')
 	parser.add_argument('-kernsizes_cnn', '--kernsizes_cnn', dest='kernsizes_cnn', required=False, type=str, default='3,5,7', action='store',help='Convolution filter kernel sizes per each layer')
@@ -194,6 +197,8 @@ def main():
 	strides_cnn= [int(x.strip()) for x in args.strides_cnn.split(',')]
 	dense_layer_sizes= [int(x.strip()) for x in args.dense_layer_sizes.split(',')]
 	dense_layer_activation= args.dense_layer_activation
+	add_dropout_layer= args.add_dropout_layer
+	dropout_rate= args.dropout_rate
 	
 	# - Train options
 	predict= args.predict
@@ -264,7 +269,8 @@ def main():
 	sclass.strides_cnn= strides_cnn
 	sclass.dense_layer_sizes= dense_layer_sizes
 	sclass.dense_layer_activation= dense_layer_activation
-
+	sclass.add_dropout_layer= add_dropout_layer
+	sclass.dropout_rate= dropout_rate
 	sclass.weight_seed= weight_seed
 
 
