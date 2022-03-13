@@ -1063,11 +1063,11 @@ class SClassifier(object):
 		logger.info("--> Metrics per class")
 		print("classnames")
 		print(self.data_preclassified_targetnames)
-		print("precisions")
+		print("class precisions")
 		print(self.class_precisions)
-		print("recall")
+		print("class recall")
 		print(self.class_recalls)
-		print("f1score")
+		print("class f1score")
 		print(self.class_f1scores)
 
 		# - Retrieving confusion matrix
@@ -1297,11 +1297,11 @@ class SClassifier(object):
 			logger.info("--> Metrics per class")
 			print("classnames")
 			print(self.data_preclassified_targetnames)
-			print("precisions")
+			print("class precisions")
 			print(self.class_precisions)
-			print("recall")
+			print("class recall")
 			print(self.class_recalls)
-			print("f1score")
+			print("class f1score")
 			print(self.class_f1scores)
 
 			# - Retrieving confusion matrix
