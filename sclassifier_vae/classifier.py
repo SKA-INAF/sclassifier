@@ -48,7 +48,7 @@ from sklearn.tree import export_text
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 
 from lightgbm import LGBMClassifier
-from lightgbm import early_stopping
+from lightgbm import early_stopping, log_evaluation, record_evaluation
 
 ## GRAPHICS MODULES
 import matplotlib
@@ -135,6 +135,7 @@ class SClassifier(object):
 		# - LGBM custom options
 		self.early_stop_round= 10
 		self.metric_lgbm= 'multi_logloss'
+		self.lgbm_eval_dict= {}
 
 		# - Set class label names
 		#self.classid_remap= {
@@ -946,14 +947,16 @@ class SClassifier(object):
 					stopping_rounds=self.early_stop_round, 
 					first_metric_only=False, verbose=True
 				)
+			
+				logeval_cb= log_evaluation(period=1, show_stdv=True)	
+				receval_cb= record_evaluation(self.lgbm_eval_dict)
 
 				try:
 					self.model.fit(
 						self.data_preclassified, self.data_preclassified_targets,
 						eval_set=[(self.data_preclassified, self.data_preclassified_targets)],
 						eval_metric=self.metric_lgbm,
-						callbacks=[earlystop_cb],
-						verbose=5	
+						callbacks=[earlystop_cb, logeval_cb, receval_cb]
 					)
 				except Exception as e:
 					logger.error("Failed to fit model on data (err=%s)!" % (str(e)))
@@ -962,8 +965,7 @@ class SClassifier(object):
 				# - Custom LGBM scikit fit method
 				try:
 					self.model.fit(
-						self.data_preclassified, self.data_preclassified_targets,
-						verbose=5
+						self.data_preclassified, self.data_preclassified_targets
 					)
 				except Exception as e:
 					logger.error("Failed to fit model on data (err=%s)!" % (str(e)))
