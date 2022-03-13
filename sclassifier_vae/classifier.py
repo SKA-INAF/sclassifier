@@ -1338,7 +1338,7 @@ class SClassifier(object):
 			n_iters= len(losses_train)
 			losses_train_arr= np.array(losses_train).reshape(n_iters,1)			
 			losses_cv_arr= np.array(losses_cv).reshape(n_iters,1)			
-			iters= np.array(np.range(1, n_iters+1))
+			iters= np.array(range(1, n_iters+1))
 			head= '{} {}'.format("# iter loss_train loss_cv")
 
 			outdata_losses= np.concatenate(
