@@ -48,6 +48,7 @@ from sklearn.tree import export_text
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 
 from lightgbm import LGBMClassifier
+from lightgbm import early_stopping
 
 ## GRAPHICS MODULES
 import matplotlib
@@ -941,12 +942,18 @@ class SClassifier(object):
 		if self.classifier=='LGBMClassifier':
 			if has_cv_data:
 				# - Custom LGBM scikit fit method with early stopping
+				earlystop_cb= early_stopping(
+					stopping_rounds=self.early_stop_round, 
+					first_metric_only=False, verbose=True
+				)
+
 				try:
 					self.model.fit(
 						self.data_preclassified, self.data_preclassified_targets,
 						eval_set=[(self.data_preclassified, self.data_preclassified_targets)],
 						early_stopping_rounds=self.early_stop_round,
 						eval_metric=self.metric_lgbm,
+						callbacks=earlystop_cb
 						verbose=5	
 					)
 				except Exception as e:
