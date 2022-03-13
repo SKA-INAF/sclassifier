@@ -946,7 +946,7 @@ class SClassifier(object):
 				# - Custom LGBM scikit fit method with early stopping
 				earlystop_cb= early_stopping(
 					stopping_rounds=self.early_stop_round, 
-					first_metric_only=False, verbose=True
+					first_metric_only=True, verbose=True
 				)
 			
 				logeval_cb= log_evaluation(period=1, show_stdv=True)	
@@ -955,8 +955,8 @@ class SClassifier(object):
 				try:
 					self.model.fit(
 						self.data_preclassified, self.data_preclassified_targets,
-						eval_set=[(self.data_preclassified_cv, self.data_preclassified_targets_cv)],
-						eval_names=["cv"],
+						eval_set=[(self.data_preclassified_cv, self.data_preclassified_targets_cv), (self.data_preclassified, self.data_preclassified_targets)],
+						eval_names=["cv","train"],
 						eval_metric=self.metric_lgbm,
 						callbacks=[earlystop_cb, logeval_cb, receval_cb]
 					)
