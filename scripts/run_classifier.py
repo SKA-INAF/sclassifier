@@ -52,6 +52,7 @@ def get_args():
 
 	# - Input options
 	parser.add_argument('-inputfile','--inputfile', dest='inputfile', required=True, type=str, help='Input feature data table filename') 
+	parser.add_argument('-inputfile_cv','--inputfile_cv', dest='inputfile_cv', type=str, default='', help='Input feature validation data table filename') 
 	
 	# - Pre-processing options
 	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize feature data in range [0,1] before applying models (default=false)')	
@@ -102,6 +103,7 @@ def main():
 
 	# - Input filelist
 	inputfile= args.inputfile
+	inputfile_cv= args.inputfile_cv
 
 	# - Data pre-processing
 	normalize= args.normalize
@@ -139,6 +141,23 @@ def main():
 	snames= ret[1]
 	classids= ret[2]
 
+	#====================================
+	#==   READ FEATURE VALIDATION DATA
+	#====================================
+	data_cv= None
+	snames_cv= []
+	classids_cv= []
+
+	if inputfile_cv!="":
+		ret_cv= Utils.read_feature_data(inputfile_cv)
+		if not ret_cv:
+			logger.error("Failed to read validation data from file %s!" % (inputfile_cv))
+			return 1
+
+		data_cv= ret_cv[0]
+		snames_cv= ret_cv[1]
+		classids_cv= ret_cv[2]
+
 	#===========================
 	#==   CLASSIFY DATA
 	#===========================
@@ -156,9 +175,16 @@ def main():
 	sclass.niters= niters
 
 	if predict:
-		status= sclass.run_predict(data, classids, snames, modelfile, scalerfile)
+		status= sclass.run_predict(
+			data, classids, snames, 
+			modelfile, scalerfile
+		)
 	else:
-		status= sclass.run_train(data, classids, snames, modelfile, scalerfile)
+		status= sclass.run_train(
+			data, classids, snames, 
+			modelfile, scalerfile,
+			data_cv, classids_cv, snames_cv,
+		)
 	
 	if status<0:
 		logger.error("Classifier run failed!")

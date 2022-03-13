@@ -86,6 +86,22 @@ class SClassifier(object):
 		self.source_names= []
 		self.source_names_preclassified= []
 
+		# - Validation data
+		self.nsamples_cv= 0
+		self.nfeatures_cv= 0
+		self.data_cv= None
+		self.data_labels_cv= []
+		self.data_classids_cv= []
+		self.data_targets_cv= []
+		self.data_preclassified_cv= None
+		self.data_preclassified_labels_cv= None
+		self.data_preclassified_classids_cv= None
+		self.data_preclassified_targets_cv= None
+		self.data_preclassified_classnames_cv= None
+		self.data_preclassified_targetnames_cv= None
+		self.source_names_cv= []
+		self.source_names_preclassified_cv= []
+
 		# *****************************
 		# ** Model
 		# *****************************
@@ -114,6 +130,10 @@ class SClassifier(object):
 		self.feat_ranks= []
 		self.nclasses= 7
 		self.multiclass= multiclass
+
+		# - LGBM custom options
+		self.early_stop_round= 10
+		self.metric_lgbm= 'multi_logloss'
 
 		# - Set class label names
 		#self.classid_remap= {
@@ -271,9 +291,12 @@ class SClassifier(object):
 		if max_depth_lgbm is None:
 			max_depth_lgbm= -1
 
-		objective_lgbm= 'binary'
 		if self.multiclass:
 			objective_lgbm= 'multiclass'
+			self.metric_lgbm= 'multi_logloss'
+		else:
+			objective_lgbm= 'binary'
+			self.metric_lgbm= 'binary_logloss'
 
 		lgbm= LGBMClassifier(
 			n_estimators=self.n_estimators, 
@@ -283,7 +306,9 @@ class SClassifier(object):
 			learning_rate=self.learning_rate,
 			num_iterations=self.niters,
 			objective=objective_lgbm,
+			metric=self.metric_lgbm,
 			boosting_type='gbdt',
+			verbose=1
 			#num_class=self.nclasses
 		)
 
@@ -430,6 +455,47 @@ class SClassifier(object):
 
 		return 0
 
+	def __set_preclass_val_data(self):
+		""" Set pre-classified validation data """
+
+		# - Set preclassified data
+		row_list= []
+		label_list= []
+		classid_list= []	
+		targetid_list= []
+
+		for i in range(self.nsamples_cv):
+			source_name= self.source_names_cv[i]
+			obj_id= self.data_classids_cv[i]
+			label= self.data_labels_cv[i]
+			target_id= self.classid_remap[obj_id] # remap obj id to target class ids
+				
+			if obj_id!=0 and obj_id!=-1:
+				row_list.append(i)
+				classid_list.append(obj_id)
+				targetid_list.append(target_id)	
+				label_list.append(label)
+				self.source_names_preclassified_cv.append(source_name)				
+
+		if row_list:	
+			self.data_preclassified_cv= self.data_cv[row_list,:]
+			self.data_preclassified_labels_cv= np.array(label_list)
+			self.data_preclassified_classids_cv= np.array(classid_list)
+			self.data_preclassified_targets_cv= np.array(targetid_list)
+			self.data_preclassified_classnames_cv= list(set(label_list))
+			self.data_preclassified_targetnames_cv= [self.target_label_map[item] for item in set(sorted(targetid_list))]
+			
+			print("data_preclassified_targetnames_cv")
+			print(self.data_preclassified_targetnames_cv)
+
+			print("self.data_preclassified_targets_cv")
+			print(self.data_preclassified_targets_cv)
+
+		if self.data_preclassified_cv is not None:
+			logger.info("#nsamples_preclass_cv=%d" % (len(self.data_preclassified_labels_cv)))
+
+		return 0
+
 	#####################################
 	##     SET DATA FROM FILE
 	#####################################	
@@ -496,6 +562,74 @@ class SClassifier(object):
 		# - Set pre-classified data
 		logger.info("Setting pre-classified data (if any) ...")
 		self.__set_preclass_data()
+
+		return 0
+
+
+
+	def set_val_data_from_file(self, filename):
+		""" Set validation data from input file. Expected format: sname, N features, classid """
+
+		# - Read table
+		row_start= 0
+		try:
+			table= ascii.read(filename, data_start=row_start)
+		except:
+			logger.error("Failed to read feature file %s!" % filename)
+			return -1
+	
+		print(table.colnames)
+		print(table)
+
+		ncols= len(table.colnames)
+		nfeat= ncols-2
+
+		# - Set data vectors
+		rowIndex= 0
+		self.data_labels_cv= []
+		self.data_classids_cv= []
+		self.data_targets_cv= []
+		self.source_names_cv= []
+		featdata= []
+
+		for data in table:
+			sname= data[0]
+			obj_id= data[ncols-1]
+			label= self.classid_label_map[classid]
+			targetid= self.classid_remap[obj_id] # remap obj id in class id
+
+			self.source_names_cv.append(sname)
+			self.data_labels_cv.append(label)
+			self.data_classids_cv.append(obj_id)
+			self.data_targets_cv.append(targetid)
+			featdata_curr= []
+			for k in range(nfeat):
+				featdata_curr.append(data[k+1])
+			featdata.append(featdata_curr)
+
+		self.data_cv= np.array(featdata)
+		if self.data.size_cv==0:
+			logger.error("Empty feature data vector read!")
+			return -1
+
+		data_shape= self.data_cv.shape
+		self.nsamples_cv= data_shape[0]
+		self.nfeatures_cv= data_shape[1]
+		logger.info("#nsamples=%d, #nfeatures=%d" % (self.nsamples_cv, self.nfeatures_cv))
+		
+		# - Normalize feature data?
+		if self.normalize:
+			logger.info("Normalizing feature data ...")
+			#data_norm= self.__normalize_data(self.data, self.norm_min, self.norm_max)
+			data_norm= self.__transform_data(self.data_cv, self.norm_min, self.norm_max)
+			if data_norm is None:
+				logger.error("Data transformation failed!")
+				return -1
+			self.data_cv= data_norm
+
+		# - Set pre-classified data
+		logger.info("Setting pre-classified validation data (if any) ...")
+		self.__set_preclass_val_data()
 
 		return 0
 
@@ -573,10 +707,79 @@ class SClassifier(object):
 		return 0
 
 
+	def set_val_data(self, featdata, class_ids=[], snames=[]):
+		""" Set validation data from input array. Optionally give labels & obj names """
+
+		# - Set data vector
+		self.data_labels_cv= []
+		self.data_classids_cv= []
+		self.data_targets_cv= []
+		self.source_names_cv= []
+
+		# - Set feature data
+		self.data_cv= featdata
+		data_shape= self.data_cv.shape
+
+		if self.data_cv.size==0:
+			logger.error("Empty feature data vector given!")
+			return -1
+
+		self.nsamples_cv= data_shape[0]
+		self.nfeatures_cv= data_shape[1]
+
+		# - Set class ids & labels
+		if class_ids:
+			nids= len(class_ids)
+			if nids!=self.nsamples_cv:
+				logger.error("Given class ids have size (%d) different than feature data (%d)!" % (nids,self.nsamples_cv))
+				return -1
+			self.data_classids_cv= class_ids
+
+			for classid in self.data_classids_cv:
+				label= self.classid_label_map[classid]
+				self.data_labels_cv.append(label)
+
+		else:
+			self.data_classids_cv= [0]*self.nsamples_cv # Init to unknown type
+			self.data_labels_cv= ["UNKNOWN"]*self.nsamples_cv
+		
+		# - Set target ids
+		for j in range(len(self.data_classids_cv)):
+			obj_id= self.data_classids_cv[j]
+			targetid= self.classid_remap[obj_id] # remap obj id in class id
+			self.data_targets_cv.append(targetid)
+		
+		# - Set obj names
+		if snames:
+			n= len(snames)	
+			if n!=self.nsamples_cv:
+				logger.error("Given source names have size (%d) different than feature data (%d)!" % (n,self.nsamples_cv))
+				return -1
+			self.source_names_cv= snames
+		else:
+			self.source_names_cv= ["XXX"]*self.nsamples_cv # Init to unclassified
+		
+		logger.info("#nsamples=%d, #nfeatures=%d" % (self.nsamples_cv, self.nfeatures_cv))
+		
+		# - Normalize feature data?
+		if self.normalize:
+			logger.info("Normalizing feature data ...")
+			data_norm= self.__transform_data(self.data_cv, self.norm_min, self.norm_max)
+			if data_norm is None:
+				logger.error("Data transformation failed!")
+				return -1
+			self.data_cv= data_norm
+
+		# - Set pre-classified data
+		logger.info("Setting pre-classified validation data (if any) ...")
+		self.__set_preclass_val_data()
+
+		return 0
+
 	#####################################
 	##     RUN TRAIN
 	#####################################
-	def run_train(self, datafile, modelfile='', scalerfile=''):
+	def run_train(self, datafile, modelfile='', scalerfile='', datafile_cv=''):
 		""" Run train using input dataset """
 
 		#================================
@@ -603,6 +806,16 @@ class SClassifier(object):
 			logger.error("Failed to read datafile %s!" % datafile)
 			return -1
 
+		#================================
+		#==   LOAD CROSS-VALIDATION DATA
+		#================================
+		if datafile_cv!="":
+			logger.info("Reading validation data from file %s ..." % datafile_cv)
+			
+			if self.set_val_data_from_file(datafile_cv)<0:
+				logger.error("Failed to read validation datafile %s!" % datafile_cv)
+				return -1
+		
 		#================================
 		#==   LOAD MODEL
 		#================================
@@ -643,7 +856,7 @@ class SClassifier(object):
 		return 0
 
 
-	def run_train(self, data, class_ids=[], snames=[], modelfile='', scalerfile=''):
+	def run_train(self, data, class_ids=[], snames=[], modelfile='', scalerfile='', data_cv=None, class_ids_cv=[], snames_cv=[]):
 		""" Run train using input dataset """
 
 		#================================
@@ -667,8 +880,18 @@ class SClassifier(object):
 			return -1
 
 		if self.set_data(data, class_ids, snames)<0:
-			logger.error("Failed to read datafile %s!" % datafile)
+			logger.error("Failed to set data!")
 			return -1
+
+		#================================
+		#==   LOAD CROSS-VALIDATION DATA
+		#================================
+		if data_cv is not None:
+			logger.info("Loading validation data ...")
+			
+			if self.set_val_data(data_cv, class_ids_cv, snames_cv)<0:
+				logger.error("Failed to set validation data!")
+				return -1
 
 		#================================
 		#==   LOAD MODEL
@@ -710,6 +933,46 @@ class SClassifier(object):
 		return 0
 
 
+	def __fit_model(self):
+		""" Fit model """
+
+		has_cv_data= (self.data_preclassified_cv is not None) and (self.data_preclassified_targets_cv is not None)
+
+		if self.classifier=='LGBMClassifier':
+			if has_cv_data:
+				# - Custom LGBM scikit fit method with early stopping
+				try:
+					self.model.fit(
+						self.data_preclassified, self.data_preclassified_targets,
+						eval_set=[(self.data_preclassified, self.data_preclassified_targets)],
+						early_stopping_rounds=self.early_stop_round,
+						eval_metric=self.metric_lgbm,
+						verbose=5	
+					)
+				except Exception as e:
+					logger.error("Failed to fit model on data (err=%s)!" % (str(e)))
+					return -1
+			else:
+				# - Custom LGBM scikit fit method
+				try:
+					self.model.fit(
+						self.data_preclassified, self.data_preclassified_targets,
+						verbose=5
+					)
+				except Exception as e:
+					logger.error("Failed to fit model on data (err=%s)!" % (str(e)))
+					return -1
+		else:
+			# - Standard scikit learn fit method
+			try:
+				self.model.fit(self.data_preclassified, self.data_preclassified_targets)
+			except Exception as e:
+				logger.error("Failed to fit model on data (err=%s)!" % (str(e)))
+				return -1
+		
+		return 0
+
+
 	def __train(self):
 		""" Train model """
 		
@@ -728,11 +991,14 @@ class SClassifier(object):
 
 		# - Fit model on pre-classified data
 		logger.info("Fit model on train data ...")
-		try:
-			self.model.fit(self.data_preclassified, self.data_preclassified_targets)
-		except Exception as e:
-			logger.error("Failed to fit model on data (err=%s)!" % (str(e)))
+		if self.__fit_model()<0:
+			logger.error("Failed to fit model on data!")
 			return -1
+		#try:
+		#	self.model.fit(self.data_preclassified, self.data_preclassified_targets)
+		#except Exception as e:
+		#	logger.error("Failed to fit model on data (err=%s)!" % (str(e)))
+		#	return -1
 
 		# - Predict model on pre-classified data
 		logger.info("Predicting class and probabilities on train data ...")
