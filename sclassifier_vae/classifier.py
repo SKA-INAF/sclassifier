@@ -951,9 +951,8 @@ class SClassifier(object):
 					self.model.fit(
 						self.data_preclassified, self.data_preclassified_targets,
 						eval_set=[(self.data_preclassified, self.data_preclassified_targets)],
-						early_stopping_rounds=self.early_stop_round,
 						eval_metric=self.metric_lgbm,
-						callbacks=earlystop_cb,
+						callbacks=[earlystop_cb],
 						verbose=5	
 					)
 				except Exception as e:
