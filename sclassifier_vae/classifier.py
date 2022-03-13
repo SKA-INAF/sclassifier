@@ -192,6 +192,7 @@ class SClassifier(object):
 		self.outfile_model= "classifier.sav"
 		self.outfile_metrics= "metrics.dat"
 		self.outfile= 'classified_data.dat'
+		self.outfile_losses= 'losses.dat'
 		self.plotfile_decisiontree= 'decision_tree.png'
 
 	#####################################
@@ -956,7 +957,7 @@ class SClassifier(object):
 					self.model.fit(
 						self.data_preclassified, self.data_preclassified_targets,
 						eval_set=[(self.data_preclassified_cv, self.data_preclassified_targets_cv), (self.data_preclassified, self.data_preclassified_targets)],
-						eval_names=["cv","train"],
+						eval_names=["cv", "train"],
 						eval_metric=self.metric_lgbm,
 						callbacks=[earlystop_cb, logeval_cb, receval_cb]
 					)
@@ -1327,6 +1328,26 @@ class SClassifier(object):
 			logger.info("Dumping model to file %s ..." % self.outfile_model)
 			pickle.dump(self.model, open(self.outfile_model, 'wb'))
 			
+		#================================
+		#==   SAVE LOSSES
+		#================================
+		if self.classifier=='LGBMClassifier' and self.lgbm_eval_dict:
+			logger.info("Saving LGBM loss metrics ...")
+			losses_train= self.lgbm_eval_dict['train'][self.metric_lgbm]
+			losses_cv= self.lgbm_eval_dict['cv'][self.metric_lgbm]
+			n_iters= len(losses_train)
+			losses_train_arr= np.array(losses_train).reshape(n_iters,1)			
+			losses_cv_arr= np.array(losses_cv).reshape(n_iters,1)			
+			iters= np.array(np.range(1, n_iters+1))
+			head= '{} {}'.format("# iter loss_train loss_cv")
+
+			outdata_losses= np.concatenate(
+				(iters, losses_train_arr, losses_cv_arr),
+				axis=1
+			)
+			Utils.write_ascii(outdata_losses, self.outfile_losses, head)	
+
+
 		#================================
 		#==   SAVE METRICS
 		#================================
