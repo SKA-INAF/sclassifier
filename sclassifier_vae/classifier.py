@@ -959,6 +959,10 @@ class SClassifier(object):
 						eval_metric=self.metric_lgbm,
 						callbacks=[earlystop_cb, logeval_cb, receval_cb]
 					)
+		
+					print("--> lgbm eval dict")
+					print(self.lgbm_eval_dict)
+
 				except Exception as e:
 					logger.error("Failed to fit model on data (err=%s)!" % (str(e)))
 					return -1
