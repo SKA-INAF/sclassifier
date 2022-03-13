@@ -1052,10 +1052,14 @@ class SClassifier(object):
 			self.class_recalls.append(class_recall)
 			self.class_f1scores.append(class_f1score)
 			
+		
 		logger.info("accuracy=%f" % (self.accuracy))
 		logger.info("precision=%f" % (self.precision))
 		logger.info("recall=%f" % (self.recall))
 		logger.info("f1score=%f" % (self.f1score))
+		
+		print("--> Classification report")
+		print(report)
 		logger.info("--> Metrics per class")
 		print("classnames")
 		print(self.data_preclassified_targetnames)
