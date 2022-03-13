@@ -954,7 +954,8 @@ class SClassifier(object):
 				try:
 					self.model.fit(
 						self.data_preclassified, self.data_preclassified_targets,
-						eval_set=[(self.data_preclassified, self.data_preclassified_targets)],
+						eval_set=[(self.data_preclassified_cv, self.data_preclassified_targets_cv)],
+						eval_names=["cv"],
 						eval_metric=self.metric_lgbm,
 						callbacks=[earlystop_cb, logeval_cb, receval_cb]
 					)
