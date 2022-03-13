@@ -309,6 +309,7 @@ class SClassifier(object):
 			num_iterations=self.niters,
 			objective=objective_lgbm,
 			metric=self.metric_lgbm,
+			is_provide_training_metric=True,
 			boosting_type='gbdt',
 			verbose=1
 			#num_class=self.nclasses
