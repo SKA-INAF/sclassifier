@@ -131,6 +131,7 @@ class SClassifier(object):
 		self.feat_ranks= []
 		self.nclasses= 7
 		self.multiclass= multiclass
+		self.balance_classes= False
 
 		# - LGBM custom options
 		self.early_stop_round= 10
@@ -297,24 +298,50 @@ class SClassifier(object):
 		if self.multiclass:
 			objective_lgbm= 'multiclass'
 			self.metric_lgbm= 'multi_logloss'
+			
+			class_weight= None
+			if self.balance_classes:
+				class_weight= 'balanced'
+
+			lgbm= LGBMClassifier(
+				n_estimators=self.n_estimators, 
+				max_depth=max_depth_lgbm, 
+				min_data_in_leaf=self.min_samples_leaf, 
+				num_leaves=self.num_leaves,
+				learning_rate=self.learning_rate,
+				num_iterations=self.niters,
+				objective=objective_lgbm,
+				metric=self.metric_lgbm,
+				is_provide_training_metric=True,
+				boosting_type='gbdt',
+				class_weight=class_weight,
+				verbose=1
+				#num_class=self.nclasses
+			)
+
 		else:
 			objective_lgbm= 'binary'
 			self.metric_lgbm= 'binary_logloss'
 
-		lgbm= LGBMClassifier(
-			n_estimators=self.n_estimators, 
-			max_depth=max_depth_lgbm, 
-			min_data_in_leaf=self.min_samples_leaf, 
-			num_leaves=self.num_leaves,
-			learning_rate=self.learning_rate,
-			num_iterations=self.niters,
-			objective=objective_lgbm,
-			metric=self.metric_lgbm,
-			is_provide_training_metric=True,
-			boosting_type='gbdt',
-			verbose=1
-			#num_class=self.nclasses
-		)
+			is_unbalance= False
+			if self.balance_classes:
+				is_unbalance= True
+
+			lgbm= LGBMClassifier(
+				n_estimators=self.n_estimators, 
+				max_depth=max_depth_lgbm, 
+				min_data_in_leaf=self.min_samples_leaf, 
+				num_leaves=self.num_leaves,
+				learning_rate=self.learning_rate,
+				num_iterations=self.niters,
+				objective=objective_lgbm,
+				metric=self.metric_lgbm,
+				is_provide_training_metric=True,
+				boosting_type='gbdt',
+				is_unbalance=is_unbalance,
+				verbose=1
+				#num_class=self.nclasses
+			)
 
 		# - Set DecisionTree classifier
 		dt= DecisionTreeClassifier(

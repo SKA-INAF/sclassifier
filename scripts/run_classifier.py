@@ -66,6 +66,8 @@ def get_args():
 	parser.set_defaults(predict=False)
 	parser.add_argument('--binary_class', dest='binary_class', action='store_true',help='Perform a binary classification {0=EGAL,1=GAL} (default=multiclass)')	
 	parser.set_defaults(binary_class=False)
+	parser.add_argument('--balance_classes', dest='balance_classes', action='store_true',help='Apply class weights to balance classes (default=false)')	
+	parser.set_defaults(balance_classes=False)
 
 	# - Tree options
 	parser.add_argument('-max_depth','--max_depth', dest='max_depth', required=False, type=int, default=None, help='Max depth for decision tree, random forest and LGBM')
@@ -75,6 +77,7 @@ def get_args():
 	parser.add_argument('-num_leaves','--num_leaves', dest='num_leaves', required=False, type=int, default=31, help='Max number of leaves in one tree for LGBM classifier') 
 	parser.add_argument('-learning_rate','--learning_rate', dest='learning_rate', required=False, type=float, default=0.1, help='Learning rate for LGBM classifier and others (TBD)') 
 	parser.add_argument('-niters','--niters', dest='niters', required=False, type=int, default=100, help='Number of boosting iterations for LGBM classifier and others (TBD)') 
+	
 	
 	# - Output options
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='classified_data.dat', help='Output filename (.dat) with classified data') 
@@ -116,6 +119,8 @@ def main():
 	multiclass= True
 	if args.binary_class:
 		multiclass= False
+
+	balance_classes= args.balance_classes
 
 	# - Tree options
 	max_depth= args.max_depth
@@ -173,6 +178,7 @@ def main():
 	sclass.num_leaves= num_leaves
 	sclass.learning_rate= learning_rate
 	sclass.niters= niters
+	sclass.balance_classes= balance_classes
 
 	if predict:
 		status= sclass.run_predict(
