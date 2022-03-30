@@ -100,7 +100,7 @@ def lgbm_multiclass_scan_objective(trial, X, y, target_names, niters=1000, balan
 
 	# - Scan over parameters
 	for idx, (train_idx, test_idx) in enumerate(cv.split(X, y)):
-		X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
+		X_train, X_test = X[train_idx], X[test_idx]
 		y_train, y_test = y[train_idx], y[test_idx]
 
 #	for train_idx, test_idx in cv.split(X, y):
@@ -183,7 +183,7 @@ def lgbm_binary_scan_objective(trial, X, y, target_names, niters=1000, balance_c
 
 	# - Scan over parameters
 	for idx, (train_idx, test_idx) in enumerate(cv.split(X, y)):
-		X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
+		X_train, X_test = X[train_idx], X[test_idx]
 		y_train, y_test = y[train_idx], y[test_idx]
 
 		# - Create model
