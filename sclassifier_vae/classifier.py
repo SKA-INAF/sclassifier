@@ -92,12 +92,6 @@ def lgbm_multiclass_scan_objective(trial, X, y, target_names, niters=1000, balan
 	cv = StratifiedKFold(n_splits=nsplits, shuffle=True, random_state=1121218)
 	cv_scores = np.empty(nsplits)
 
-	print("X shape")
-	print(X.shape)
-
-	print("y shape")
-	print(y.shape)
-
 	# - Scan over parameters
 	for idx, (train_idx, test_idx) in enumerate(cv.split(X, y)):
 		X_train, X_test = X[train_idx], X[test_idx]
@@ -105,7 +99,7 @@ def lgbm_multiclass_scan_objective(trial, X, y, target_names, niters=1000, balan
 
 		# - Create model
 		objective_lgbm= 'multiclass'
-		metric_lgbm= 'multiclass'		
+		metric_lgbm= 'multi_logloss'		
 		class_weight= None
 		if balance_classes:
 			class_weight= 'balanced'
