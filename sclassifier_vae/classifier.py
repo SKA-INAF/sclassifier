@@ -1221,7 +1221,7 @@ class SClassifier(object):
 
 		# - Define optuna study	
 		logger.info("Define optuna study ...")
-		study = optuna.create_study(direction="maximize", study_name="LGBM Classifier")
+		study = optuna.create_study(direction="minimize", study_name="LGBM Classifier")
 		
 		if self.multiclass:
 			func= lambda trial: lgbm_multiclass_scan_objective(trial, X, y, target_names=self.target_names, niters=self.niters, balance_classes=self.balance_classes)
