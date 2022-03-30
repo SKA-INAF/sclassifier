@@ -1153,9 +1153,9 @@ class SClassifier(object):
 			"boosting_type": "gbdt",
 			"is_provide_training_metric": True,
 			"class_weight": class_weight,
-			"learning_rate": learning_rate,
-			"n_estimators": n_estimators,
-			"min_data_in_leaf": min_data_in_leaf,
+			"learning_rate": self.learning_rate,
+			"n_estimators": self.n_estimators,
+			"min_data_in_leaf": self.min_data_in_leaf,
 
 			# "device_type": trial.suggest_categorical("device_type", ['gpu']),
 			#"n_estimators": trial.suggest_categorical("n_estimators", [10000]),
