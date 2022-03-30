@@ -88,13 +88,25 @@ def lgbm_multiclass_scan_objective(trial, X, y, target_names, niters=1000, balan
 		#),
 	}
 
-	cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=1121218)
-	cv_scores = np.empty(5)
+	nsplits= 5
+	cv = StratifiedKFold(n_splits=nsplits, shuffle=True, random_state=1121218)
+	cv_scores = np.empty(nsplits)
+
+	print("X shape")
+	print(X.shape)
+
+	print("y shape")
+	print(y.shape)
 
 	# - Scan over parameters
 	for idx, (train_idx, test_idx) in enumerate(cv.split(X, y)):
 		X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
 		y_train, y_test = y[train_idx], y[test_idx]
+
+#	for train_idx, test_idx in cv.split(X, y):
+#		print("TRAIN:", train_idx, "TEST:", test_idx)
+#		X_train, X_test = X[train_idx], X[test_idx]
+#		y_train, y_test = y[train_idx], y[test_idx]
 
 		# - Create model
 		objective_lgbm= 'multiclass'
