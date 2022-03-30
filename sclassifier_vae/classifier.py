@@ -110,12 +110,6 @@ def lgbm_multiclass_scan_objective(trial, X, y, target_names, niters=1000, balan
 	cv = StratifiedKFold(n_splits=nsplits, shuffle=True, random_state=1121218)
 	cv_scores = np.empty(nsplits)
 
-	earlystop_cb= early_stopping(
-		stopping_rounds=self.early_stop_round, 
-		first_metric_only=True, verbose=True
-	)
-			
-	logeval_cb= log_evaluation(period=1, show_stdv=True)
 
 	# - Scan over parameters
 	for idx, (train_idx, test_idx) in enumerate(cv.split(X, y)):
@@ -133,8 +127,8 @@ def lgbm_multiclass_scan_objective(trial, X, y, target_names, niters=1000, balan
 			eval_metric=metric_lgbm,
 			early_stopping_rounds=100,
 			callbacks=[	
-				#LightGBMPruningCallback(trial, metric_lgbm, valid_name='testsample'),
-				earlystop_cb, 
+				LightGBMPruningCallback(trial, metric_lgbm, valid_name='testsample'),
+				#earlystop_cb, 
 				#logeval_cb, 
 				#receval_cb
 			]
