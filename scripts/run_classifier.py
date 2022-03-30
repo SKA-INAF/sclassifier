@@ -78,6 +78,10 @@ def get_args():
 	parser.add_argument('-learning_rate','--learning_rate', dest='learning_rate', required=False, type=float, default=0.1, help='Learning rate for LGBM classifier and others (TBD)') 
 	parser.add_argument('-niters','--niters', dest='niters', required=False, type=int, default=100, help='Number of boosting iterations for LGBM classifier and others (TBD)') 
 	
+	# - Run option
+	parser.add_argument('--run_scan', dest='run_scan', action='store_true',help='Run LGBM scan (default=false)')	
+	parser.set_defaults(run_scan=False)
+	parser.add_argument('-ntrials','--ntrials', dest='ntrials', required=False, type=int, default=1, help='Number of Optuna study trials (default=1)') 
 	
 	# - Output options
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='classified_data.dat', help='Output filename (.dat) with classified data') 
@@ -130,6 +134,10 @@ def main():
 	num_leaves= args.num_leaves
 	learning_rate= args.learning_rate
 	niters= args.niters
+
+	# - Run options
+	run_scan= args.run_scan
+	ntrials= args.ntrials
 	
 	# - Output options
 	outfile= args.outfile
@@ -186,11 +194,15 @@ def main():
 			modelfile, scalerfile
 		)
 	else:
-		status= sclass.run_train(
-			data, classids, snames, 
-			modelfile, scalerfile,
-			data_cv, classids_cv, snames_cv,
-		)
+		if run_scan:
+			status= sclass.run_lgbm_scan(n_trials=ntrials)
+
+		else:
+			status= sclass.run_train(
+				data, classids, snames, 
+				modelfile, scalerfile,
+				data_cv, classids_cv, snames_cv,
+			)
 	
 	if status<0:
 		logger.error("Classifier run failed!")

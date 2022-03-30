@@ -21,6 +21,7 @@ import logging
 import re
 import shutil
 import glob
+import json
 
 ## COMMAND-LINE ARG MODULES
 import getopt
@@ -53,7 +54,7 @@ from sclassifier_vae.data_loader import DataLoader
 from sclassifier_vae.utils import Utils
 from sclassifier_vae.classifier import SClassifier
 from sclassifier_vae.cutout_maker import SCutoutMaker
-
+from sclassifier_vae.feature_extractor_mom import FeatExtractorMom
 
 #===========================
 #==   IMPORT MPI
@@ -435,15 +436,18 @@ def read_img(inputfile, metadata_file="metadata.tbl", jobdir=""):
 
 	return data, header, wcs
 
-
+#===========================
+#==   MAKE DATA LISTS
+#===========================
 def clear_cutout_dirs(datadir, datadir_mask, nsurveys):
 	""" Remove cutout dirs with less than desired survey files """
 
 	# - List all directories with masked cutouts
 	sdirs_mask= []
 	for item in os.listdir(datadir_mask):
-		if os.path.isdir(os.path.join(datadir_mask, item)):
-			sdirs_mask.append(item)
+		fullpath= os.path.join(datadir_mask, item)
+		if os.path.isdir(fullpath):
+			sdirs_mask.append(fullpath)
 
 	print("sdirs_mask")
 	print(sdirs_mask)
@@ -459,19 +463,20 @@ def clear_cutout_dirs(datadir, datadir_mask, nsurveys):
 
 		if os.path.exists(sdir_mask):
 			logger.info("[PROC %d] Removing masked cutout dir %s ..." % (procId, sdir_mask))
-			#shutil.rmtree(sdir_mask)
+			shutil.rmtree(sdir_mask)
 
 			sdir_base= os.path.basename(os.path.normpath(sdir_mask))
 			sdir= os.path.join(datadir, sdir_base)
 			if os.path.exists(sdir):
 				logger.info("[PROC %d] Removing cutout dir %s ..." % (procId, sdir))
-				#shutil.rmtree(sdir)
+				shutil.rmtree(sdir)
 
 	# - Do the same on cutout dirs (e.g. maybe masked cutouts are missed due to a fail on masking routine)
 	sdirs= []
 	for item in os.listdir(datadir):
-		if os.path.isdir(os.path.join(datadir, item)):
-			sdirs.append(item)
+		fullpath= os.path.join(datadir, item)
+		if os.path.isdir(fullpath):
+			sdirs.append(fullpath)
 
 	for sdir in sdirs:
 		files= glob.glob(os.path.join(sdir,"*.fits"))
@@ -481,10 +486,126 @@ def clear_cutout_dirs(datadir, datadir_mask, nsurveys):
 		
 		if os.path.exists(sdir):
 			logger.info("[PROC %d] Removing cutout dir %s ..." % (procId, sdir))
-			#shutil.rmtree(sdir)
+			shutil.rmtree(sdir)
 
 	return 0
 
+def file_sorter(item):
+	""" Custom sorter of filename according to rank """
+	return item[1]
+
+def get_file_rank(filename):
+	""" Return file order rank from filename """
+
+	# - Check if radio
+	is_radio= False
+	score= 0
+	if "meerkat_gps" in filename:
+		is_radio= True
+	if "askap" in filename:
+		is_radio= True
+	if "first" in filename:
+		is_radio= True
+	if "custom_survey" in filename:
+		is_radio= True
+	if is_radio:
+		score= 0
+
+	# - Check if 12 um
+	if "wise_12" in filename:
+		score= 1
+
+	# - Check if 22 um
+	if "wise_22" in filename:
+		score= 2
+
+	# - Check if 3.4 um
+	if "wise_3_4" in filename:
+		score= 3
+
+	# - Check if 4.6 um
+	if "wise_4_6" in filename:
+		score= 4
+
+	# - Check if 8 um
+	if "irac_8" in filename:
+		score= 5
+
+	# - Check if 70 um
+	if "higal_70" in filename:
+		score= 6
+
+	return score
+
+def make_datalists(datadir, slabelmap, outfile):
+	""" Create json datalists for cutouts """
+
+	# - Init data dictionary
+	data_dict= {"data": []}
+	normalizable_flag= 1
+
+	# - Create dir list
+	sdirs= []
+	for item in os.listdir(datadir):
+		fullpath= os.path.join(datadir, item)
+		if os.path.isdir(fullpath):
+			sdirs.append(fullpath)
+
+	for sdir in sdirs:
+		# - Get all FITS files in dir
+		filenames= glob.glob(os.path.join(sdir,"*.fits"))
+		nfiles= len(filenames)
+		if nfiles<=0:
+			continue
+		
+		# - Sort filename (bash equivalent)
+		filenames_sorted= sorted(filenames)
+		filenames= filenames_sorted	
+
+		# - Sort filename according to specified ranks
+		filenames_ranks = []
+		for filename in filenames:
+			rank= get_file_rank(filename)
+			filenames_ranks.append(rank)
+
+		filenames_tuple= [(filename,rank) for filename,rank in zip(filenames,filenames_ranks)]
+		filenames_tuple_sorted= sorted(filenames_tuple, key=file_sorter)
+		filenames_sorted= []
+		for item in filenames_tuple_sorted:
+			filenames_sorted.append(item[0])
+
+		filenames= filenames_sorted
+
+		# - Create normalizable flags
+		normalizable= [normalizable_flag]*len(filenames)
+
+		# - Compute source name from directory name
+		sname= os.path.basename(os.path.normpath(sdir))
+
+		# - Find class label & id
+		class_label= "UNKNOWN"
+		if sname not in slabelmap:
+			logger.warn("[PROC %d] Source %s not present in class label map, setting class label to UNKNOWN..." % (procId, sname))
+			class_label= "UNKNOWN"
+		else:
+			class_label= slabelmap[sname]
+		
+		class_id= class_label_id_map[class_label]
+		
+		# - Add entry in dictionary
+		d= {}
+		d["filepaths"]= filenames
+		d["normalizable"]= normalizable
+		d["sname"]= sname
+		d["id"]= class_id
+		d["label"]= class_label
+		data_dict["data"].append(d)
+
+	# - Save json filelist
+	logger.info("[PROC %d] Saving json datalist to file %s ..." % (procId, outfile))
+	with open(outfile, 'w') as fp:
+		json.dump(data_dict, fp)
+		
 
 ##############
 ##   MAIN   ##
@@ -616,6 +737,9 @@ def main():
 		slabel= slabels_sel[i]
 		sname_label_map[sname]= slabel
 
+	print("sname_label_map")
+	print(sname_label_map)
+
 	# - Compute centroids & radius
 	centroids, radii= compute_region_info(regs_sel)
 
@@ -697,11 +821,89 @@ def main():
 
 	#===========================
 	#==   MAKE FILELISTS
+	#==      (ONLY PROC 0)
 	#===========================
-	# - Create data filelists
+	if procId==MASTER:
+		mkdatalist_status= 0
+
+		# - Create data filelists for cutouts
+		datalist_file= os.path.join(jobdir, "datalist.json")
+		logger.info("[PROC %d] Creating cutout data list file %s ..." % (procId, datalist_file))
+		make_datalists(datadir, sname_label_map, datalist_file)
+
+		# - Create data filelists for masked cutouts
+		datalist_mask_file= os.path.join(jobdir, "datalist_masked.json")
+		logger.info("[PROC %d] Creating masked cutout data list file %s ..." % (procId, datalist_mask_file))
+		make_datalists(datadir_mask, sname_label_map, datalist_mask_file)
+
+		# - Check datalist number of entries
+		logger.info("[PROC %d] Checking cutout data list number of entries ..." % (procId))
+		try:
+			with open(datalist_file) as fp:
+				datadict= json.load(fp)
+				n= len(datadict["data"])
+				
+			with open(datalist_mask_file) as fp:
+				datadict= json.load(fp)
+				n_masked= len(datadict["data"])
+
+			logger.info("[PROC %d] Cutout filelists have sizes (%d,%d) ..." % (procId, n, n_masked))
+
+			if n!=n_masked:
+				logger.error("[PROC %d] Data lists for cutouts and masked cutouts differ in size (%d!=%d)!" % (procId, n, n_masked))
+				mkdatalist_status= -1
+			
+		except Exception as e:
+			logger.error("[PROC %d] Exception occurred when checking cutout datalist sizes!" % (procId))
+			mkdatalist_status= -1
+
+	else:
+		mkdatalist_status= 0
+		
+	if comm is not None:
+		mkdatalist_status= comm.bcast(mkdatalist_status, root=MASTER)
+
+	if mkdatalist_status<0:
+		logger.error("[PROC %d] Error on creating cutout data lists, exit!" % (procId))
+		return 1
+
+	#===========================
+	#==   EXTRACT FEATURES
+	#==     (ONLY PROC 0)
+	#===========================
+	# - Extract moment features
+	if procId==MASTER:
+		momfeat_status= 0
+		featfile_mom= os.path.join(jobdir, "features_moments.csv")		
+
+		mc= FeatExtractorMom(datalist_file, datalist_mask_file)
+		mc.refch= 0
+		mc.draw= False	
+		mc.shrink_masks= False
+		mc.grow_masks= False
+		mc.subtract_bkg= True
+		mc.subtract_bkg_only_refch= False
+		mc.ssim_winsize= 3
+		mc.save_ssim_pars= True
+		mc.outfile= featfile_mom
+
+		logger.info("[PROC %d] Extracting moment features from cutout data ..." % (procId))
+		if mc.run()<0:
+			logger.error("[PROC %d] Failed to extract moment features (see logs)!" % (procId))
+			momfeat_status= -1
+
+	else:
+		momfeat_status= 0
+
+	if comm is not None:
+		momfeat_status= comm.bcast(momfeat_status, root=MASTER)
+
+	if momfeat_status<0:
+		logger.error("[PROC %d] Failed to extract moment features, exit!" % (procId))
+		return 1
+
+	# - Extract autoencoder features
 	# ...
-
-
 
 	#===========================
 	#==   CLASSIFY SOURCES
