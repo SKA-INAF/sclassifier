@@ -105,7 +105,7 @@ def lgbm_multiclass_scan_objective(trial, X, y, target_names, niters=1000, balan
 
 		# - Create model
 		objective_lgbm= 'multiclass'
-		metric_lgbm= 'multi_logloss'		
+		metric_lgbm= 'multiclass'		
 		class_weight= None
 		if balance_classes:
 			class_weight= 'balanced'
