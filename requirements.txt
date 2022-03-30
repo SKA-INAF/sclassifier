@@ -20,3 +20,7 @@ lightgbm
 opencv-python
 mahotas
 imutils
+montage_wrapper
+scutout
+mpi4py
+optuna
