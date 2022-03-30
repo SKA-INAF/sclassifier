@@ -103,25 +103,20 @@ def lgbm_multiclass_scan_objective(trial, X, y, target_names, niters=1000, balan
 		X_train, X_test = X[train_idx], X[test_idx]
 		y_train, y_test = y[train_idx], y[test_idx]
 
-#	for train_idx, test_idx in cv.split(X, y):
-#		print("TRAIN:", train_idx, "TEST:", test_idx)
-#		X_train, X_test = X[train_idx], X[test_idx]
-#		y_train, y_test = y[train_idx], y[test_idx]
-
 		# - Create model
 		objective_lgbm= 'multiclass'
 		metric_lgbm= 'multi_logloss'		
 		class_weight= None
 		if balance_classes:
 			class_weight= 'balanced'
-			
+
 		model= LGBMClassifier(
 			num_iterations=niters,
 			objective=objective_lgbm,
 			metric=metric_lgbm,					
 			is_provide_training_metric=True,
 			boosting_type='gbdt',
-			is_unbalance=is_unbalance,
+			class_weight=class_weight,
 			verbose=1,
 			**param_grid
 		)
