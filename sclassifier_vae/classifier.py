@@ -1135,8 +1135,8 @@ class SClassifier(object):
 
 
 
-	def __lgbm_multiclass_scan_objective(self, trial, X, y):
-		""" Define optuna objective function for multiclass classification scan """
+	def __lgbm_scan_objective(self, trial, X, y):
+		""" Define optuna objective function for multiclass/binary classification scan """
     
 		# - Define parameters to be optimized
 		if self.multiclass:
@@ -1276,13 +1276,8 @@ class SClassifier(object):
 		# - Define optuna study	
 		logger.info("Define optuna study ...")
 		study = optuna.create_study(direction="maximize", study_name="LGBM Classifier")
+		func= lambda trial: self.__lgbm_scan_objective(trial, X, y)
 		
-		if self.multiclass:
-			#func= lambda trial: lgbm_multiclass_scan_objective(trial, X, y, target_names=self.target_names, niters=self.niters, balance_classes=self.balance_classes)
-			func= lambda trial: self.__lgbm_multiclass_scan_objective(trial, X, y)
-		else:
-			func= lambda trial: lgbm_binary_scan_objective(trial, X, y, target_names=self.target_names, niters=self.niters, balance_classes=self.balance_classes)
-
 		#================================
 		#==   RUN SCAN
 		#================================
@@ -1336,12 +1331,7 @@ class SClassifier(object):
 		# - Define optuna study	
 		logger.info("Define optuna study ...")
 		study = optuna.create_study(direction="maximize", study_name="LGBM Classifier")
-		
-		if self.multiclass:
-			#func= lambda trial: lgbm_multiclass_scan_objective(trial, X, y, target_names=self.target_names, niters=self.niters, balance_classes=self.balance_classes, learning_rate=self.learning_rate, n_estimators=self.n_estimators, min_data_in_leaf=self.min_samples_leaf)
-			func= lambda trial: self.__lgbm_multiclass_scan_objective(trial, X, y)
-		else:
-			func= lambda trial: lgbm_binary_scan_objective(trial, X, y, target_names=self.target_names, niters=self.niters, balance_classes=self.balance_classes)
+		func= lambda trial: self.__lgbm_scan_objective(trial, X, y)
 
 		#================================
 		#==   RUN SCAN
