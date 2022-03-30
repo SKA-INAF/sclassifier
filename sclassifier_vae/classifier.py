@@ -285,6 +285,8 @@ class SClassifier(object):
 		self.precision= None
 		self.recall= None   
 		self.f1score= None
+		self.cm= None
+		self.cm_norm= None
 		self.class_precisions= []
 		self.class_recalls= []  
 		self.class_f1scores= []
@@ -352,6 +354,8 @@ class SClassifier(object):
 		self.outfile_scaler = 'datascaler.sav'
 		self.outfile_model= "classifier.sav"
 		self.outfile_metrics= "metrics.dat"
+		self.outfile_cm= "confusion_matrix.dat"
+		self.outfile_cm_norm= "confusion_matrix_norm.dat"
 		self.outfile= 'classified_data.dat'
 		self.outfile_losses= 'losses.dat'
 		self.plotfile_decisiontree= 'decision_tree.png'
@@ -1383,10 +1387,15 @@ class SClassifier(object):
 
 		# - Retrieving confusion matrix
 		logger.info("Retrieving confusion matrix on train data ...")
-		cm= confusion_matrix(self.data_preclassified_targets, self.targets_pred)
+		self.cm= confusion_matrix(self.data_preclassified_targets, self.targets_pred)
 
 		print("confusion matrix")
-		print(cm)
+		print(self.cm)
+
+		self.cm_norm= confusion_matrix(self.data_preclassified_targets, self.targets_pred, normalize="true")
+
+		print("confusion matrix norm")
+		print(self.cm_norm)
 
 		# - Retrieving the feature importances
 		self.feat_ranks= self.model.feature_importances_
@@ -1617,10 +1626,16 @@ class SClassifier(object):
 
 			# - Retrieving confusion matrix
 			logger.info("Retrieving confusion matrix on pre-classified data ...")
-			cm= confusion_matrix(self.data_preclassified_targets, targets_pred_preclass)
+			self.cm= confusion_matrix(self.data_preclassified_targets, targets_pred_preclass)
 
 			print("confusion matrix")
-			print(cm)
+			print(self.cm)
+
+			self.cm_norm= confusion_matrix(self.data_preclassified_targets, targets_pred_preclass, normalize="true")
+
+			print("confusion matrix norm")
+			print(self.cm_norm)
+
 
 		return 0
 
@@ -1697,6 +1712,14 @@ class SClassifier(object):
 		print(metric_data.shape)
 		
 		Utils.write_ascii(metric_data, self.outfile_metrics, head)	
+
+		# - Save confusion matrix
+		logger.info("Saving confusion matrix to file ...")
+		with open(self.outfile_cm, 'w') as f:
+			f.write(np.array2string(self.cm, separator=', '))
+
+		with open(self.outfile_cm_norm, 'w') as f:
+			f.write(np.array2string(self.cm_norm, separator=', '))
 		
 		#================================
 		#==   SAVE TRAIN PREDICTION DATA
