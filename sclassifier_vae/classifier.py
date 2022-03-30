@@ -1715,12 +1715,16 @@ class SClassifier(object):
 
 		# - Save confusion matrix
 		logger.info("Saving confusion matrix to file ...")
-		with open(self.outfile_cm, 'w') as f:
-			f.write(np.array2string(self.cm, separator=', '))
+		#with open(self.outfile_cm, 'w') as f:
+		#	f.write(np.array2string(self.cm, separator=', '))
 
-		with open(self.outfile_cm_norm, 'w') as f:
-			f.write(np.array2string(self.cm_norm, separator=', '))
+		np.savetxt(self.outfile_cm, self.cm, delimiter=',')
+
+		#with open(self.outfile_cm_norm, 'w') as f:
+		#	f.write(np.array2string(self.cm_norm, separator=', '))
 		
+		np.savetxt(self.outfile_cm_norm, self.cm_norm, delimiter=',')
+
 		#================================
 		#==   SAVE TRAIN PREDICTION DATA
 		#================================
