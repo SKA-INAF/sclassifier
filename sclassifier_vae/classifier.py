@@ -70,7 +70,8 @@ def lgbm_multiclass_scan_objective(trial, X, y, target_names, niters=1000, balan
     
 	# - Define parameters to be optimized
 	objective_lgbm= 'multiclass'
-	metric_lgbm= 'multi_logloss'		
+	#metric_lgbm= 'multi_logloss' # this is not working for unknown reasons...	
+	metric_lgbm= 'multi_error'	
 	class_weight= None
 	if balance_classes:
 		class_weight= 'balanced'
