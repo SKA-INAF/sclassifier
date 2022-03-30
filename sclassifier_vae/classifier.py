@@ -65,164 +65,6 @@ from .data_loader import SourceData
 
 
 
-def lgbm_multiclass_scan_objective(trial, X, y, target_names, niters=1000, balance_classes=False, learning_rate=0.1, n_estimators=100, min_data_in_leaf=20):
-	""" Define optuna objective function for multiclass classification scan """
-    
-	# - Define parameters to be optimized
-	objective_lgbm= 'multiclass'
-	metric_lgbm= 'multi_logloss' # this is not working for unknown reasons...	
-	#metric_lgbm= 'multi_error'	
-	class_weight= None
-	if balance_classes:
-		class_weight= 'balanced'
-
-	param_grid = {
-		"num_iterations": niters,
-		"objective": objective_lgbm,
-		"metric": metric_lgbm,
-		"verbosity": 1,
-		"boosting_type": "gbdt",
-		"is_provide_training_metric": True,
-		"class_weight": class_weight,
-		"learning_rate": learning_rate,
-		"n_estimators": n_estimators,
-		"min_data_in_leaf": min_data_in_leaf,
-
-		# "device_type": trial.suggest_categorical("device_type", ['gpu']),
-		#"n_estimators": trial.suggest_categorical("n_estimators", [10000]),
-		#"learning_rate": trial.suggest_float("learning_rate", 0.01, 0.5),
-		"num_leaves": trial.suggest_int("num_leaves", 10, 4096, step=20),
-		"max_depth": trial.suggest_int("max_depth", 2, 12),
-		#"min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 10, 200, step=10),
-		#"lambda_l1": trial.suggest_int("lambda_l1", 0, 100, step=5),
-		#"lambda_l2": trial.suggest_int("lambda_l2", 0, 100, step=5),
-		#"min_gain_to_split": trial.suggest_float("min_gain_to_split", 0, 15),
-		#"bagging_fraction": trial.suggest_float(
-		#	"bagging_fraction", 0.2, 0.95, step=0.1
-		#),
- 		#"bagging_freq": trial.suggest_categorical("bagging_freq", [1]),
-		#"feature_fraction": trial.suggest_float(
-		#	"feature_fraction", 0.2, 0.95, step=0.1
-		#),
-	}
-
-	nsplits= 5
-	cv = StratifiedKFold(n_splits=nsplits, shuffle=True, random_state=1121218)
-	cv_scores = np.empty(nsplits)
-
-
-	# - Scan over parameters
-	for idx, (train_idx, test_idx) in enumerate(cv.split(X, y)):
-		X_train, X_test = X[train_idx], X[test_idx]
-		y_train, y_test = y[train_idx], y[test_idx]
-
-		# - Create model
-		model= LGBMClassifier(**param_grid)
-
-		# - Fit model	
-		model.fit(
-			X_train, y_train,
-			eval_set=[(X_test, y_test)],
-			eval_names=["testsample"],
-			eval_metric=metric_lgbm,
-			early_stopping_rounds=100,
-			callbacks=[	
-				LightGBMPruningCallback(trial, metric_lgbm, valid_name='testsample'),
-				#earlystop_cb, 
-				#logeval_cb, 
-				#receval_cb
-			]
-		)
-		
-		# - Predict model on pre-classified data
-		y_pred= model.predict(X_test)
-		
-		# - Retrieve metrics
-		logger.info("Computing classification metrics on train data ...")
-		report= classification_report(y_test, y_pred, target_names=target_names, output_dict=True)
-		f1score= report['weighted avg']['f1-score']
-		cv_scores[idx]= f1score
-
-	return np.mean(cv_scores)
-
-
-
-
-def lgbm_binary_scan_objective(trial, X, y, target_names, niters=1000, balance_classes=False):
-	""" Define optuna objective function for binary classification scan """
-    
-	# - Define parameters to be optimized
-	objective_lgbm= 'binary'
-	metric_lgbm= 'binary_logloss'
-
-	is_unbalance= False
-	if balance_classes:
-		is_unbalance= True
-
-	param_grid = {
-		"num_iterations": niters,
-		"objective": objective_lgbm,
-		"metric": metric_lgbm,
-		"is_provide_training_metric": True,
-		"boosting_type": 'gbdt',
-		"is_unbalance": is_unbalance,
-		"verbose": 1,
-
-		# "device_type": trial.suggest_categorical("device_type", ['gpu']),
-		"n_estimators": trial.suggest_categorical("n_estimators", [10000]),
-		"learning_rate": trial.suggest_float("learning_rate", 0.01, 0.5),
-		"num_leaves": trial.suggest_int("num_leaves", 20, 3000, step=20),
-		"max_depth": trial.suggest_int("max_depth", 3, 12),
-		"min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 200, 10000, step=100),
-		#"lambda_l1": trial.suggest_int("lambda_l1", 0, 100, step=5),
-		#"lambda_l2": trial.suggest_int("lambda_l2", 0, 100, step=5),
-		#"min_gain_to_split": trial.suggest_float("min_gain_to_split", 0, 15),
-		#"bagging_fraction": trial.suggest_float(
-		#	"bagging_fraction", 0.2, 0.95, step=0.1
-		#),
- 		#"bagging_freq": trial.suggest_categorical("bagging_freq", [1]),
-		#"feature_fraction": trial.suggest_float(
-		#	"feature_fraction", 0.2, 0.95, step=0.1
-		#),
-	}
-
-	cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=1121218)
-	cv_scores = np.empty(5)
-
-	# - Scan over parameters
-	for idx, (train_idx, test_idx) in enumerate(cv.split(X, y)):
-		X_train, X_test = X[train_idx], X[test_idx]
-		y_train, y_test = y[train_idx], y[test_idx]
-
-		# - Create model
-		model= LGBMClassifier(**param_grid)
-
-		# - Fit model
-		model.fit(
-			X_train, y_train,
-			eval_set=[(X_test, y_test)],
-			eval_names=["testsample"],
-			eval_metric=metric_lgbm,
-			early_stopping_rounds=100,
-			callbacks=[	
-				LightGBMPruningCallback(trial, metric_lgbm, valid_name='testsample'),
-				#earlystop_cb, 
-				#logeval_cb, 
-				#receval_cb
-			]
-		)
-		
-		# - Predict model on pre-classified data
-		y_pred= model.predict(X_test)
-		
-		# - Retrieve metrics
-		logger.info("Computing classification metrics on train data ...")
-		report= classification_report(y_test, y_pred, target_names=target_names, output_dict=True)
-		f1score= report['weighted avg']['f1-score']
-		cv_scores[idx]= f1score
-
-	return np.mean(cv_scores)
-
 ##################################
 ##     SClassifier CLASS
 ##################################
@@ -469,7 +311,7 @@ class SClassifier(object):
 				class_weight= 'balanced'
 
 			lgbm= LGBMClassifier(
-				n_estimators=self.n_estimators, 
+				#n_estimators=self.n_estimators, 
 				max_depth=max_depth_lgbm, 
 				min_data_in_leaf=self.min_samples_leaf, 
 				num_leaves=self.num_leaves,
@@ -493,7 +335,7 @@ class SClassifier(object):
 				is_unbalance= True
 
 			lgbm= LGBMClassifier(
-				n_estimators=self.n_estimators, 
+				#n_estimators=self.n_estimators, 
 				max_depth=max_depth_lgbm, 
 				min_data_in_leaf=self.min_samples_leaf, 
 				num_leaves=self.num_leaves,
@@ -1166,7 +1008,6 @@ class SClassifier(object):
 			"boosting_type": "gbdt",
 			"is_provide_training_metric": True,
 			"learning_rate": self.learning_rate,
-			"n_estimators": self.n_estimators,
 			"min_data_in_leaf": self.min_samples_leaf,
 
 			"class_weight": class_weight,
