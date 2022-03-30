@@ -65,7 +65,7 @@ from .data_loader import SourceData
 
 
 
-def lgbm_multiclass_scan_objective(trial, X, y, target_names, niters=1000, balance_classes=False, learning_rate=0.1, n_estimators=100):
+def lgbm_multiclass_scan_objective(trial, X, y, target_names, niters=1000, balance_classes=False, learning_rate=0.1, n_estimators=100, min_data_in_leaf=20):
 	""" Define optuna objective function for multiclass classification scan """
     
 	# - Define parameters to be optimized
@@ -86,13 +86,14 @@ def lgbm_multiclass_scan_objective(trial, X, y, target_names, niters=1000, balan
 		"class_weight": class_weight,
 		"learning_rate": learning_rate,
 		"n_estimators": n_estimators,
+		"min_data_in_leaf": min_data_in_leaf,
 
 		# "device_type": trial.suggest_categorical("device_type", ['gpu']),
 		#"n_estimators": trial.suggest_categorical("n_estimators", [10000]),
 		#"learning_rate": trial.suggest_float("learning_rate", 0.01, 0.5),
 		"num_leaves": trial.suggest_int("num_leaves", 10, 4096, step=20),
 		"max_depth": trial.suggest_int("max_depth", 2, 12),
-		"min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 10, 200, step=10),
+		#"min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 10, 200, step=10),
 		#"lambda_l1": trial.suggest_int("lambda_l1", 0, 100, step=5),
 		#"lambda_l2": trial.suggest_int("lambda_l2", 0, 100, step=5),
 		#"min_gain_to_split": trial.suggest_float("min_gain_to_split", 0, 15),
@@ -1225,7 +1226,7 @@ class SClassifier(object):
 		study = optuna.create_study(direction="minimize", study_name="LGBM Classifier")
 		
 		if self.multiclass:
-			func= lambda trial: lgbm_multiclass_scan_objective(trial, X, y, target_names=self.target_names, niters=self.niters, balance_classes=self.balance_classes, learning_rate=self.learning_rate, n_estimators=self.n_estimators)
+			func= lambda trial: lgbm_multiclass_scan_objective(trial, X, y, target_names=self.target_names, niters=self.niters, balance_classes=self.balance_classes, learning_rate=self.learning_rate, n_estimators=self.n_estimators, min_data_in_leaf=self.min_samples_leaf)
 		else:
 			func= lambda trial: lgbm_binary_scan_objective(trial, X, y, target_names=self.target_names, niters=self.niters, balance_classes=self.balance_classes)
 
