@@ -65,13 +65,13 @@ from .data_loader import SourceData
 
 
 
-def lgbm_multiclass_scan_objective(trial, X, y, target_names, niters=1000, balance_classes=False):
+def lgbm_multiclass_scan_objective(trial, X, y, target_names, niters=1000, balance_classes=False, learning_rate=0.1, n_estimators=100):
 	""" Define optuna objective function for multiclass classification scan """
     
 	# - Define parameters to be optimized
 	objective_lgbm= 'multiclass'
-	#metric_lgbm= 'multi_logloss' # this is not working for unknown reasons...	
-	metric_lgbm= 'multi_error'	
+	metric_lgbm= 'multi_logloss' # this is not working for unknown reasons...	
+	#metric_lgbm= 'multi_error'	
 	class_weight= None
 	if balance_classes:
 		class_weight= 'balanced'
@@ -84,13 +84,15 @@ def lgbm_multiclass_scan_objective(trial, X, y, target_names, niters=1000, balan
 		"boosting_type": "gbdt",
 		"is_provide_training_metric": True,
 		"class_weight": class_weight,
+		"learning_rate": learning_rate,
+		"n_estimators": n_estimators,
 
 		# "device_type": trial.suggest_categorical("device_type", ['gpu']),
-		"n_estimators": trial.suggest_categorical("n_estimators", [10000]),
-		"learning_rate": trial.suggest_float("learning_rate", 0.01, 0.5),
-		"num_leaves": trial.suggest_int("num_leaves", 20, 3000, step=20),
-		"max_depth": trial.suggest_int("max_depth", 3, 12),
-		"min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 200, 10000, step=100),
+		#"n_estimators": trial.suggest_categorical("n_estimators", [10000]),
+		#"learning_rate": trial.suggest_float("learning_rate", 0.01, 0.5),
+		"num_leaves": trial.suggest_int("num_leaves", 10, 4096, step=20),
+		"max_depth": trial.suggest_int("max_depth", 2, 12),
+		"min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 10, 200, step=10),
 		#"lambda_l1": trial.suggest_int("lambda_l1", 0, 100, step=5),
 		#"lambda_l2": trial.suggest_int("lambda_l2", 0, 100, step=5),
 		#"min_gain_to_split": trial.suggest_float("min_gain_to_split", 0, 15),
@@ -148,7 +150,22 @@ def lgbm_binary_scan_objective(trial, X, y, target_names, niters=1000, balance_c
 	""" Define optuna objective function for binary classification scan """
     
 	# - Define parameters to be optimized
+	objective_lgbm= 'binary'
+	metric_lgbm= 'binary_logloss'
+
+	is_unbalance= False
+	if balance_classes:
+		is_unbalance= True
+
 	param_grid = {
+		"num_iterations": niters,
+		"objective": objective_lgbm,
+		"metric": metric_lgbm,
+		"is_provide_training_metric": True,
+		"boosting_type": 'gbdt',
+		"is_unbalance": is_unbalance,
+		"verbose": 1,
+
 		# "device_type": trial.suggest_categorical("device_type", ['gpu']),
 		"n_estimators": trial.suggest_categorical("n_estimators", [10000]),
 		"learning_rate": trial.suggest_float("learning_rate", 0.01, 0.5),
@@ -176,23 +193,7 @@ def lgbm_binary_scan_objective(trial, X, y, target_names, niters=1000, balance_c
 		y_train, y_test = y[train_idx], y[test_idx]
 
 		# - Create model
-		objective_lgbm= 'binary'
-		metric_lgbm= 'binary_logloss'
-
-		is_unbalance= False
-		if balance_classes:
-			is_unbalance= True
-
-		model= LGBMClassifier(
-			num_iterations=niters,
-			objective=objective_lgbm,
-			metric=metric_lgbm,
-			is_provide_training_metric=True,
-			boosting_type='gbdt',
-			is_unbalance=is_unbalance,
-			verbose=1,
-			**param_grid
-		)
+		model= LGBMClassifier(**param_grid)
 
 		# - Fit model
 		model.fit(
@@ -202,7 +203,7 @@ def lgbm_binary_scan_objective(trial, X, y, target_names, niters=1000, balance_c
 			eval_metric=metric_lgbm,
 			early_stopping_rounds=100,
 			callbacks=[	
-				LightGBMPruningCallback(trial, metric_lgbm),
+				LightGBMPruningCallback(trial, metric_lgbm, valid_name='testsample'),
 				#earlystop_cb, 
 				#logeval_cb, 
 				#receval_cb
@@ -1224,7 +1225,7 @@ class SClassifier(object):
 		study = optuna.create_study(direction="minimize", study_name="LGBM Classifier")
 		
 		if self.multiclass:
-			func= lambda trial: lgbm_multiclass_scan_objective(trial, X, y, target_names=self.target_names, niters=self.niters, balance_classes=self.balance_classes)
+			func= lambda trial: lgbm_multiclass_scan_objective(trial, X, y, target_names=self.target_names, niters=self.niters, balance_classes=self.balance_classes, learning_rate=self.learning_rate, n_estimators=self.n_estimators)
 		else:
 			func= lambda trial: lgbm_binary_scan_objective(trial, X, y, target_names=self.target_names, niters=self.niters, balance_classes=self.balance_classes)
 
