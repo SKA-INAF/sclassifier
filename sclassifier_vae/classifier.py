@@ -69,7 +69,21 @@ def lgbm_multiclass_scan_objective(trial, X, y, target_names, niters=1000, balan
 	""" Define optuna objective function for multiclass classification scan """
     
 	# - Define parameters to be optimized
+	objective_lgbm= 'multiclass'
+	metric_lgbm= 'multi_logloss'		
+	class_weight= None
+	if balance_classes:
+		class_weight= 'balanced'
+
 	param_grid = {
+		"num_iterations": niters,
+		"objective": objective_lgbm,
+		"metric": metric_lgbm,
+		"verbosity": 1,
+		"boosting_type": "gbdt",
+		"is_provide_training_metric": True,
+		"class_weight": class_weight,
+
 		# "device_type": trial.suggest_categorical("device_type", ['gpu']),
 		"n_estimators": trial.suggest_categorical("n_estimators", [10000]),
 		"learning_rate": trial.suggest_float("learning_rate", 0.01, 0.5),
@@ -98,22 +112,7 @@ def lgbm_multiclass_scan_objective(trial, X, y, target_names, niters=1000, balan
 		y_train, y_test = y[train_idx], y[test_idx]
 
 		# - Create model
-		objective_lgbm= 'multiclass'
-		metric_lgbm= 'multi_logloss'		
-		class_weight= None
-		if balance_classes:
-			class_weight= 'balanced'
-
-		model= LGBMClassifier(
-			num_iterations=niters,
-			objective=objective_lgbm,
-			metric=metric_lgbm,					
-			is_provide_training_metric=True,
-			boosting_type='gbdt',
-			class_weight=class_weight,
-			verbose=1,
-			**param_grid
-		)
+		model= LGBMClassifier(**param_grid)
 
 		# - Fit model	
 		model.fit(
