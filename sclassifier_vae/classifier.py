@@ -557,35 +557,6 @@ class SClassifier(object):
 		return self.classifier_inventory[self.classifier]
 
 
-	def run_lgbm_scan(self, n_trials=20):
-		""" Run LGBM par scan """
-
-		# - Set scan data
-		X= self.data_preclassified
-		y= self.data_preclassified_targets
-
-		# - Define optuna study	
-		logger.info("Define optuna study ...")
-		study = optuna.create_study(direction="maximize", study_name="LGBM Classifier")
-		
-		if self.multiclass:
-			func= lambda trial: lgbm_multiclass_scan_objective(trial, X, y, target_names=self.target_names, niters=self.niters, balance_classes=self.balance_classes)
-		else:
-			func= lambda trial: lgbm_binary_scan_objective(trial, X, y, target_names=self.target_names, niters=self.niters, balance_classes=self.balance_classes)
-
-		# - Run study
-		logger.info("Run optuna study ...")
-		study.optimize(func, n_trials=n_trials)
-
-		print(f"\tBest value (rmse): {study.best_value:.5f}")
-		print(f"\tBest params:")
-
-		for key, value in study.best_params.items():
-			print(f"\t\t{key}: {value}")
-
-		return 0
-
-
 	
 
 	#####################################
@@ -1088,6 +1059,7 @@ class SClassifier(object):
 		return 0
 
 
+
 	def run_train(self, data, class_ids=[], snames=[], modelfile='', scalerfile='', data_cv=None, class_ids_cv=[], snames_cv=[]):
 		""" Run train using input dataset """
 
@@ -1161,6 +1133,126 @@ class SClassifier(object):
 		if self.__save_train()<0:
 			logger.error("Failed to save results!")
 			return -1
+
+		return 0
+
+
+	def run_lgbm_scan(self, datafile, n_trials=1):
+		""" Run LGBM par scan """
+
+		#================================
+		#==   LOAD DATA SCALER
+		#================================
+		# - Load scaler from file?
+		if scalerfile!="":
+			logger.info("Loading data scaler from file %s ..." % (scalerfile))
+			try:
+				self.data_scaler= pickle.load(open(scalerfile, 'rb'))
+			except Exception as e:
+				logger.error("Failed to load data scaler from file %s!" % (scalerfile))
+				return -1
+
+		#================================
+		#==   LOAD DATA
+		#================================
+		# - Check inputs
+		if datafile=="":
+			logger.error("Empty data file specified!")
+			return -1
+
+		if self.set_data_from_file(datafile)<0:
+			logger.error("Failed to read datafile %s!" % datafile)
+			return -1
+
+		#================================
+		#==   CREATE SCAN MODEL
+		#================================
+		# - Set scan data
+		X= self.data_preclassified
+		y= self.data_preclassified_targets
+
+		# - Define optuna study	
+		logger.info("Define optuna study ...")
+		study = optuna.create_study(direction="maximize", study_name="LGBM Classifier")
+		
+		if self.multiclass:
+			func= lambda trial: lgbm_multiclass_scan_objective(trial, X, y, target_names=self.target_names, niters=self.niters, balance_classes=self.balance_classes)
+		else:
+			func= lambda trial: lgbm_binary_scan_objective(trial, X, y, target_names=self.target_names, niters=self.niters, balance_classes=self.balance_classes)
+
+		#================================
+		#==   RUN SCAN
+		#================================
+		# - Run study
+		logger.info("Run optuna study ...")
+		study.optimize(func, n_trials=n_trials)
+
+		print(f"\tBest value (rmse): {study.best_value:.5f}")
+		print(f"\tBest params:")
+
+		for key, value in study.best_params.items():
+			print(f"\t\t{key}: {value}")
+
+		return 0
+
+
+	def run_lgbm_scan(self, data, class_ids=[], snames=[], scalerfile='', n_trials=1):
+		""" Run train using input dataset """
+
+		#================================
+		#==   LOAD DATA SCALER
+		#================================
+		# - Load scaler from file?
+		if scalerfile!="":
+			logger.info("Loading data scaler from file %s ..." % (scalerfile))
+			try:
+				self.data_scaler= pickle.load(open(scalerfile, 'rb'))
+			except Exception as e:
+				logger.error("Failed to load data scaler from file %s!" % (scalerfile))
+				return -1
+
+		#================================
+		#==   LOAD DATA
+		#================================
+		# - Check inputs
+		if data is None:
+			logger.error("None input data specified!")
+			return -1
+
+		if self.set_data(data, class_ids, snames)<0:
+			logger.error("Failed to set data!")
+			return -1
+
+		#================================
+		#==   CREATE SCAN MODEL
+		#================================
+		# - Set scan data
+		X= self.data_preclassified
+		y= self.data_preclassified_targets
+
+		# - Define optuna study	
+		logger.info("Define optuna study ...")
+		study = optuna.create_study(direction="maximize", study_name="LGBM Classifier")
+		
+		if self.multiclass:
+			func= lambda trial: lgbm_multiclass_scan_objective(trial, X, y, target_names=self.target_names, niters=self.niters, balance_classes=self.balance_classes)
+		else:
+			func= lambda trial: lgbm_binary_scan_objective(trial, X, y, target_names=self.target_names, niters=self.niters, balance_classes=self.balance_classes)
+
+		#================================
+		#==   RUN SCAN
+		#================================
+		# - Run study
+		logger.info("Run optuna study ...")
+		study.optimize(func, n_trials=n_trials)
+
+		print(f"\tBest value (rmse): {study.best_value:.5f}")
+		print(f"\tBest params:")
+
+		for key, value in study.best_params.items():
+			print(f"\t\t{key}: {value}")
+
+		return 0
 
 		return 0
 

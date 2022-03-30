@@ -195,7 +195,11 @@ def main():
 		)
 	else:
 		if run_scan:
-			status= sclass.run_lgbm_scan(n_trials=ntrials)
+			status= sclass.run_lgbm_scan(
+				data, classids, snames,
+				scalerfile,
+				n_trials=ntrials
+			)
 
 		else:
 			status= sclass.run_train(
