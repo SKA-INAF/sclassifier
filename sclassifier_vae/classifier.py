@@ -1139,12 +1139,25 @@ class SClassifier(object):
 		""" Define optuna objective function for multiclass classification scan """
     
 		# - Define parameters to be optimized
-		objective_lgbm= 'multiclass'
-		metric_lgbm= 'multi_logloss' # this is not working for unknown reasons...	
-		class_weight= None
-		if self.balance_classes:
-			class_weight= 'balanced'
+		if self.multiclass:
+			objective_lgbm= 'multiclass'
+			metric_lgbm= 'multi_logloss'
+			
+			class_weight= None
+			is_unbalance= False
+			if self.balance_classes:
+				class_weight= 'balanced'
 
+		else:
+			objective_lgbm= 'binary'
+			metric_lgbm= 'binary_logloss'
+
+			class_weight= None
+			is_unbalance= False
+			if self.balance_classes:
+				is_unbalance= True
+
+	
 		param_grid = {
 			"num_iterations": self.niters,
 			"objective": objective_lgbm,
@@ -1152,10 +1165,12 @@ class SClassifier(object):
 			"verbosity": 1,
 			"boosting_type": "gbdt",
 			"is_provide_training_metric": True,
-			"class_weight": class_weight,
 			"learning_rate": self.learning_rate,
 			"n_estimators": self.n_estimators,
 			"min_data_in_leaf": self.min_samples_leaf,
+
+			"class_weight": class_weight,
+			"is_unbalance": is_unbalance,
 
 			# "device_type": trial.suggest_categorical("device_type", ['gpu']),
 			#"n_estimators": trial.suggest_categorical("n_estimators", [10000]),
@@ -1174,6 +1189,7 @@ class SClassifier(object):
 			#	"feature_fraction", 0.2, 0.95, step=0.1
 			#),
 		}
+
 
 		# - Define data split
 		nsplits= 5
