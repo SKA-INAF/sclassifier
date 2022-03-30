@@ -123,7 +123,7 @@ def lgbm_multiclass_scan_objective(trial, X, y, target_names, niters=1000, balan
 			eval_metric=metric_lgbm,
 			early_stopping_rounds=100,
 			callbacks=[	
-				LightGBMPruningCallback(trial, metric_lgbm),
+				LightGBMPruningCallback(trial, metric_lgbm, valid_name='testsample'),
 				#earlystop_cb, 
 				#logeval_cb, 
 				#receval_cb
