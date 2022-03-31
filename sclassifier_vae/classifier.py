@@ -1544,6 +1544,7 @@ class SClassifier(object):
 			# - Retrieve metrics
 			logger.info("Computing classification metrics on pre-classified data ...")
 			report= classification_report(self.data_preclassified_targets, targets_pred_preclass, target_names=self.target_names, labels=labels, output_dict=True)
+			print(report)
 			self.accuracy= report['accuracy']
 			self.precision= report['weighted avg']['precision']
 			self.recall= report['weighted avg']['recall']    
