@@ -1546,7 +1546,9 @@ class SClassifier(object):
 			report= classification_report(self.data_preclassified_targets, targets_pred_preclass, target_names=self.target_names, labels=labels, output_dict=True)
 			#report= classification_report(self.data_preclassified_targets, targets_pred_preclass, target_names=self.target_names, output_dict=True)
 			print(report)
-			self.accuracy= report['accuracy']
+			self.accuracy= 0
+			if 'accuracy' in report:
+				self.accuracy= report['accuracy']
 			self.precision= report['weighted avg']['precision']
 			self.recall= report['weighted avg']['recall']    
 			self.f1score= report['weighted avg']['f1-score']
