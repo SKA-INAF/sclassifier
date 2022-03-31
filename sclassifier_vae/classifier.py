@@ -1532,8 +1532,10 @@ class SClassifier(object):
 			print(self.target_names)
 			print("targets_pred_preclass.shape")
 			print(targets_pred_preclass.shape)
+			print(targets_pred_preclass)
 			print("data_preclassified_targets.shape")
 			print(self.data_preclassified_targets.shape)
+			print(self.data_preclassified_targets)
 
 			# - Retrieve metrics
 			logger.info("Computing classification metrics on pre-classified data ...")
