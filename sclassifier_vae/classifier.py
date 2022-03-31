@@ -1536,10 +1536,14 @@ class SClassifier(object):
 			print("data_preclassified_targets.shape")
 			print(self.data_preclassified_targets.shape)
 			print(self.data_preclassified_targets)
+			nclasses= len(self.target_names)
+			labels= list(range(1,nclasses+1))
+			print("labels")
+			print(labels)
 
 			# - Retrieve metrics
 			logger.info("Computing classification metrics on pre-classified data ...")
-			report= classification_report(self.data_preclassified_targets, targets_pred_preclass, target_names=self.target_names, output_dict=True)
+			report= classification_report(self.data_preclassified_targets, targets_pred_preclass, target_names=self.target_names, labels=labels, output_dict=True)
 			self.accuracy= report['accuracy']
 			self.precision= report['weighted avg']['precision']
 			self.recall= report['weighted avg']['recall']    
