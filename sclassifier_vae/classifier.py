@@ -1528,6 +1528,13 @@ class SClassifier(object):
 				return -1
 
 
+			print("target_names")
+			print(self.target_names)
+			print("targets_pred_preclass.shape")
+			print(targets_pred_preclass.shape)
+			print("data_preclassified_targets.shape")
+			print(self.data_preclassified_targets.shape)
+
 			# - Retrieve metrics
 			logger.info("Computing classification metrics on pre-classified data ...")
 			report= classification_report(self.data_preclassified_targets, targets_pred_preclass, target_names=self.target_names, output_dict=True)
