@@ -1,0 +1,144 @@
+#!/usr/bin/env python
+
+from __future__ import print_function
+
+##################################################
+###          MODULE IMPORT
+##################################################
+## STANDARD MODULES
+import os
+import sys
+import subprocess
+import string
+import time
+import signal
+from threading import Thread
+import datetime
+import numpy as np
+import random
+import math
+import logging
+
+## COMMAND-LINE ARG MODULES
+import getopt
+import argparse
+import collections
+
+## MODULES
+from sclassifier_vae import __version__, __date__
+from sclassifier_vae import logger
+from sclassifier_vae.data_loader import DataLoader
+from sclassifier_vae.utils import Utils
+from sclassifier_vae.outlier_finder import OutlierFinder
+
+import matplotlib.pyplot as plt
+
+#### GET SCRIPT ARGS ####
+def str2bool(v):
+	if v.lower() in ('yes', 'true', 't', 'y', '1'):
+		return True
+	elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+		return False
+	else:
+		raise argparse.ArgumentTypeError('Boolean value expected.')
+
+###########################
+##     ARGS
+###########################
+def get_args():
+	"""This function parses and return arguments passed in"""
+	parser = argparse.ArgumentParser(description="Parse args.")
+
+	# - Input options
+	parser.add_argument('-inputfile','--inputfile', dest='inputfile', required=True, type=str, help='Input feature data table filename') 
+	
+	# - Pre-processing options
+	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize feature data in range [0,1] before applying models (default=false)')	
+	parser.set_defaults(normalize=False)
+	parser.add_argument('-scalerfile', '--scalerfile', dest='scalerfile', required=False, type=str, default='', action='store',help='Load and use data transform stored in this file (.sav)')
+	
+	# - Model options
+	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=False, type=str, default='', action='store',help='Classifier model filename (.sav)')
+	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
+	parser.set_defaults(predict=False)
+	parser.add_argument('-n_estimators','--n_estimators', dest='n_estimators', required=False, type=int, default=100, help='Number of forest trees to fit') 
+	
+	# - Output options
+	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='outlier_data.dat', help='Output filename (.dat) with classified data') 
+
+	args = parser.parse_args()	
+
+	return args
+
+
+
+##############
+##   MAIN   ##
+##############
+def main():
+	"""Main function"""
+
+	#===========================
+	#==   PARSE ARGS
+	#===========================
+	logger.info("Get script args ...")
+	try:
+		args= get_args()
+	except Exception as ex:
+		logger.error("Failed to get and parse options (err=%s)",str(ex))
+		return 1
+
+	# - Input filelist
+	inputfile= args.inputfile
+	
+	# - Data pre-processing
+	normalize= args.normalize
+	scalerfile= args.scalerfile
+
+	# - Model options
+	modelfile= args.modelfile
+	predict= args.predict
+	n_estimators= args.n_estimators
+	
+	# - Output options
+	outfile= args.outfile
+
+	#===========================
+	#==   READ FEATURE DATA
+	#===========================
+	ret= Utils.read_feature_data(inputfile)
+	if not ret:
+		logger.error("Failed to read data from file %s!" % (inputfile))
+		return 1
+
+	data= ret[0]
+	snames= ret[1]
+	classids= ret[2]
+
+	#===========================
+	#==   DETECT OUTLIERS
+	#===========================
+	logger.info("Detecting outliers on input feature data ...")
+	ofinder= OutlierFinder()
+	ofinder.normalize= normalize
+	ofinder.n_estimators= n_estimators
+	ofinder.outfile= outfile
+
+	status= sclass.run(
+		data, classids, snames, 
+		modelfile, scalerfile
+	)
+	
+	if status<0:
+		logger.error("Outlier search run failed!")
+		return 1
+	
+
+	return 0
+
+###################
+##   MAIN EXEC   ##
+###################
+if __name__ == "__main__":
+	sys.exit(main())
+
