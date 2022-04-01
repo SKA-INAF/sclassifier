@@ -1619,6 +1619,14 @@ class SClassifier(object):
 			logger.info("Saving decision tree plots ...")
 			self.__save_decisiontree()
 
+		# - If classifier is LGBM plot tree
+		if self.classifier=='LightGBMClassifier':
+			logger.info("Saving LGBM tree plot ...")
+			#lightgbm.plot_tree(self.model, ax=None, tree_index=0, figsize=None, dpi=None, show_info=None, precision=3, orientation='horizontal', **kwargs)
+			#lightgbm.plot_tree(self.model)
+			fig= lightgbm.plot_tree(self.model, tree_index=0, figsize=(15, 15), show_info=['split_gain'])
+			fig.savefig("lgbm_tree.png")	
+
 		#================================
 		#==   SAVE MODEL
 		#================================
