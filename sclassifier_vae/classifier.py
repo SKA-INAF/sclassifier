@@ -1287,11 +1287,16 @@ class SClassifier(object):
 		logger.info("Converting predicted targets to class ids ...")
 		self.classids_pred= [self.classid_remap_inv[item] for item in self.targets_pred]
 		
+		nclasses= len(self.target_names)
+		labels= list(range(0,nclasses))
 
 		# - Retrieve metrics
 		logger.info("Computing classification metrics on train data ...")
-		report= classification_report(self.data_preclassified_targets, self.targets_pred, target_names=self.target_names, output_dict=True)
-		self.accuracy= report['accuracy']
+		#report= classification_report(self.data_preclassified_targets, self.targets_pred, target_names=self.target_names, output_dict=True)
+		report= classification_report(self.data_preclassified_targets, self.targets_pred, target_names=self.target_names, labels=labels, output_dict=True)	
+		self.accuracy= 0
+		if 'accuracy' in report:
+			self.accuracy= report['accuracy']
 		self.precision= report['weighted avg']['precision']
 		self.recall= report['weighted avg']['recall']    
 		self.f1score= report['weighted avg']['f1-score']
