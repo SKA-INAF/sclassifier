@@ -1289,6 +1289,10 @@ class SClassifier(object):
 		
 		nclasses= len(self.target_names)
 		labels= list(range(0,nclasses))
+		print("target_names")
+		print(self.target_names)
+		print("labels")
+		print(labels)
 
 		# - Retrieve metrics
 		logger.info("Computing classification metrics on train data ...")
