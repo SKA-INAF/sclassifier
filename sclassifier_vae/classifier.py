@@ -48,6 +48,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 
 from lightgbm import LGBMClassifier
 from lightgbm import early_stopping, log_evaluation, record_evaluation
+from lightgbm import plot_tree
 
 ## OPTUNA
 import optuna
@@ -1620,11 +1621,11 @@ class SClassifier(object):
 			self.__save_decisiontree()
 
 		# - If classifier is LGBM plot tree
-		if self.classifier=='LightGBMClassifier':
+		if self.classifier=='LGBMClassifier':
 			logger.info("Saving LGBM tree plot ...")
 			#lightgbm.plot_tree(self.model, ax=None, tree_index=0, figsize=None, dpi=None, show_info=None, precision=3, orientation='horizontal', **kwargs)
 			#lightgbm.plot_tree(self.model)
-			fig= lightgbm.plot_tree(self.model, tree_index=0, figsize=(15, 15), show_info=['split_gain'])
+			fig= plot_tree(self.model, tree_index=0, figsize=(15, 15), show_info=['split_gain'])
 			fig.savefig("lgbm_tree.png")	
 
 		#================================
