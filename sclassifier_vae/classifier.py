@@ -1625,8 +1625,8 @@ class SClassifier(object):
 			logger.info("Saving LGBM tree plot ...")
 			#lightgbm.plot_tree(self.model, ax=None, tree_index=0, figsize=None, dpi=None, show_info=None, precision=3, orientation='horizontal', **kwargs)
 			#lightgbm.plot_tree(self.model)
-			fig= plot_tree(self.model, tree_index=0, figsize=(15, 15), show_info=['split_gain'])
-			fig.savefig("lgbm_tree.png")	
+			ax= plot_tree(self.model, tree_index=0, figsize=(15, 15), show_info=['split_gain'])
+			plt.savefig("lgbm_tree.png")	
 
 		#================================
 		#==   SAVE MODEL
