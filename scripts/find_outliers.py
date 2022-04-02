@@ -62,6 +62,8 @@ def get_args():
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
 	parser.set_defaults(predict=False)
 	parser.add_argument('-n_estimators','--n_estimators', dest='n_estimators', required=False, type=int, default=100, help='Number of forest trees to fit') 
+	#parser.add_argument('-contamination','--contamination', dest='contamination', required=False, type=float, default=None, help='Fraction of outliers expected [0,0.5]. If None set it to auto (defaul=None)')
+	parser.add_argument('-anomaly_thr','--anomaly_thr', dest='anomaly_thr', required=False, type=float, default=0.9, help='Threshold in anomaly score above which observation is set as outlier (default=0.9)') 
 	
 	# - Output options
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='outlier_data.dat', help='Output filename (.dat) with classified data') 
@@ -99,7 +101,11 @@ def main():
 	modelfile= args.modelfile
 	predict= args.predict
 	n_estimators= args.n_estimators
-	
+	#contamination= args.contamination
+	#if contamination is None:
+	#	contamination= 'auto'
+	anomaly_thr= args.anomaly_thr	
+
 	# - Output options
 	outfile= args.outfile
 
@@ -122,9 +128,11 @@ def main():
 	ofinder= OutlierFinder()
 	ofinder.normalize= normalize
 	ofinder.n_estimators= n_estimators
+	#ofinder.contamination= contamination
+	ofinder.anomaly_thr= anomaly_thr
 	ofinder.outfile= outfile
 
-	status= sclass.run(
+	status= ofinder.run(
 		data, classids, snames, 
 		modelfile, scalerfile
 	)

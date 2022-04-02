@@ -35,7 +35,7 @@ import matplotlib.pyplot as plt
 matplotlib.use('Agg')
 
 ## PACKAGE MODULES
-#from .utils import Utils
+from .utils import Utils
 
 
 ##################################
@@ -74,12 +74,16 @@ class OutlierFinder(object):
 		self.max_features= 1
 		self.verbose= 0
 		self.ncores= 1
+	
+		self.data_pred= None
+		self.anomaly_scores= None
+		self.anomaly_scores_df= None
+		self.anomaly_scores_orig= None
+		self.anomaly_thr= 0.9
 
 		# *****************************
 		# ** Output data
 		# *****************************
-		self.data_pred= None
-		self.anomaly_scores= None
 		self.outfile= "outlier_data.dat"
 
 	#####################################
@@ -255,7 +259,7 @@ class OutlierFinder(object):
 		rng = np.random.RandomState(42)
 
 		# - Init isolation forest
-		self.model= IsolationForest(
+		model= IsolationForest(
 			n_estimators=self.n_estimators,
 			max_samples=self.max_samples,
 			contamination=self.contamination,
@@ -266,7 +270,7 @@ class OutlierFinder(object):
 			verbose=self.verbose
 		)
 	
-		return 0
+		return model
 
 
 	#####################################
@@ -287,8 +291,18 @@ class OutlierFinder(object):
 		# - Retrieve the anomaly scores
 		#   NB: The lower, the more abnormal. Negative scores represent outliers, positive scores represent inliers
 		logger.info("Retrieving the anomaly score (-1 or negative values means outliers) ...")
-		self.anomaly_scores= self.model.decision_function(self.data)
-		#self.anomaly_scores= self.score_samples(self.data)
+		self.anomaly_scores_df= self.model.decision_function(self.data)
+		self.anomaly_scores= self.model.score_samples(self.data)
+		self.anomaly_scores_orig= -self.anomaly_scores
+
+		# - Apply user threshold
+		N= self.data_pred.shape[0]
+		for i in range(N):
+			score= self.anomaly_scores_orig[i]
+			if score>self.anomaly_thr:
+				self.data_pred[i]= -1
+			else:
+				self.data_pred[i]= 1
 
 		return 0		
 
@@ -443,15 +457,17 @@ class OutlierFinder(object):
 		outlier_outputs[outlier_outputs==1]= 0   # set non-outliers to 0 
 		outlier_outputs[outlier_outputs==-1]= 1  # set outliers to 1
 		outlier_scores= np.array(self.anomaly_scores).reshape(N,1)
+		outlier_scores_df= np.array(self.anomaly_scores_df).reshape(N,1)
+		outlier_score_orig= np.array(self.anomaly_scores_orig).reshape(N,1)
 
 		outdata= np.concatenate(
-			(snames, self.data, objids, outlier_outputs, outlier_scores),
+			(snames, self.data, objids, outlier_outputs, outlier_score_orig),
 			axis=1
 		)
 
 		znames_counter= list(range(1,Nfeat+1))
 		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
-		head= '{} {} {}'.format("# sname",znames," id is_outlier outlier_score")
+		head= '{} {} {}'.format("# sname",znames," id is_outlier outlier_score outlier_score_df")
 
 		# - Save outlier data 
 		logger.info("Saving outlier output data to file %s ..." % (self.outfile))
