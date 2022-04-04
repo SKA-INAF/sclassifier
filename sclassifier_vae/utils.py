@@ -198,6 +198,8 @@ class Utils(object):
 				for	col in range(1, nvars+1):
 					colname= colnames_mod[col]
 					var= row[col]
+					if sname in d:
+						logger.warn("Source %s is already present in data dict, overwriting it ...")
 					d[sname][colname]= var
 			d[sname][colnames[ndim-1]]= classid
 
