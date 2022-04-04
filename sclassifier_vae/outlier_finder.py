@@ -20,6 +20,7 @@ import math
 import logging
 import collections
 import csv
+import pickle
 
 ##############################
 ##     GLOBAL VARS
@@ -85,6 +86,7 @@ class OutlierFinder(object):
 		# ** Output data
 		# *****************************
 		self.outfile= "outlier_data.dat"
+		self.outfile_model= "outlier_model.sav"
 
 	#####################################
 	##     PRE-PROCESSING
@@ -467,11 +469,17 @@ class OutlierFinder(object):
 
 		znames_counter= list(range(1,Nfeat+1))
 		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
-		head= '{} {} {}'.format("# sname",znames," id is_outlier outlier_score outlier_score_df")
+		head= '{} {} {}'.format("# sname",znames," id is_outlier outlier_score")
 
 		# - Save outlier data 
 		logger.info("Saving outlier output data to file %s ..." % (self.outfile))
 		Utils.write_ascii(outdata, self.outfile, head)
+
+		# - Save model
+		if self.model:
+			logger.info("Saving model to file %s ..." % (self.outfile_model))
+			pickle.dump(self.model, open(self.outfile_model, 'wb'))
+
 	
 		return 0
 

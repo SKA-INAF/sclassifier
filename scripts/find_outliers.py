@@ -59,8 +59,8 @@ def get_args():
 	
 	# - Model options
 	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=False, type=str, default='', action='store',help='Classifier model filename (.sav)')
-	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
-	parser.set_defaults(predict=False)
+	#parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
+	#parser.set_defaults(predict=False)
 	parser.add_argument('-n_estimators','--n_estimators', dest='n_estimators', required=False, type=int, default=100, help='Number of forest trees to fit') 
 	#parser.add_argument('-contamination','--contamination', dest='contamination', required=False, type=float, default=None, help='Fraction of outliers expected [0,0.5]. If None set it to auto (defaul=None)')
 	parser.add_argument('-anomaly_thr','--anomaly_thr', dest='anomaly_thr', required=False, type=float, default=0.9, help='Threshold in anomaly score above which observation is set as outlier (default=0.9)') 
@@ -99,7 +99,7 @@ def main():
 
 	# - Model options
 	modelfile= args.modelfile
-	predict= args.predict
+	#predict= args.predict
 	n_estimators= args.n_estimators
 	#contamination= args.contamination
 	#if contamination is None:
