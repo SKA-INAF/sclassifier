@@ -106,8 +106,14 @@ def get_args():
 	parser.add_argument('--dump_sample_stats', dest='dump_sample_stats', action='store_true',help='Dump image stats over entire sample')	
 	parser.set_defaults(dump_sample_stats=False)
 
+	parser.add_argument('--dump_flags', dest='dump_flags', action='store_true',help='Dump image flags')	
+	parser.set_defaults(dump_flags=False)
+
 	parser.add_argument('--exit_on_fault', dest='exit_on_fault', action='store_true',help='Exit on fault')	
 	parser.set_defaults(exit_on_fault=False)
+
+	parser.add_argument('--skip_on_fault', dest='skip_on_fault', action='store_true',help='Skip to next source on fault')	
+	parser.set_defaults(skip_on_fault=False)
 
 	parser.add_argument('-fthr_zeros', '--fthr_zeros', dest='fthr_zeros', required=False, type=float, default=0.1, action='store',help='Max fraction of zeros above which channel is bad (default=0.1)')	
 	
@@ -151,6 +157,7 @@ def main():
 	draw= args.draw
 	dump_stats= args.dump_stats
 	dump_sample_stats= args.dump_sample_stats
+	dump_flags= args.dump_flags
 	scale= args.scale
 	scale_factors= []
 	if args.scale_factors!="":
@@ -170,8 +177,10 @@ def main():
 	erode= args.erode	
 	erode_kernel= args.erode_kernel
 	outfile_stats= "stats_info.dat"
+	outfile_flags= "stats_flags.dat"
 	outfile_sample_stats= "stats_sample_info.dat"
 	exit_on_fault= args.exit_on_fault
+	skip_on_fault= args.skip_on_fault
 	save_fits= args.save_fits
 	fthr_zeros= args.fthr_zeros
 
@@ -213,6 +222,7 @@ def main():
 
 	img_counter= 0
 	img_stats_all= []
+	img_flags_all= []
 	pixel_values_per_channels= []
 	
 	while True:
@@ -233,14 +243,15 @@ def main():
 			# - Check for NANs
 			has_naninf= np.any(~np.isfinite(data))
 			if has_naninf:
-				logger.error("Image %d (name=%s, label=%s) has some nan/inf, check!" % (img_counter, sname, label))
+				logger.warn("Image %d (name=%s, label=%s) has some nan/inf, check!" % (img_counter, sname, label))
 				if exit_on_fault:
 					return 1
 				else:
-					break
+					if skip_on_fault:
+						break
 
 			# - Check for fraction of zeros in radio mask
-			cond= np.logical_and(data[0,:,:,0]!=0,np.isfinite(data[0,:,:,0]))
+			cond= np.logical_and(data[0,:,:,0]!=0, np.isfinite(data[0,:,:,0]))
 			for i in range(1,nchannels):
 				data_2d= data[0,:,:,i]
 				data_1d= data_2d[cond]
@@ -252,7 +263,8 @@ def main():
 				
 				if f>=fthr_zeros:
 					logger.warn("Image %d chan %d (name=%s, label=%s) has a zero fraction %f, check!" % (img_counter, i+1, sname, label, f))
-					break
+					if skip_on_fault:
+						break
 
 			# - Check if channels have elements all equal
 			for i in range(nchannels):
@@ -264,7 +276,8 @@ def main():
 					if exit_on_fault:
 						return 1
 					else:
-						break
+						if skip_on_fault:
+							break
 			
 			# - Check correct norm
 			if normalize:
@@ -279,7 +292,30 @@ def main():
 					if exit_on_fault:
 						return 1
 					else:
-						break
+						if skip_on_fault:
+							break
+
+			# - Dump image flags
+			if dump_flags:
+				img_flags= [sname]
+
+				for i in range(nchannels):
+					##cond_i= np.logical_and(data[0,:,:,i]!=0, np.isfinite(data[0,:,:,i]))
+					data_2d= data[0,:,:,i]
+					data_1d= data_2d[cond] # pixel in radio mask
+					n= data_1d.size
+					n_bad= np.count_nonzero(np.logical_or(~np.isfinite(data_1d), data_1d==0))
+					n_neg= np.count_nonzero(data_1d<0)
+					f_bad= float(n_bad)/float(n)
+					f_negative= float(n_neg)/float(n)
+					same_values= int(data_min==data_max)
+					
+					img_flags.append(same_values)
+					img_flags.append(f_bad)
+					img_flags.append(f_negative)
+
+				img_flags.append(classid)
+				img_flags_all.append(img_flags)
 
 			# - Dump image stats
 			if dump_stats:
@@ -291,6 +327,7 @@ def main():
 					data_max= data_masked.max()
 					data_mean= data_masked.mean() 
 					data_std= data_masked.std()
+					
 					img_stats.append(data_min)
 					img_stats.append(data_max)
 					img_stats.append(data_mean)
@@ -336,7 +373,8 @@ def main():
 						if exit_on_fault:
 							return 1
 						else:
-							break
+							if skip_on_fault:
+								break
 					pixel_values_per_channels[i].extend(data_masked_list)
 
 			# - Draw data
@@ -376,6 +414,23 @@ def main():
 			logger.warn("Stop loop (exception catched %s) ..." % str(e))
 			break
 
+	# - Dump img flags
+	if dump_flags:
+		logger.info("Dumping img flag info to file %s ..." % (outfile_stats))
+
+		head= "# sname "
+
+		for i in range(nchannels):
+			ch= i+1
+			s= 'equalPixValues_ch{i} badPixFract_ch{i} negativePixFract_ch{i} '.format(i=ch)
+			head= head + s
+		head= head + "id"
+		logger.info("Flag file head: %s" % (head))
+		
+		# - Dump to file
+		Utils.write_ascii(np.array(img_flags_all), outfile_flags, head)	
+
+
 	# - Dump img stats
 	if dump_stats:
 		logger.info("Dumping img stats info to file %s ..." % (outfile_stats))
@@ -383,7 +438,7 @@ def main():
 		head= "# sname "
 		for i in range(nchannels):
 			ch= i+1
-			s= 'min_ch{i} max_ch{i} mean_ch{i} std_ch{i} '.format(i=ch)
+			s= 'min_ch{i} max_ch{i} mean_ch{i} std_ch{i} equalPixValues_ch{i} badPixFract_ch{i} '.format(i=ch)
 			head= head + s
 		head= head + "id"
 		logger.info("Stats file head: %s" % (head))
