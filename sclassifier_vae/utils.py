@@ -192,14 +192,14 @@ class Utils(object):
 		for row in table:
 			sname= row[0]
 			classid= row[ndim-1]
+			if sname in d:
+				logger.warn("Source %s is already present in data dict, overwriting it ..." % (sname))
 			d[sname]= OrderedDict()
 			d[sname][colnames[0]]= sname
 			if nvars>0:
 				for	col in range(1, nvars+1):
 					colname= colnames_mod[col]
 					var= row[col]
-					if sname in d:
-						logger.warn("Source %s is already present in data dict, overwriting it ...")
 					d[sname][colname]= var
 			d[sname][colnames[ndim-1]]= classid
 
