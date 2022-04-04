@@ -416,7 +416,7 @@ def main():
 
 	# - Dump img flags
 	if dump_flags:
-		logger.info("Dumping img flag info to file %s ..." % (outfile_stats))
+		logger.info("Dumping img flag info to file %s ..." % (outfile_flags))
 
 		head= "# sname "
 
@@ -438,7 +438,7 @@ def main():
 		head= "# sname "
 		for i in range(nchannels):
 			ch= i+1
-			s= 'min_ch{i} max_ch{i} mean_ch{i} std_ch{i} equalPixValues_ch{i} badPixFract_ch{i} '.format(i=ch)
+			s= 'min_ch{i} max_ch{i} mean_ch{i} std_ch{i} '.format(i=ch)
 			head= head + s
 		head= head + "id"
 		logger.info("Stats file head: %s" % (head))
