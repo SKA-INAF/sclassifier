@@ -315,7 +315,7 @@ def main():
 					same_values= int(data_min==data_max)
 
 					kernsize= 3
-					footprint = np.ones((kernsize, ) * data.ndim, dtype=bool)
+					footprint = np.ones((kernsize, ) * data_2d.ndim, dtype=bool)
 					peaks= peak_local_max(np.copy(data_2d), footprint=footprint, min_distance=4, exclude_border=True)
 					npeaks= len(peaks)
 	
