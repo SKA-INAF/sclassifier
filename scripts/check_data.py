@@ -342,6 +342,7 @@ def main():
 				if polygon is None:
 					peaks_sel= peaks
 				else:
+					peaks_sel= []
 					for peak in peaks:
 						point = Point(peak[1], peak[0])
 						has_peak= polygon.contains(point)
