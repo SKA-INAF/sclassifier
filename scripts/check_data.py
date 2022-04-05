@@ -24,6 +24,10 @@ import getopt
 import argparse
 import collections
 
+## IMAGE MODULES
+from skimage.feature import peak_local_max
+from skimage.measure import inertia_tensor_eigvals
+
 ## MODULES
 from sclassifier_vae import __version__, __date__
 from sclassifier_vae import logger
@@ -313,12 +317,17 @@ def main():
 					kernsize= 3
 					footprint = np.ones((kernsize, ) * data.ndim, dtype=bool)
 					peaks= peak_local_max(np.copy(data_2d), footprint=footprint, min_distance=4, exclude_border=True)
-					npeaks= len(peaks)					
+					npeaks= len(peaks)
+	
+					eigvals = inertia_tensor_eigvals(image=data_2d)
+					aspect_ratio= eigvals[0]/eigvals[1]
+					
 
 					img_flags.append(same_values)
 					img_flags.append(f_bad)
 					img_flags.append(f_negative)
 					img_flags.append(npeaks)
+					img_flags.append(aspect_ratio)
 
 				img_flags.append(classid)
 				img_flags_all.append(img_flags)
@@ -428,7 +437,7 @@ def main():
 
 		for i in range(nchannels):
 			ch= i+1
-			s= 'equalPixValues_ch{i} badPixFract_ch{i} negativePixFract_ch{i} npeaks_ch{i} '.format(i=ch)
+			s= 'equalPixValues_ch{i} badPixFract_ch{i} negativePixFract_ch{i} npeaks_ch{i} aspectRatio_ch{i} '.format(i=ch)
 			head= head + s
 		head= head + "id"
 		logger.info("Flag file head: %s" % (head))
