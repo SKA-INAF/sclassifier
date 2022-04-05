@@ -324,7 +324,7 @@ def main():
 					img_flags.append(f_negative)
 
 				# - Compute peaks & aspect ratio of first channel
-				kernsize= 3
+				kernsize= 7
 				footprint = np.ones((kernsize, ) * data[0,:,:,i].ndim, dtype=bool)
 				peaks= peak_local_max(np.copy(data[0,:,:,i]), footprint=footprint, min_distance=4, exclude_border=True)
 
