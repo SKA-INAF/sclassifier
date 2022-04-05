@@ -25,8 +25,12 @@ import argparse
 import collections
 
 ## IMAGE MODULES
+import cv2
+import imutils
 from skimage.feature import peak_local_max
 from skimage.measure import inertia_tensor_eigvals
+from shapely.geometry import Polygon
+from shapely.geometry import Point
 
 ## MODULES
 from sclassifier_vae import __version__, __date__
@@ -323,7 +327,28 @@ def main():
 				kernsize= 3
 				footprint = np.ones((kernsize, ) * data[0,:,:,i].ndim, dtype=bool)
 				peaks= peak_local_max(np.copy(data[0,:,:,i]), footprint=footprint, min_distance=4, exclude_border=True)
-				npeaks= len(peaks)
+
+				bmap= cond.astype(np.uint8)
+				polygon= None
+				try:
+					contours= cv2.findContours(np.copy(bmap), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+					contours= imutils.grab_contours(contours)
+					if len(contours)>0:
+						contour= np.squeeze(contours[0])
+						polygon = Polygon(contour)
+				except Exception as e:
+					logger.warn("Failed to compute mask contour (err=%s)!" % (str(e)))
+			
+				if polygon is None:
+					peaks_sel= peaks
+				else:
+					for peak in peaks:
+						point = Point(peak[1], peak[0])
+						has_peak= polygon.contains(point)
+						if has_peak:
+							peaks_sel.append(peak)
+
+				npeaks= len(peaks_sel)
 	
 				eigvals = inertia_tensor_eigvals(image=data_2d)
 				aspect_ratio= eigvals[0]/eigvals[1]	
