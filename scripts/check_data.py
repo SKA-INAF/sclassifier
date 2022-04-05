@@ -309,10 +309,16 @@ def main():
 					f_bad= float(n_bad)/float(n)
 					f_negative= float(n_neg)/float(n)
 					same_values= int(data_min==data_max)
-					
+
+					kernsize= 3
+					footprint = np.ones((kernsize, ) * data.ndim, dtype=bool)
+					peaks= peak_local_max(np.copy(data_2d), footprint=footprint, min_distance=4, exclude_border=True)
+					npeaks= len(peaks)					
+
 					img_flags.append(same_values)
 					img_flags.append(f_bad)
 					img_flags.append(f_negative)
+					img_flags.append(npeaks)
 
 				img_flags.append(classid)
 				img_flags_all.append(img_flags)
@@ -422,7 +428,7 @@ def main():
 
 		for i in range(nchannels):
 			ch= i+1
-			s= 'equalPixValues_ch{i} badPixFract_ch{i} negativePixFract_ch{i} '.format(i=ch)
+			s= 'equalPixValues_ch{i} badPixFract_ch{i} negativePixFract_ch{i} npeaks_ch{i} '.format(i=ch)
 			head= head + s
 		head= head + "id"
 		logger.info("Flag file head: %s" % (head))
