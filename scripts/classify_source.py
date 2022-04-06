@@ -930,9 +930,9 @@ def main():
 		dc.refch= 0
 		dc.outfile= featfile_datacheck
 
-		logger.info("[PROC %d] Extracting data check features from cutout data %s ..." % (procId, datalist_file))
+		logger.info("[PROC %d] Extracting data check features from cutout data %s ..." % (procId, datalist_mask_file))
 		if dc.run(datalist_file)<0:
-			logger.error("[PROC %d] Failed to extract data check features from file %s (see logs)!" % (procId, datalist_file))
+			logger.error("[PROC %d] Failed to extract data check features from file %s (see logs)!" % (procId, datalist_mask_file))
 			datacheck_status= -1
 
 		nvars_datacheck= dc.nvars_out
