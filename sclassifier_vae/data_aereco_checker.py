@@ -19,6 +19,7 @@ import random
 import math
 import logging
 import pickle
+import collections
 
 ## SCLASSIFIER MODULES
 from .utils import Utils
@@ -80,7 +81,7 @@ class DataAERecoChecker(object):
 		# - Output data
 		self.nvars_out= 0
 		self.param_dict_list= []
-		self.output= "reco_metrics.dat"
+		self.outfile= "reco_metrics.dat"
 
 	#############################
 	##     READ DATA
@@ -141,9 +142,9 @@ class DataAERecoChecker(object):
 
 		# - Read metric data and apply thresholds
 		colprefix= ""
-		d= Utils.read_feature_data_dict(self.output, colprefix=colprefix)
+		d= Utils.read_feature_data_dict(self.outfile, colprefix=colprefix)
 		if not d or d is None:
-			logger.error("Failed to read reco metrics file %s!" % (self.output))
+			logger.error("Failed to read reco metrics file %s!" % (self.outfile))
 			return -1
 
 		nentries= len(d.keys())
@@ -210,7 +211,7 @@ class DataAERecoChecker(object):
 			self.modelfile_encoder, self.weightfile_encoder, 
 			self.modelfile_decoder, self.weightfile_decoder,
 			winsize= self.winsize,
-			outfile_metrics=self.output,
+			outfile_metrics=self.outfile,
 			save_imgs= self.save_imgs
 		)
 

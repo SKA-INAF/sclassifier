@@ -19,6 +19,7 @@ import random
 import math
 import logging
 import pickle
+import collections
 
 ## SCLASSIFIER MODULES
 from .utils import Utils
@@ -72,7 +73,7 @@ class DataChecker(object):
 		# - Output data
 		self.nvars_out= 0
 		self.param_dict_list= []
-		self.output= "datacheck.dat"
+		self.outfile= "datacheck.dat"
 
 	#############################
 	##     READ DATA
