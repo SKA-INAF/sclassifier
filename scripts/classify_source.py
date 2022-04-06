@@ -560,7 +560,10 @@ def make_datalists(datadir, slabelmap, outfile):
 
 	# - Create dir list
 	sdirs= []
-	for item in os.listdir(datadir):
+	dirlist= os.listdir(datadir)
+	dirlist.sort()
+
+	for item in dirlist:
 		fullpath= os.path.join(datadir, item)
 		if os.path.isdir(fullpath):
 			sdirs.append(fullpath)
