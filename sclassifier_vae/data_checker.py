@@ -153,6 +153,7 @@ class DataChecker(object):
 			data_max= np.nanmax(data_1d)
 			same_values= int(data_min==data_max)
 
+			
 			is_bad_ch_data= (
 				f_negative>=self.negative_pix_fract_thr or
 				f_bad>=self.bad_pix_fract_thr or
@@ -161,6 +162,9 @@ class DataChecker(object):
 			if is_bad_ch_data:
 				is_bad_data= True
 	
+			logger.info("Source %s (ch%d): min/max=%f/%f, n=%d, n_neg=%d, is_bad_ch_data? %d" % (sname, i+1, data_min, data_max, n, n_neg, int(is_bad_ch_data)))
+
+
 			# - Fill dict
 			par_name= "equalPixValues_ch" + str(i+1)
 			param_dict[par_name]= same_values
