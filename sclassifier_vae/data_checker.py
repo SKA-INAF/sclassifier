@@ -167,7 +167,7 @@ class DataChecker(object):
 			self.nvars_out+= 1
 
 			par_name= "negativePixFract_ch" + str(i+1)		
- 			param_dict[par_name]= f_negative
+			param_dict[par_name]= f_negative
 			self.nvars_out+= 1
 	
 			par_name= "isBad_ch" + str(i+1)
