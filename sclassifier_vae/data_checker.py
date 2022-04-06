@@ -70,6 +70,7 @@ class DataChecker(object):
 		self.bad_pix_fract_thr= 0.05
 
 		# - Output data
+		self.nvars_out= 0
 		self.param_dict_list= []
 		self.output= "datacheck.dat"
 
@@ -135,6 +136,9 @@ class DataChecker(object):
 		nchannels= data.shape[3]
 		cond= np.logical_and(data[0,:,:,self.refch]!=0, np.isfinite(data[0,:,:,self.refch]))
 
+		is_bad_data= False
+		self.nvars_out= 0
+
 		for i in range(nchannels):
 			data_2d= data[0,:,:,i]
 			data_1d= data_2d[cond] # pixel in ref band mask
@@ -145,24 +149,33 @@ class DataChecker(object):
 			f_negative= float(n_neg)/float(n)
 			same_values= int(data_min==data_max)
 
-			is_bad_data= (
+			is_bad_ch_data= (
 				f_negative>=self.negative_pix_fract_thr or
 				f_bad>=self.bad_pix_fract_thr or
 				same_values==1
 			)
+			if is_bad_ch_data:
+				is_bad_data= True
 	
 			# - Fill dict
 			par_name= "equalPixValues_ch" + str(i+1)
 			param_dict[par_name]= same_values
+			self.nvars_out+= 1
 
 			par_name= "badPixFract_ch" + str(i+1)
 			param_dict[par_name]= f_bad
+			self.nvars_out+= 1
 
 			par_name= "negativePixFract_ch" + str(i+1)		
  			param_dict[par_name]= f_negative
+			self.nvars_out+= 1
 	
 			par_name= "isBad_ch" + str(i+1)
-			param_dict[par_name]= is_bad_data
+			param_dict[par_name]= int(is_bad_ch_data)
+			self.nvars_out+= 1
+
+		param_dict["isBadData"]= int(is_bad_data)
+		self.nvars_out+= 1
 
 		param_dict["id"]= classid
 

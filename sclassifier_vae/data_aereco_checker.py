@@ -78,6 +78,7 @@ class DataAERecoChecker(object):
 		self.reco_thr= 0.5
 		
 		# - Output data
+		self.nvars_out= 0
 		self.param_dict_list= []
 		self.output= "reco_metrics.dat"
 
@@ -154,20 +155,26 @@ class DataAERecoChecker(object):
 		# - Init data dict
 		self.param_dict_list= []
 		
+		
 		for i in range(nentries):
 			param_dict= collections.OrderedDict()
 			param_dict["sname"]= sname
 
 			is_bad_reco= False
+			self.nvars_out= 0
+
 			for j in range(nbands):
 				varname= self.metric_name + str(j+1)
 				metric= param_dict[varname]
 				param_dict[varname]= metric
+				self.nvars_out+= 1
 				
 				if metric<self.reco_thr:
 					is_bad_reco= True
 				
-			param_dict["isbadreco"]= int(is_bad_reco)
+			param_dict["isBadAEReco"]= int(is_bad_reco)
+			self.nvars_out+= 1
+
 			param_dict["id"]= classid
 
 			self.param_dict_list.append(param_dict)
