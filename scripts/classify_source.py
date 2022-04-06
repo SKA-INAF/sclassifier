@@ -118,7 +118,7 @@ def get_args():
 	parser.add_argument('-weightfile_encoder', '--weightfile_encoder', dest='weightfile_encoder', required=False, type=str, default='', action='store',help='Encoder model weights filename (.h5)')
 	parser.add_argument('-modelfile_decoder', '--modelfile_decoder', dest='modelfile_decoder', required=False, type=str, default='', action='store',help='Decoder model architecture filename (.json)')
 	parser.add_argument('-weightfile_decoder', '--weightfile_decoder', dest='weightfile_decoder', required=False, type=str, default='', action='store',help='Decoder model weights filename (.h5)')
-	parser.add_argument('-aereco_thr', '--aereco_thr', dest='aereco_thr', required=True, type=float, default=0.5, action='store',help='AE reco threshold below which data is considered bad (default=0.5)')
+	parser.add_argument('-aereco_thr', '--aereco_thr', dest='aereco_thr', required=False, type=float, default=0.5, action='store',help='AE reco threshold below which data is considered bad (default=0.5)')
 
 	# - Model options
 	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=False, type=str, default='', action='store',help='Classifier model filename (.sav)')
