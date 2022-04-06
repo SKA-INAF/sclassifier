@@ -216,6 +216,8 @@ class DataChecker(object):
 		self.__read_data(datalist)
 
 		# - Loop over source images and compute quality flags
+		img_counter= 0
+
 		while True:
 			try:
 				# - Read data
