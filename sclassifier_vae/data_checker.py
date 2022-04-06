@@ -236,7 +236,7 @@ class DataChecker(object):
 				if param_dict is None or not param_dict:
 					logger.warn("Feature dict for source %d (name=%s, label=%s) is empty or None, skip it ..." % (img_counter, sname, label))
 				else:
-					self.param_dict_list.append(par_dict)
+					self.param_dict_list.append(param_dict)
 
 				# - Stop generator
 				if img_counter>=self.nsamples_max:
