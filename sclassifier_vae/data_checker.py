@@ -20,6 +20,7 @@ import math
 import logging
 import pickle
 import collections
+import csv
 
 ## SCLASSIFIER MODULES
 from .utils import Utils
