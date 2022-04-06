@@ -205,6 +205,67 @@ class Utils(object):
 
 		return d
 
+	@classmethod
+	def read_sel_feature_data_dict(cls, filename, selcolids, colprefix=""):
+		""" Read data table and return dict. Format: sname data classid """	
+
+		# - Read table
+		row_start= 0
+		table= ascii.read(filename, data_start=row_start)
+		colnames= table.colnames
+		print(colnames)
+
+		ndim= len(colnames)
+		nvars= ndim-2
+		nvars_sel= len(selcolids)
+
+		# - Check vars
+		if nvars<=0:
+			logger.error("Too few cols present in file (ndim=%d)!" % (ndim))
+			return ()
+		if nvars_sel>nvars:
+			logger.error("Number of column vars to be selected (%d) exceeds available columns (%d)!" % (nvars_sel, nvars))
+			return ()
+		for colid in selcolids:
+			if colid<0 or colid>=nvars:
+				logger.error("Given sel column id (%d) exceed range of available columns [0,%d]!" % (colid, nvars))
+				return ()
+
+		# - Check if prefix has to be given to vars
+		#colnames_mod= []
+		#for i in range(nvars_sel):
+		#	colid= selcolids[
+		#	colname= colnames[1+i]
+		#	if colprefix=="":
+		#		colname_mod= colprefix + colname 
+		#	else:
+		#		colname_mod= colname
+		#	colnames_mod.append(colname)
+
+		#print("colnames_mod")
+		#print(colnames_mod)
+
+		# - Iterate over table and create dict
+		d= OrderedDict()
+
+		for row in table:
+			sname= row[0]
+			classid= row[ndim-1]
+			if sname in d:
+				logger.warn("Source %s is already present in data dict, overwriting it ..." % (sname))
+			d[sname]= OrderedDict()
+			d[sname][colnames[0]]= sname
+			
+			for i in range(nvars_sel):
+				col= selcolids[i] + 1 # NB: selcolid=0 is the first feature not sname
+				#colname= colnames_mod[i]
+				colname= colprefix+colnames[col]
+				var= row[col]
+				d[sname][colname]= var
+			d[sname][colnames[ndim-1]]= classid
+
+		return d
+
 
 	@classmethod
 	def write_fits(cls,data,filename):
