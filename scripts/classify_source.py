@@ -995,7 +995,7 @@ def main():
 			selcolids= [selcols_datacheck, selcols_aereco]
 
 		else:
-			inputfiles= [featfile_datacheck, featfile_aereco]
+			inputfiles= [featfile_datacheck]
 			selcols_datacheck= [nvars_datacheck-1]
 			selcolids= [selcols_datacheck]
 
