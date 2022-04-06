@@ -928,6 +928,7 @@ def main():
 
 		dc= DataChecker()
 		dc.refch= 0
+		dc.outfile= featfile_datacheck
 
 		logger.info("[PROC %d] Extracting data check features from cutout data %s ..." % (procId, datalist_file))
 		if dc.run(datalist_file)<0:
@@ -959,7 +960,7 @@ def main():
 		daerc.encoder_weights= weightfile_encoder
 		daerc.decoder_weights= weightfile_decoder
 		daerc.reco_thr= aereco_thr
-		daerc.output= featfile_aereco
+		daerc.outfile= featfile_aereco
 
 		aereco_status= daerc.run(datalist_mask_file)
 
