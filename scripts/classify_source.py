@@ -55,6 +55,9 @@ from sclassifier_vae.utils import Utils
 from sclassifier_vae.classifier import SClassifier
 from sclassifier_vae.cutout_maker import SCutoutMaker
 from sclassifier_vae.feature_extractor_mom import FeatExtractorMom
+from sclassifier_vae.data_checker import DataChecker
+from sclassifier_vae.data_aereco_checker import DataAERecoChecker
+from sclassifier_vae.feature_merger import FeatMerger
 
 #===========================
 #==   IMPORT MPI
@@ -105,7 +108,18 @@ def get_args():
 	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize feature data in range [0,1] before applying models (default=false)')	
 	parser.set_defaults(normalize=False)
 	parser.add_argument('-scalerfile', '--scalerfile', dest='scalerfile', required=False, type=str, default='', action='store',help='Load and use data transform stored in this file (.sav)')
-	
+
+	# - Autoencoder model options
+	parser.add_argument('--check_aereco', dest='check_aereco', action='store_true',help='Check AE reconstruction metrics (default=false)')	
+	parser.set_defaults(check_aereco=False)
+	parser.add_argument('-nx', '--nx', dest='nx', required=False, type=int, default=64, action='store',help='Image resize width in pixels (default=64)')
+	parser.add_argument('-ny', '--ny', dest='ny', required=False, type=int, default=64, action='store',help='Image resize height in pixels (default=64)')
+	parser.add_argument('-modelfile_encoder', '--modelfile_encoder', dest='modelfile_encoder', required=False, type=str, default='', action='store',help='Encoder model architecture filename (.json)')
+	parser.add_argument('-weightfile_encoder', '--weightfile_encoder', dest='weightfile_encoder', required=False, type=str, default='', action='store',help='Encoder model weights filename (.h5)')
+	parser.add_argument('-modelfile_decoder', '--modelfile_decoder', dest='modelfile_decoder', required=False, type=str, default='', action='store',help='Decoder model architecture filename (.json)')
+	parser.add_argument('-weightfile_decoder', '--weightfile_decoder', dest='weightfile_decoder', required=False, type=str, default='', action='store',help='Decoder model weights filename (.h5)')
+	parser.add_argument('-aereco_thr', '--aereco_thr', dest='aereco_thr', required=True, type=float, default=0.5, action='store',help='AE reco threshold below which data is considered bad (default=0.5)')
+
 	# - Model options
 	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=False, type=str, default='', action='store',help='Classifier model filename (.sav)')
 	parser.add_argument('--binary_class', dest='binary_class', action='store_true',help='Perform a binary classification {0=EGAL,1=GAL} (default=multiclass)')	
@@ -649,6 +663,28 @@ def main():
 			return 1
 		jobdir= args.jobdir
 
+	# - Data pre-processing
+	normalize= args.normalize
+	
+
+	# - Autoencoder options
+	check_aereco= args.check_aereco
+	nx= args.nx
+	ny= args.ny
+	modelfile_encoder= args.modelfile_encoder
+	modelfile_decoder= args.modelfile_decoder
+	weightfile_encoder= args.weightfile_encoder
+	weightfile_decoder= args.weightfile_decoder
+	aereco_thr= args.aereco_thr
+	empty_filenames= (
+		(modelfile_encoder=="" or modelfile_decoder=="") or
+		(weightfile_encoder=="" or weightfile_decoder=="")
+	)
+
+	if check_aereco and empty_filenames:
+		logger.error("[PROC %d] Empty AE model/weight filename given!" % (procId))
+		return 1
+
 	#==================================
 	#==   READ IMAGE DATA   
 	#==     (READ - ALL PROC)
@@ -857,6 +893,20 @@ def main():
 			logger.error("[PROC %d] Exception occurred when checking cutout datalist sizes!" % (procId))
 			mkdatalist_status= -1
 
+		# - Set data loader
+		logger.info("[PROC %d] Reading datalist %s ..." % (procId, datalist_file))
+		dl= DataLoader(filename=datalist_file)
+		if dl.read_datalist()<0:
+			logger.error("Failed to read cutout datalist!")
+			mkdatalist_status= -1
+
+		# - Set masked data loader
+		logger.info("[PROC %d] Reading masked datalist %s ..." % (procId, datalist_mask_file))
+		dl_mask= DataLoader(filename=datalist_mask_file)
+		if dl_mask.read_datalist()<0:
+			logger.error("Failed to read masked cutout datalist!")
+			mkdatalist_status= -1
+
 	else:
 		mkdatalist_status= 0
 		
@@ -865,6 +915,107 @@ def main():
 
 	if mkdatalist_status<0:
 		logger.error("[PROC %d] Error on creating cutout data lists, exit!" % (procId))
+		return 1
+
+	#================================
+	#==   CHECK DATA & AE RECO
+	#==     (ONLY PROC 0)
+	#================================
+	# - Extract image flag data
+	if procId==MASTER:
+		datacheck_status= 0
+		featfile_datacheck= os.path.join(jobdir, "datacheck.dat")
+
+		dc= DataChecker()
+		dc.refch= 0
+
+		logger.info("[PROC %d] Extracting data check features from cutout data %s ..." % (procId, datalist_file))
+		if dc.run(datalist_file)<0:
+			logger.error("[PROC %d] Failed to extract data check features from file %s (see logs)!" % (procId, datalist_file))
+			datacheck_status= -1
+
+		nvars_datacheck= dc.nvars_out
+
+	else:
+		datacheck_status= 0
+
+	if comm is not None:
+		datacheck_status= comm.bcast(datacheck_status, root=MASTER)
+
+	if datacheck_status<0:
+		logger.error("[PROC %d] Failed to extract data check features, exit!" % (procId))
+		return 1
+
+	# - Extract autoencoder reconstruction metrics
+	if procId==MASTER and check_aereco:
+		aereco_status= 0
+		featfile_aereco= os.path.join(jobdir, "reco_metrics.dat")
+
+		logger.info("[PROC %d] Running autoencoder reconstruction ..." % (procId))
+
+		daerc= DataAERecoChecker()
+		daerc.encoder_model= modelfile_encoder
+		daerc.decoder_model= modelfile_decoder
+		daerc.encoder_weights= weightfile_encoder
+		daerc.decoder_weights= weightfile_decoder
+		daerc.reco_thr= aereco_thr
+		daerc.output= featfile_aereco
+
+		aereco_status= daerc.run(datalist_mask_file)
+
+		nvars_aereco= daerc.nvars_out
+
+		if aereco_status<0:		
+			logger.error("[PROC %d] Autoencoder reconstruction failed!")
+			
+	else:
+		aereco_status= 0
+
+	if comm is not None:
+		aereco_status= comm.bcast(aereco_status, root=MASTER)
+
+	if aereco_status<0:
+		logger.error("[PROC %d] Failed to run autoencoder reconstruction, exit!" % (procId))
+		return 1
+		
+	
+	# - Merge produced check data
+	if procId==MASTER:
+		dataflags_status= 0
+		featfile_flags= os.path.join(jobdir, "dataflags.dat")
+
+		fm= FeatMerger()
+		fm.save_csv= False
+
+		if check_aereco:
+			inputfiles= [featfile_datacheck, featfile_aereco]
+			selcols_datacheck= [nvars_datacheck-1]
+			selcols_aereco= [nvars_aereco-1]			
+			selcolids= [selcols_datacheck, selcols_aereco]
+
+		else:
+			inputfiles= [featfile_datacheck, featfile_aereco]
+			selcols_datacheck= [nvars_datacheck-1]
+			selcolids= [selcols_datacheck]
+
+		dataflags_status= fm.run(
+			inputfiles, 
+			outfile=featfile_flags, 
+			selcolids=selcolids, 
+			allow_novars=False
+		)
+
+		if dataflags_status<0:		
+			logger.error("[PROC %d] Failed to merge data check flag files!")
+
+	else:
+		dataflags_status= 0
+
+	if comm is not None:
+		dataflags_status= comm.bcast(dataflags_status, root=MASTER)
+
+	if dataflags_status<0:
+		logger.error("[PROC %d] Failed to merge data check flag files, exit!" % (procId))
 		return 1
 
 	#===========================
@@ -904,6 +1055,8 @@ def main():
 
 	# - Extract autoencoder features
 	# ...
+
+	
 
 	#===========================
 	#==   CLASSIFY SOURCES
