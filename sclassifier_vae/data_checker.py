@@ -148,6 +148,8 @@ class DataChecker(object):
 			n_neg= np.count_nonzero(data_1d<0)
 			f_bad= float(n_bad)/float(n)
 			f_negative= float(n_neg)/float(n)
+			data_min= np.nanmin(data_1d)
+			data_max= np.nanmax(data_1d)
 			same_values= int(data_min==data_max)
 
 			is_bad_ch_data= (
