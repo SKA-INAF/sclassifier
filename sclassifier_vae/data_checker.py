@@ -199,7 +199,7 @@ class DataChecker(object):
 				fp.write("# ")
 				dict_writer = csv.DictWriter(fp, parnames)
 				dict_writer.writeheader()
-				dict_writer.writerows(self.par_dict_list)
+				dict_writer.writerows(self.param_dict_list)
 		else:
 			logger.warn("Parameter dict list is empty, no files will be written!")
 			return -1
