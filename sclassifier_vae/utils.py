@@ -344,6 +344,7 @@ class Utils(object):
 	#===========================
 	#==   MAKE IMG METADATA
 	#===========================
+	@classmethod
 	def write_montage_fits_metadata(cls, inputfile, metadata_file="metadata.tbl", jobdir=""):
 		""" Generate Montage metadata for input image path """
 
@@ -691,6 +692,7 @@ class Utils(object):
 	#===========================
 	#==   MAKE DATA LISTS
 	#===========================
+	@classmethod
 	def clear_cutout_dirs(cls, datadir, datadir_mask, nsurveys):
 		""" Remove cutout dirs with less than desired survey files """
 
@@ -742,10 +744,12 @@ class Utils(object):
 
 		return 0
 
+	@classmethod
 	def file_sorter(cls, item):
 		""" Custom sorter of filename according to rank """
 		return item[1]
 
+	@classmethod
 	def get_file_rank(cls, filename):
 		""" Return file order rank from filename """
 
@@ -789,7 +793,7 @@ class Utils(object):
 
 		return score
 
-
+	@classmethod
 	def make_datalists(cls, datadir, slabelmap, outfile):
 		""" Create json datalists for cutouts """
 
@@ -865,6 +869,7 @@ class Utils(object):
 	#=============================
 	#==   READ SCUTOUT CONFIG
 	#=============================
+	@classmethod
 	def make_scutout_config(cls, configfile, surveys, jobdir, add_survey=False, img_metadata=""):
 		""" Set scutout config class from config file template """
 
