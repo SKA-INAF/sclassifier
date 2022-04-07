@@ -101,7 +101,7 @@ class SourceData(object):
 			logger.debug("Reading file %s ..." % filename) 
 			data= None
 			try:
-				data, header= Utils.read_fits(filename)
+				data, header, wcs= Utils.read_fits(filename)
 			except Exception as e:
 				logger.error("Failed to read image data from file %s (err=%s)!" % (filename,str(e)))
 				return -1

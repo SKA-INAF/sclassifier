@@ -235,7 +235,7 @@ class DataProvider(object):
 				logger.info("Reading file %s ..." % filename) 
 				data= None
 				try:
-					data, header= Utils.read_fits(filename)
+					data, header, wcs= Utils.read_fits(filename)
 				except Exception as ex:
 					errmsg= 'Failed to read image data (err=' + str(ex) + ')'
 					logger.warn(errmsg)
