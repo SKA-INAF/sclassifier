@@ -52,6 +52,7 @@ from sclassifier_vae import __version__, __date__
 from sclassifier_vae import logger
 from sclassifier_vae.data_loader import DataLoader
 from sclassifier_vae.utils import Utils
+from sclassifier_vae.utils import g_class_labels, g_class_label_id_map
 from sclassifier_vae.classifier import SClassifier
 from sclassifier_vae.cutout_maker import SCutoutMaker
 from sclassifier_vae.feature_extractor_mom import FeatExtractorMom
@@ -75,6 +76,7 @@ except Exception as e:
 	comm= None
 	nproc= 1
 	procId= 0
+
 
 
 ##############################

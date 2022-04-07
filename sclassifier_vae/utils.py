@@ -54,6 +54,21 @@ logger = logging.getLogger(__name__)
 
 
 ###########################
+##   GLOBAL DEFINITIONS
+###########################
+g_class_labels= ["UNKNOWN","PN","HII","PULSAR","YSO","STAR","GALAXY","QSO"]
+g_class_label_id_map= {
+	"UNKNOWN": 0,
+	"STAR": 1,
+	"GALAXY": 2,
+	"PN": 3,
+	"HII": 6,
+	"PULSAR": 23,
+	"YSO": 24,
+	"QSO": 6000
+}
+
+###########################
 ##     CLASS DEFINITIONS
 ###########################
 class Utils(object):
@@ -550,7 +565,7 @@ class Utils(object):
 				tags= region.meta['tag']
 				for tag in tags:
 					tag_value= re.sub('[{}]','',tag)
-					if tag_value in class_labels:
+					if tag_value in g_class_labels:
 						label= tag_value
 						break
 
@@ -620,7 +635,7 @@ class Utils(object):
 			label= "UNKNOWN"
 			for tag in tags:
 				tag_value= re.sub('[{}]','',tag)
-				if tag_value in class_labels:
+				if tag_value in g_class_labels:
 					label= tag_value
 					break
 
@@ -850,7 +865,7 @@ class Utils(object):
 			else:
 				class_label= slabelmap[sname]
 		
-			class_id= class_label_id_map[class_label]
+			class_id= g_class_label_id_map[class_label]
 		
 			# - Add entry in dictionary
 			d= {}
