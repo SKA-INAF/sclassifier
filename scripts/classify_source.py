@@ -1090,18 +1090,62 @@ def main():
 		return 1
 
 	# - Select Zernike moment features
-	# ...
+	if procId==MASTER:
+		zernmomfeat_status= 0
+		featfile_zernmom= os.path.join(jobdir, "features_zernmom.dat")
+
+		# ...
+		# ...
+
+	else:
+		zernmomfeat_status= 0
+
+	if comm is not None:
+		zernmomfeat_status= comm.bcast(zernmomfeat_status, root=MASTER)
+
+	if zernmomfeat_status<0:
+		logger.error("[PROC %d] Failed to select zernike moments features from file %s, exit!" % (procId, featfile_mom))
+		return 1
+		
 
 	# - Extract autoencoder features
 	# ...
+	# ...
 
 	# - Combine features
-	# ...
+	if procId==MASTER:
+		featmerge_status= 0
+		featfile_allfeat= os.path.join(jobdir, "features_all.dat")
+
+		fm= FeatMerger()
+		fm.save_csv= False
+
+		# - NB: Only colors used
+		inputfiles= [featfile_col]
+		
+		featmerge_status= fm.run(
+			inputfiles, 
+			outfile=featfile_allfeat
+		)
+
+		if featmerge_status<0:		
+			logger.error("[PROC %d] Failed to merge feature data files!")
+
+	else:
+		featmerge_status= 0
+
+	if comm is not None:
+		featmerge_status= comm.bcast(featmerge_status, root=MASTER)
+
+	if featmerge_status<0:
+		logger.error("[PROC %d] Failed to merge feature data files, exit!" % (procId))
+		return 1
 		
 
 	#===========================
 	#==   CLASSIFY SOURCES
 	#===========================
+	# ...
 	# ...
 
 	return 0

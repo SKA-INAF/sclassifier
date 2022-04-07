@@ -67,9 +67,14 @@ class FeatMerger(object):
 		for i in range(len(inputfiles)):
 			inputfile= inputfiles[i]
 			colprefix= "featset" + str(i+1) + "_"
-			selcols_i= selcolids[i]
-			if selcols_i:
-				d= Utils.read_sel_feature_data_dict(inputfile, selcols_i, colprefix=colprefix)
+
+			if selcolids:
+				selcols_i= selcolids[i]
+				if selcols_i:
+					d= Utils.read_sel_feature_data_dict(inputfile, selcols_i, colprefix=colprefix)
+				else:
+					logger.error("Empty selcols for file %s given!" % (inputfile))
+					return -1	
 			else:
 				d= Utils.read_feature_data_dict(inputfile, colprefix=colprefix, allow_novars=allow_novars)
 			if not d or d is None:
