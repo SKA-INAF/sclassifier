@@ -840,7 +840,7 @@ class Utils(object):
 			# - Sort filename according to specified ranks
 			filenames_ranks = []
 			for filename in filenames:
-				rank= get_file_rank(filename)
+				rank= cls.get_file_rank(filename)
 				filenames_ranks.append(rank)
 
 			filenames_tuple= [(filename,rank) for filename,rank in zip(filenames,filenames_ranks)]
