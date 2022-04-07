@@ -1135,7 +1135,7 @@ class SData(object):
 		""" Select feature cols (0 index is the first feature, not sname) """
 
 		# - Check if param dict is filled
-		if not self.param_dict or self.param_dict is None
+		if not self.param_dict or self.param_dict is None:
 			logger.error("Parameter dict is empty!")
 			return -1
 
