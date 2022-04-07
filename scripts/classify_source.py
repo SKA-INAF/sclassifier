@@ -1074,7 +1074,7 @@ def main():
 			selcols= [13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137]
 		
 		if selcols:
-			colfeat_status= fsel.select(featfile_mom, selcols)
+			colfeat_status= fsel.select_from_file(featfile_mom, selcols)
 		else:
 			logger.error("[PROC %d] Unsupported number of bands (%d) found (only 5 or 7 supported)!" % (procId, nsurveys))
 			colfeat_status= -1
