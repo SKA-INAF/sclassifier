@@ -405,7 +405,7 @@ class Pipeline(object):
 		#==      (ALL PROCS)
 		#=============================
 		# - Create scutout config class (radio+IR)
-		logger.info("[PROC %d] Creating scutout config class from template config file %s ..." % (procId, configfile_scutout))
+		logger.info("[PROC %d] Creating scutout config class from template config file %s ..." % (procId, self.configfile))
 		add_survey= True
 		
 		config= Utils.make_scutout_config(
