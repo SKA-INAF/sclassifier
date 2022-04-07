@@ -413,7 +413,7 @@ class Pipeline(object):
 		fem.save= False
 			
 		logger.info("[PROC %d] Extracting color features from cutout data (nsources=%d) ..." % (procId, len(self.datalist_proc)))
-		if fem.run(self.datalist_proc, self.datalist_mask_proc)<0:
+		if fem.run_from_datalist(self.datalist_proc, self.datalist_mask_proc)<0:
 			logger.error("[PROC %d] Failed to extract color features (see logs)!" % (procId))
 			return -1
 

@@ -1168,8 +1168,10 @@ class FeatExtractorMom(object):
 		# - Data options
 		self.datalistfile= datalistfile
 		self.datalistfile_mask= datalistfile_mask
-		self.datalist= {}
-		self.datalist_mask= {}
+		#self.datalist= {}
+		#self.datalist_mask= {}
+		self.datalist= []
+		self.datalist_mask= []
 		self.datasize= 0
 		self.classids= []
 		self.classfract_map= {}
@@ -1215,7 +1217,7 @@ class FeatExtractorMom(object):
 		self.outfile= "features_moments.csv"
 
 
-	def run(self, datalist, datalist_mask):
+	def run_from_datalist(self, datalist, datalist_mask):
 		""" Run moment calculation passing data dict lists as inputs """
 
 		# - Set data info
