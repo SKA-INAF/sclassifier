@@ -115,6 +115,10 @@ class SData(object):
 		self.ssim_maps= []
 		self.ssim_avg= []
 
+		# - Quality cuts
+		self.negative_pix_fract_thr= 0.9
+		self.bad_pix_fract_thr= 0.05
+
 		# - Draw options
 		self.draw= False
 
@@ -194,13 +198,13 @@ class SData(object):
 
 			# - Compute data mask
 			#   NB: =1 good values, =0 bad (pix=0 or pix=inf or pix=nan)
-			data_mask= np.logical_and(data!=0,np.isfinite(data)).astype(np.uint8)
+			data_mask= np.logical_and(data!=0, np.isfinite(data)).astype(np.uint8)
 		
 			# - Check image integrity
-			has_bad_pixs= self.__has_bad_pixel(data, check_fract=False, thr=0)
-			if has_bad_pixs:
-				logger.warn("Image %s has too many bad pixels (f=%f>%f)!" % (filename,f_badpix,self.f_badpix_thr) )	
-				return -1
+			#has_bad_pixs= self.__has_bad_pixels(data, check_fract=False, thr=0)
+			#if has_bad_pixs:
+			#	logger.warn("Image %s has too many bad pixels (f=%f>%f)!" % (filename,f_badpix,self.f_badpix_thr) )	
+			#	return -1
 
 			# - Append image channel data to list
 			self.img_data.append(data)
@@ -237,8 +241,42 @@ class SData(object):
 			plt.show()
 	
 
-	def __has_bad_pixel(self, data, check_fract=True, thr=0.1):
-		""" Check image data values """ 
+	def has_good_data(self, check_mask=False, check_bad=True, check_neg=True, check_same=True):
+		""" Check data integrity (nan, negative, etc) """
+			
+		is_good= True		
+		for i in range(self.nchannels):
+			
+			data= self.img_data[i]
+			if check_mask:
+				data= self.img_data_mask[i]
+
+			# - Check for bad pixels
+			if check_bad:
+				has_bad_pixs= self.__has_bad_pixels(data, check_fract=True, thr=self.bad_pix_fract_thr)
+				if has_bad_pixs:
+					is_good= False
+					break
+
+			# - Check for negative pixels
+			if check_neg:
+				has_neg_pixs= self.__has_neg_pixels(data, check_fract=True, thr=self.negative_pix_fract_thr)
+				if has_neg_pixs:
+					is_good= False
+					break
+		
+			# - Check for equal pixels
+			if check_same:
+				has_same_vals= self.__has_equal_pixels(data)
+				if has_same_vals:
+					is_good= False
+					break
+
+		return is_good
+
+
+	def __has_bad_pixels(self, data, check_fract=True, thr=0.1):
+		""" Check image data NAN values """ 
 		
 		npixels= data.size
 		npixels_nan= np.count_nonzero(np.isnan(data)) 
@@ -255,6 +293,30 @@ class SData(object):
 				return True
 
 		return False
+
+	def __has_neg_pixels(self, data, check_fract=True, thr=0.9):
+		""" Check image data negative values """ 
+		
+		npixels= data.size
+		n_neg= np.count_nonzero(data<0) 
+		f_neg= n_neg/float(npixels)
+		if check_fract:
+			if f_neg>thr:
+				logger.warn("Image has too many negative pixels (f=%f>%f)!" % (f_neg, thr) )	
+				return True
+		else:
+			if n_neg>thr:
+				logger.warn("Image has too many bad pixels (n=%f>%f)!" % (n_neg, thr) )	
+				return True
+
+		return False
+
+	def __has_equal_pixels(self, data):
+		""" Check image data same values """ 
+
+		data_min= np.nanmin(data)
+		data_max= np.nanmax(data)
+		return (data_min==data_max)
 
 	def check_img_sizes(self):
 		""" Check if images have the same size """
@@ -1069,13 +1131,38 @@ class SData(object):
 		self.param_dict["id"]= self.id
 
 
+	def select_features(self, selcolids):
+		""" Select feature cols (0 index is the first feature, not sname) """
+
+		# - Check if param dict is filled
+		if not self.param_dict or self.param_dict is None
+			logger.error("Parameter dict is empty!")
+			return -1
+
+		# - Get list of sel keys given col indices
+		keys= list(self.param_dict.keys())
+		keys_sel= [keys[selcol+1] for selcol in selcolids] # +1 because 0 index is the first feature, not sname
+
+		# - Create new dict with selected pars
+		param_dict_sel= collections.OrderedDict()
+		param_dict_sel["sname"]= self.param_dict["sname"]
+
+		for key in key_sel:
+			param_dict_sel[key]= self.param_dict[key]
+
+		param_dict_sel["id"]= self.param_dict["id"]
+
+		# - Override old dict
+		self.param_dict= param_dict_sel
+		
+		return 0
 
 #####################################
 ##      FeatExtractorMom class
 #####################################
 class FeatExtractorMom(object):
 	
-	def __init__(self, datalistfile, datalistfile_mask):
+	def __init__(self, datalistfile="", datalistfile_mask=""):
 		""" Return a FeatExtractorMom object """	
 
 		# - Data options
@@ -1111,12 +1198,66 @@ class FeatExtractorMom(object):
 		self.ssim_winsize= 3
 		self.save_ssim_pars= False
 
+		# - Quality cuts
+		self.negative_pix_fract_thr= 0.9
+		self.bad_pix_fract_thr= 0.05
+
+		# - Feature selection
+		self.select_feat= False
+		self.selfeatids= []
+
 		# - Draw options
 		self.draw= False
 
 		# - Output options
+		self.save= True
 		self.par_dict_list= []
 		self.outfile= "features_moments.csv"
+
+
+	def run(self, datalist, datalist_mask):
+		""" Run moment calculation passing data dict lists as inputs """
+
+		# - Set data info
+		logger.debug("Setting data info ...")
+		self.datalist= datalist
+		self.datalist_mask= datalist_mask
+
+		self.datasize= len(self.datalist)
+		self.labels= [item["label"] for item in self.datalist]
+		self.snames= [item["sname"] for item in self.datalist]
+		self.classids= 	[item["id"] for item in self.datalist]
+		self.classfract_map= dict(Counter(self.classids).items())
+		datasize_mask= len(self.datalist_mask)
+
+		# - Check number of channels per image
+		nchannels_set= set([len(item["filepaths"]) for item in self.datalist])
+		if len(nchannels_set)!=1:
+			logger.warn("Number of channels in each object instance is different (len(nchannels_set)=%d!=1)!" % (len(nchannels_set)))
+			print(nchannels_set)
+			return -1
+
+		self.nchannels= list(nchannels_set)[0]
+		
+		# - Check data size for imgs and masks
+		if self.datasize!=datasize_mask:
+			logger.error("Img and mask datalist have different size!")
+			return -1
+
+		# - Loop over data and extract params per each source
+		logger.info("Loop over data and extract params per each source ...")
+		for i in range(self.datasize):
+			if self.__process_sdata(i)<0:
+				logger.error("Failed to read and process source data %d, skip to next..." % (i))
+				continue
+			
+		# - Save data
+		if self.save:
+			logger.info("Saving data to file %s ..." % (self.outfile))
+			self.__save_data()
+
+		return 0
+
 
 	def run(self):
 		""" Run moment calculation """
@@ -1135,8 +1276,9 @@ class FeatExtractorMom(object):
 				continue
 			
 		# - Save data
-		logger.info("Saving data ...")
-		self.__save_data()
+		if self.save:
+			logger.info("Saving data to file %s ..." % (self.outfile))
+			self.__save_data()
 
 		return 0
 
@@ -1196,7 +1338,27 @@ class FeatExtractorMom(object):
 		masks= sdata_mask.img_data_mask
 		#mask_ref= masks[self.refch]
 
-		
+		#===========================
+		#==  CHECK DATA INTEGRITY
+		#===========================
+		# - Check non-masked data
+		has_good_data= sdata.has_good_data(check_mask=False, check_bad=True, check_neg=False, check_same=True)
+		if not has_good_data:
+			logger.warn("Source data %d are bad (too may NANs or equal pixel values)!" % (index))
+			return -1
+
+		# - Check masked data
+		has_good_mask_data= sdata_mask.has_good_data(check_mask=False, check_bad=True, check_neg=True, check_same=True)
+		if not has_good_mask_data:
+			logger.warn("Source mask data %d are bad (too may NANs/negative or equal pixel values)!" % (index))
+			return -1
+
+		#===========================
+		#==  CHECK AE RECO ACCURACY
+		#===========================
+		# ...
+		# ...
+
 		#===========================
 		#==    COMPUTE BKG/FLUX
 		#===========================
@@ -1263,8 +1425,20 @@ class FeatExtractorMom(object):
 		par_dict= sdata.param_dict
 		if par_dict is None or not par_dict:
 			logger.warn("Feature dict for source data %d is empty or None, skip it ..." % (index))
+			
 		else:
-			self.par_dict_list.append(par_dict)
+			# - Select features?
+			if self.select_feat and self.selfeatids:
+				ret= sdata.select_features(self.selfeatids)
+				par_dict= sdata.param_dict
+
+				if ret==0:
+					self.par_dict_list.append(par_dict)
+				else:
+					logger.warn("Failed to select features for source data %d, skip it ..." % (index))
+
+			else:
+				self.par_dict_list.append(par_dict)
 		
 		return 0
 
@@ -1283,16 +1457,21 @@ class FeatExtractorMom(object):
 		sdata.kernsize= self.kernsize
 		sdata.draw= self.draw
 		sdata.save_ssim_pars= self.save_ssim_pars
+		sdata.negative_pix_fract_thr= self.negative_pix_fract_thr
+		sdata.bad_pix_fract_thr= self.bad_pix_fract_thr
 		
 		sdata_mask= SData()
 		sdata_mask.refch= self.refch
 		sdata_mask.kernsize= self.kernsize
 		sdata_mask.draw= self.draw
 		sdata_mask.save_ssim_pars= self.save_ssim_pars
+		sdata_mask.negative_pix_fract_thr= self.negative_pix_fract_thr
+		sdata_mask.bad_pix_fract_thr= self.bad_pix_fract_thr
 
 		# - Read source image data
 		logger.debug("Reading source image data %d ..." % index)
-		d= self.datalist["data"][index]
+		#d= self.datalist["data"][index]
+		d= self.datalist[index]
 		if sdata.set_from_dict(d)<0:
 			logger.error("Failed to set source image data %d!" % index)
 			return None
@@ -1303,7 +1482,8 @@ class FeatExtractorMom(object):
 
 		# - Read source masked image data
 		logger.debug("Reading source masked image data %d ..." % index)
-		d= self.datalist_mask["data"][index]
+		#d= self.datalist_mask["data"][index]
+		d= self.datalist_mask[index]
 		
 		if sdata_mask.set_from_dict(d)<0:
 			logger.error("Failed to set source masked image data %d!" % index)
@@ -1345,19 +1525,32 @@ class FeatExtractorMom(object):
 	def __read_datalist(self):
 		""" Read json filelist """
 
+		# - Check datalist files
+		if self.datalistfile=="" or self.datalistfile_mask=="":
+			logger.error("Data list files are empty!")
+			return -1
+
 		# - Read data list for images and store number of instances per class, etc
 		ret= self.__read_filelist(self.datalistfile)
 		if ret is None:
 			logger.error("Failed to read filelist for imgs!")
 			return -1
-		self.datalist= ret[0]
+		#self.datalist= ret[0]
+		datadict= ret[0]
 		nchannels_set= ret[1]
 		
+		self.datalist= datadict["data"]
 		self.nchannels= list(nchannels_set)[0]
-		self.datasize= len(self.datalist["data"])
-		self.labels= [item["label"] for item in self.datalist["data"]]
-		self.snames= [item["sname"] for item in self.datalist["data"]]
-		self.classids= 	[item["id"] for item in self.datalist["data"]]
+		#self.datasize= len(self.datalist["data"])
+		#self.labels= [item["label"] for item in self.datalist["data"]]
+		#self.snames= [item["sname"] for item in self.datalist["data"]]
+		#self.classids= 	[item["id"] for item in self.datalist["data"]]
+		
+		self.datasize= len(self.datalist)
+		self.labels= [item["label"] for item in self.datalist]
+		self.snames= [item["sname"] for item in self.datalist]
+		self.classids= 	[item["id"] for item in self.datalist]
+
 		self.classfract_map= dict(Counter(self.classids).items())
 
 		logger.info("#%d objects in dataset" % self.datasize)
@@ -1367,8 +1560,11 @@ class FeatExtractorMom(object):
 		if ret is None:
 			logger.error("Failed to read filelist for masked imgs!")
 			return -1
-		self.datalist_mask= ret[0]
-		datasize_mask= len(self.datalist_mask["data"])
+		#self.datalist_mask= ret[0]
+		datadict_mask= ret[0]
+		self.datalist_mask= datadict_mask["data"]
+		#datasize_mask= len(self.datalist_mask["data"])
+		datasize_mask= len(self.datalist_mask)
 
 		# - Check data size for imgs and masks
 		if self.datasize!=datasize_mask:

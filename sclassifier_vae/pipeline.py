@@ -111,6 +111,12 @@ class Pipeline(object):
 		self.imgfile= ""
 		self.imgfile_fullpath= ""
 		self.img_metadata= ""
+		self.datadir= ""
+		self.datadir_mask= ""
+		self.datalist_file= ""
+		self.datalist_mask_file= ""
+		self.datadict= {}
+		self.datadict_mask= {}
 
 		# - scutout info
 		self.configfile= ""
@@ -127,6 +133,14 @@ class Pipeline(object):
 		self.centroids_proc= []
 		self.radii_proc= []
 		self.sname_label_map= {}
+		self.datalist_proc= []
+		self.datalist_mask_proc= []
+
+		# - Color feature extraction options
+		self.refch= 0
+		self.shrink_masks= False
+		self.grow_masks= False
+
 
 	#=========================
 	#==   READ IMG
@@ -351,7 +365,64 @@ class Pipeline(object):
 
 		return 0
 
+	#=========================
+	#==   DISTRIBUTE SOURCE
+	#=========================
+	def distribute_sources(self):
+		""" Distribute sources to each proc """
+
+		# - Read cutout data list dict and partition source list across processors
+		with open(self.datalist_file) as fp:
+			self.datadict= json.load(fp)
+
+		with open(self.datalist_mask_file) as fp:
+			self.datadict_mask= json.load(fp)
+		
+		self.nsources= len(self.datadict["data"])
+		source_indices= list(range(0, self.nsources))
+		source_indices_split= np.array_split(source_indices, nproc)
+		source_indices_proc= list(source_indices_split[procId])
+		self.nsources_proc= len(source_indices_proc)
+		imin= source_indices_proc[0]
+		imax= source_indices_proc[self.nsources_proc-1]
 	
+		logger.info("[PROC %d] #%d sources assigned to this processor ..." % (procId, self.nsources_proc))
+
+		self.datalist_proc= self.datadict["data"][imin:imax+1]
+		self.datalist_mask_proc= self.datadict_mask["data"][imin:imax+1]
+	
+		return 0
+
+	#=============================
+	#==   EXTRACT COLOR FEATURES
+	#=============================
+	def extract_color_features(self):
+		""" Extract color features """
+
+		# - Create feat extractor obj
+		#   NB: All PROC
+		mc= FeatExtractorMom()
+		mc.refch= self.refch
+		mc.draw= False	
+		mc.shrink_masks= self.shrink_masks
+		mc.grow_masks= self.grow_masks
+		mc.subtract_bkg= True
+		mc.subtract_bkg_only_refch= False
+		mc.ssim_winsize= 3
+		mc.save_ssim_pars= True
+		mc.save= False
+			
+		logger.info("[PROC %d] Extracting color features from cutout data (nsources=%d) ..." % (procId, len(self.datalist_proc)))
+		if mc.run(self.datalist_proc, self.datalist_mask_proc)<0:
+			logger.error("[PROC %d] Failed to extract color features (see logs)!" % (procId))
+			return -1
+
+		# - Merge parameters found by each proc
+		# ...
+		# ...
+
+		return 0
+
 
 	#=========================
 	#==   RUN
@@ -390,6 +461,11 @@ class Pipeline(object):
 		self.imgfile_fullpath= os.path.abspath(imgfile)
 		self.regionfile= regionfile
 		self.img_metadata= os.path.join(self.jobdir, "metadata.tbl")
+		self.datadir= os.path.join(self.jobdir, "cutouts")
+		self.datadir_mask= os.path.join(self.jobdir, "cutouts_masked")
+		self.datalist_file= os.path.join(self.jobdir, "datalist.json")
+		self.datalist_mask_file= os.path.join(self.jobdir, "datalist_masked.json")
+
 	
 		#==================================
 		#==   READ IMAGE DATA   
@@ -402,7 +478,6 @@ class Pipeline(object):
 			logger.error("[PROC %d] Failed to read input image %s and/or generate metadata!" % (procId, self.imgfile))
 			return -1
 
-	
 		#=============================
 		#==   READ SCUTOUT CONFIG
 		#==      (ALL PROCS)
@@ -440,17 +515,23 @@ class Pipeline(object):
 		#== (DISTRIBUTE AMONG PROCS)
 		#=============================
 		# - Create radio+IR cutouts
-		datadir= os.path.join(self.jobdir, "cutouts")
-		datadir_mask= os.path.join(self.jobdir, "cutouts_masked")
-		datalist_file= os.path.join(self.jobdir, "datalist.json")
-		datalist_mask_file= os.path.join(self.jobdir, "datalist_masked.json")
-
-		if self.make_scutouts(self.config, datadir, datadir_mask, self.nsurveys, datalist_file, datalist_mask_file)<0:
-			logger.error("PROC %d] Failed to create source cutouts!" % (procId))
+		if self.make_scutouts(self.config, self.datadir, self.datadir_mask, self.nsurveys, self.datalist_file, self.datalist_mask_file)<0:
+			logger.error("[PROC %d] Failed to create source cutouts!" % (procId))
 			return -1
 
-		
-		
+		# - Distribute sources among proc
+		self.distribute_sources()
+
+		#=============================
+		#==   EXTRACT FEATURES
+		#== (DISTRIBUTE AMONG PROCS)
+		#=============================
+		# - Extract color features
+		logger.info("[PROC %d] Extracting color features ..." % (procId))
+		if self.extract_color_features()<0:
+			logger.error("[PROC %d] Failed to extract color features ..." % (procId))
+			return -1
+
 
 		return 0
 
