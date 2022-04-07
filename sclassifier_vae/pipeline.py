@@ -420,8 +420,16 @@ class Pipeline(object):
 		param_dict_list= fem.par_dict_list
 
 		# - Merge parameters found by each proc
-		# newData = comm.gather(data,root=0)
-		# ...
+		if comm is None:
+			colfeat_dict_list= param_dict_list
+		else:
+			logger.info("[PROC %d] ")
+			colfeat_dict_list= comm.gather(param_dict_list, root=MASTER)
+		
+			if procId==MASTER:
+				print("colfeat_dict_list")
+				print(colfeat_dict_list)
+		
 
 		return 0
 
