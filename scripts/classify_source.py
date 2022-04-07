@@ -105,11 +105,7 @@ def get_args():
 	parser.add_argument('-scutout_config','--scutout_config', dest='scutout_config', required=True, type=str, help='scutout configuration filename (.ini)') 
 	parser.add_argument('-surveys','--surveys', dest='surveys', required=False, type=str, help='List of surveys to be used for cutouts, separated by comma. First survey is radio.') 
 	
-	# - Pre-processing options
-	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize feature data in range [0,1] before applying models (default=false)')	
-	parser.set_defaults(normalize=False)
-	parser.add_argument('-scalerfile', '--scalerfile', dest='scalerfile', required=False, type=str, default='', action='store',help='Load and use data transform stored in this file (.sav)')
-
+	
 	# - Autoencoder model options
 	parser.add_argument('--check_aereco', dest='check_aereco', action='store_true',help='Check AE reconstruction metrics (default=false)')	
 	parser.set_defaults(check_aereco=False)
@@ -125,6 +121,9 @@ def get_args():
 	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=False, type=str, default='', action='store',help='Classifier model filename (.sav)')
 	parser.add_argument('--binary_class', dest='binary_class', action='store_true',help='Perform a binary classification {0=EGAL,1=GAL} (default=multiclass)')	
 	parser.set_defaults(binary_class=False)
+	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize feature data in range [0,1] before applying models (default=false)')	
+	parser.set_defaults(normalize=False)
+	parser.add_argument('-scalerfile', '--scalerfile', dest='scalerfile', required=False, type=str, default='', action='store',help='Load and use data transform stored in this file (.sav)')
 	
 	# - Output options
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='classified_data.dat', help='Output filename (.dat) with classified data') 
@@ -1130,7 +1129,7 @@ def main():
 		)
 
 		if featmerge_status<0:		
-			logger.error("[PROC %d] Failed to merge feature data files!")
+			logger.error("[PROC %d] Failed to merge feature data files!" % (procId))
 
 	else:
 		featmerge_status= 0
@@ -1146,8 +1145,37 @@ def main():
 	#===========================
 	#==   CLASSIFY SOURCES
 	#===========================
-	# ...
-	# ...
+	if procId==MASTER:
+		sclass_status= 0
+		outfile_sclass= os.path.join(jobdir, "classified_data.dat")
+
+		multiclass= True
+		if binary_class:
+			multiclass= False
+
+		sclass= SClassifier(multiclass=multiclass)
+		sclass.normalize= normalize
+		sclass.outfile= outfile_sclass
+	
+		sclass_status= sclass.run_predict(
+			datafile=featfile_allfeat, 
+			modelfile=modelfile, 
+			scalerfile=scalerfile
+		)
+	
+		if sclass_status<0:		
+			logger.error("[PROC %d] Failed to run classifier on data %s!" % (procId, featfile_allfeat))
+
+	else:
+		sclass_status= 0
+
+	if comm is not None:
+		sclass_status= comm.bcast(sclass_status, root=MASTER)
+
+	if sclass_status<0:
+		logger.error("[PROC %d] Failed to run classifier on data %s, exit!" % (procId, featfile_allfeat))
+		return 1
+
 
 	return 0
 
