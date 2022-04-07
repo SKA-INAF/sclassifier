@@ -401,26 +401,26 @@ class Pipeline(object):
 
 		# - Create feat extractor obj
 		#   NB: All PROC
-		mc= FeatExtractorMom()
-		mc.refch= self.refch
-		mc.draw= False	
-		mc.shrink_masks= self.shrink_masks
-		mc.grow_masks= self.grow_masks
-		mc.subtract_bkg= True
-		mc.subtract_bkg_only_refch= False
-		mc.ssim_winsize= 3
-		mc.save_ssim_pars= True
-		mc.save= False
+		fem= FeatExtractorMom()
+		fem.refch= self.refch
+		fem.draw= False	
+		fem.shrink_masks= self.shrink_masks
+		fem.grow_masks= self.grow_masks
+		fem.subtract_bkg= True
+		fem.subtract_bkg_only_refch= False
+		fem.ssim_winsize= 3
+		fem.save_ssim_pars= True
+		fem.save= False
 			
 		logger.info("[PROC %d] Extracting color features from cutout data (nsources=%d) ..." % (procId, len(self.datalist_proc)))
-		if mc.run(self.datalist_proc, self.datalist_mask_proc)<0:
+		if fem.run(self.datalist_proc, self.datalist_mask_proc)<0:
 			logger.error("[PROC %d] Failed to extract color features (see logs)!" % (procId))
 			return -1
 
-		param_dict_list= mc.par_dict_list
+		param_dict_list= fem.par_dict_list
 
 		# - Merge parameters found by each proc
-		# ...
+		# newData = comm.gather(data,root=0)
 		# ...
 
 		return 0
