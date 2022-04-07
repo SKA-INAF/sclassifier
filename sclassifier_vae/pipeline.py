@@ -189,7 +189,7 @@ class Pipeline(object):
 		slabels_sel= slabels
 		if self.filter_regions_by_tags and self.tags:
 			logger.info("[PROC %d] Selecting DS9 region with desired tags ..." % (procId))
-			regs_sel, snames_sel, slabels_sel= Utils.select_regions(regs, tags)
+			regs_sel, snames_sel, slabels_sel= Utils.select_regions(regs, self.tags)
 		
 		if not regs_sel:
 			logger.warn("[PROC %d] No region left for processing (check input region file)!" % (procId))
