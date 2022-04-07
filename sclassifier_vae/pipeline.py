@@ -387,7 +387,7 @@ class Pipeline(object):
 		self.imgfile= imgfile
 		self.imgfile_fullpath= os.path.abspath(imgfile)
 		self.regionfile= regionfile
-		self.img_metadata= os.path.join(jobdir, "metadata.tbl")
+		self.img_metadata= os.path.join(self.jobdir, "metadata.tbl")
 	
 		#==================================
 		#==   READ IMAGE DATA   
