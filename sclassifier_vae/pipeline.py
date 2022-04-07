@@ -423,7 +423,7 @@ class Pipeline(object):
 		if comm is None:
 			colfeat_dict_list= param_dict_list
 		else:
-			logger.info("[PROC %d] ")
+			logger.info("[PROC %d] Gathering color features ... " % (procId))
 			colfeat_dict_list= comm.gather(param_dict_list, root=MASTER)
 		
 			if procId==MASTER:
