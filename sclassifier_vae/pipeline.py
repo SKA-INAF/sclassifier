@@ -232,7 +232,7 @@ class Pipeline(object):
 	#==   MAKE SCUTOUTS
 	#=========================
 	#def make_scutouts(self):
-	def make_scutouts(self, config, datadir, datadir_mask, nbands, datalist_file, datalist_file, datalist_mask_file):	
+	def make_scutouts(self, config, datadir, datadir_mask, nbands, datalist_file, datalist_mask_file):	
 		""" Run scutout and produce source cutout data """
 
 		# - Prepare dir
