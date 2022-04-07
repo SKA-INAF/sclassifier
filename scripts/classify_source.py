@@ -159,7 +159,7 @@ def find_duplicates(seq):
   #return ({key:locs} for key,locs in tally.items() if len(locs)>0)
 	return (locs for key,locs in tally.items() if len(locs)>0)
 
-def read_regions(regionfiles):
+def read_regions(regionfiles, class_labels):
 	""" Read input regions """
 
 	# - Read regions
