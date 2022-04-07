@@ -195,6 +195,7 @@ class SClassifier(object):
 		# *****************************
 		# ** Output
 		# *****************************
+		self.save_labels= False
 		self.dump_model= True
 		self.outfile_scaler = 'datascaler.sav'
 		self.outfile_model= "classifier.sav"
@@ -1423,7 +1424,7 @@ class SClassifier(object):
 		#==   SAVE
 		#================================
 		logger.info("Saving results ...")
-		if self.__save_train()<0:
+		if self.__save_predict()<0:
 			logger.error("Failed to save results!")
 			return -1
 
@@ -1489,7 +1490,7 @@ class SClassifier(object):
 		#==   SAVE
 		#================================
 		logger.info("Saving results ...")
-		if self.__save_train()<0:
+		if self.__save_predict()<0:
 			logger.error("Failed to save results!")
 			return -1
 
@@ -1526,9 +1527,8 @@ class SClassifier(object):
 		logger.info("Converting predicted targets to class ids ...")
 		self.classids_pred= [self.classid_remap_inv[item] for item in self.targets_pred]
 
-
-		# - Compute 
-		#self.labels_pred= [self.classid_label_map[item] for item in self.classids_pred]
+		# - Compute pred labels
+		self.labels_pred= [self.classid_label_map[item] for item in self.classids_pred]
 
 		# - Predict model on pre-classified data (if any)
 		if self.data_preclassified is not None:
@@ -1616,6 +1616,85 @@ class SClassifier(object):
 	#####################################
 	##     SAVE
 	#####################################
+	def __save_predict(self):
+		""" Save prediction results """
+
+		#================================
+		#==   SAVE METRICS
+		#================================
+		logger.info("Saving train metrics ...")
+		metrics= [self.accuracy, self.precision, self.recall, self.f1score]
+		metric_names= ["accuracy","precision","recall","f1score"]
+		
+		for i in range(len(self.data_preclassified_targetnames)):
+			classname= self.data_preclassified_targetnames[i]
+			precision= self.class_precisions[i]
+			recall= self.class_recalls[i]
+			f1score= self.class_f1scores[i]
+			metrics.append(precision)
+			metrics.append(recall)
+			metrics.append(f1score)
+			metric_names.append("precision_" + classname)
+			metric_names.append("recall_" + classname)
+			metric_names.append("f1score_" + classname)
+			
+		Nmetrics= len(metrics)
+		metric_data= np.array(metrics).reshape(1,Nmetrics)
+
+		metric_names_str= ' '.join(str(item) for item in metric_names)
+		head= '{} {}'.format("# ",metric_names_str)
+
+		print("metric_data")
+		print(metrics)
+		print(len(metrics))
+		print(metric_data.shape)
+		
+		Utils.write_ascii(metric_data, self.outfile_metrics, head)	
+
+		# - Save confusion matrix
+		logger.info("Saving confusion matrix to file ...")
+		#with open(self.outfile_cm, 'w') as f:
+		#	f.write(np.array2string(self.cm, separator=', '))
+
+		np.savetxt(self.outfile_cm, self.cm, delimiter=',')
+
+		#with open(self.outfile_cm_norm, 'w') as f:
+		#	f.write(np.array2string(self.cm_norm, separator=', '))
+		
+		np.savetxt(self.outfile_cm_norm, self.cm_norm, delimiter=',')
+
+		#================================
+		#==   SAVE PREDICTION DATA
+		#================================
+		logger.info("Saving prediction data to file %s ..." % (self.outfile))
+		N= self.data.shape[0]
+		snames= np.array(self.source_names).reshape(N,1)
+		objids= np.array(self.data_classids).reshape(N,1)
+		objids_pred= np.array(self.classids_pred).reshape(N,1)
+		probs_pred= np.array(self.probs_pred).reshape(N,1)
+		objlabels_pred= np.array(self.objids_pred).reshape(N,1)
+		objlabels= np.array(self.data_labels).reshape(N,1)
+
+		if self.save_labels:
+			outdata= np.concatenate(
+				(snames, self.data, objlabels, objlabels_pred, probs_pred),
+				axis=1
+			)
+		else:
+			outdata= np.concatenate(
+				(snames, self.data, objids, objids_pred, probs_pred),
+				axis=1
+			)
+
+		znames_counter= list(range(1,self.nfeatures+1))
+		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
+		head= '{} {} {}'.format("# sname",znames,"id id_pred prob")
+
+		Utils.write_ascii(outdata, self.outfile, head)	
+
+		return 0
+
+
 	def __save_train(self):
 		""" Save train results """
 
@@ -1716,11 +1795,19 @@ class SClassifier(object):
 		objids= np.array(self.data_preclassified_classids).reshape(N,1)
 		objids_pred= np.array(self.classids_pred).reshape(N,1)
 		probs_pred= np.array(self.probs_pred).reshape(N,1)
+		objlabels_pred= np.array(self.objids_pred).reshape(N,1)
+		objlabels= np.array(self.data_preclassified_labels).reshape(N,1)
 
-		outdata= np.concatenate(
-			(snames, self.data_preclassified, objids, objids_pred, probs_pred),
-			axis=1
-		)
+		if self.save_labels:
+			outdata= np.concatenate(
+				(snames, self.data_preclassified, objlabels, objlabels_pred, probs_pred),
+				axis=1
+			)
+		else:
+			outdata= np.concatenate(
+				(snames, self.data_preclassified, objids, objids_pred, probs_pred),
+				axis=1
+			)
 
 		znames_counter= list(range(1,self.nfeatures+1))
 		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
