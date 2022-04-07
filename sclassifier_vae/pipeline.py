@@ -133,7 +133,7 @@ class Pipeline(object):
 		""" Read input image and generate Montage metadata """
 
 		# - Read FITS (ALL PROC)
-		logger.info("[PROC %d] Reading input image %s ..." % (procId, imgfile))
+		logger.info("[PROC %d] Reading input image %s ..." % (procId, self.imgfile_fullpath))
 		try:
 			data, header, wcs= Utils.read_fits(self.imgfile_fullpath)
 			
