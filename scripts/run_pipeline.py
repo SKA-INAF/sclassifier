@@ -60,6 +60,7 @@ from sclassifier_vae.data_aereco_checker import DataAERecoChecker
 from sclassifier_vae.feature_merger import FeatMerger
 from sclassifier_vae.feature_selector import FeatSelector
 from sclassifier_vae.pipeline import Pipeline
+from sclassifier_vae.pipeline import procId, MASTER, nproc, comm
 
 
 #### GET SCRIPT ARGS ####
