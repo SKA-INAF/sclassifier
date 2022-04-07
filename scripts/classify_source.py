@@ -1026,7 +1026,7 @@ def main():
 	#==   EXTRACT FEATURES
 	#==     (ONLY PROC 0)
 	#===========================
-	# - Extract moment features
+	# - Compute moment+color features
 	if procId==MASTER:
 		momfeat_status= 0
 		featfile_mom= os.path.join(jobdir, "features_moments.csv")		
@@ -1057,10 +1057,47 @@ def main():
 		logger.error("[PROC %d] Failed to extract moment features, exit!" % (procId))
 		return 1
 
+	# - Select colour features
+	if procId==MASTER:
+		colfeat_status= 0
+		featfile_col= os.path.join(jobdir, "features_colors.csv")		
+
+		logger.info("[PROC %d] Running feature selector to get color features from file %s ..." % (procId, featfile_mom))
+		fsel= FeatSelector()
+		fsel.normalize= False # No normalization, as we are only selecting feature columns
+		fsel.outfile= featfile_col
+
+		selcols= []	
+		if nsurveys==5:
+			selcols= [9,10,11,12,13,14,15,16,17,18,19,20,21,22,73,74,75,76,77,78,79,80,81,82]	
+		elif nsurveys==7:
+			selcols= [13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137]
+		
+		if selcols:
+			colfeat_status= fsel.select(featfile_mom, selcols)
+		else:
+			logger.error("[PROC %d] Unsupported number of bands (%d) found (only 5 or 7 supported)!" % (procId, nsurveys))
+			colfeat_status= -1
+
+	else:
+		colfeat_status= 0
+
+	if comm is not None:
+		colfeat_status= comm.bcast(colfeat_status, root=MASTER)
+
+	if colfeat_status<0:
+		logger.error("[PROC %d] Failed to select colour features from file %s, exit!" % (procId, featfile_mom))
+		return 1
+
+	# - Select Zernike moment features
+	# ...
+
 	# - Extract autoencoder features
 	# ...
 
-	
+	# - Combine features
+	# ...
+		
 
 	#===========================
 	#==   CLASSIFY SOURCES
