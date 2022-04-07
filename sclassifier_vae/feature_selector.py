@@ -674,7 +674,7 @@ class FeatSelector(object):
 		return 0
 
 
-	def select(self, datafile, selcols):
+	def select_from_file(self, datafile, selcols):
 		""" Select data columns provided in selcols list """
 		
 		#================================

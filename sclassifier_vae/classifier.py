@@ -123,6 +123,7 @@ class SClassifier(object):
 		self.classifier= 'DecisionTreeClassifier'
 		self.model= None
 		self.classids_pred= None
+		self.labels_pred= None
 		self.targets_pred= None
 		self.probs_pred= None
 		self.accuracy= None
@@ -1287,6 +1288,9 @@ class SClassifier(object):
 		# - Convert targets to obj ids
 		logger.info("Converting predicted targets to class ids ...")
 		self.classids_pred= [self.classid_remap_inv[item] for item in self.targets_pred]
+
+		# - Convert obj ids to labels
+		self.labels_pred= [self.classid_label_map[item] for item in self.classids_pred]
 		
 		nclasses= len(self.target_names)
 		labels= list(range(0,nclasses))
@@ -1522,6 +1526,9 @@ class SClassifier(object):
 		logger.info("Converting predicted targets to class ids ...")
 		self.classids_pred= [self.classid_remap_inv[item] for item in self.targets_pred]
 
+
+		# - Compute 
+		#self.labels_pred= [self.classid_label_map[item] for item in self.classids_pred]
 
 		# - Predict model on pre-classified data (if any)
 		if self.data_preclassified is not None:
