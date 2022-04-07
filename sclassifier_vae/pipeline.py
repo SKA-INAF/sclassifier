@@ -150,7 +150,7 @@ class Pipeline(object):
 		
 		if procId==MASTER:
 			self.img_metadata= os.path.join(self.jobdir, "metadata.tbl")
-			status= Utils.write_montage_fits_metadata(self.imgfile_fullpath, metadata_file=self.img_metadata, jobdir=self.jobdir)
+			status= Utils.write_montage_fits_metadata(inputfile=self.imgfile_fullpath, metadata_file=self.img_metadata, jobdir=self.jobdir)
 		
 		else: # OTHER PROCS
 			status= -1
