@@ -417,6 +417,8 @@ class Pipeline(object):
 			logger.error("[PROC %d] Failed to extract color features (see logs)!" % (procId))
 			return -1
 
+		param_dict_list= mc.par_dict_list
+
 		# - Merge parameters found by each proc
 		# ...
 		# ...
