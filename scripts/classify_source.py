@@ -58,6 +58,7 @@ from sclassifier_vae.feature_extractor_mom import FeatExtractorMom
 from sclassifier_vae.data_checker import DataChecker
 from sclassifier_vae.data_aereco_checker import DataAERecoChecker
 from sclassifier_vae.feature_merger import FeatMerger
+from sclassifier_vae.feature_selector import FeatSelector
 
 #===========================
 #==   IMPORT MPI
