@@ -213,7 +213,7 @@ def main():
 	
 	logger.info("[PROC %d] Running source classification pipeline ..." % (procId))
 	status= pipeline.run(
-		imgfile, regionfile)
+		imgfile, regionfile
 	)
 
 	if status<0:
