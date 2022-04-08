@@ -1652,7 +1652,7 @@ class SClassifier(object):
 		Utils.write_ascii(metric_data, self.outfile_metrics, head)	
 
 		# - Save confusion matrix
-		logger.info("Saving confusion matrix to file ...")
+		logger.info("Saving confusion matrix to file %s ..." % (self.outfile_cm))
 		#with open(self.outfile_cm, 'w') as f:
 		#	f.write(np.array2string(self.cm, separator=', '))
 
