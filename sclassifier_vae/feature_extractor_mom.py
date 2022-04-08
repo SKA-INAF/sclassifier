@@ -1147,7 +1147,7 @@ class SData(object):
 		param_dict_sel= collections.OrderedDict()
 		param_dict_sel["sname"]= self.param_dict["sname"]
 
-		for key in key_sel:
+		for key in keys_sel:
 			param_dict_sel[key]= self.param_dict[key]
 
 		param_dict_sel["id"]= self.param_dict["id"]
