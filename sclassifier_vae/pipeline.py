@@ -376,18 +376,18 @@ class Pipeline(object):
 				mkdatalist_status= -1
 
 			# - Set data loader
-			logger.info("[PROC %d] Reading datalist %s ..." % (procId, datalist_file))
-			dl= DataLoader(filename=datalist_file)
-			if dl.read_datalist()<0:
-				logger.error("Failed to read cutout datalist!")
-				mkdatalist_status= -1
+			#logger.info("[PROC %d] Reading datalist %s ..." % (procId, datalist_file))
+			#dl= DataLoader(filename=datalist_file)
+			#if dl.read_datalist()<0:
+			#	logger.error("Failed to read cutout datalist!")
+			#	mkdatalist_status= -1
 
 			# - Set masked data loader
-			logger.info("[PROC %d] Reading masked datalist %s ..." % (procId, datalist_mask_file))
-			dl_mask= DataLoader(filename=datalist_mask_file)
-			if dl_mask.read_datalist()<0:
-				logger.error("Failed to read masked cutout datalist!")
-				mkdatalist_status= -1
+			#logger.info("[PROC %d] Reading masked datalist %s ..." % (procId, datalist_mask_file))
+			#dl_mask= DataLoader(filename=datalist_mask_file)
+			#if dl_mask.read_datalist()<0:
+			#	logger.error("Failed to read masked cutout datalist!")
+			#	mkdatalist_status= -1
 
 		else:
 			mkdatalist_status= 0
@@ -762,6 +762,8 @@ class Pipeline(object):
 
 		self.config_radio= config_radio
 		self.nsurveys_radio= len(config_radio.surveys)
+
+		logger.info("[PROC %d] #surveys=%d, #surveys_radio=%d" % (procId, self.nsurveys, self.nsurveys_radio))
 
 		#===========================
 		#==   READ REGIONS
