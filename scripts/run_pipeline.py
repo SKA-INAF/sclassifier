@@ -91,7 +91,7 @@ def get_args():
 	# - Source cutout options
 	parser.add_argument('-scutout_config','--scutout_config', dest='scutout_config', required=True, type=str, help='scutout configuration filename (.ini)') 
 	parser.add_argument('-surveys','--surveys', dest='surveys', required=False, type=str, help='List of surveys to be used for cutouts, separated by comma. First survey is radio.') 
-	
+	parser.add_argument('-surveys_radio','--surveys_radio', dest='surveys_radio', required=False, type=str, help='List of radio surveys to be used for cutouts and spectral index, separated by comma.') 
 	
 	# - Autoencoder model options
 	parser.add_argument('--check_aereco', dest='check_aereco', action='store_true',help='Check AE reconstruction metrics (default=false)')	
@@ -166,6 +166,11 @@ def main():
 	if args.surveys!="":
 		surveys= [str(x.strip()) for x in args.surveys.split(',')]
 
+	surveys_radio= []
+	if args.surveys_radio!="":
+		surveys_radio= [str(x.strip()) for x in args.surveys_radio.split(',')]
+
+
 	if imgfile=="" and not surveys:
 		logger.error("[PROC %d] No image passed, surveys option cannot be empty!" % (procId))
 		return 1
@@ -216,6 +221,7 @@ def main():
 	pipeline.tags= tags
 	pipeline.configfile= configfile
 	pipeline.surveys= surveys
+	pipeline.surveys_radio= surveys_radio
 	pipeline.normalize_feat= normalize_feat
 	pipeline.scalerfile= scalerfile
 	pipeline.modelfile= modelfile
