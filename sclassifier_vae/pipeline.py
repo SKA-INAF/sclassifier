@@ -576,7 +576,7 @@ class Pipeline(object):
 		self.datalist_file= os.path.join(self.jobdir, "datalist.json")
 		self.datalist_mask_file= os.path.join(self.jobdir, "datalist_masked.json")
 
-		self.outfile_sclass= os.path.join(jobdir, "classified_data.dat")	
+		self.outfile_sclass= os.path.join(self.jobdir, "classified_data.dat")	
 
 		#==================================
 		#==   READ IMAGE DATA   
