@@ -177,6 +177,13 @@ class Pipeline(object):
 		self.scalerfile= ""
 		self.save_class_labels= False
 
+		# - Outlier detection options
+		self.find_outliers= False
+		self.modelfile_outlier= ""
+		self.anomaly_thr= 0.7
+		self.save_outlier= False
+		self.outfile_outlier= "outlier_data.dat"
+
 		# - Output data
 		self.outfile_sclass= "classified_data.dat"
 		self.outfile_sclass_metrics= "classification_metrics.dat"
@@ -511,6 +518,12 @@ class Pipeline(object):
 			sclass.outfile_cm= self.outfile_sclass_cm
 			sclass.outfile_cm_norm= self.outfile_sclass_cm_norm
 			sclass.save_labels= self.save_class_labels
+
+			sclass.find_outliers= self.find_outliers
+			sclass.outlier_modelfile= self.modelfile_outlier
+			sclass.outlier_thr= self.anomaly_thr
+			sclass.save_outlier= self.save_outlier
+			sclass.outlier_outfile= self.outfile_outlier
 	
 			# - Run classification
 			sclass_status= sclass.run_predict(

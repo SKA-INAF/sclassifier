@@ -113,6 +113,15 @@ def get_args():
 	parser.add_argument('-scalerfile', '--scalerfile', dest='scalerfile', required=False, type=str, default='', action='store',help='Load and use data transform stored in this file (.sav)')
 	parser.add_argument('--save_class_labels', dest='save_class_labels', action='store_true',help='Save class labels instead of classid in classification data output (default=false)')	
 	parser.set_defaults(save_class_labels=False)
+
+	# - Outlier detection
+	parser.add_argument('--find_outliers', dest='find_outliers', action='store_true',help='Find outliers in data (only in prediction step) (default=false)')	
+	parser.set_defaults(find_outliers=False)
+	parser.add_argument('-modelfile_outlier', '--modelfile_outlier', dest='modelfile_outlier', required=False, type=str, default='', action='store',help='Outlier model filename (.sav)')
+	parser.add_argument('-anomaly_thr','--anomaly_thr', dest='anomaly_thr', required=False, type=float, default=0.9, help='Threshold in anomaly score above which observation is set as outlier (default=0.9)') 
+	parser.add_argument('--save_outlier', dest='save_outlier', action='store_true',help='Save outlier results to file (default=false)')	
+	parser.set_defaults(save_outlier=False)
+	parser.add_argument('-outfile_outlier','--outfile_outlier', dest='outfile_outlier', required=False, type=str, default='outlier_data.dat', help='Output filename (.dat) with outlier data') 
 	
 	# - Output options
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='classified_data.dat', help='Output filename (.dat) with classified data') 
@@ -212,6 +221,13 @@ def main():
 		logger.error("[PROC %d] Empty AE model/weight filename given!" % (procId))
 		return 1
 
+	# - Outlier search options
+	find_outliers= args.find_outliers
+	modelfile_outlier= args.modelfile_outlier
+	anomaly_thr= args.anomaly_thr
+	save_outlier= args.save_outlier
+	outfile_outlier= args.outfile_outlier
+
 	#==================================
 	#==   RUN
 	#==================================
@@ -227,6 +243,12 @@ def main():
 	pipeline.modelfile= modelfile
 	pipeline.binary_class= binary_class
 	pipeline.save_class_labels= save_class_labels
+
+	pipeline.find_outliers = find_outliers 
+	pipeline.modelfile_outlier = modelfile_outlier
+	pipeline.outlier_thr = anomaly_thr
+	pipeline.save_outlier= save_outlier
+	pipeline.outfile_outlier = outfile_outlier
 	
 	logger.info("[PROC %d] Running source classification pipeline ..." % (procId))
 	status= pipeline.run(
