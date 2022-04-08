@@ -140,6 +140,9 @@ class Pipeline(object):
 		self.refch= 0
 		self.shrink_masks= False
 		self.grow_masks= False
+		self.selfeatcols_5bands= [9,10,11,12,13,14,15,16,17,18,19,20,21,22,73,74,75,76,77,78,79,80,81,82]	
+		self.selfeatcols_7bands= [13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137]
+		self.selfeatcols= []
 
 
 	#=========================
@@ -399,6 +402,15 @@ class Pipeline(object):
 	def extract_color_features(self):
 		""" Extract color features """
 
+		# - Select color features
+		if self.nsurveys==5:
+			selcols= self.selfeatcols_5bands
+		elif nsurveys==7:
+			selcols= self.selfeatcols_7bands
+		else:
+			selcols= []
+
+
 		# - Create feat extractor obj
 		#   NB: All PROC
 		fem= FeatExtractorMom()
@@ -411,6 +423,8 @@ class Pipeline(object):
 		fem.ssim_winsize= 3
 		fem.save_ssim_pars= True
 		fem.save= False
+		fem.select_feat= True
+		fem.selfeatids= selcols
 			
 		logger.info("[PROC %d] Extracting color features from cutout data (nsources=%d) ..." % (procId, len(self.datalist_proc)))
 		if fem.run_from_datalist(self.datalist_proc, self.datalist_mask_proc)<0:
@@ -570,6 +584,23 @@ class Pipeline(object):
 		if self.extract_color_features()<0:
 			logger.error("[PROC %d] Failed to extract color features ..." % (procId))
 			return -1
+	
+		# - Extract spectral index features
+		# ...
+		# ...
+
+		# - Concatenate features
+		# ...
+		# ...
+
+		#=============================
+		#==   EXTRACT FEATURES
+		#== (DISTRIBUTE AMONG PROCS)
+		#=============================
+		
+
+
+
 
 
 		return 0
