@@ -118,6 +118,13 @@ class Pipeline(object):
 		self.datadict= {}
 		self.datadict_mask= {}
 
+		self.datadir_radio= ""
+		self.datadir_radio_mask= ""
+		self.datalist_radio_file= ""
+		self.datalist_radio_mask_file= ""
+		self.datadict_radio= {}
+		self.datadict_radio_mask= {}
+
 		# - scutout info
 		self.jobdir_scutout= os.path.join(self.jobdir, "scutout")
 		self.jobdir_scutout_multiband= os.path.join(self.jobdir_scutout, "multiband")
@@ -141,6 +148,9 @@ class Pipeline(object):
 		self.sname_label_map= {}
 		self.datalist_proc= []
 		self.datalist_mask_proc= []
+
+		self.datalist_radio_proc= []
+		self.datalist_radio_mask_proc= []
 
 		# - Color feature extraction options
 		self.jobdir_sfeat= os.path.join(self.jobdir, "sfeat")
@@ -391,34 +401,7 @@ class Pipeline(object):
 
 		return 0
 
-	#=========================
-	#==   DISTRIBUTE SOURCE
-	#=========================
-	def distribute_sources(self):
-		""" Distribute sources to each proc """
-
-		# - Read cutout data list dict and partition source list across processors
-		with open(self.datalist_file) as fp:
-			self.datadict= json.load(fp)
-
-		with open(self.datalist_mask_file) as fp:
-			self.datadict_mask= json.load(fp)
-		
-		self.nsources= len(self.datadict["data"])
-		source_indices= list(range(0, self.nsources))
-		source_indices_split= np.array_split(source_indices, nproc)
-		source_indices_proc= list(source_indices_split[procId])
-		self.nsources_proc= len(source_indices_proc)
-		imin= source_indices_proc[0]
-		imax= source_indices_proc[self.nsources_proc-1]
 	
-		logger.info("[PROC %d] #%d sources assigned to this processor ..." % (procId, self.nsources_proc))
-
-		self.datalist_proc= self.datadict["data"][imin:imax+1]
-		self.datalist_mask_proc= self.datadict_mask["data"][imin:imax+1]
-	
-		return 0
-
 	#=============================
 	#==   EXTRACT COLOR FEATURES
 	#=============================
@@ -572,10 +555,17 @@ class Pipeline(object):
 		#self.datalist_mask_file= os.path.join(self.jobdir, "datalist_masked.json")
 
 		self.img_metadata= os.path.join(self.jobdir_scutout, "metadata.tbl")
+
 		self.datadir= os.path.join(self.jobdir_scutout_multiband, "cutouts")
 		self.datadir_mask= os.path.join(self.jobdir_scutout_multiband, "cutouts_masked")
 		self.datalist_file= os.path.join(self.jobdir_scutout_multiband, "datalist.json")
 		self.datalist_mask_file= os.path.join(self.jobdir_scutout_multiband, "datalist_masked.json")
+
+		self.datadir_radio= os.path.join(self.jobdir_scutout_radio, "cutouts")
+		self.datadir_radio_mask= os.path.join(self.jobdir_scutout_radio, "cutouts_masked")
+		self.datalist_radio_file= os.path.join(self.jobdir_scutout_radio, "datalist.json")
+		self.datalist_radio_mask_file= os.path.join(self.jobdir_scutout_radio, "datalist_masked.json")
+
 
 		self.outfile_sclass= os.path.join(self.jobdir_sclass, "classified_data.dat")
 		self.outfile_sclass_metrics= os.path.join(self.jobdir_sclass, "classification_metrics.dat")
@@ -630,6 +620,48 @@ class Pipeline(object):
 			return -1
 
 		return 0
+
+	#=========================
+	#==   DISTRIBUTE SOURCE
+	#=========================
+	def distribute_sources(self):
+		""" Distribute sources to each proc """
+
+		# - Read multi-band cutout data list dict and partition source list across processors
+		logger.info("[PROC %d] Reading multi-band cutout data list and assign sources to processor ..." % (procId))
+		with open(self.datalist_file) as fp:
+			self.datadict= json.load(fp)
+
+		with open(self.datalist_mask_file) as fp:
+			self.datadict_mask= json.load(fp)
+		
+		self.nsources= len(self.datadict["data"])
+		source_indices= list(range(0, self.nsources))
+		source_indices_split= np.array_split(source_indices, nproc)
+		source_indices_proc= list(source_indices_split[procId])
+		self.nsources_proc= len(source_indices_proc)
+		imin= source_indices_proc[0]
+		imax= source_indices_proc[self.nsources_proc-1]
+	
+		logger.info("[PROC %d] #%d sources (multi-band) assigned to this processor ..." % (procId, self.nsources_proc))
+
+		self.datalist_proc= self.datadict["data"][imin:imax+1]
+		self.datalist_mask_proc= self.datadict_mask["data"][imin:imax+1]
+
+		# - Read radio cutout data and partition source list across processors
+		logger.info("[PROC %d] Reading multi-radio cutout data list and assign sources to processor ..." % (procId))
+		with open(self.datalist_radio_file) as fp:
+			self.datadict_radio= json.load(fp)
+
+		with open(self.datalist_radio_mask_file) as fp:
+			self.datadict_radio_mask= json.load(fp)
+
+		self.datalist_radio_proc= self.datadict_radio["data"][imin:imax+1]
+		self.datalist_radio_mask_proc= self.datadict_radio_mask["data"][imin:imax+1]
+
+	
+		return 0
+
 
 	#=========================
 	#==   RUN
@@ -746,17 +778,21 @@ class Pipeline(object):
 		#==   MAKE CUTOUTS
 		#== (DISTRIBUTE AMONG PROCS)
 		#=============================
-		
 		# - Create radio+IR cutouts
+		logger.info("[PROC %d] Creating radio-IR cutouts ..." % (procId))
 		os.chdir(self.jobdir_scutout_multiband)
 
 		if self.make_scutouts(self.config, self.datadir, self.datadir_mask, self.nsurveys, self.datalist_file, self.datalist_mask_file)<0:
-			logger.error("[PROC %d] Failed to create source cutouts!" % (procId))
+			logger.error("[PROC %d] Failed to create multi-band source cutouts!" % (procId))
 			return -1
-
+		
 		# - Create radio multi cutouts
-		# os.chdir(self.jobdir_scutout_radio)
-		# ...
+		logger.info("[PROC %d] Creating multi-frequency radio cutouts ..." % (procId))
+		os.chdir(self.jobdir_scutout_radio)
+
+		if self.make_scutouts(self.config_radio, self.datadir_radio, self.datadir_radio_mask, self.nsurveys_radio, self.datalist_radio_file, self.datalist_radio_mask_file)<0:
+			logger.error("[PROC %d] Failed to create radio source cutouts!" % (procId))
+			return -1
 
 		# - Distribute sources among proc
 		self.distribute_sources()
