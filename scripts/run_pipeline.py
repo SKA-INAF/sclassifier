@@ -108,8 +108,8 @@ def get_args():
 	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=False, type=str, default='', action='store',help='Classifier model filename (.sav)')
 	parser.add_argument('--binary_class', dest='binary_class', action='store_true',help='Perform a binary classification {0=EGAL,1=GAL} (default=multiclass)')	
 	parser.set_defaults(binary_class=False)
-	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize feature data in range [0,1] before applying models (default=false)')	
-	parser.set_defaults(normalize=False)
+	parser.add_argument('--normalize_feat', dest='normalize_feat', action='store_true',help='Normalize feature data in range [0,1] before applying models (default=false)')	
+	parser.set_defaults(normalize_feat=False)
 	parser.add_argument('-scalerfile', '--scalerfile', dest='scalerfile', required=False, type=str, default='', action='store',help='Load and use data transform stored in this file (.sav)')
 	
 	# - Output options
@@ -180,8 +180,11 @@ def main():
 			return 1
 		jobdir= args.jobdir
 
-	# - Data pre-processing
-	normalize= args.normalize
+	# - Classifier options
+	normalize_feat= args.normalize
+	scalerfile= args.scalerfile
+	binary_class= args.binary_class
+	modelfile= args.modelfile
 	
 
 	# - Autoencoder options
@@ -211,6 +214,10 @@ def main():
 	pipeline.tags= tags
 	pipeline.configfile= configfile
 	pipeline.surveys= surveys
+	pipeline.normalize_feat= normalize_feat
+	pipeline.scalerfile= scalerfile
+	pipeline.modelfile= modelfile
+	pipeline.binary_class= binary_class
 	
 	logger.info("[PROC %d] Running source classification pipeline ..." % (procId))
 	status= pipeline.run(
