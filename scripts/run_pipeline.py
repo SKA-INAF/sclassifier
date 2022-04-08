@@ -181,7 +181,7 @@ def main():
 		jobdir= args.jobdir
 
 	# - Classifier options
-	normalize_feat= args.normalize
+	normalize_feat= args.normalize_feat
 	scalerfile= args.scalerfile
 	binary_class= args.binary_class
 	modelfile= args.modelfile
