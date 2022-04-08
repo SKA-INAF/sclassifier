@@ -435,20 +435,21 @@ class Pipeline(object):
 				feat_colors_snames= []
 				feat_colors_classids= []
 
-				for d in colfeat_dict_list:
-					keys= list(d.keys())
-					nvars= len(keys)-2
-					featvars= []
-					for i in range(1,nvars):
-						varname= keys[i]
-						var= d[varname]
-						featvars.append(var)
+				for dictlist in colfeat_dict_list:
+					for d in dictlist:
+						keys= list(d.keys())
+						nvars= len(keys)-2
+						featvars= []
+						for i in range(1,nvars):
+							varname= keys[i]
+							var= d[varname]
+							featvars.append(var)
 
-					sname= d["sname"]
-					classid= d["id"]
-					feat_colors_snames.append(sname)
-					feat_colors_classids.append(classid)
-					feat_colors.append(featvars)
+						sname= d["sname"]
+						classid= d["id"]
+						feat_colors_snames.append(sname)
+						feat_colors_classids.append(classid)
+						feat_colors.append(featvars)
 					
 				feat_colors= np.array(feat_colors)
 
