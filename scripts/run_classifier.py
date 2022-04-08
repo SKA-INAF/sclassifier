@@ -78,6 +78,15 @@ def get_args():
 	parser.add_argument('-learning_rate','--learning_rate', dest='learning_rate', required=False, type=float, default=0.1, help='Learning rate for LGBM classifier and others (TBD)') 
 	parser.add_argument('-niters','--niters', dest='niters', required=False, type=int, default=100, help='Number of boosting iterations for LGBM classifier and others (TBD)') 
 	
+	# - Outlier detection
+	parser.add_argument('--find_outliers', dest='find_outliers', action='store_true',help='Find outliers in data (only in prediction step) (default=false)')	
+	parser.set_defaults(find_outliers=False)
+	parser.add_argument('-modelfile_outlier', '--modelfile_outlier', dest='modelfile_outlier', required=False, type=str, default='', action='store',help='Outlier model filename (.sav)')
+	parser.add_argument('-anomaly_thr','--anomaly_thr', dest='anomaly_thr', required=False, type=float, default=0.9, help='Threshold in anomaly score above which observation is set as outlier (default=0.9)') 
+	parser.add_argument('--save_outlier', dest='save_outlier', action='store_true',help='Save outlier results to file (default=false)')	
+	parser.set_defaults(save_outlier=False)
+	parser.add_argument('-outfile_outlier','--outfile_outlier', dest='outfile_outlier', required=False, type=str, default='outlier_data.dat', help='Output filename (.dat) with outlier data') 
+	
 	# - Run option
 	parser.add_argument('--run_scan', dest='run_scan', action='store_true',help='Run LGBM scan (default=false)')	
 	parser.set_defaults(run_scan=False)
@@ -135,6 +144,13 @@ def main():
 	learning_rate= args.learning_rate
 	niters= args.niters
 
+	# - Outlier search options
+	find_outliers= args.find_outliers
+	modelfile_outlier= args.modelfile_outlier
+	anomaly_thr= args.anomaly_thr
+	save_outlier= args.save_outlier
+	outfile_outlier= args.outfile_outlier
+
 	# - Run options
 	run_scan= args.run_scan
 	ntrials= args.ntrials
@@ -188,6 +204,12 @@ def main():
 	sclass.niters= niters
 	sclass.balance_classes= balance_classes
 
+	sclass.find_outliers = find_outliers 
+	sclass.outlier_modelfile = modelfile_outlier
+	sclass.outlier_thr = anomaly_thr
+	sclass.save_outlier= save_outlier
+	sclass.outlier_outfile = outfile_outlier
+		
 	if predict:
 		status= sclass.run_predict(
 			data, classids, snames, 

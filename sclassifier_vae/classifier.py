@@ -197,7 +197,6 @@ class SClassifier(object):
 		# *****************************
 		self.find_outliers= False
 		self.outlier_modelfile= ""
-		self.outlier_model= None
 		self.outlier_thr= 0.9
 		self.outlier_flags= None
 		self.outlier_scores= None
