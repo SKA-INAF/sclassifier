@@ -120,6 +120,8 @@ class Pipeline(object):
 
 		# - scutout info
 		self.jobdir_scutout= os.path.join(self.jobdir, "scutout")
+		self.jobdir_scutout_multiband= os.path.join(self.jobdir_scutout, "multiband")
+		self.jobdir_scutout_radio= os.path.join(self.jobdir_scutout, "radio")
 		self.configfile= ""
 		self.config= None
 		self.surveys= []
@@ -555,6 +557,8 @@ class Pipeline(object):
 
 		# - Set job directories & filenames
 		self.jobdir_scutout= os.path.join(self.jobdir, "scutout")
+		self.jobdir_scutout_multiband= os.path.join(self.jobdir_scutout, "multiband")
+		self.jobdir_scutout_radio= os.path.join(self.jobdir_scutout, "radio")
 		self.jobdir_sfeat= os.path.join(self.jobdir, "sfeat")
 		self.jobdir_sclass= os.path.join(self.jobdir, "sclass")
 		
@@ -565,10 +569,10 @@ class Pipeline(object):
 		#self.datalist_mask_file= os.path.join(self.jobdir, "datalist_masked.json")
 
 		self.img_metadata= os.path.join(self.jobdir_scutout, "metadata.tbl")
-		self.datadir= os.path.join(self.jobdir_scutout, "cutouts")
-		self.datadir_mask= os.path.join(self.jobdir_scutout, "cutouts_masked")
-		self.datalist_file= os.path.join(self.jobdir_scutout, "datalist.json")
-		self.datalist_mask_file= os.path.join(self.jobdir_scutout, "datalist_masked.json")
+		self.datadir= os.path.join(self.jobdir_scutout_multiband, "cutouts")
+		self.datadir_mask= os.path.join(self.jobdir_scutout_multiband, "cutouts_masked")
+		self.datalist_file= os.path.join(self.jobdir_scutout_multiband, "datalist.json")
+		self.datalist_mask_file= os.path.join(self.jobdir_scutout_multiband, "datalist_masked.json")
 
 		self.outfile_sclass= os.path.join(self.jobdir_sclass, "classified_data.dat")
 		self.outfile_sclass_metrics= os.path.join(self.jobdir_sclass, "classification_metrics.dat")
@@ -583,9 +587,20 @@ class Pipeline(object):
 
 			# - Create scutout dir
 			mkdir_scutout_status= 0
+
 			if not os.path.exists(self.jobdir_scutout):
 				logger.info("[PROC %d] Creating scutout dir %s ..." % (procId, self.jobdir_scutout))
 				mkdir_scutout_status= Utils.mkdir(self.jobdir_scutout, delete_if_exists=False)
+				
+			mkdir_scutout_subdir1_status= 0
+			if not os.path.exists(self.jobdir_scutout_multiband):
+				logger.info("[PROC %d] Creating scutout dir %s ..." % (procId, self.jobdir_scutout_multiband))
+				mkdir_scutout_subdir1_status= Utils.mkdir(self.jobdir_scutout_multiband, delete_if_exists=False)
+
+			mkdir_scutout_subdir2_status= 0
+			if not os.path.exists(self.jobdir_scutout_radio):
+				logger.info("[PROC %d] Creating scutout dir %s ..." % (procId, self.jobdir_scutout_radio))
+				mkdir_scutout_subdir2_status= Utils.mkdir(self.jobdir_scutout_radio, delete_if_exists=False)
 
 			# - Create sfeat dir
 			mkdir_sfeat_status= 0
@@ -601,7 +616,7 @@ class Pipeline(object):
 
 			# - Check status
 			mkdir_status= 0
-			if mkdir_scutout_status<0 or mkdir_sfeat_status<0 or mkdir_sclass_status<0:
+			if mkdir_scutout_status<0 or mkdir_scutout_subdir1_status<0 or mkdir_scutout_subdir2_status<0 or mkdir_sfeat_status<0 or mkdir_sclass_status<0:
 				mkdir_status= -1
 
 		if comm is not None:
@@ -679,7 +694,7 @@ class Pipeline(object):
 		# - Create scutout config class (radio+IR)
 		logger.info("[PROC %d] Creating scutout config class from template config file %s ..." % (procId, self.configfile))
 		add_survey= True
-		os.chdir(self.jobdir_scutout)
+		os.chdir(self.jobdir_scutout_multiband)
 		
 		config= Utils.make_scutout_config(
 			self.configfile, 
@@ -711,12 +726,17 @@ class Pipeline(object):
 		#==   MAKE CUTOUTS
 		#== (DISTRIBUTE AMONG PROCS)
 		#=============================
-		os.chdir(self.jobdir_scutout)
-
+		
 		# - Create radio+IR cutouts
+		os.chdir(self.jobdir_scutout_multiband)
+
 		if self.make_scutouts(self.config, self.datadir, self.datadir_mask, self.nsurveys, self.datalist_file, self.datalist_mask_file)<0:
 			logger.error("[PROC %d] Failed to create source cutouts!" % (procId))
 			return -1
+
+		# - Create radio multi cutouts
+		# ...
+		# ...
 
 		# - Distribute sources among proc
 		self.distribute_sources()
