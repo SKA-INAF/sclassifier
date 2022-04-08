@@ -1511,7 +1511,7 @@ class SClassifier(object):
 		#================================
 		if self.find_outliers:
 			logger.info("Run outlier finder ...")
-			if self.__find_outliers(data, class_ids, sname, self.outlier_modelfile, scalerfile)<0:
+			if self.__find_outliers(data, class_ids, snames, self.outlier_modelfile, scalerfile)<0:
 				logger.warn("Failed to run outlier finder on input data!")
 				return -1
 
