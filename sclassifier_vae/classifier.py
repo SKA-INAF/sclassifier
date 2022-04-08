@@ -1672,7 +1672,7 @@ class SClassifier(object):
 		objids= np.array(self.data_classids).reshape(N,1)
 		objids_pred= np.array(self.classids_pred).reshape(N,1)
 		probs_pred= np.array(self.probs_pred).reshape(N,1)
-		objlabels_pred= np.array(self.objids_pred).reshape(N,1)
+		objlabels_pred= np.array(self.labels_pred).reshape(N,1)
 		objlabels= np.array(self.data_labels).reshape(N,1)
 
 		if self.save_labels:
@@ -1795,7 +1795,7 @@ class SClassifier(object):
 		objids= np.array(self.data_preclassified_classids).reshape(N,1)
 		objids_pred= np.array(self.classids_pred).reshape(N,1)
 		probs_pred= np.array(self.probs_pred).reshape(N,1)
-		objlabels_pred= np.array(self.objids_pred).reshape(N,1)
+		objlabels_pred= np.array(self.labels_pred).reshape(N,1)
 		objlabels= np.array(self.data_preclassified_labels).reshape(N,1)
 
 		if self.save_labels:
