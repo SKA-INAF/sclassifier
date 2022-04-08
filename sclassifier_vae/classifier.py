@@ -63,7 +63,7 @@ matplotlib.use('Agg')
 from .utils import Utils
 from .data_loader import DataLoader
 from .data_loader import SourceData
-
+from .outlier_finder import OutlierFinder
 
 
 ##################################
@@ -191,7 +191,19 @@ class SClassifier(object):
 		self.norm_min= 0
 		self.norm_max= 1
 
-
+		
+		# *****************************
+		# ** Anomaly detection
+		# *****************************
+		self.find_outliers= False
+		self.outlier_modelfile= ""
+		self.outlier_model= None
+		self.outlier_thr= 0.9
+		self.outlier_flags= None
+		self.outlier_scores= None
+		self.save_outlier= False
+		self.outlier_outfile= "outlier_data.dat"
+		
 		# *****************************
 		# ** Output
 		# *****************************
@@ -1421,6 +1433,15 @@ class SClassifier(object):
 			return -1
 
 		#================================
+		#==   RUN OUTLIER FINDER
+		#================================
+		if self.find_outliers:
+			logger.info("Run outlier finder ...")
+			if self.__find_outliers(datafile, self.outlier_modelfile, scalerfile)<0:
+				logger.warn("Failed to run outlier finder on input data!")
+				return -1
+
+		#================================
 		#==   SAVE
 		#================================
 		logger.info("Saving results ...")
@@ -1485,6 +1506,15 @@ class SClassifier(object):
 		if self.__predict()<0:
 			logger.warn("Failed to run model predict on input data!")
 			return -1
+	
+		#================================
+		#==   RUN OUTLIER FINDER
+		#================================
+		if self.find_outliers:
+			logger.info("Run outlier finder ...")
+			if self.__find_outliers(data, class_ids, sname, self.outlier_modelfile, scalerfile)<0:
+				logger.warn("Failed to run outlier finder on input data!")
+				return -1
 
 		#================================
 		#==   SAVE
@@ -1614,6 +1644,72 @@ class SClassifier(object):
 		return 0
 
 	#####################################
+	##     FIND OUTLIERS
+	#####################################
+	def __find_outliers(self, datafile, modelfile="", scalerfile=""):
+		""" Find outliers """
+		
+		# - Check if outlier model file has been given
+		if modelfile=="":
+			logger.error("No trained outlier model file given!")
+			return -1
+	
+		# - Run outlier prediction on input data
+		ofinder= OutlierFinder()
+		ofinder.normalize= self.normalize
+		ofinder.anomaly_thr= self.outlier_thr
+		ofinder.save_to_file= self.save_outlier
+		ofinder.outfile= self.outlier_outfile
+
+		status= ofinder.run(
+			datafile, 
+			modelfile=modelfile,
+			scalerfile=scalerfile
+		)
+
+		if status<0:
+			logger.error("Failed to run outlier finder!")
+			return -1
+
+		# - Retrieve results
+		self.outlier_flags= ofinder.data_pred
+		self.outlier_scores= ofinder.anomaly_scores_orig
+
+		return 0
+
+
+	def __find_outliers(self, data, class_ids, snames, modelfile="", scalerfile=""):
+		""" Find outliers """
+		
+		# - Check if outlier model file has been given
+		if modelfile=="":
+			logger.error("No trained outlier model file given!")
+			return -1
+	
+		# - Run outlier prediction on input data
+		ofinder= OutlierFinder()
+		ofinder.normalize= self.normalize
+		ofinder.anomaly_thr= self.outlier_thr
+		ofinder.save_to_file= self.save_outlier
+		ofinder.outfile= self.outlier_outfile
+
+		status= ofinder.run(
+			data, class_ids, snames, 
+			modelfile=modelfile,
+			scalerfile=scalerfile
+		)
+
+		if status<0:
+			logger.error("Failed to run outlier finder!")
+			return -1
+
+		# - Retrieve results
+		self.outlier_flags= ofinder.data_pred
+		self.outlier_scores= ofinder.anomaly_scores_orig
+
+		return 0
+
+	#####################################
 	##     SAVE
 	#####################################
 	def __save_predict(self):
@@ -1675,20 +1771,50 @@ class SClassifier(object):
 		objlabels_pred= np.array(self.labels_pred).reshape(N,1)
 		objlabels= np.array(self.data_labels).reshape(N,1)
 
+		if self.find_outliers:
+			N_outliers= self.outlier_flags.shape[0]
+			if N!=N_outliers:
+				logger.error("Number of entries in outlier data out (%d) is different from classifier data out (%d)!" % (N_outliers, N))
+				return -1
+			outlier_flags= np.array(self.outlier_flags).reshape(N_outliers,1)
+			outlier_scores= np.array(self.outlier_scores).reshape(N_outliers,1)
+
 		if self.save_labels:
-			outdata= np.concatenate(
-				(snames, self.data, objlabels, objlabels_pred, probs_pred),
-				axis=1
-			)
+			if self.find_outliers:
+				outdata= np.concatenate(
+					(snames, self.data, outlier_flags, outlier_scores, objlabels, objlabels_pred, probs_pred),
+					axis=1
+				)
+			else:
+				outdata= np.concatenate(
+					(snames, self.data, objlabels, objlabels_pred, probs_pred),
+					axis=1
+				)
 		else:
-			outdata= np.concatenate(
-				(snames, self.data, objids, objids_pred, probs_pred),
-				axis=1
-			)
+			if self.find_outliers:
+				outdata= np.concatenate(
+					(snames, self.data, outlier_flags, outlier_scores, objids, objids_pred, probs_pred),
+					axis=1
+				)
+			else:
+				outdata= np.concatenate(
+					(snames, self.data, objids, objids_pred, probs_pred),
+					axis=1
+				)	
 
 		znames_counter= list(range(1,self.nfeatures+1))
 		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
-		head= '{} {} {}'.format("# sname",znames,"id id_pred prob")
+		if self.save_labels:
+			if self.find_outliers:
+				head= '{} {} {}'.format("# sname",znames,"is_outlier outlier_score label label_pred prob")
+			else:
+				head= '{} {} {}'.format("# sname",znames,"label label_pred prob")
+		else:
+			if self.find_outliers:
+				head= '{} {} {}'.format("# sname",znames,"is_outlier outlier_score id id_pred prob")
+			else:
+				head= '{} {} {}'.format("# sname",znames,"id id_pred prob")
+			
 
 		Utils.write_ascii(outdata, self.outfile, head)	
 

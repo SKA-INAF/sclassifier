@@ -85,6 +85,7 @@ class OutlierFinder(object):
 		# *****************************
 		# ** Output data
 		# *****************************
+		self.save_to_file= True
 		self.outfile= "outlier_data.dat"
 		self.outfile_model= "outlier_model.sav"
 
@@ -302,9 +303,11 @@ class OutlierFinder(object):
 		for i in range(N):
 			score= self.anomaly_scores_orig[i]
 			if score>self.anomaly_thr:
-				self.data_pred[i]= -1
-			else:
+				#self.data_pred[i]= -1
 				self.data_pred[i]= 1
+			else:
+				#self.data_pred[i]= 1
+				self.data_pred[i]= 0
 
 		return 0		
 
@@ -364,10 +367,11 @@ class OutlierFinder(object):
 		#================================
 		#==   SAVE
 		#================================
-		logger.info("Saving results ...")
-		if self.__save()<0:
-			logger.error("Failed to save outlier search results!")
-			return -1
+		if self.save_to_file:
+			logger.info("Saving results ...")
+			if self.__save()<0:
+				logger.error("Failed to save outlier search results!")
+				return -1
 
 		return 0
 
@@ -427,10 +431,11 @@ class OutlierFinder(object):
 		#================================
 		#==   SAVE
 		#================================
-		logger.info("Saving results ...")
-		if self.__save()<0:
-			logger.error("Failed to save outlier search results!")
-			return -1
+		if self.save_to_file:
+			logger.info("Saving results ...")
+			if self.__save()<0:
+				logger.error("Failed to save outlier search results!")
+				return -1
 
 		return 0
 
@@ -456,8 +461,8 @@ class OutlierFinder(object):
 		snames= np.array(self.source_names).reshape(N,1)
 		objids= np.array(self.data_classids).reshape(N,1)
 		outlier_outputs= np.array(self.data_pred).reshape(N,1)
-		outlier_outputs[outlier_outputs==1]= 0   # set non-outliers to 0 
-		outlier_outputs[outlier_outputs==-1]= 1  # set outliers to 1
+		#outlier_outputs[outlier_outputs==1]= 0   # set non-outliers to 0 
+		#outlier_outputs[outlier_outputs==-1]= 1  # set outliers to 1
 		outlier_scores= np.array(self.anomaly_scores).reshape(N,1)
 		outlier_scores_df= np.array(self.anomaly_scores_df).reshape(N,1)
 		outlier_score_orig= np.array(self.anomaly_scores_orig).reshape(N,1)
