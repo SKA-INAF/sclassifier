@@ -124,8 +124,11 @@ class Pipeline(object):
 		self.jobdir_scutout_radio= os.path.join(self.jobdir_scutout, "radio")
 		self.configfile= ""
 		self.config= None
+		self.config_radio= None
 		self.surveys= []
+		self.surveys_radio= []
 		self.nsurveys= 0
+		self.nsurveys_radio= 0
 
 		# - Source catalog info
 		self.nsources= 0
@@ -699,7 +702,7 @@ class Pipeline(object):
 		config= Utils.make_scutout_config(
 			self.configfile, 
 			self.surveys, 
-			self.jobdir, 
+			self.jobdir_scutout_multiband, 
 			add_survey, 
 			self.img_metadata
 		)
@@ -710,6 +713,23 @@ class Pipeline(object):
 
 		self.config= config
 		self.nsurveys= len(config.surveys)
+
+		# - Create scutout config class (radio multi)
+		os.chdir(self.jobdir_scutout_radio)
+		config_radio= Utils.make_scutout_config(
+			self.configfile, 
+			self.surveys_radio, 
+			self.jobdir_scutout_radio, 
+			add_survey, 
+			self.img_metadata
+		)
+
+		if config_radio is None:
+			logger.error("[PROC %d] Failed to create scutout radio config!" % (procId))
+			return -1
+
+		self.config_radio= config_radio
+		self.nsurveys_radio= len(config_radio.surveys)
 
 		#===========================
 		#==   READ REGIONS
@@ -735,7 +755,7 @@ class Pipeline(object):
 			return -1
 
 		# - Create radio multi cutouts
-		# ...
+		# os.chdir(self.jobdir_scutout_radio)
 		# ...
 
 		# - Distribute sources among proc
