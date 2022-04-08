@@ -140,9 +140,26 @@ class Pipeline(object):
 		self.refch= 0
 		self.shrink_masks= False
 		self.grow_masks= False
-		self.selfeatcols_5bands= [9,10,11,12,13,14,15,16,17,18,19,20,21,22,73,74,75,76,77,78,79,80,81,82]	
-		self.selfeatcols_7bands= [13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137]
+		# 9,10,11,12,13,14,15,16,17,18,19,20,21,22,73,74,75,76,77,78,79,80,81,82
+		#self.selfeatcols_5bands= [0,1,2,3,14,15,16,18,20,23]
+		self.selfeatcols_5bands= [9,10,11,12,73,74,75,77,79,82]	
+
+		# SELCOLS="13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,     117,118,119,120,121,122,  123,124,125,126,  127,128,129,  130,131,132,133,134,135,136,137"
+		#self.selfeatcols_7bands= [0,1,2,3,4,5,  27,28,29,31,  33,35,36,  40,41,42,45,47]
+		self.selfeatcols_7bands= [13,14,15,16,17,18,117,118,119,121,123,125,126,130,131,132,135,137]
 		self.selfeatcols= []
+		self.feat_colors= None
+		self.feat_colors_snames= []
+		self.feat_colors_classids= []
+
+		# - Classification options
+		self.binary_class= False
+		self.modelfile= ""
+		self.normalize_feat= False
+		self.scalerfile= ""
+
+		# - Output data
+		self.outfile_sclass= "classified_data.dat"
 
 
 	#=========================
@@ -445,9 +462,9 @@ class Pipeline(object):
 				print(colfeat_dict_list)
 	
 				# - Set col feat data
-				feat_colors= []
-				feat_colors_snames= []
-				feat_colors_classids= []
+				self.feat_colors= []
+				self.feat_colors_snames= []
+				self.feat_colors_classids= []
 
 				for dictlist in colfeat_dict_list:
 					for d in dictlist:
@@ -461,21 +478,61 @@ class Pipeline(object):
 
 						sname= d["sname"]
 						classid= d["id"]
-						feat_colors_snames.append(sname)
-						feat_colors_classids.append(classid)
-						feat_colors.append(featvars)
+						self.feat_colors_snames.append(sname)
+						self.feat_colors_classids.append(classid)
+						self.feat_colors.append(featvars)
 					
-				feat_colors= np.array(feat_colors)
+				self.feat_colors= np.array(self.feat_colors)
 
 				print("snames")
-				print(feat_colors_snames)
+				print(self.feat_colors_snames)
 				print("classids")
-				print(feat_colors_classids)
+				print(self.feat_colors_classids)
 				print("feat colors")
-				print(feat_colors)
+				print(self.feat_colors)
 
 		return 0
 
+	#===========================
+	#==   CLASSIFY SOURCES
+	#===========================
+	def classify_sources(self):
+		""" Run source classification """
+
+		
+		if procId==MASTER:
+			sclass_status= 0
+			
+			# - Define sclassifier class
+			multiclass= True
+			if self.binary_class:
+				multiclass= False
+
+			sclass= SClassifier(multiclass=multiclass)
+			sclass.normalize= self.normalize_feat
+			sclass.outfile= self.outfile_sclass
+	
+			# - Run classification
+			sclass_status= sclass.run_predict(
+				data=self.feat_colors, class_ids=self.feat_colors_classids, snames=self.feat_colors_snames
+				modelfile=self.modelfile, 
+				scalerfile=self.scalerfile
+			)
+	
+			if sclass_status<0:		
+				logger.error("[PROC %d] Failed to run classifier on data %s!" % (procId, featfile_allfeat))
+
+		else:
+			sclass_status= 0
+
+		if comm is not None:
+			sclass_status= comm.bcast(sclass_status, root=MASTER)
+
+		if sclass_status<0:
+			logger.error("[PROC %d] Failed to run classifier on data %s, exit!" % (procId, featfile_allfeat))
+			return -1
+
+		return 0
 
 	#=========================
 	#==   RUN
@@ -519,7 +576,8 @@ class Pipeline(object):
 		self.datalist_file= os.path.join(self.jobdir, "datalist.json")
 		self.datalist_mask_file= os.path.join(self.jobdir, "datalist_masked.json")
 
-	
+		self.outfile_sclass= os.path.join(jobdir, "classified_data.dat")	
+
 		#==================================
 		#==   READ IMAGE DATA   
 		#==     (READ - ALL PROC)
@@ -597,7 +655,10 @@ class Pipeline(object):
 		#==   EXTRACT FEATURES
 		#== (DISTRIBUTE AMONG PROCS)
 		#=============================
-		
+		logger.info("[PROC %d] Run source classification ..." % (procId))
+		if self.classify_sources()<0:	
+			logger.error("[PROC %d] Failed to run source classification ..." % (procId))
+			return -1
 
 
 
