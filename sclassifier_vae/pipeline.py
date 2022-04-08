@@ -119,6 +119,7 @@ class Pipeline(object):
 		self.datadict_mask= {}
 
 		# - scutout info
+		self.jobdir_scutout= os.path.join(self.jobdir, "scutout")
 		self.configfile= ""
 		self.config= None
 		self.surveys= []
@@ -137,6 +138,7 @@ class Pipeline(object):
 		self.datalist_mask_proc= []
 
 		# - Color feature extraction options
+		self.jobdir_sfeat= os.path.join(self.jobdir, "sfeat")
 		self.refch= 0
 		self.shrink_masks= False
 		self.grow_masks= False
@@ -153,6 +155,7 @@ class Pipeline(object):
 		self.feat_colors_classids= []
 
 		# - Classification options
+		self.jobdir_sclass= os.path.join(self.jobdir, "sclass")
 		self.binary_class= False
 		self.modelfile= ""
 		self.normalize_feat= False
@@ -509,6 +512,7 @@ class Pipeline(object):
 	def classify_sources(self):
 		""" Run source classification """
 
+		# - Run source classification
 		if procId==MASTER:
 			sclass_status= 0
 			
@@ -525,6 +529,9 @@ class Pipeline(object):
 			sclass.outfile_cm_norm= self.outfile_sclass_cm_norm
 			sclass.save_labels= self.save_class_labels
 	
+			# - Enter sclass directory
+			
+
 			# - Run classification
 			sclass_status= sclass.run_predict(
 				data=self.feat_colors, class_ids=self.feat_colors_classids, snames=self.feat_colors_snames,
@@ -543,6 +550,73 @@ class Pipeline(object):
 
 		if sclass_status<0:
 			logger.error("[PROC %d] Failed to run classifier on data %s, exit!" % (procId, featfile_allfeat))
+			return -1
+
+		return 0
+
+
+	#=========================
+	#==   PREPARE JOB DIRS
+	#=========================
+	def set_job_dirs(self):
+		""" Set and create job dirs """
+
+		# - Set job directories & filenames
+		self.jobdir_scutout= os.path.join(self.jobdir, "scutout")
+		self.jobdir_sfeat= os.path.join(self.jobdir, "sfeat")
+		self.jobdir_sclass= os.path.join(self.jobdir, "sclass")
+		
+		#self.img_metadata= os.path.join(self.jobdir, "metadata.tbl")
+		#self.datadir= os.path.join(self.jobdir, "cutouts")
+		#self.datadir_mask= os.path.join(self.jobdir, "cutouts_masked")
+		#self.datalist_file= os.path.join(self.jobdir, "datalist.json")
+		#self.datalist_mask_file= os.path.join(self.jobdir, "datalist_masked.json")
+
+		self.img_metadata= os.path.join(self.jobdir_scutout, "metadata.tbl")
+		self.datadir= os.path.join(self.jobdir_scutout, "cutouts")
+		self.datadir_mask= os.path.join(self.jobdir_scutout, "cutouts_masked")
+		self.datalist_file= os.path.join(self.jobdir_scutout, "datalist.json")
+		self.datalist_mask_file= os.path.join(self.jobdir_scutout, "datalist_masked.json")
+
+		self.outfile_sclass= os.path.join(self.jobdir_sclass, "classified_data.dat")
+		self.outfile_sclass_metrics= os.path.join(self.jobdir_sclass, "classification_metrics.dat")
+		self.outfile_sclass_cm= os.path.join(self.jobdir_sclass, "confusion_matrix.dat")
+		self.outfile_sclass_cm_norm= os.path.join(self.jobdir_sclass, "confusion_matrix_norm.dat")
+
+		# - Create directories
+		#   NB: Done by PROC 0
+		mkdir_status= -1
+		
+		if procId==MASTER:
+
+			# - Create scutout dir
+			mkdir_scutout_status= 0
+			if not os.path.exists(self.jobdir_scutout):
+				logger.info("[PROC %d] Creating scutout dir %s ..." % (procId, self.jobdir_scutout))
+				mkdir_scutout_status= Utils.mkdir(self.jobdir_scutout, delete_if_exists=False)
+
+			# - Create sfeat dir
+			mkdir_sfeat_status= 0
+			if not os.path.exists(self.jobdir_sfeat):
+				logger.info("[PROC %d] Creating sfeat dir %s ..." % (procId, self.jobdir_sfeat))
+				mkdir_sfeat_status= Utils.mkdir(self.jobdir_sfeat, delete_if_exists=False)
+
+			# - Create sclass dir
+			mkdir_sclass_status= 0
+			if not os.path.exists(self.jobdir_sclass):
+				logger.info("[PROC %d] Creating sclass dir %s ..." % (procId, self.jobdir_sfeat))
+				mkdir_sclass_status= Utils.mkdir(self.jobdir_sclass, delete_if_exists=False)
+
+			# - Check status
+			mkdir_status= 0
+			if mkdir_scutout_status<0 or mkdir_sfeat_status<0 or mkdir_sclass_status<0:
+				mkdir_status= -1
+
+		if comm is not None:
+			mkdir_status= comm.bcast(mkdir_status, root=MASTER)
+
+		if mkdir_status<0:
+			logger.error("[PROC %d] Failed to create job directories, exit!" % (procId))
 			return -1
 
 		return 0
@@ -583,16 +657,14 @@ class Pipeline(object):
 		self.imgfile= imgfile
 		self.imgfile_fullpath= os.path.abspath(imgfile)
 		self.regionfile= regionfile
-		self.img_metadata= os.path.join(self.jobdir, "metadata.tbl")
-		self.datadir= os.path.join(self.jobdir, "cutouts")
-		self.datadir_mask= os.path.join(self.jobdir, "cutouts_masked")
-		self.datalist_file= os.path.join(self.jobdir, "datalist.json")
-		self.datalist_mask_file= os.path.join(self.jobdir, "datalist_masked.json")
 
-		self.outfile_sclass= os.path.join(self.jobdir, "classified_data.dat")
-		self.outfile_sclass_metrics= os.path.join(self.jobdir, "classification_metrics.dat")
-		self.outfile_sclass_cm= os.path.join(self.jobdir, "confusion_matrix.dat")
-		self.outfile_sclass_cm_norm= os.path.join(self.jobdir, "confusion_matrix_norm.dat")
+		#==================================
+		#==   SET JOB DIRS (PROC 0)
+		#==================================
+		logger.info("[PROC %d] Set and create job directories ..." % (procId))
+		if self.set_job_dirs()<0:
+			logger.error("[PROC %d] Failed to set and create job dirs!" % (procId))
+			return -1
 
 		#==================================
 		#==   READ IMAGE DATA   
@@ -600,9 +672,12 @@ class Pipeline(object):
 		#==     (METADATA GEN - PROC 0) 
 		#==================================
 		# - Read & generate image metadata
-		logger.info("[PROC %d] Reading input image %s and generate metadata ..." % (procId, self.imgfile))
+		logger.info("[PROC %d] Reading input image %s and generate metadata ..." % (procId, self.imgfile_fullpath))
+
+		os.chdir(self.jobdir_scutout)
+
 		if self.read_img()<0:
-			logger.error("[PROC %d] Failed to read input image %s and/or generate metadata!" % (procId, self.imgfile))
+			logger.error("[PROC %d] Failed to read input image %s and/or generate metadata!" % (procId, self.imgfile_fullpath))
 			return -1
 
 		#=============================
@@ -612,6 +687,7 @@ class Pipeline(object):
 		# - Create scutout config class (radio+IR)
 		logger.info("[PROC %d] Creating scutout config class from template config file %s ..." % (procId, self.configfile))
 		add_survey= True
+		os.chdir(self.jobdir_scutout)
 		
 		config= Utils.make_scutout_config(
 			self.configfile, 
@@ -633,14 +709,18 @@ class Pipeline(object):
 		#==     (ALL PROCS)
 		#===========================
 		# - Read DS9 regions and assign sources to each processor
+		os.chdir(self.jobdir)
+
 		if self.read_regions()<0:
-			logger.error("[PROC %d] Failed to read input DS9 region!" % (procId))
+			logger.error("[PROC %d] Failed to read input DS9 region %s!" % (procId, self.regionfile))
 			return -1
 
 		#=============================
 		#==   MAKE CUTOUTS
 		#== (DISTRIBUTE AMONG PROCS)
 		#=============================
+		os.chdir(self.jobdir_scutout)
+
 		# - Create radio+IR cutouts
 		if self.make_scutouts(self.config, self.datadir, self.datadir_mask, self.nsurveys, self.datalist_file, self.datalist_mask_file)<0:
 			logger.error("[PROC %d] Failed to create source cutouts!" % (procId))
@@ -653,9 +733,11 @@ class Pipeline(object):
 		#==   EXTRACT FEATURES
 		#== (DISTRIBUTE AMONG PROCS)
 		#=============================
+		os.chdir(self.jobdir_sfeat)
+
 		# - Extract color features
 		logger.info("[PROC %d] Extracting color features ..." % (procId))
-		os.chdir(self.jobdir)
+
 		if self.extract_color_features()<0:
 			logger.error("[PROC %d] Failed to extract color features ..." % (procId))
 			return -1
@@ -672,13 +754,13 @@ class Pipeline(object):
 		#==   CLASSIFY SOURCES
 		#== (PROC 0)
 		#=============================
+		os.chdir(self.jobdir_sclass)
+
 		logger.info("[PROC %d] Run source classification ..." % (procId))
-		os.chdir(self.jobdir)
+		
 		if self.classify_sources()<0:	
 			logger.error("[PROC %d] Failed to run source classification ..." % (procId))
 			return -1
-
-
 
 
 
