@@ -654,6 +654,7 @@ class Pipeline(object):
 		#=============================
 		# - Extract color features
 		logger.info("[PROC %d] Extracting color features ..." % (procId))
+		os.chdir(self.jobdir)
 		if self.extract_color_features()<0:
 			logger.error("[PROC %d] Failed to extract color features ..." % (procId))
 			return -1
@@ -671,6 +672,7 @@ class Pipeline(object):
 		#== (PROC 0)
 		#=============================
 		logger.info("[PROC %d] Run source classification ..." % (procId))
+		os.chdir(self.jobdir)
 		if self.classify_sources()<0:	
 			logger.error("[PROC %d] Failed to run source classification ..." % (procId))
 			return -1
