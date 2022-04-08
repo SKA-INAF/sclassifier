@@ -160,7 +160,9 @@ class Pipeline(object):
 
 		# - Output data
 		self.outfile_sclass= "classified_data.dat"
-
+		self.outfile_sclass_metrics= "classification_metrics.dat"
+		self.outfile_sclass_cm= "confusion_matrix.dat"
+		self.outfile_sclass_cm_norm= "confusion_matrix_norm.dat"
 
 	#=========================
 	#==   READ IMG
@@ -518,6 +520,9 @@ class Pipeline(object):
 			sclass= SClassifier(multiclass=multiclass)
 			sclass.normalize= self.normalize_feat
 			sclass.outfile= self.outfile_sclass
+			sclass.outfile_metrics= self.outfile_sclass_metrics
+			sclass.outfile_cm= self.outfile_sclass_cm
+			sclass.outfile_cm_norm= self.outfile_sclass_cm_norm
 	
 			# - Run classification
 			sclass_status= sclass.run_predict(
@@ -583,7 +588,10 @@ class Pipeline(object):
 		self.datalist_file= os.path.join(self.jobdir, "datalist.json")
 		self.datalist_mask_file= os.path.join(self.jobdir, "datalist_masked.json")
 
-		self.outfile_sclass= os.path.join(self.jobdir, "classified_data.dat")	
+		self.outfile_sclass= os.path.join(self.jobdir, "classified_data.dat")
+		self.outfile_sclass_metrics= os.path.join(self.jobdir, "classification_metrics.dat")
+		self.outfile_sclass_cm= os.path.join(self.jobdir, "confusion_matrix.dat")
+		self.outfile_sclass_cm_norm= os.path.join(self.jobdir, "confusion_matrix_norm.dat")
 
 		#==================================
 		#==   READ IMAGE DATA   
