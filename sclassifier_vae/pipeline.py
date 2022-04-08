@@ -191,8 +191,7 @@ class Pipeline(object):
 		status= 0
 		
 		if procId==MASTER:
-			self.img_metadata= os.path.join(self.jobdir, "metadata.tbl")
-			status= Utils.write_montage_fits_metadata(inputfile=self.imgfile_fullpath, metadata_file=self.img_metadata, jobdir=self.jobdir)
+			status= Utils.write_montage_fits_metadata(inputfile=self.imgfile_fullpath, metadata_file=self.img_metadata, jobdir=self.jobdir_scutout)
 		
 		else: # OTHER PROCS
 			status= -1
@@ -273,14 +272,10 @@ class Pipeline(object):
 	#=========================
 	#==   MAKE SCUTOUTS
 	#=========================
-	#def make_scutouts(self):
 	def make_scutouts(self, config, datadir, datadir_mask, nbands, datalist_file, datalist_mask_file):	
 		""" Run scutout and produce source cutout data """
 
 		# - Prepare dir
-		#datadir= os.path.join(self.jobdir, "cutouts")
-		#datadir_mask= os.path.join(self.jobdir, "cutouts_masked")
-
 		mkdir_status= -1
 		
 		if procId==MASTER:
@@ -529,9 +524,6 @@ class Pipeline(object):
 			sclass.outfile_cm_norm= self.outfile_sclass_cm_norm
 			sclass.save_labels= self.save_class_labels
 	
-			# - Enter sclass directory
-			
-
 			# - Run classification
 			sclass_status= sclass.run_predict(
 				data=self.feat_colors, class_ids=self.feat_colors_classids, snames=self.feat_colors_snames,
