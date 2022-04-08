@@ -471,10 +471,17 @@ class Pipeline(object):
 						keys= list(d.keys())
 						nvars= len(keys)-2
 						featvars= []
-						for i in range(1,nvars):
-							varname= keys[i]
+						print("keys")
+						print(keys)
+						print("nvars")
+						print(nvars)
+
+						for i in range(nvars):
+							var_index= i+1 # exclude sname
+							varname= keys[var_index]
 							var= d[varname]
 							featvars.append(var)
+							print("Adding feat %s ..." % (varname))
 
 						sname= d["sname"]
 						classid= d["id"]
@@ -652,8 +659,8 @@ class Pipeline(object):
 		# ...
 
 		#=============================
-		#==   EXTRACT FEATURES
-		#== (DISTRIBUTE AMONG PROCS)
+		#==   CLASSIFY SOURCES
+		#== (PROC 0)
 		#=============================
 		logger.info("[PROC %d] Run source classification ..." % (procId))
 		if self.classify_sources()<0:	
