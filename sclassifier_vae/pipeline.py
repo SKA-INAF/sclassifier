@@ -429,7 +429,35 @@ class Pipeline(object):
 			if procId==MASTER:
 				print("colfeat_dict_list")
 				print(colfeat_dict_list)
-		
+	
+				# - Set col feat data
+				feat_colors= []
+				feat_colors_snames= []
+				feat_colors_classids= []
+
+				for d in colfeat_dict_list:
+					keys= list(d.keys())
+					nvars= len(keys)-2
+					featvars= []
+					for i in range(1,nvars):
+						varname= keys[i]
+						var= d[varname]
+						featvars.append(var)
+
+					sname= d["sname"]
+					classid= d["id"]
+					feat_colors_snames.append(sname)
+					feat_colors_classids.append(classid)
+					feat_colors.append(featvars)
+					
+				feat_colors= np.array(feat_colors)
+
+				print("snames")
+				print(feat_colors_snames)
+				print("classids")
+				print(feat_colors_classids)
+				print("feat colors")
+				print(feat_colors)
 
 		return 0
 
