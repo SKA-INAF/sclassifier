@@ -111,6 +111,8 @@ def get_args():
 	parser.add_argument('--normalize_feat', dest='normalize_feat', action='store_true',help='Normalize feature data in range [0,1] before applying models (default=false)')	
 	parser.set_defaults(normalize_feat=False)
 	parser.add_argument('-scalerfile', '--scalerfile', dest='scalerfile', required=False, type=str, default='', action='store',help='Load and use data transform stored in this file (.sav)')
+	parser.add_argument('--save_class_labels', dest='save_class_labels', action='store_true',help='Save class labels instead of classid in classification data output (default=false)')	
+	parser.set_defaults(save_class_labels=False)
 	
 	# - Output options
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='classified_data.dat', help='Output filename (.dat) with classified data') 
@@ -185,7 +187,7 @@ def main():
 	scalerfile= args.scalerfile
 	binary_class= args.binary_class
 	modelfile= args.modelfile
-	
+	save_class_labels= args.save_class_labels
 
 	# - Autoencoder options
 	check_aereco= args.check_aereco
@@ -218,6 +220,7 @@ def main():
 	pipeline.scalerfile= scalerfile
 	pipeline.modelfile= modelfile
 	pipeline.binary_class= binary_class
+	pipeline.save_class_labels= save_class_labels
 	
 	logger.info("[PROC %d] Running source classification pipeline ..." % (procId))
 	status= pipeline.run(

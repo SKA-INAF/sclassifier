@@ -157,6 +157,7 @@ class Pipeline(object):
 		self.modelfile= ""
 		self.normalize_feat= False
 		self.scalerfile= ""
+		self.save_class_labels= False
 
 		# - Output data
 		self.outfile_sclass= "classified_data.dat"
@@ -508,7 +509,6 @@ class Pipeline(object):
 	def classify_sources(self):
 		""" Run source classification """
 
-		
 		if procId==MASTER:
 			sclass_status= 0
 			
@@ -523,6 +523,7 @@ class Pipeline(object):
 			sclass.outfile_metrics= self.outfile_sclass_metrics
 			sclass.outfile_cm= self.outfile_sclass_cm
 			sclass.outfile_cm_norm= self.outfile_sclass_cm_norm
+			sclass.save_labels= self.save_class_labels
 	
 			# - Run classification
 			sclass_status= sclass.run_predict(
