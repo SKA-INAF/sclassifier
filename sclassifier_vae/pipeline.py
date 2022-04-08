@@ -514,7 +514,7 @@ class Pipeline(object):
 	
 			# - Run classification
 			sclass_status= sclass.run_predict(
-				data=self.feat_colors, class_ids=self.feat_colors_classids, snames=self.feat_colors_snames
+				data=self.feat_colors, class_ids=self.feat_colors_classids, snames=self.feat_colors_snames,
 				modelfile=self.modelfile, 
 				scalerfile=self.scalerfile
 			)
