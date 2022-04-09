@@ -125,7 +125,9 @@ class SData(object):
 		# - Output options
 		self.param_dict= collections.OrderedDict()
 
-
+	#####################################
+	##     READ FITS
+	#####################################
 	def __read_fits(self, filename):
 		""" Read FITS image and return data """
 
@@ -223,6 +225,9 @@ class SData(object):
 
 		return 0
 
+	#####################################
+	##     APPLY MASKS
+	#####################################
 	def apply_masks(self, masks):
 		""" Set and apply masks """
 		self.img_data_mask= masks
@@ -240,7 +245,9 @@ class SData(object):
 		if self.draw:
 			plt.show()
 	
-
+	#####################################
+	##     CHECK DATA
+	#####################################
 	def has_good_data(self, check_mask=False, check_bad=True, check_neg=True, check_same=True):
 		""" Check data integrity (nan, negative, etc) """
 			
@@ -342,6 +349,37 @@ class SData(object):
 					same_size= False
 
 		return same_size
+
+	#####################################
+	##     AE RECO
+	#####################################
+	#def check_ae_reco(self, encoder_model, decoder_model):
+	#	""" Check AE reconstruction metrics """
+	
+	#	# - Normalize each channel to [0,1]
+	#	data_list= []
+	#	for i in range(self.nchannels):
+	#		data= self.img_data[i]
+	#		cond= np.logical_and(data!=0, np.isfinite(data))
+	#		data_1d= data[cond]
+	#		data_min= np.nanmin(data_1d)
+	#		data_max= np.nanmax(data_1d)
+	#		data_norm= (data-data_min)/(data_max-data_min)
+	#		data_list.append(data_norm)
+			
+	#	data_cube= np.dstack(data_list)
+
+	#	# - Get latent data for this output
+	#	use_multiprocessing= True
+	#	nworkers= 1
+
+	#	predout= encoder.predict(
+	#		x= data_cube,	
+	#		batch_size=1,
+  #  	verbose=2,
+  #  	workers=nworkers,
+  #  	use_multiprocessing=use_multiprocessing
+	#	)
 
 	#####################################
 	##     FLUX-BKG METHODS
@@ -478,7 +516,6 @@ class SData(object):
 	#####################################
 	##     COMPUTE MOMENTS
 	#####################################
-	
 	def compute_img_moments(self):
 		""" Compute image moments """
 

@@ -184,6 +184,31 @@ class Pipeline(object):
 		self.save_outlier= False
 		self.outfile_outlier= "outlier_data.dat"
 
+		# - Autoencoder reco options
+		self.run_aereco= False
+		self.modelfile_encoder= ""
+		self.modelfile_decoder= ""
+		self.weightfile_encoder= ""
+		self.weightfile_decoder= ""
+		self.resize_img= True
+		self.nx= 64
+		self.ny= 64
+		self.normalize_img= True
+		self.scale_img_to_abs_max= False
+		self.scale_img_to_max= False
+		self.log_transform_img= False
+		self.scale_img= False
+		self.scale_img_factors= []
+		self.standardize_img= False
+		self.img_means= []
+		self.img_sigmas= []
+		self.img_chan_divide= False
+		self.img_chan_mins= []
+		self.img_erode= False
+		self.img_erode_kernel= 9
+		self.add_channorm_layer= False
+		self.winsize= 3
+
 		# - Output data
 		self.outfile_sclass= "classified_data.dat"
 		self.outfile_sclass_metrics= "classification_metrics.dat"
@@ -547,6 +572,66 @@ class Pipeline(object):
 
 		return 0
 
+	#=====================================
+	#==   AUTOENCODER RECONSTRUCTION
+	#=====================================
+	def run_ae_reconstruction(self, datalist):
+		""" Run AE reconstruction """
+
+		if procId==MASTER:
+			aereco_status= 0
+
+			# - Create data loader
+			dl= DataLoader(filename=datalist)
+
+			# - Read datalist	
+			logger.info("[PROC %d] Reading datalist %s ..." % (procId, datalist))
+			dataread_status= dl.read_datalist()
+
+			if dataread_status<0:
+				logger.error("[PROC %d] Failed to read input datalist %s" % (procId, datalist))
+				aereco_status= -1
+
+			else:
+				# - Run AE reco
+				logger.info("[PROC %d] Running autoencoder classifier reconstruction ..." % (procId))
+				ae= FeatExtractorAE(dl)
+				ae.resize= self.resize_img
+				ae.set_image_size(self.nx, self.ny)
+				ae.normalize= self.normalize_img
+				ae.scale_to_abs_max= self.scale_img_to_abs_max
+				ae.scale_to_max= self.scale_img_to_max
+				ae.log_transform_img= self.log_transform_img
+				ae.scale_img= self.scale_img
+				ae.scale_img_factors= self.scale_img_factors
+				ae.standardize_img= self.standardize_img
+				ae.img_means= self.img_means
+				ae.img_sigmas= self.img_sigmas
+				ae.chan_divide= self.img_chan_divide
+				ae.chan_mins= self.img_chan_mins
+				ae.erode= self.img_erode
+				ae.erode_kernel= self.img_erode_kernel
+				ae.add_channorm_layer= self.add_channorm_layer
+
+				aereco_status= ae.reconstruct_data(
+					self.modelfile_encoder, self.weightfile_encoder, 
+					self.modelfile_decoder, self.weightfile_decoder,
+					winsize= self.winsize,
+					save_imgs= False
+				)
+
+		else:
+			aereco_status= 0
+
+		if comm is not None:
+			aereco_status= comm.bcast(aereco_status, root=MASTER)
+
+		if aereco_status<0:
+			logger.error("[PROC %d] Failed to run autoencoder reconstruction on data %s, exit!" % (procId, datalist))
+			return -1
+
+		return 0
+
 
 	#=========================
 	#==   PREPARE JOB DIRS
@@ -828,6 +913,13 @@ class Pipeline(object):
 		# - Extract spectral index features
 		# ...
 		# ...
+
+		# - Run AE reconstruction
+		#   NB: Don by PROC 0
+		if self.run_aereco:
+			if self.run_ae_reconstruction(self.datalist_mask_file)<0:
+				logger.error("[PROC %d] Failed to run AE reconstruction on data %s ..." % (procId, self.datalist_mask_file))
+				return -1
 
 		# - Concatenate features
 		# ...
