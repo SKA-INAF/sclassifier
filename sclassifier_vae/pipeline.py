@@ -214,6 +214,7 @@ class Pipeline(object):
 		self.outfile_sclass_metrics= "classification_metrics.dat"
 		self.outfile_sclass_cm= "confusion_matrix.dat"
 		self.outfile_sclass_cm_norm= "confusion_matrix_norm.dat"
+		self.outfile_aerecometrics= "aereco_metrics.dat"
 
 	#=========================
 	#==   READ IMG
@@ -617,6 +618,7 @@ class Pipeline(object):
 					self.modelfile_encoder, self.weightfile_encoder, 
 					self.modelfile_decoder, self.weightfile_decoder,
 					winsize= self.winsize,
+					outfile_metrics=self.outfile_aerecometrics,
 					save_imgs= False
 				)
 
@@ -664,11 +666,12 @@ class Pipeline(object):
 		self.datalist_radio_file= os.path.join(self.jobdir_scutout_radio, "datalist.json")
 		self.datalist_radio_mask_file= os.path.join(self.jobdir_scutout_radio, "datalist_masked.json")
 
-
 		self.outfile_sclass= os.path.join(self.jobdir_sclass, "classified_data.dat")
 		self.outfile_sclass_metrics= os.path.join(self.jobdir_sclass, "classification_metrics.dat")
 		self.outfile_sclass_cm= os.path.join(self.jobdir_sclass, "confusion_matrix.dat")
 		self.outfile_sclass_cm_norm= os.path.join(self.jobdir_sclass, "confusion_matrix_norm.dat")
+
+		self.outfile_aerecometrics= os.path.join(self.jobdir_sclass, "aereco_metrics.dat")
 
 		# - Create directories
 		#   NB: Done by PROC 0
