@@ -94,7 +94,7 @@ def get_args():
 	parser.add_argument('-surveys_radio','--surveys_radio', dest='surveys_radio', required=False, type=str, help='List of radio surveys to be used for cutouts and spectral index, separated by comma.') 
 	
 	# - Autoencoder model options
-	parser.add_argument('--check_aereco', dest='check_aereco', action='store_true',help='Check AE reconstruction metrics (default=false)')	
+	parser.add_argument('--run_aereco', dest='run_aereco', action='store_true',help='Run AE reconstruction metrics (default=false)')	
 	parser.set_defaults(check_aereco=False)
 	parser.add_argument('-nx', '--nx', dest='nx', required=False, type=int, default=64, action='store',help='Image resize width in pixels (default=64)')
 	parser.add_argument('-ny', '--ny', dest='ny', required=False, type=int, default=64, action='store',help='Image resize height in pixels (default=64)')
@@ -204,7 +204,7 @@ def main():
 	save_class_labels= args.save_class_labels
 
 	# - Autoencoder options
-	check_aereco= args.check_aereco
+	run_aereco= args.run_aereco
 	nx= args.nx
 	ny= args.ny
 	modelfile_encoder= args.modelfile_encoder
@@ -217,7 +217,7 @@ def main():
 		(weightfile_encoder=="" or weightfile_decoder=="")
 	)
 
-	if check_aereco and empty_filenames:
+	if run_aereco and empty_filenames:
 		logger.error("[PROC %d] Empty AE model/weight filename given!" % (procId))
 		return 1
 
@@ -249,6 +249,31 @@ def main():
 	pipeline.outlier_thr = anomaly_thr
 	pipeline.save_outlier= save_outlier
 	pipeline.outfile_outlier = outfile_outlier
+
+	pipeline.run_aereco= run_aereco
+	pipeline.modelfile_encoder= modelfile_encoder
+	pipeline.modelfile_decoder= modelfile_decoder
+	pipeline.weightfile_encoder= weightfile_encoder
+	pipeline.weightfile_decoder= weightfile_decoder
+	pipeline.resize_img= True
+	pipeline.nx= nx
+	pipeline.ny= ny
+	pipeline.normalize_img= True
+	pipeline.scale_img_to_abs_max= False
+	pipeline.scale_img_to_max= False
+	pipeline.log_transform_img= False
+	pipeline.scale_img= False
+	pipeline.scale_img_factors= []
+	pipeline.standardize_img= False
+	pipeline.img_means= []
+	pipeline.img_sigmas= []
+	pipeline.img_chan_divide= False
+	pipeline.img_chan_mins= []
+	pipeline.img_erode= False
+	pipeline.img_erode_kernel= 9
+	pipeline.add_channorm_layer= False
+	pipeline.winsize= 3
+
 	
 	logger.info("[PROC %d] Running source classification pipeline ..." % (procId))
 	status= pipeline.run(
