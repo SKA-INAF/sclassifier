@@ -95,7 +95,7 @@ def get_args():
 	
 	# - Autoencoder model options
 	parser.add_argument('--run_aereco', dest='run_aereco', action='store_true',help='Run AE reconstruction metrics (default=false)')	
-	parser.set_defaults(check_aereco=False)
+	parser.set_defaults(run_aereco=False)
 	parser.add_argument('-nx', '--nx', dest='nx', required=False, type=int, default=64, action='store',help='Image resize width in pixels (default=64)')
 	parser.add_argument('-ny', '--ny', dest='ny', required=False, type=int, default=64, action='store',help='Image resize height in pixels (default=64)')
 	parser.add_argument('-modelfile_encoder', '--modelfile_encoder', dest='modelfile_encoder', required=False, type=str, default='', action='store',help='Encoder model architecture filename (.json)')
