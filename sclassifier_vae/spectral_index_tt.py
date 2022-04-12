@@ -34,7 +34,7 @@ from scipy.stats import linregress
 
 ## MODULES
 from sclassifier_vae import logger
-
+from sclassifier_vae.utils import Utils
 
 #####################################
 ##   SpectralIndexTTHelper class
