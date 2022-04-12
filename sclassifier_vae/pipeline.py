@@ -668,10 +668,12 @@ class Pipeline(object):
 			fm= FeatMerger()
 		
 			mergeable_dicts= []
-			if self.feat_colors_dict is not None:
+			if self.feat_colors_dict and self.feat_colors_dict is not None:
+				logger.info("[PROC %d] Adding color features for merging ..." % (procId))
 				mergeable_dicts.append(self.feat_colors_dict)
 
-			if self.feat_alpha_dict is not None:
+			if self.feat_alpha_dict and self.feat_alpha_dict is not None:
+				logger.info("[PROC %d] Adding spectral index features for merging ..." % (procId))
 				mergeable_dicts.append(self.feat_alpha_dict)
 
 			# - Merge features
