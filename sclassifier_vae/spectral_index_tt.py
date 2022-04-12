@@ -32,6 +32,9 @@ from astropy.wcs import WCS
 import regions
 from scipy.stats import linregress
 
+## MODULES
+from sclassifier_vae import logger
+
 
 #####################################
 ##   SpectralIndexTTHelper class
