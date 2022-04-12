@@ -658,13 +658,13 @@ class SpectralIndexTTCalculator(object):
 		par_dict= sih.param_dict
 		
 		if par_dict is None or not par_dict:
-			logger.warn("Feature dict for source data %d is empty or None, skip it ..." % (i))
+			logger.warn("Feature dict for source data %d is empty or None, skip it ..." % (index))
 			return -1
 
 		if has_good_alpha:
 			self.par_dict_list.append(par_dict)
 		else:
-			logger.warn("Spectral index computed for source %d is not reliable, skip it ..." % (i))
+			logger.warn("Spectral index computed for source %d is not reliable, skip it ..." % (index))
 
 		return 0
 
