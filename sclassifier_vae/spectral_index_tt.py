@@ -390,10 +390,10 @@ class SpectralIndexTTHelper(object):
 				return -1
 
 		for i in range(len(img_group_2)):
-		index= img_group_2[i]
-		if index<0 or index>=self.nchannels:	
-			logger.error("Invalid index (%d) in group 2, must be in range [0,%d]!" % (index, self.nchannels-1))
-			return 1
+			index= img_group_2[i]
+			if index<0 or index>=self.nchannels:	
+				logger.error("Invalid index (%d) in group 2, must be in range [0,%d]!" % (index, self.nchannels-1))
+				return 1
 
 		# - Loop over img combinations and compute spectral indices
 		logger.info("Computing spectral index (#%d combinations) ..." % (len(img_group_1)))
