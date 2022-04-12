@@ -27,7 +27,7 @@ import json
 import getopt
 import argparse
 import collections
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 ## ASTRO MODULES
 from astropy.io import fits
