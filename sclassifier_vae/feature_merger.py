@@ -59,6 +59,16 @@ class FeatMerger(object):
 			logger.error("Empty data dict list given!")
 			return -1
 
+		nvars_tot= 0
+		for d in dlist:
+			nentries= len(d.keys())
+			firstitem= next(iter(d.items()))
+			nvars= len(firstitem[1].keys()) - 2
+			nvars_tot+= nvars
+			logger.info("Data dict has #%d entries (#%d vars) ..." % (nentries, nvars))
+
+		logger.info("Merged set is expected to have %d vars ..." % (nvars_tot))
+
 		# - Merge features
 		logger.info("Merging feature data for input data dict ...")
 
