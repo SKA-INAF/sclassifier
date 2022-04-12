@@ -548,6 +548,7 @@ class SpectralIndexTTCalculator(object):
 
 		# - Alpha calculation options
 		self.alpha_rcoeff_thr= 0.9
+		self.img_freqs= []
 		
 		# - Output options
 		self.save= True
@@ -646,6 +647,7 @@ class SpectralIndexTTCalculator(object):
 		sih.negative_pix_fract_thr= self.negative_pix_fract_thr
 		sih.bad_pix_fract_thr= self.bad_pix_fract_thr
 		sih.rcoeff_thr= self.alpha_rcoeff_thr
+		sih.img_freqs= self.img_freqs
 
 		if sih.run(img_group_1, img_group_2)<0:
 			logger.warn("Failed to compute spectral index for source %d ..." % (index))
