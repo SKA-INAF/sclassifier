@@ -59,6 +59,13 @@ class FeatMerger(object):
 			logger.error("Empty data dict list given!")
 			return -1
 
+		for i in range(len(dlist)):
+			d= dlist[i]
+			if not d:
+				logger.error("Data dict %d is empty!" % (i+1))
+				return -1
+
+		# - Compute number of vars
 		nvars_tot= 0
 		for d in dlist:
 			print("d")
