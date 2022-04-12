@@ -582,6 +582,8 @@ class SpectralIndexTTCalculator(object):
 			logger.info("Saving data to file %s ..." % (self.outfile))
 			self.__save_data()
 
+		return 0
+
 
 	def run_from_datalistfile(self, datafile, img_group_1, img_group_2):
 		""" Run spectral index calculation using data json filelist as input """
