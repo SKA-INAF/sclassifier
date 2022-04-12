@@ -410,7 +410,7 @@ class SpectralIndexTTHelper(object):
 		alphas= []
 		rcoeffs= []
 
-		smask= self.img_masks[self.refch]
+		smask= self.img_data_mask[self.refch]
 
 		for i in range(len(img_group_1)):
 			index_1= img_group_1[i]
