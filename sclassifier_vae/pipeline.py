@@ -518,55 +518,55 @@ class Pipeline(object):
 			logger.info("[PROC %d] Gathering color features ... " % (procId))
 			colfeat_dict_list= comm.gather(param_dict_list, root=MASTER)
 		
-			if procId==MASTER:
-				print("colfeat_dict_list")
-				print(colfeat_dict_list)
+		if procId==MASTER:
+			print("colfeat_dict_list")
+			print(colfeat_dict_list)
 	
-				# - Set col feat data
-				self.feat_colors= []
-				self.feat_colors_snames= []
-				self.feat_colors_classids= []
-				self.feat_colors_dict= OrderedDict()
+			# - Set col feat data
+			self.feat_colors= []
+			self.feat_colors_snames= []
+			self.feat_colors_classids= []
+			self.feat_colors_dict= OrderedDict()
 
-				for dictlist in colfeat_dict_list:
-					for d in dictlist:
-						keys= list(d.keys())
-						nvars= len(keys)-2
-						featvars= []
-						print("keys")
-						print(keys)
-						print("nvars")
-						print(nvars)
+			for dictlist in colfeat_dict_list:
+				for d in dictlist:
+					keys= list(d.keys())
+					nvars= len(keys)-2
+					featvars= []
+					print("keys")
+					print(keys)
+					print("nvars")
+					print(nvars)
 
-						sname= d["sname"]
-						classid= d["id"]
+					sname= d["sname"]
+					classid= d["id"]
 
-						if sname in self.feat_colors_dict:
-							logger.warn("[PROC %d] Source %s is already present in data dict, overwriting it ..." % (procId, sname))
-						self.feat_colors_dict[sname]= OrderedDict()
-						self.feat_colors_dict[sname]["sname"]= sname	
+					if sname in self.feat_colors_dict:
+						logger.warn("[PROC %d] Source %s is already present in data dict, overwriting it ..." % (procId, sname))
+					self.feat_colors_dict[sname]= OrderedDict()
+					self.feat_colors_dict[sname]["sname"]= sname	
 						
-						for i in range(nvars):
-							var_index= i+1 # exclude sname
-							varname= keys[var_index]
-							var= d[varname]
-							featvars.append(var)
-							print("Adding feat %s ..." % (varname))
-							self.feat_colors_dict[sname][varname]= var
+					for i in range(nvars):
+						var_index= i+1 # exclude sname
+						varname= keys[var_index]
+						var= d[varname]
+						featvars.append(var)
+						print("Adding feat %s ..." % (varname))
+						self.feat_colors_dict[sname][varname]= var
 
-						self.feat_colors_dict[sname]["id"]= classid
-						self.feat_colors_snames.append(sname)
-						self.feat_colors_classids.append(classid)
-						self.feat_colors.append(featvars)
+					self.feat_colors_dict[sname]["id"]= classid
+					self.feat_colors_snames.append(sname)
+					self.feat_colors_classids.append(classid)
+					self.feat_colors.append(featvars)
 					
-				self.feat_colors= np.array(self.feat_colors)
+			self.feat_colors= np.array(self.feat_colors)
 
-				print("snames")
-				print(self.feat_colors_snames)
-				print("classids")
-				print(self.feat_colors_classids)
-				print("feat colors")
-				print(self.feat_colors)
+			print("feat_colors_snames")
+			print(self.feat_colors_snames)
+			print("feat_colors_classids")
+			print(self.feat_colors_classids)
+			print("feat colors")
+			print(self.feat_colors)
 
 		return 0
 
@@ -600,52 +600,52 @@ class Pipeline(object):
 			logger.info("[PROC %d] Gathering spectral index features ... " % (procId))
 			alphafeat_dict_list= comm.gather(param_dict_list, root=MASTER)
 		
-			if procId==MASTER:
-				print("alphafeat_dict_list")
-				print(alphafeat_dict_list)
+		if procId==MASTER:
+			print("alphafeat_dict_list")
+			print(alphafeat_dict_list)
 	
-				# - Set col feat data
-				self.feat_alpha= []
-				self.feat_alpha_snames= []
-				self.feat_alpha_classids= []
-				self.feat_alpha_dict= OrderedDict()
+			# - Set col feat data
+			self.feat_alpha= []
+			self.feat_alpha_snames= []
+			self.feat_alpha_classids= []
+			self.feat_alpha_dict= OrderedDict()
 
-				for dictlist in alphafeat_dict_list:
-					for d in dictlist:
-						keys= list(d.keys())
-						nvars= len(keys)-2
-						featvars= []
+			for dictlist in alphafeat_dict_list:
+				for d in dictlist:
+					keys= list(d.keys())
+					nvars= len(keys)-2
+					featvars= []
 
-						sname= d["sname"]
-						classid= d["id"]
+					sname= d["sname"]
+					classid= d["id"]
 				
-						if sname in self.feat_alpha_dict:
-							logger.warn("[PROC %d] Source %s is already present in data dict, overwriting it ..." % (procId, sname))
-						self.feat_alpha_dict[sname]= OrderedDict()
-						self.feat_alpha_dict[sname]["sname"]= sname	
+					if sname in self.feat_alpha_dict:
+						logger.warn("[PROC %d] Source %s is already present in data dict, overwriting it ..." % (procId, sname))
+					self.feat_alpha_dict[sname]= OrderedDict()
+					self.feat_alpha_dict[sname]["sname"]= sname	
 
-						for i in range(nvars):
-							var_index= i+1 # exclude sname
-							varname= keys[var_index]
-							var= d[varname]
-							featvars.append(var)
-							print("Adding feat %s ..." % (varname))
-							self.feat_alpha_dict[sname][varname]= var
+					for i in range(nvars):
+						var_index= i+1 # exclude sname
+						varname= keys[var_index]
+						var= d[varname]
+						featvars.append(var)
+						print("Adding feat %s ..." % (varname))
+						self.feat_alpha_dict[sname][varname]= var
 
-						self.feat_alpha_dict[sname]["id"]= classid
+					self.feat_alpha_dict[sname]["id"]= classid
 						
-						self.feat_alpha_snames.append(sname)
-						self.feat_alpha_classids.append(classid)
-						self.feat_alpha.append(featvars)
+					self.feat_alpha_snames.append(sname)
+					self.feat_alpha_classids.append(classid)
+					self.feat_alpha.append(featvars)
 					
-				self.feat_alpha= np.array(self.feat_alpha)
+			self.feat_alpha= np.array(self.feat_alpha)
 
-				print("snames")
-				print(self.feat_alpha_snames)
-				print("classids")
-				print(self.feat_alpha_classids)
-				print("feat colors")
-				print(self.feat_alpha)
+			print("feat_alpha_snames")
+			print(self.feat_alpha_snames)
+			print("feat_alpha_classids")
+			print(self.feat_alpha_classids)
+			print("feat_alpha")
+			print(self.feat_alpha)
 
 		return 0
 

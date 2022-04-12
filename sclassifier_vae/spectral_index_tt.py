@@ -370,6 +370,13 @@ class SpectralIndexTTHelper(object):
 		""" Compute spectral index alpha """
 
 		# - Check first if frequency data are available
+		print("self.img_freqs")
+		print(self.img_freqs)
+		print("len(self.img_freqs)")
+		print(len(self.img_freqs))
+		print("len(self.img_data)")
+		print(len(self.img_data))
+
 		freqs= []
 		if self.img_freqs and len(self.img_freqs)==len(self.img_data):
 			freqs= self.img_freqs
