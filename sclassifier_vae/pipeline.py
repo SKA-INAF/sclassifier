@@ -61,6 +61,7 @@ from sclassifier_vae.data_aereco_checker import DataAERecoChecker
 from sclassifier_vae.feature_merger import FeatMerger
 from sclassifier_vae.feature_selector import FeatSelector
 from sclassifier_vae.feature_extractor_ae import FeatExtractorAE
+from sclassifier_vae.spectral_index_tt import SpectralIndexTTCalculator
 
 #===========================
 #==   IMPORT MPI
@@ -169,6 +170,7 @@ class Pipeline(object):
 		self.feat_colors= None
 		self.feat_colors_snames= []
 		self.feat_colors_classids= []
+		self.feat_colors_dict= None
 
 		# - Classification options
 		self.jobdir_sclass= os.path.join(self.jobdir, "sclass")
@@ -210,12 +212,35 @@ class Pipeline(object):
 		self.add_channorm_layer= False
 		self.winsize= 3
 
+		# - Radio spectral index calculation
+		self.add_spectral_index= False
+		self.alpha_img_group_1= []
+		self.alpha_img_group_2= []
+		self.alpha_rcoeff_thr= 0.9
+		self.save_spectral_index_data= False
+		self.feat_alpha= None
+		self.feat_alpha_snames= []
+		self.feat_alpha_classids= []
+		self.feat_alpha_dict= None
+
+		# - Merged feature data
+		self.feat_all= None
+		self.feat_all_snames= []
+		self.feat_all_classids= []
+		self.feat_all_dict= None
+
+		# - Data quality options
+		self.negative_pix_fract_thr= 0.9
+		self.bad_pix_fract_thr= 0.05
+
 		# - Output data
 		self.outfile_sclass= "classified_data.dat"
 		self.outfile_sclass_metrics= "classification_metrics.dat"
 		self.outfile_sclass_cm= "confusion_matrix.dat"
 		self.outfile_sclass_cm_norm= "confusion_matrix_norm.dat"
 		self.outfile_aerecometrics= "aereco_metrics.dat"
+		self.outfile_feat_alpha= "features_alpha.csv"
+		self.outfile_feat_merged= "features_merged.csv"
 
 	#=========================
 	#==   READ IMG
@@ -450,7 +475,6 @@ class Pipeline(object):
 		else:
 			selcols= []
 
-
 		# - Create feat extractor obj
 		#   NB: All PROC
 		fem= FeatExtractorMom()
@@ -465,6 +489,8 @@ class Pipeline(object):
 		fem.save= False
 		fem.select_feat= True
 		fem.selfeatids= selcols
+		fem.negative_pix_fract_thr= self.negative_pix_fract_thr
+		fem.bad_pix_fract_thr= self.bad_pix_fract_thr
 			
 		logger.info("[PROC %d] Extracting color features from cutout data (nsources=%d) ..." % (procId, len(self.datalist_proc)))
 		if fem.run_from_datalist(self.datalist_proc, self.datalist_mask_proc)<0:
@@ -488,6 +514,7 @@ class Pipeline(object):
 				self.feat_colors= []
 				self.feat_colors_snames= []
 				self.feat_colors_classids= []
+				self.feat_colors_dict= OrderedDict()
 
 				for dictlist in colfeat_dict_list:
 					for d in dictlist:
@@ -499,15 +526,23 @@ class Pipeline(object):
 						print("nvars")
 						print(nvars)
 
+						sname= d["sname"]
+						classid= d["id"]
+
+						if sname in self.feat_colors_dict:
+							logger.warn("[PROC %d] Source %s is already present in data dict, overwriting it ..." % (procId, sname))
+						self.feat_colors_dict[sname]= OrderedDict()
+						self.feat_colors_dict[sname]["sname"]= sname	
+						
 						for i in range(nvars):
 							var_index= i+1 # exclude sname
 							varname= keys[var_index]
 							var= d[varname]
 							featvars.append(var)
 							print("Adding feat %s ..." % (varname))
+							self.feat_colors_dict[sname][varname]= var
 
-						sname= d["sname"]
-						classid= d["id"]
+						self.feat_colors_dict[sname]["id"]= classid
 						self.feat_colors_snames.append(sname)
 						self.feat_colors_classids.append(classid)
 						self.feat_colors.append(featvars)
@@ -522,6 +557,171 @@ class Pipeline(object):
 				print(self.feat_colors)
 
 		return 0
+
+	#========================================
+	#==   COMPUTE SPECTRAL INDEX
+	#========================================
+	def compute_spectral_index(self):
+		""" Extract spectral index measurement """
+
+		# - Create spectral index calculator obj
+		#   NB: All PROC
+		sic= SpectralIndexTTCalculator()
+		sic.alpha_rcoeff_thr= self.alpha_rcoeff_thr
+		sic.negative_pix_fract_thr= self.negative_pix_fract_thr
+		sic.bad_pix_fract_thr= self.bad_pix_fract_thr
+		sic.save= self.save_spectral_index_data
+		sic.outfile= self.outfile_feat_alpha
+			
+		logger.info("[PROC %d] Measuring spectral index from cutout data (nsources=%d) ..." % (procId, len(self.datalist_radio_mask_proc)))
+		if sic.run_from_datalist(self.datalist_radio_mask_proc, self.alpha_img_group_1, self.alpha_img_group_2)<0:
+			logger.error("[PROC %d] Failed to measure spectral index (see logs)!" % (procId))
+			return -1
+
+		param_dict_list= sic.par_dict_list
+
+		# - Merge parameters found by each proc
+		if comm is None:
+			alphafeat_dict_list= param_dict_list
+		else:
+			logger.info("[PROC %d] Gathering spectral index features ... " % (procId))
+			alphafeat_dict_list= comm.gather(param_dict_list, root=MASTER)
+		
+			if procId==MASTER:
+				print("alphafeat_dict_list")
+				print(alphafeat_dict_list)
+	
+				# - Set col feat data
+				self.feat_alpha= []
+				self.feat_alpha_snames= []
+				self.feat_alpha_classids= []
+				self.feat_alpha_dict= OrderedDict()
+
+				for dictlist in alphafeat_dict_list:
+					for d in dictlist:
+						keys= list(d.keys())
+						nvars= len(keys)-2
+						featvars= []
+
+						sname= d["sname"]
+						classid= d["id"]
+				
+						if sname in self.feat_alpha_dict:
+							logger.warn("[PROC %d] Source %s is already present in data dict, overwriting it ..." % (procId, sname))
+						self.feat_alpha_dict[sname]= OrderedDict()
+						self.feat_alpha_dict[sname]["sname"]= sname	
+
+						for i in range(nvars):
+							var_index= i+1 # exclude sname
+							varname= keys[var_index]
+							var= d[varname]
+							featvars.append(var)
+							print("Adding feat %s ..." % (varname))
+							self.feat_alpha_dict[sname][varname]= var
+
+						self.feat_alpha_dict[sname]["id"]= classid
+						
+						self.feat_alpha_snames.append(sname)
+						self.feat_alpha_classids.append(classid)
+						self.feat_alpha.append(featvars)
+					
+				self.feat_alpha= np.array(self.feat_alpha)
+
+				print("snames")
+				print(self.feat_alpha_snames)
+				print("classids")
+				print(self.feat_alpha_classids)
+				print("feat colors")
+				print(self.feat_alpha)
+
+		return 0
+
+	#========================================
+	#==   MERGE FEATURES
+	#========================================
+	def merge_features(self):
+		""" Merge feature data """
+			
+		# - Merge features if PROC 0
+		if procId==MASTER:
+			
+			mergefeat_status= 0
+
+			# - Set feature data dict to be merged
+			fm= FeatMerger()
+		
+			mergeable_dicts= []
+			if self.feat_colors_dict is not None:
+				mergeable_dicts.append(self.feat_colors_dict)
+
+			if self.feat_alpha_dict is not None:
+				mergeable_dicts.append(self.feat_alpha_dict)
+
+			# - Merge features
+			if mergeable_dicts:
+				mergefeat_status= fm.run_from_dictlist(mergeable_dicts, outfile=self.outfile_feat_merged)
+			else:
+				logger.error("[PROC %d] No feature data to be merged!" % (procId))
+				mergefeat_status= -1
+				
+			# - Set merged feat data
+			if mergefeat_status==0:
+				allfeat_dict_list= fm.par_dict_list
+
+				self.feat_all= []
+				self.feat_all_snames= []
+				self.feat_all_classids= []
+				self.feat_all_dict= OrderedDict()
+
+				for d in allfeat_dict_list:
+					keys= list(d.keys())
+					nvars= len(keys)-2
+					featvars= []
+
+					sname= d["sname"]
+					classid= d["id"]
+				
+					if sname in self.feat_all_dict:
+						logger.warn("[PROC %d] Source %s is already present in data dict, overwriting it ..." % (procId, sname))
+					self.feat_all_dict[sname]= OrderedDict()
+					self.feat_all_dict[sname]["sname"]= sname	
+
+					for i in range(nvars):
+						var_index= i+1 # exclude sname
+						varname= keys[var_index]
+						var= d[varname]
+						featvars.append(var)
+						print("Adding feat %s ..." % (varname))
+						self.feat_all_dict[sname][varname]= var
+
+					self.feat_all_dict[sname]["id"]= classid
+						
+					self.feat_all_snames.append(sname)
+					self.feat_all_classids.append(classid)
+					self.feat_all.append(featvars)
+					
+				self.feat_all= np.array(self.feat_all)
+
+				print("snames")
+				print(self.feat_all_snames)
+				print("classids")
+				print(self.feat_all_classids)
+				print("feat all")
+				print(self.feat_all)
+
+
+		else:
+			mergefeat_status= 0
+		
+		if comm is not None:
+			mergefeat_status= comm.bcast(mergefeat_status, root=MASTER)
+
+		if mergefeat_status<0:
+			logger.error("[PROC %d] Error on merging feature data, exit!" % (procId))
+			return -1
+
+		return 0
+				
 
 	#===========================
 	#==   CLASSIFY SOURCES
@@ -554,7 +754,8 @@ class Pipeline(object):
 	
 			# - Run classification
 			sclass_status= sclass.run_predict(
-				data=self.feat_colors, class_ids=self.feat_colors_classids, snames=self.feat_colors_snames,
+				#data=self.feat_colors, class_ids=self.feat_colors_classids, snames=self.feat_colors_snames,
+				data=self.feat_all, class_ids=self.feat_all_classids, snames=self.feat_all_snames,
 				modelfile=self.modelfile, 
 				scalerfile=self.scalerfile
 			)
@@ -673,6 +874,8 @@ class Pipeline(object):
 		self.outfile_sclass_cm_norm= os.path.join(self.jobdir_sclass, "confusion_matrix_norm.dat")
 
 		self.outfile_aerecometrics= os.path.join(self.jobdir_sclass, "aereco_metrics.dat")
+		self.outfile_feat_alpha= os.path.join(self.jobdir_sclass, "features_alpha.csv")
+		self.outfile_feat_merged= os.path.join(self.jobdir_sclass, "features_merged.dat")
 
 		# - Create directories
 		#   NB: Done by PROC 0
@@ -751,15 +954,16 @@ class Pipeline(object):
 		self.datalist_mask_proc= self.datadict_mask["data"][imin:imax+1]
 
 		# - Read radio cutout data and partition source list across processors
-		logger.info("[PROC %d] Reading multi-radio cutout data list and assign sources to processor ..." % (procId))
-		with open(self.datalist_radio_file) as fp:
-			self.datadict_radio= json.load(fp)
+		if self.add_spectral_index:
+			logger.info("[PROC %d] Reading multi-radio cutout data list and assign sources to processor ..." % (procId))
+			with open(self.datalist_radio_file) as fp:
+				self.datadict_radio= json.load(fp)
 
-		with open(self.datalist_radio_mask_file) as fp:
-			self.datadict_radio_mask= json.load(fp)
+			with open(self.datalist_radio_mask_file) as fp:
+				self.datadict_radio_mask= json.load(fp)
 
-		self.datalist_radio_proc= self.datadict_radio["data"][imin:imax+1]
-		self.datalist_radio_mask_proc= self.datadict_radio_mask["data"][imin:imax+1]
+			self.datalist_radio_proc= self.datadict_radio["data"][imin:imax+1]
+			self.datalist_radio_mask_proc= self.datadict_radio_mask["data"][imin:imax+1]
 
 	
 		return 0
@@ -848,24 +1052,28 @@ class Pipeline(object):
 		self.config= config
 		self.nsurveys= len(config.surveys)
 
+		logger.info("[PROC %d] #surveys=%d" % (procId, self.nsurveys))
+
+
 		# - Create scutout config class (radio multi)
-		os.chdir(self.jobdir_scutout_radio)
-		config_radio= Utils.make_scutout_config(
-			self.configfile, 
-			self.surveys_radio, 
-			self.jobdir_scutout_radio, 
-			add_survey, 
-			self.img_metadata
-		)
+		if self.add_spectral_index:
+			os.chdir(self.jobdir_scutout_radio)
+			config_radio= Utils.make_scutout_config(
+				self.configfile, 
+				self.surveys_radio, 
+				self.jobdir_scutout_radio, 
+				add_survey, 
+				self.img_metadata
+			)
 
-		if config_radio is None:
-			logger.error("[PROC %d] Failed to create scutout radio config!" % (procId))
-			return -1
+			if config_radio is None:
+				logger.error("[PROC %d] Failed to create scutout radio config!" % (procId))
+				return -1
 
-		self.config_radio= config_radio
-		self.nsurveys_radio= len(config_radio.surveys)
+			self.config_radio= config_radio
+			self.nsurveys_radio= len(config_radio.surveys)
 
-		logger.info("[PROC %d] #surveys=%d, #surveys_radio=%d" % (procId, self.nsurveys, self.nsurveys_radio))
+			logger.info("[PROC %d] #surveys_radio=%d" % (procId, self.nsurveys_radio))
 
 		#===========================
 		#==   READ REGIONS
@@ -890,13 +1098,14 @@ class Pipeline(object):
 			logger.error("[PROC %d] Failed to create multi-band source cutouts!" % (procId))
 			return -1
 		
-		# - Create radio multi cutouts
-		logger.info("[PROC %d] Creating multi-frequency radio cutouts ..." % (procId))
-		os.chdir(self.jobdir_scutout_radio)
+		# - Create radio multi cutouts?
+		if self.add_spectral_index:
+			logger.info("[PROC %d] Creating multi-frequency radio cutouts ..." % (procId))
+			os.chdir(self.jobdir_scutout_radio)
 
-		if self.make_scutouts(self.config_radio, self.datadir_radio, self.datadir_radio_mask, self.nsurveys_radio, self.datalist_radio_file, self.datalist_radio_mask_file)<0:
-			logger.error("[PROC %d] Failed to create radio source cutouts!" % (procId))
-			return -1
+			if self.make_scutouts(self.config_radio, self.datadir_radio, self.datadir_radio_mask, self.nsurveys_radio, self.datalist_radio_file, self.datalist_radio_mask_file)<0:
+				logger.error("[PROC %d] Failed to create radio source cutouts!" % (procId))
+				return -1
 
 		# - Distribute sources among proc
 		self.distribute_sources()
@@ -915,19 +1124,26 @@ class Pipeline(object):
 			return -1
 	
 		# - Extract spectral index features
-		# ...
-		# ...
+		if self.add_spectral_index:
+			logger.info("[PROC %d] Computing spectral index ..." % (procId))
+
+			if self.compute_spectral_index()<0:
+				logger.error("[PROC %d] Failed to compute spectral index ..." % (procId))
+				return -1
 
 		# - Run AE reconstruction
-		#   NB: Don by PROC 0
+		#   NB: Done by PROC 0
 		if self.run_aereco:
 			if self.run_ae_reconstruction(self.datalist_mask_file)<0:
 				logger.error("[PROC %d] Failed to run AE reconstruction on data %s ..." % (procId, self.datalist_mask_file))
 				return -1
 
 		# - Concatenate features
-		# ...
-		# ...
+		#   NB: Done by PROC 0
+		logger.info("[PROC %d] Concatenating all extracted features ..." % (procId))
+		if self.merge_features()<0:
+			logger.error("[PROC %d] Failed to concatenate available features extracted ..." % (procId))
+			return -1
 
 		#=============================
 		#==   CLASSIFY SOURCES

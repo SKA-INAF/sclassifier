@@ -49,10 +49,47 @@ class FeatMerger(object):
 		self.save_csv= False
 
 	#===========================
+	#==   MERGE FEATURE DATA
+	#===========================
+	def __merge_data(self, dlist):
+		""" Merge feature data """
+
+		# - Check input list
+		if not dlist:
+			logger.error("Empty data dict list given!")
+			return -1
+
+		# - Merge features
+		logger.info("Merging feature data for input data dict ...")
+
+		dmerged= collections.OrderedDict()
+
+		for d in dlist:
+			for key, value in d.items():
+				if key not in dmerged:
+					dmerged[key]= collections.OrderedDict({})
+				dmerged[key].update(value)
+				dmerged[key].move_to_end("id")
+
+		# - Remove rows with less number of entries
+		logger.info("Removing rows with number of vars !=%d ..." % (nvars_tot))
+
+		self.par_dict_list= []
+		for key, value in dmerged.items():
+			nvars= len(value.keys())-2
+			if nvars!=nvars_tot:
+				logger.info("Removing entry (%s) as number of vars (%d) is !=%d ..." % (key, nvars, nvars_tot))
+				#del dmerged[key]
+				continue
+			self.par_dict_list.append(value)
+
+		return 0
+
+	#===========================
 	#==   READ FEATURE DATA
 	#===========================
 	def __read_and_merge_data(self, inputfiles, selcolids=[], allow_novars=False):
-		""" Read feature data """
+		""" Read and merge feature data """
 	
 		# - Check selcolids has format [[selcol_1],[selcol_2]]
 		if selcolids:
@@ -169,6 +206,21 @@ class FeatMerger(object):
 		logger.info("Reading and merging input feature files ...")
 		if self.__read_and_merge_data(inputfiles, selcolids, allow_novars)<0:
 			logger.error("Failed to read and merge data!")
+			return -1	
+
+		# - Save data
+		logger.info("Saving merged data to file %s ..." % (outfile))
+		self.__save(outfile)
+		
+		return 0
+
+	def run_from_dictlist(self, dlist, outfile='featdata_merged.dat'):
+		""" Run feature merger """
+
+		# - Read feature data and merge 
+		logger.info("Merging input feature data dicts ...")
+		if self.__merge_data(dlist)<0:
+			logger.error("Failed to merge data!")
 			return -1	
 
 		# - Save data

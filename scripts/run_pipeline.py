@@ -119,14 +119,16 @@ def get_args():
 	parser.set_defaults(find_outliers=False)
 	parser.add_argument('-modelfile_outlier', '--modelfile_outlier', dest='modelfile_outlier', required=False, type=str, default='', action='store',help='Outlier model filename (.sav)')
 	parser.add_argument('-anomaly_thr','--anomaly_thr', dest='anomaly_thr', required=False, type=float, default=0.9, help='Threshold in anomaly score above which observation is set as outlier (default=0.9)') 
+
+	# - Run options	
+	parser.add_argument('-jobdir','--jobdir', dest='jobdir', required=False, type=str, default='', help='Job directory. Set to PWD if empty') 
+
+	# - Output options
+	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='classified_data.dat', help='Output filename (.dat) with classified data') 
 	parser.add_argument('--save_outlier', dest='save_outlier', action='store_true',help='Save outlier results to file (default=false)')	
 	parser.set_defaults(save_outlier=False)
 	parser.add_argument('-outfile_outlier','--outfile_outlier', dest='outfile_outlier', required=False, type=str, default='outlier_data.dat', help='Output filename (.dat) with outlier data') 
-	
-	# - Output options
-	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='classified_data.dat', help='Output filename (.dat) with classified data') 
-	parser.add_argument('-jobdir','--jobdir', dest='jobdir', required=False, type=str, default='', help='Job directory. Set to PWD if empty') 
-	
+
 	args = parser.parse_args()	
 
 	return args

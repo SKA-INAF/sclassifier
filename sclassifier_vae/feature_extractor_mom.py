@@ -255,8 +255,11 @@ class SData(object):
 		for i in range(self.nchannels):
 			
 			data= self.img_data[i]
+			mask= self.img_data_mask[i]
+			data_masked= data[mask==1]
+
 			if check_mask:
-				data= self.img_data_mask[i]
+				data= data_masked
 
 			# - Check for bad pixels
 			if check_bad:
