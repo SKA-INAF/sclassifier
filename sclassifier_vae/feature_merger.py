@@ -61,6 +61,8 @@ class FeatMerger(object):
 
 		nvars_tot= 0
 		for d in dlist:
+			print("d")
+			print(d)
 			nentries= len(d.keys())
 			firstitem= next(iter(d.items()))
 			nvars= len(firstitem[1].keys()) - 2

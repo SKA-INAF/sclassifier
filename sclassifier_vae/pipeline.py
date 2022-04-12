@@ -566,7 +566,9 @@ class Pipeline(object):
 			print("feat_colors_classids")
 			print(self.feat_colors_classids)
 			print("feat colors")
-			print(self.feat_colors)
+			print(self.feat_colors)	
+			print("feat_colors_dict")
+			print(self.feat_colors_dict)
 
 		return 0
 
@@ -646,6 +648,8 @@ class Pipeline(object):
 			print(self.feat_alpha_classids)
 			print("feat_alpha")
 			print(self.feat_alpha)
+			print("feat_alpha_dict")
+			print(self.feat_alpha_dict)
 
 		return 0
 
