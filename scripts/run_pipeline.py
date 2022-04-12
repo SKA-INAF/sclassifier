@@ -114,6 +114,8 @@ def get_args():
 	parser.add_argument('-kernsizes_grow','--kernsizes_grow', dest='kernsizes_grow', required=False, type=str, default='', help='Mask dilation kernel sizes in pixels used for mask growing (default=empty)') 
 	#parser.add_argument('--subtract_bkg', dest='subtract_bkg', action='store_true')	
 	#parser.set_defaults(subtract_bkg=False)
+	parser.add_argument('-seed_thr','--seed_thr', dest='seed_thr', required=False, type=float, default=4, help='Seed threshold (default=4)')
+	parser.add_argument('-merge_thr','--merge_thr', dest='merge_thr', required=False, type=float, default=2.5, help='Merge threshold (default=2.5)')
 
 	# - Spectral index options
 	parser.add_argument('--add_spectral_index', dest='add_spectral_index', action='store_true', help='Run radio multi-freq cutouts, compute spectral index and add it to features')	
@@ -245,6 +247,8 @@ def main():
 	kernsizes_shrink= args.kernsizes_shrink
 	grow_mask= args.grow_mask
 	kernsizes_grow= args.kernsizes_grow
+	seed_thr= args.seed_thr
+	merge_thr= args.merge_thr
 
 	# - Spectral index
 	add_spectral_index= args.add_spectral_index
@@ -321,6 +325,8 @@ def main():
 	pipeline.kernsizes_shrink= kernsizes_shrink
 	pipeline.grow_mask= grow_mask
 	pipeline.kernsizes_grow= kernsizes_grow
+	pipeline.seed_thr= seed_thr
+	pipeline.merge_thr= merge_thr
 
 	pipeline.add_spectral_index= add_spectral_index
 	pipeline.img_group_1= img_group_1

@@ -163,6 +163,8 @@ class Pipeline(object):
 		self.grow_kernels= []
 		self.subtract_bkg= True
 		self.save_ssim_pars= True
+		self.seed_thr= 4
+		self.merge_thr= 2.5
 
 		# 9,10,11,12,13,14,15,16,17,18,19,20,21,22,73,74,75,76,77,78,79,80,81,82
 		#self.selfeatcols_5bands= [0,1,2,3,14,15,16,18,20,23]
@@ -489,6 +491,8 @@ class Pipeline(object):
 		fem.erode_kernels = self.shrink_kernels
 		fem.grow_masks= self.grow_masks
 		fem.dilate_kernels = self.grow_kernels
+		fem.seed_thr= self.seed_thr
+		fem.merge_thr= self.merge_thr
 		fem.subtract_bkg= self.subtract_bkg
 		fem.subtract_bkg_only_refch= False
 		fem.ssim_winsize= 3
