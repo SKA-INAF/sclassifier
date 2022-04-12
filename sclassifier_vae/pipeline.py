@@ -221,6 +221,7 @@ class Pipeline(object):
 
 		# - Radio spectral index calculation
 		self.add_spectral_index= False
+		self.alpha_img_freqs= []
 		self.alpha_img_group_1= []
 		self.alpha_img_group_2= []
 		self.alpha_rcoeff_thr= 0.9
@@ -578,6 +579,7 @@ class Pipeline(object):
 		# - Create spectral index calculator obj
 		#   NB: All PROC
 		sic= SpectralIndexTTCalculator()
+		sic.img_freqs= self.alpha_img_freqs
 		sic.alpha_rcoeff_thr= self.alpha_rcoeff_thr
 		sic.negative_pix_fract_thr= self.negative_pix_fract_thr
 		sic.bad_pix_fract_thr= self.bad_pix_fract_thr

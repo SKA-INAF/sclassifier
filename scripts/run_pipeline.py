@@ -120,6 +120,7 @@ def get_args():
 	# - Spectral index options
 	parser.add_argument('--add_spectral_index', dest='add_spectral_index', action='store_true', help='Run radio multi-freq cutouts, compute spectral index and add it to features')	
 	parser.set_defaults(add_spectral_index=False)
+	parser.add_argument('-img_freqs','--img_freqs', dest='img_freqs', required=False, type=str, help='Radio frequencies of images used for spectral index, separated by commas')
 	parser.add_argument('-img_group_1','--img_group_1', dest='img_group_1', required=False, type=str, help='Indexes of images in group 1 when computing the spectral index, separated by commas') 
 	parser.add_argument('-img_group_2','--img_group_2', dest='img_group_2', required=False, type=str, help='Indexes of images in group 2 when computing the spectral index, separated by commas') 
 	parser.add_argument('-alpha_rcoeff_thr', '--alpha_rcoeff_thr', dest='alpha_rcoeff_thr', required=False, type=float, default=0.9, action='store', help='Correlation coefficient threshold used in spectral index T-T plot fit (default=0.9)')
@@ -254,10 +255,13 @@ def main():
 	add_spectral_index= args.add_spectral_index
 	img_group_1= []
 	img_group_2= []
+	img_freqs= []
 	if args.img_group_1!="":
 		img_group_1= [int(x.strip()) for x in args.img_group_1.split(',')]
 	if args.img_group_2!="":
 		img_group_2= [int(x.strip()) for x in args.img_group_2.split(',')]
+	if args.img_freqs!="":
+		img_freqs= [float(x.strip()) for x in args.img_freqs.split(',')]
 
 	alpha_rcoeff_thr= args.alpha_rcoeff_thr
 	save_spectral_index= args.save_spectral_index
@@ -329,6 +333,7 @@ def main():
 	pipeline.merge_thr= merge_thr
 
 	pipeline.add_spectral_index= add_spectral_index
+	pipeline.alpha_img_freqs= img_freqs
 	pipeline.img_group_1= img_group_1
 	pipeline.img_group_2= img_group_2
 	pipeline.alpha_rcoeff_thr= alpha_rcoeff_thr
