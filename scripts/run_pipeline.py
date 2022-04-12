@@ -332,6 +332,7 @@ def main():
 	pipeline.seed_thr= seed_thr
 	pipeline.merge_thr= merge_thr
 
+
 	pipeline.add_spectral_index= add_spectral_index
 	pipeline.alpha_img_freqs= img_freqs
 	pipeline.img_group_1= img_group_1
@@ -341,6 +342,10 @@ def main():
 
 	pipeline.negative_pix_fract_thr= negative_pix_fract_thr
 	pipeline.bad_pix_fract_thr= bad_pix_fract_thr
+
+	print("pipeline.alpha_img_freqs")
+	print(pipeline.alpha_img_freqs)
+
 
 	logger.info("[PROC %d] Running source classification pipeline ..." % (procId))
 	status= pipeline.run(
