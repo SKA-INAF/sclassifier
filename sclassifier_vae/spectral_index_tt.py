@@ -636,7 +636,7 @@ class SpectralIndexTTCalculator(object):
 		sih.rcoeff_thr= self.alpha_rcoeff_thr
 
 		if sih.run(img_group_1, img_group_2)<0:
-			logger.warn("Failed to compute spectral index for source %d ..." $ (index))
+			logger.warn("Failed to compute spectral index for source %d ..." % (index))
 			return -1
 
 		# - Append out dict to list if a good index was estimated
