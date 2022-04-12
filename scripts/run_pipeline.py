@@ -104,6 +104,24 @@ def get_args():
 	parser.add_argument('-weightfile_decoder', '--weightfile_decoder', dest='weightfile_decoder', required=False, type=str, default='', action='store',help='Decoder model weights filename (.h5)')
 	parser.add_argument('-aereco_thr', '--aereco_thr', dest='aereco_thr', required=False, type=float, default=0.5, action='store',help='AE reco threshold below which data is considered bad (default=0.5)')
 
+	# - Color/moment options
+	parser.add_argument('-refch','--refch', dest='refch', required=False, type=int, default=0, help='Reference channel id (default=0)') 
+	parser.add_argument('--shrink_mask', dest='shrink_mask', action='store_true')	
+	parser.set_defaults(shrink_mask=False)
+	parser.add_argument('-kernsizes_shrink','--kernsizes_shrink', dest='kernsizes_shrink', required=False, type=str, default='', help='Mask erosion kernel sizes in pixels used for mask shrinking (default=empty)') 
+	parser.add_argument('--grow_mask', dest='grow_mask', action='store_true')	
+	parser.set_defaults(grow_mask=False)
+	parser.add_argument('-kernsizes_grow','--kernsizes_grow', dest='kernsizes_grow', required=False, type=str, default='', help='Mask dilation kernel sizes in pixels used for mask growing (default=empty)') 
+	#parser.add_argument('--subtract_bkg', dest='subtract_bkg', action='store_true')	
+	#parser.set_defaults(subtract_bkg=False)
+
+	# - Spectral index options
+	parser.add_argument('--add_spectral_index', dest='add_spectral_index', action='store_true', help='Run radio multi-freq cutouts, compute spectral index and add it to features')	
+	parser.set_defaults(add_spectral_index=False)
+	parser.add_argument('-img_group_1','--img_group_1', dest='img_group_1', required=False, type=str, help='Indexes of images in group 1 when computing the spectral index, separated by commas') 
+	parser.add_argument('-img_group_2','--img_group_2', dest='img_group_2', required=False, type=str, help='Indexes of images in group 2 when computing the spectral index, separated by commas') 
+	parser.add_argument('-alpha_rcoeff_thr', '--alpha_rcoeff_thr', dest='alpha_rcoeff_thr', required=False, type=float, default=0.9, action='store', help='Correlation coefficient threshold used in spectral index T-T plot fit (default=0.9)')
+
 	# - Model options
 	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=False, type=str, default='', action='store',help='Classifier model filename (.sav)')
 	parser.add_argument('--binary_class', dest='binary_class', action='store_true',help='Perform a binary classification {0=EGAL,1=GAL} (default=multiclass)')	
@@ -120,6 +138,10 @@ def get_args():
 	parser.add_argument('-modelfile_outlier', '--modelfile_outlier', dest='modelfile_outlier', required=False, type=str, default='', action='store',help='Outlier model filename (.sav)')
 	parser.add_argument('-anomaly_thr','--anomaly_thr', dest='anomaly_thr', required=False, type=float, default=0.9, help='Threshold in anomaly score above which observation is set as outlier (default=0.9)') 
 
+	# - Quality data options
+	parser.add_argument('-negative_pix_fract_thr','--negative_pix_fract_thr', dest='negative_pix_fract_thr', required=False, type=float, default=0.9, help='Threshold in negative pixel value fraction above which data images are set as bad (default=0.9)') 
+	parser.add_argument('-bad_pix_fract_thr','--bad_pix_fract_thr', dest='bad_pix_fract_thr', required=False, type=float, default=0.05, help='Threshold in bad (NAN/0) pixel values above which data images are set as bad (default=0.9)') 
+
 	# - Run options	
 	parser.add_argument('-jobdir','--jobdir', dest='jobdir', required=False, type=str, default='', help='Job directory. Set to PWD if empty') 
 
@@ -128,26 +150,13 @@ def get_args():
 	parser.add_argument('--save_outlier', dest='save_outlier', action='store_true',help='Save outlier results to file (default=false)')	
 	parser.set_defaults(save_outlier=False)
 	parser.add_argument('-outfile_outlier','--outfile_outlier', dest='outfile_outlier', required=False, type=str, default='outlier_data.dat', help='Output filename (.dat) with outlier data') 
+	parser.add_argument('--save_spectral_index', dest='save_spectral_index', action='store_true', help='Save spectral index data to file (default=false)')	
+	parser.set_defaults(save_spectral_index=False)
 
 	args = parser.parse_args()	
 
 	return args
 
-
-#===========================
-#==   READ REGIONS
-#===========================
-class_labels= ["UNKNOWN","PN","HII","PULSAR","YSO","STAR","GALAXY","QSO"]
-class_label_id_map= {
-	"UNKNOWN": 0,
-	"STAR": 1,
-	"GALAXY": 2,
-	"PN": 3,
-	"HII": 6,
-	"PULSAR": 23,
-	"YSO": 24,
-	"QSO": 6000
-}
 
 
 
@@ -230,6 +239,37 @@ def main():
 	save_outlier= args.save_outlier
 	outfile_outlier= args.outfile_outlier
 
+	# - Color index
+	refch= args.refch
+	shrink_mask= args.shrink_mask
+	kernsizes_shrink= args.kernsizes_shrink
+	grow_mask= args.grow_mask
+	kernsizes_grow= args.kernsizes_grow
+
+	# - Spectral index
+	add_spectral_index= args.add_spectral_index
+	img_group_1= []
+	img_group_2= []
+	if args.img_group_1!="":
+		img_group_1= [int(x.strip()) for x in args.img_group_1.split(',')]
+	if args.img_group_2!="":
+		img_group_2= [int(x.strip()) for x in args.img_group_2.split(',')]
+
+	alpha_rcoeff_thr= args.alpha_rcoeff_thr
+	save_spectral_index= args.save_spectral_index
+
+	if add_spectral_index:
+		if not img_group_1 or not img_group_2:
+			logger.error("Group image indices for spectral index calculation not given in input or empty!")
+			return 1
+		if len(img_group_1)!=len(img_group_2):
+			logger.error("Given group image indices for spectral index calculation do not have the same length!")
+			return 1
+
+	# - Quality data options
+	negative_pix_fract_thr= args.negative_pix_fract_thr
+	bad_pix_fract_thr= args.bad_pix_fract_thr
+
 	#==================================
 	#==   RUN
 	#==================================
@@ -276,7 +316,21 @@ def main():
 	pipeline.add_channorm_layer= False
 	pipeline.winsize= 3
 
-	
+	pipeline.refch= refch
+	pipeline.shrink_mask= shrink_mask
+	pipeline.kernsizes_shrink= kernsizes_shrink
+	pipeline.grow_mask= grow_mask
+	pipeline.kernsizes_grow= kernsizes_grow
+
+	pipeline.add_spectral_index= add_spectral_index
+	pipeline.img_group_1= img_group_1
+	pipeline.img_group_2= img_group_2
+	pipeline.alpha_rcoeff_thr= alpha_rcoeff_thr
+	pipeline.save_spectral_index_data= save_spectral_index
+
+	pipeline.negative_pix_fract_thr= negative_pix_fract_thr
+	pipeline.bad_pix_fract_thr= bad_pix_fract_thr
+
 	logger.info("[PROC %d] Running source classification pipeline ..." % (procId))
 	status= pipeline.run(
 		imgfile, regionfile

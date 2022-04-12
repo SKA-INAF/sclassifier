@@ -158,7 +158,12 @@ class Pipeline(object):
 		self.jobdir_sfeat= os.path.join(self.jobdir, "sfeat")
 		self.refch= 0
 		self.shrink_masks= False
+		self.shrink_kernels= []
 		self.grow_masks= False
+		self.grow_kernels= []
+		self.subtract_bkg= True
+		self.save_ssim_pars= True
+
 		# 9,10,11,12,13,14,15,16,17,18,19,20,21,22,73,74,75,76,77,78,79,80,81,82
 		#self.selfeatcols_5bands= [0,1,2,3,14,15,16,18,20,23]
 		self.selfeatcols_5bands= [9,10,11,12,73,74,75,77,79,82]	
@@ -481,11 +486,13 @@ class Pipeline(object):
 		fem.refch= self.refch
 		fem.draw= False	
 		fem.shrink_masks= self.shrink_masks
+		fem.erode_kernels = self.shrink_kernels
 		fem.grow_masks= self.grow_masks
-		fem.subtract_bkg= True
+		fem.dilate_kernels = self.grow_kernels
+		fem.subtract_bkg= self.subtract_bkg
 		fem.subtract_bkg_only_refch= False
 		fem.ssim_winsize= 3
-		fem.save_ssim_pars= True
+		fem.save_ssim_pars= self.save_ssim_pars
 		fem.save= False
 		fem.select_feat= True
 		fem.selfeatids= selcols
