@@ -345,7 +345,10 @@ def main():
 
 	print("pipeline.alpha_img_freqs")
 	print(pipeline.alpha_img_freqs)
-
+	print("pipeline.img_group_1")
+	print(pipeline.img_group_1)
+	print("pipeline.img_group_2")
+	print(pipeline.img_group_2)
 
 	logger.info("[PROC %d] Running source classification pipeline ..." % (procId))
 	status= pipeline.run(
