@@ -376,6 +376,11 @@ class SpectralIndexTTHelper(object):
 		print(len(self.img_freqs))
 		print("len(self.img_data)")
 		print(len(self.img_data))
+		print("img_group_1")
+		print(img_group_1)
+		print("img_group_2")
+		print(img_group_2)
+	
 
 		freqs= []
 		if self.img_freqs and len(self.img_freqs)==len(self.img_data):
@@ -403,7 +408,7 @@ class SpectralIndexTTHelper(object):
 			index= img_group_2[i]
 			if index<0 or index>=self.nchannels:	
 				logger.error("Invalid index (%d) in group 2, must be in range [0,%d]!" % (index, self.nchannels-1))
-				return 1
+				return -1
 
 		# - Loop over img combinations and compute spectral indices
 		logger.info("Computing spectral index (#%d combinations) ..." % (len(img_group_1)))
@@ -415,8 +420,8 @@ class SpectralIndexTTHelper(object):
 		for i in range(len(img_group_1)):
 			index_1= img_group_1[i]
 			index_2= img_group_2[i]
-			data_1= data_list[index_1]
-			data_2= data_list[index_2]
+			data_1= self.img_data[index_1]
+			data_2= self.img_data[index_2]
 			
 			# - Find frequency from header
 			nu1= freqs[index_1]

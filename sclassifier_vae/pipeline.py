@@ -587,6 +587,11 @@ class Pipeline(object):
 		sic.bad_pix_fract_thr= self.bad_pix_fract_thr
 		sic.save= self.save_spectral_index_data
 		sic.outfile= self.outfile_feat_alpha
+
+		print("self.alpha_img_group_1")
+		print(self.alpha_img_group_1)
+		print("self.alpha_img_group_2")
+		print(self.alpha_img_group_2)
 			
 		logger.info("[PROC %d] Measuring spectral index from cutout data (nsources=%d) ..." % (procId, len(self.datalist_radio_mask_proc)))
 		if sic.run_from_datalist(self.datalist_radio_mask_proc, self.alpha_img_group_1, self.alpha_img_group_2)<0:
