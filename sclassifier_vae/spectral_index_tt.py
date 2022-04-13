@@ -566,6 +566,19 @@ class SpectralIndexTTCalculator(object):
 	def run_from_datalist(self, datalist, img_group_1, img_group_2):
 		""" Run spectral index calculation passing data dict lists as inputs """
 
+		# - Check input data
+		if not datalist:
+			logger.error("Empty data dict list given!")
+			return -1
+
+		if not img_group_1 or not img_group_2:
+			logger.error("Empty image group index given!")
+			return -1
+
+		if len(img_group_1)!=len(img_group_2):
+			logger.error("Given image group index list have different lengths!")
+			return -1
+
 		# - Set data info
 		logger.debug("Setting data info ...")
 		self.datalist= datalist
