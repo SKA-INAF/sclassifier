@@ -335,8 +335,8 @@ def main():
 
 	pipeline.add_spectral_index= add_spectral_index
 	pipeline.alpha_img_freqs= img_freqs
-	pipeline.img_group_1= img_group_1
-	pipeline.img_group_2= img_group_2
+	pipeline.alpha_img_group_1= img_group_1
+	pipeline.alpha_img_group_2= img_group_2
 	pipeline.alpha_rcoeff_thr= alpha_rcoeff_thr
 	pipeline.save_spectral_index_data= save_spectral_index
 
