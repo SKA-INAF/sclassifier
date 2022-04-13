@@ -754,7 +754,7 @@ class Utils(object):
 				continue
 		
 			if os.path.exists(sdir):
-				logger.info("Removing cutout dir %s ..." % (procId, sdir))
+				logger.info("Removing cutout dir %s ..." % (sdir))
 				shutil.rmtree(sdir)
 
 		return 0
