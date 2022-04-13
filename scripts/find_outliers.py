@@ -62,6 +62,8 @@ def get_args():
 	#parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
 	#parser.set_defaults(predict=False)
 	parser.add_argument('-n_estimators','--n_estimators', dest='n_estimators', required=False, type=int, default=100, help='Number of forest trees to fit') 
+	parser.add_argument('-max_features','--max_features', dest='max_features', required=False, type=int, default=1, help='Number of max features used in each forest tree (default=1)')
+	parser.add_argument('-max_samples','--max_samples', dest='max_samples', required=False, type=float, default=-1, help='Number of max samples used in each forest tree. -1 means auto options, e.g. 256 entries, otherwise it is the fraction of total available entries (default=-1)') 	
 	#parser.add_argument('-contamination','--contamination', dest='contamination', required=False, type=float, default=None, help='Fraction of outliers expected [0,0.5]. If None set it to auto (defaul=None)')
 	parser.add_argument('-anomaly_thr','--anomaly_thr', dest='anomaly_thr', required=False, type=float, default=0.9, help='Threshold in anomaly score above which observation is set as outlier (default=0.9)') 
 	
@@ -105,6 +107,11 @@ def main():
 	#if contamination is None:
 	#	contamination= 'auto'
 	anomaly_thr= args.anomaly_thr	
+	max_features= args.max_features
+
+	max_samples= "auto"
+	if args.max_samples>0:
+		max_samples= args.max_samples
 
 	# - Output options
 	outfile= args.outfile
@@ -128,6 +135,8 @@ def main():
 	ofinder= OutlierFinder()
 	ofinder.normalize= normalize
 	ofinder.n_estimators= n_estimators
+	ofinder.max_samples= max_samples
+	ofinder.max_features= max_features
 	#ofinder.contamination= contamination
 	ofinder.anomaly_thr= anomaly_thr
 	ofinder.outfile= outfile
