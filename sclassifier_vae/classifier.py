@@ -198,6 +198,8 @@ class SClassifier(object):
 		self.find_outliers= False
 		self.outlier_modelfile= ""
 		self.outlier_thr= 0.9
+		self.outlier_max_samples= "auto"
+		self.outlier_max_features= 1
 		self.outlier_flags= None
 		self.outlier_scores= None
 		self.save_outlier= False
@@ -1657,6 +1659,8 @@ class SClassifier(object):
 		ofinder= OutlierFinder()
 		ofinder.normalize= self.normalize
 		ofinder.anomaly_thr= self.outlier_thr
+		ofinder.max_samples= self.outlier_max_samples
+		ofinder.max_features= self.outlier_max_features
 		ofinder.save_to_file= self.save_outlier
 		ofinder.outfile= self.outlier_outfile
 
@@ -1689,6 +1693,8 @@ class SClassifier(object):
 		ofinder= OutlierFinder()
 		ofinder.normalize= self.normalize
 		ofinder.anomaly_thr= self.outlier_thr
+		ofinder.max_samples= self.outlier_max_samples
+		ofinder.max_features= self.outlier_max_features
 		ofinder.save_to_file= self.save_outlier
 		ofinder.outfile= self.outlier_outfile
 

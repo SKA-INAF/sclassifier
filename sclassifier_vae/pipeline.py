@@ -191,6 +191,8 @@ class Pipeline(object):
 		self.find_outliers= False
 		self.modelfile_outlier= ""
 		self.anomaly_thr= 0.7
+		self.max_samples= "auto"
+		self.max_features= 1
 		self.save_outlier= False
 		self.outfile_outlier= "outlier_data.dat"
 
@@ -773,6 +775,8 @@ class Pipeline(object):
 			sclass.find_outliers= self.find_outliers
 			sclass.outlier_modelfile= self.modelfile_outlier
 			sclass.outlier_thr= self.anomaly_thr
+			sclass.outlier_max_samples= self.max_samples
+			sclass.outlier_max_features= self.max_features
 			sclass.save_outlier= self.save_outlier
 			sclass.outlier_outfile= self.outfile_outlier
 	

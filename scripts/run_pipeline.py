@@ -140,6 +140,8 @@ def get_args():
 	parser.set_defaults(find_outliers=False)
 	parser.add_argument('-modelfile_outlier', '--modelfile_outlier', dest='modelfile_outlier', required=False, type=str, default='', action='store',help='Outlier model filename (.sav)')
 	parser.add_argument('-anomaly_thr','--anomaly_thr', dest='anomaly_thr', required=False, type=float, default=0.9, help='Threshold in anomaly score above which observation is set as outlier (default=0.9)') 
+	parser.add_argument('-max_features','--max_features', dest='max_features', required=False, type=int, default=1, help='Number of max features used in each forest tree (default=1)')
+	parser.add_argument('-max_samples','--max_samples', dest='max_samples', required=False, type=float, default=-1, help='Number of max samples used in each forest tree. -1 means auto options, e.g. 256 entries, otherwise it is the fraction of total available entries (default=-1)')
 
 	# - Quality data options
 	parser.add_argument('-negative_pix_fract_thr','--negative_pix_fract_thr', dest='negative_pix_fract_thr', required=False, type=float, default=0.9, help='Threshold in negative pixel value fraction above which data images are set as bad (default=0.9)') 
@@ -239,6 +241,10 @@ def main():
 	find_outliers= args.find_outliers
 	modelfile_outlier= args.modelfile_outlier
 	anomaly_thr= args.anomaly_thr
+	max_features= args.max_features
+	max_samples= "auto"
+	if args.max_samples>0:
+		max_samples= args.max_samples
 	save_outlier= args.save_outlier
 	outfile_outlier= args.outfile_outlier
 
@@ -297,6 +303,8 @@ def main():
 	pipeline.find_outliers = find_outliers 
 	pipeline.modelfile_outlier = modelfile_outlier
 	pipeline.outlier_thr = anomaly_thr
+	pipeline.max_features= max_features
+	pipeline.max_samples= max_samples
 	pipeline.save_outlier= save_outlier
 	pipeline.outfile_outlier = outfile_outlier
 
