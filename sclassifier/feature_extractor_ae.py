@@ -22,8 +22,7 @@ import logging
 ##############################
 ##     GLOBAL VARS
 ##############################
-#logger = logging.getLogger(__name__)
-from sclassifier_vae import logger
+from sclassifier import logger
 
 ## TENSORFLOW & KERAS MODULES
 import tensorflow as tf

@@ -24,7 +24,7 @@ import csv
 ##############################
 ##     GLOBAL VARS
 ##############################
-from sclassifier_vae import logger
+from sclassifier import logger
 
 ## SCI MODULES
 from skimage.metrics import mean_squared_error

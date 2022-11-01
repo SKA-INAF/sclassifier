@@ -34,8 +34,8 @@ import cv2
 ##############################
 ##     GLOBAL VARS
 ##############################
-from sclassifier_vae import logger
-from sclassifier_vae.utils import Utils
+from sclassifier import logger
+from sclassifier.utils import Utils
 import scutout
 from scutout.cutout_extractor import CutoutHelper
 

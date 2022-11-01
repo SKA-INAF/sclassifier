@@ -56,7 +56,7 @@ import matplotlib.pyplot as plt
 from matplotlib import patches
 
 ## MODULES
-from sclassifier_vae import logger
+from sclassifier import logger
 
 
 #####################################

@@ -25,7 +25,7 @@ import csv
 ##############################
 ##     GLOBAL VARS
 ##############################
-from sclassifier_vae import logger
+from sclassifier import logger
 
 ## SCI MODULES
 from astropy.stats import sigma_clipped_stats

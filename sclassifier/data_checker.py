@@ -29,7 +29,7 @@ from .data_loader import DataLoader
 ##############################
 ##     GLOBAL VARS
 ##############################
-from sclassifier_vae import logger
+from sclassifier import logger
 
 ##############################
 ##     DataChecker CLASS
