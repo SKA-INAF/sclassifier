@@ -1,2 +1,2 @@
-# sclassifier-vae
-Source classifier using variational autoencoders (VAE)
+# sclassifier
+Source classifier using different ML methods: convolutional autoencoders (CAEs), decision trees, clustering algorithms 
