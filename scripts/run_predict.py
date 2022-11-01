@@ -33,12 +33,12 @@ import argparse
 import collections
 
 ## MODULES
-from sclassifier_vae import __version__, __date__
-from sclassifier_vae import logger
-from sclassifier_vae.data_loader import DataLoader
-from sclassifier_vae.feature_extractor_ae import FeatExtractorAE
-from sclassifier_vae.feature_extractor_umap import FeatExtractorUMAP
-from sclassifier_vae.clustering import Clusterer
+from sclassifier import __version__, __date__
+from sclassifier import logger
+from sclassifier.data_loader import DataLoader
+from sclassifier.feature_extractor_ae import FeatExtractorAE
+from sclassifier.feature_extractor_umap import FeatExtractorUMAP
+from sclassifier.clustering import Clusterer
 
 #### GET SCRIPT ARGS ####
 def str2bool(v):

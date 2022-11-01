@@ -48,19 +48,19 @@ import matplotlib.pyplot as plt
 
 
 ## MODULES
-from sclassifier_vae import __version__, __date__
-from sclassifier_vae import logger
-from sclassifier_vae.data_loader import DataLoader
-from sclassifier_vae.utils import Utils
-from sclassifier_vae.classifier import SClassifier
-from sclassifier_vae.cutout_maker import SCutoutMaker
-from sclassifier_vae.feature_extractor_mom import FeatExtractorMom
-from sclassifier_vae.data_checker import DataChecker
-from sclassifier_vae.data_aereco_checker import DataAERecoChecker
-from sclassifier_vae.feature_merger import FeatMerger
-from sclassifier_vae.feature_selector import FeatSelector
-from sclassifier_vae.pipeline import Pipeline
-from sclassifier_vae.pipeline import procId, MASTER, nproc, comm
+from sclassifier import __version__, __date__
+from sclassifier import logger
+from sclassifier.data_loader import DataLoader
+from sclassifier.utils import Utils
+from sclassifier.classifier import SClassifier
+from sclassifier.cutout_maker import SCutoutMaker
+from sclassifier.feature_extractor_mom import FeatExtractorMom
+from sclassifier.data_checker import DataChecker
+from sclassifier.data_aereco_checker import DataAERecoChecker
+from sclassifier.feature_merger import FeatMerger
+from sclassifier.feature_selector import FeatSelector
+from sclassifier.pipeline import Pipeline
+from sclassifier.pipeline import procId, MASTER, nproc, comm
 
 
 #### GET SCRIPT ARGS ####

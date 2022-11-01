@@ -25,11 +25,11 @@ import argparse
 import collections
 
 ## MODULES
-from sclassifier_vae import __version__, __date__
-from sclassifier_vae import logger
-from sclassifier_vae.data_loader import DataLoader
-from sclassifier_vae.utils import Utils
-from sclassifier_vae.classifier import SClassifier
+from sclassifier import __version__, __date__
+from sclassifier import logger
+from sclassifier.data_loader import DataLoader
+from sclassifier.utils import Utils
+from sclassifier.classifier import SClassifier
 
 
 import matplotlib.pyplot as plt
