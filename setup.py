@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 """
-Setup for sclassifier-vae
+Setup for sclassifier
 """
 import os
 import sys
@@ -14,8 +14,8 @@ def read(fname):
 
 def get_version():
 	""" Get the package version number """
-	import sclassifier_vae
-	return sclassifier_vae.__version__
+	import sclassifier
+	return sclassifier.__version__
 
 
 #reqs = ['numpy>=1.10',
@@ -78,15 +78,15 @@ reqs.append('optuna')
 data_dir = 'data'
 
 setup(
-	name="sclassifier_vae",
+	name="sclassifier",
 	version=get_version(),
 	author="Simone Riggi",
 	author_email="simone.riggi@gmail.com",
 	description="Unsupervised source classification using variational autoencoders (VAE)",
 	license = "GPL3",
-	url="https://github.com/SKA-INAF/sclassifier-vae",
+	url="https://github.com/SKA-INAF/sclassifier",
 	long_description=read('README.md'),
-	packages=['sclassifier_vae'],
+	packages=['sclassifier'],
 	install_requires=reqs,
 	scripts=['scripts/check_data.py','scripts/run_train.py','scripts/run_predict.py','scripts/run_clustering.py','scripts/reconstruct_data.py','scripts/extract_features.py','scripts/select_features.py','scripts/run_classifier.py','scripts/merge_features.py','scripts/run_classifier_nn.py','scripts/classify_source.py','scripts/find_outliers.py','scripts/run_pipeline.py'],
 )
