@@ -388,6 +388,8 @@ class FeatSelector(object):
 		
 		if self.data_preclassified is not None:
 			logger.info("#nsamples_preclass=%d" % (len(self.data_preclassified_labels)))
+		else:
+			logger.info("No pre-classified objects found in this file ...")
 
 		return 0
 
@@ -668,7 +670,8 @@ class FeatSelector(object):
 		# - Extract selected data columns
 		logger.info("Extracting selected data columns (N=%d) from original data ..." % (len(selcols)))
 		self.data_sel= self.data[:,selcolflags]
-		self.data_preclassified_sel= self.data_preclassified[:,selcolflags]
+		if self.data_preclassified_sel is not None:
+			self.data_preclassified_sel= self.data_preclassified[:,selcolflags]
 		self.selfeatids= selcols
 
 		return 0
