@@ -509,6 +509,8 @@ class SClassifier(object):
 
 		if self.data_preclassified is not None:
 			logger.info("#nsamples_preclass=%d" % (len(self.data_preclassified_labels)))
+		else:
+			logger.info("No pre-classified objects found in this file ...")
 
 		return 0
 
@@ -1723,46 +1725,47 @@ class SClassifier(object):
 		#================================
 		#==   SAVE METRICS
 		#================================
-		logger.info("Saving train metrics ...")
-		metrics= [self.accuracy, self.precision, self.recall, self.f1score]
-		metric_names= ["accuracy","precision","recall","f1score"]
+		if self.data_preclassified is not None:
+			logger.info("Saving metrics on pre-classified data ...")
+			metrics= [self.accuracy, self.precision, self.recall, self.f1score]
+			metric_names= ["accuracy","precision","recall","f1score"]
 		
-		for i in range(len(self.data_preclassified_targetnames)):
-			classname= self.data_preclassified_targetnames[i]
-			precision= self.class_precisions[i]
-			recall= self.class_recalls[i]
-			f1score= self.class_f1scores[i]
-			metrics.append(precision)
-			metrics.append(recall)
-			metrics.append(f1score)
-			metric_names.append("precision_" + classname)
-			metric_names.append("recall_" + classname)
-			metric_names.append("f1score_" + classname)
+			for i in range(len(self.data_preclassified_targetnames)):
+				classname= self.data_preclassified_targetnames[i]
+				precision= self.class_precisions[i]
+				recall= self.class_recalls[i]
+				f1score= self.class_f1scores[i]
+				metrics.append(precision)
+				metrics.append(recall)
+				metrics.append(f1score)
+				metric_names.append("precision_" + classname)
+				metric_names.append("recall_" + classname)
+				metric_names.append("f1score_" + classname)
 			
-		Nmetrics= len(metrics)
-		metric_data= np.array(metrics).reshape(1,Nmetrics)
+			Nmetrics= len(metrics)
+			metric_data= np.array(metrics).reshape(1,Nmetrics)
 
-		metric_names_str= ' '.join(str(item) for item in metric_names)
-		head= '{} {}'.format("# ",metric_names_str)
+			metric_names_str= ' '.join(str(item) for item in metric_names)
+			head= '{} {}'.format("# ",metric_names_str)
 
-		print("metric_data")
-		print(metrics)
-		print(len(metrics))
-		print(metric_data.shape)
+			print("metric_data")
+			print(metrics)
+			print(len(metrics))
+			print(metric_data.shape)
 		
-		Utils.write_ascii(metric_data, self.outfile_metrics, head)	
+			Utils.write_ascii(metric_data, self.outfile_metrics, head)	
 
-		# - Save confusion matrix
-		logger.info("Saving confusion matrix to file %s ..." % (self.outfile_cm))
-		#with open(self.outfile_cm, 'w') as f:
-		#	f.write(np.array2string(self.cm, separator=', '))
+			# - Save confusion matrix
+			logger.info("Saving confusion matrix to file %s ..." % (self.outfile_cm))
+			#with open(self.outfile_cm, 'w') as f:
+			#	f.write(np.array2string(self.cm, separator=', '))
 
-		np.savetxt(self.outfile_cm, self.cm, delimiter=',')
+			np.savetxt(self.outfile_cm, self.cm, delimiter=',')
 
-		#with open(self.outfile_cm_norm, 'w') as f:
-		#	f.write(np.array2string(self.cm_norm, separator=', '))
+			#with open(self.outfile_cm_norm, 'w') as f:
+			#	f.write(np.array2string(self.cm_norm, separator=', '))
 		
-		np.savetxt(self.outfile_cm_norm, self.cm_norm, delimiter=',')
+			np.savetxt(self.outfile_cm_norm, self.cm_norm, delimiter=',')
 
 		#================================
 		#==   SAVE PREDICTION DATA
