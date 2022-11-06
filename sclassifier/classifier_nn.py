@@ -276,6 +276,8 @@ class SClassifierNN(object):
 		self.outfile_loss= 'losses.png'
 		self.outfile_nnout_metrics= 'losses.dat'
 		self.outfile= 'classified_data.dat'
+		self.outfile_cm= "confusion_matrix.dat"
+		self.outfile_cm_norm= "confusion_matrix_norm.dat"
 		
 	#####################################
 	##     SETTERS/GETTERS
@@ -646,11 +648,23 @@ class SClassifierNN(object):
 		head= "# sname id id_pred prob"
 		Utils.write_ascii(outdata, self.outfile, head)
 
-
 		#================================
 		#==   COMPUTE AND SAVE METRICS
 		#================================
-		# - Retrieve metrics
+		# - Performed only for data with a class label set (not for unknown sources)
+		if self.target_ids:
+			self.__compute_metrics()
+
+			
+		return 0
+
+	#####################################
+	##     COMPUTE AND SAVE METRICS
+	#####################################
+	def __compute_metrics(self):
+		""" Compute and save metrics """
+
+		# - Compute classification metrics
 		logger.info("Computing classification metrics on predicted data ...")
 		report= classification_report(self.target_ids, self.targets_pred, target_names=self.target_names, output_dict=True)
 		self.accuracy= report['accuracy']
@@ -686,9 +700,13 @@ class SClassifierNN(object):
 		# - Retrieving confusion matrix
 		logger.info("Retrieving confusion matrix ...")
 		cm= confusion_matrix(self.target_ids, self.targets_pred)
+		cm_norm= confusion_matrix(self.target_ids, self.targets_pred, normalize="true")
 
 		print("confusion matrix")
 		print(cm)
+
+		print("confusion matrix (norm)")
+		print(cm_norm)
 
 		# - Saving metrics to file
 		logger.info("Saving metrics to file %s ..." % (self.outfile_metrics))
@@ -720,13 +738,17 @@ class SClassifierNN(object):
 		
 		Utils.write_ascii(metric_data, self.outfile_metrics, head)
 
+		# - Save confusion matrix to file
+		logger.info("Saving confusion matrix to file %s ..." % (self.outfile_cm))		
+		np.savetxt(self.outfile_cm, cm, delimiter=',')
+		np.savetxt(self.outfile_cm_norm, cm_norm, delimiter=',')
+
 
 		return 0
 
 	#####################################
 	##     CREATE MODEL
 	#####################################
-	
 	def __create_model(self):
 		""" Create the model """
 				
