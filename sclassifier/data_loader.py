@@ -740,7 +740,7 @@ class DataLoader(object):
 		)
 	
 		# - Set augmenter chosen
-		if choice='cae':
+		if choice=='cae':
 			self.augmenter= augmenter_cae
 		else if choice=='cnn':
 			self.augmenter= augmenter_cnn
