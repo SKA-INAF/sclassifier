@@ -632,7 +632,7 @@ class DataLoader(object):
 				
 	"""
 	
-	def __init__(self, filename):
+	def __init__(self, filename, augmenter_choice="cae"):
 		""" Return a DataLoader object """
 
 		# - Input data
@@ -645,9 +645,19 @@ class DataLoader(object):
 		self.snames= []
 		self.nchannels= 0
 
-		# - Define augmenters
-		naugmenters_applied= 2
-		self.augmenter= iaa.SomeOf((0,naugmenters_applied),
+		# - Define and set augmenter to be used
+		self.__set_augmenters(augmenter_choice)
+
+
+	#############################
+	##     DEFINE AUGMENTERS
+	#############################
+	def __set_augmenters(self, choice='cae'):
+		""" Define and set augmenters """
+
+		# - Define augmenter for CAE
+		naugmenters_cae= 2
+		augmenter_cae= iaa.SomeOf((0,naugmenters_cae),
 			[
   			iaa.Fliplr(1.0),
     		iaa.Flipud(1.0),
@@ -657,6 +667,89 @@ class DataLoader(object):
 			],
 			random_order=True
 		)
+
+		# - Define augmenter for CNN
+		naugmenters_cnn= 2
+		augmenter_cnn= iaa.Sequential(
+			[
+				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
+  			iaa.Affine(rotate=(-90, 90), mode='constant', cval=0.0),
+				iaa.Sometimes(0.5, iaa.Affine(translate_percent={"x": (-0.1, 0.1), "y": (-0.1, 0.1)}, mode='constant', cval=0.0))
+			]
+		)
+
+		# - Define augmenter for SimCLR
+		naugmenters_simclr= 2
+		augmenter_simclr= iaa.Sequential(
+			[
+  			iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Affine(rotate=(-90, 90), mode='constant', cval=0.0)]),
+				iaa.SomeOf(naugmenters_simclr,
+						[
+							iaa.Affine(scale=(0.5, 1.0), mode='constant', cval=0.0),
+							iaa.GaussianBlur(sigma=(0.1, 2.0)),
+							iaa.AdditiveGaussianNoise(scale=(0, 0.1))
+						],
+						random_order=True
+				)
+			]
+		)
+
+		# - Apply (flip + rotate) always + scale (50%) + blur (50%) + noise (50%)
+		augmenter_simclr2= iaa.Sequential(
+			[
+				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0)]),
+  			iaa.Affine(rotate=(-90, 90), mode='constant', cval=0.0),
+				iaa.Sometimes(0.5, iaa.Affine(scale=(0.5, 1.0), mode='constant', cval=0.0)),
+				iaa.Sometimes(0.5, iaa.GaussianBlur(sigma=(0.1, 2.0))),
+				iaa.Sometimes(0.5, iaa.AdditiveGaussianNoise(scale=(0, 0.1)))
+			]
+		)
+
+		# - Apply flip (66%) + rotate (always) + scale/blur/noise (75%)
+		augmenter_simclr3= iaa.Sequential(
+			[
+				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
+  			iaa.Affine(rotate=(-90, 90), mode='constant', cval=0.0),
+				iaa.OneOf(
+					[
+						iaa.Affine(scale=(0.5, 1.0), mode='constant', cval=0.0),
+						iaa.GaussianBlur(sigma=(0.1, 2.0)),
+						iaa.AdditiveGaussianNoise(scale=(0, 0.1)),
+						iaa.Noop()
+					]
+				)
+			]
+		)
+
+		# - Apply flip (66%) + rotate (always) + scale/blur/noise (50%)
+		augmenter_simclr4= iaa.Sequential(
+			[
+				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
+  			iaa.Affine(rotate=(-90, 90), mode='constant', cval=0.0),
+				iaa.Sometimes(0.5, 
+					iaa.OneOf(
+						[
+							iaa.Affine(scale=(0.5, 1.0), mode='constant', cval=0.0),
+							iaa.GaussianBlur(sigma=(0.1, 2.0)),
+							iaa.AdditiveGaussianNoise(scale=(0, 0.1)),
+						]
+					),
+					iaa.Noop()
+				)
+			]
+		)
+	
+		# - Set augmenter chosen
+		if choice='cae':
+			self.augmenter= augmenter_cae
+		else if choice=='cnn':
+			self.augmenter= augmenter_cnn
+		else if choice=='simclr':
+			self.augmenter= augmenter_simclr4
+		else:
+			logger.warn("Unknown choice (%s), setting CAE augmenter..." % (choice))
+			self.augmenter= augmenter_cae
+
 
 	#############################
 	##     READ INPUT DATA
