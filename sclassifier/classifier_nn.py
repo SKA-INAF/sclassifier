@@ -473,7 +473,7 @@ class SClassifierNN(object):
 
 		# - Create cross validation data generator
 		if self.dl_cv is None:
-			self.dl_cv= dl
+			self.dl_cv= self.dl
 			self.has_cvdata= False
 			self.nsamples_cv= 0
 		else:
