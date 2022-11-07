@@ -225,7 +225,7 @@ def main():
 		standardize=standardize, means=img_means, sigmas=img_sigmas,
 		chan_divide=chan_divide, chan_mins=chan_mins,
 		erode=erode, erode_kernel=erode_kernel,
-		retsdata=True
+		outdata_choice='cae'
 	)	
 
 	img_counter= 0
