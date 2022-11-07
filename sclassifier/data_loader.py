@@ -742,9 +742,9 @@ class DataLoader(object):
 		# - Set augmenter chosen
 		if choice=='cae':
 			self.augmenter= augmenter_cae
-		else if choice=='cnn':
+		elif choice=='cnn':
 			self.augmenter= augmenter_cnn
-		else if choice=='simclr':
+		elif choice=='simclr':
 			self.augmenter= augmenter_simclr4
 		else:
 			logger.warn("Unknown choice (%s), setting CAE augmenter..." % (choice))
