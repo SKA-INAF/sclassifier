@@ -222,10 +222,10 @@ def main():
 	#==   READ DATALIST
 	#===========================
 	# - Create data loader
-	dl= DataLoader(filename=datalist)
+	dl= DataLoader(filename=datalist, augmenter_choice='cnn')
 
 	# - Read datalist	
-	logger.info("Reading datalist %s ..." % datalist)
+	logger.info("Reading datalist %s ..." % (datalist))
 	if dl.read_datalist()<0:
 		logger.error("Failed to read input datalist!")
 		return 1
@@ -233,8 +233,8 @@ def main():
 	# - Create data loader for validation
 	dl_cv= None
 	if datalist_cv!="":
-		logger.info("Reading datalist_cv %s ..." % datalist_cv)
-		dl_cv= DataLoader(filename=datalist_cv)
+		logger.info("Reading datalist_cv %s ..." % (datalist_cv))
+		dl_cv= DataLoader(filename=datalist_cv, augmenter_choice='cnn')
 		if dl_cv.read_datalist()<0:
 			logger.error("Failed to read input datalist for validation!")
 			return 1
