@@ -419,7 +419,6 @@ class SClassifierNN(object):
 		self.source_names= self.dl.snames
 		self.nsamples= len(self.source_labels)
 
-		
 		# - Set model targets
 		self.target_ids= []
 
@@ -467,8 +466,8 @@ class SClassifierNN(object):
 			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
 			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
 			erode=self.erode, erode_kernel=self.erode_kernel,
-			retsdata=False, 
-			ret_classtargets=True, classtarget_map=self.classid_remap, nclasses=self.nclasses
+			outdata_choice='cnn',
+			classtarget_map=self.classid_remap, nclasses=self.nclasses
 		)
 
 		# - Create cross validation data generator
@@ -492,8 +491,8 @@ class SClassifierNN(object):
 			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
 			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
 			erode=self.erode, erode_kernel=self.erode_kernel,
-			retsdata=False, 
-			ret_classtargets=True, classtarget_map=self.classid_remap, nclasses=self.nclasses	
+			outdata_choice='cnn',
+			classtarget_map=self.classid_remap, nclasses=self.nclasses	
 		)	
 
 		# - Create test data generator
@@ -508,8 +507,8 @@ class SClassifierNN(object):
 			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
 			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
 			erode=self.erode, erode_kernel=self.erode_kernel,
-			retsdata=False, 
-			ret_classtargets=True, classtarget_map=self.classid_remap, nclasses=self.nclasses
+			outdata_choice='cnn', 
+			classtarget_map=self.classid_remap, nclasses=self.nclasses
 		)
 
 		return 0

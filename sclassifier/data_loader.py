@@ -878,7 +878,8 @@ class DataLoader(object):
 	###################################
 	##     GENERATE DATA FOR TRAINING
 	###################################
-	def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=64, ny=64, normalize=True, scale_to_abs_max=False, scale_to_max=False, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5, retsdata=False, ret_classtargets=False, classtarget_map={}, nclasses=7):	
+	#def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=64, ny=64, normalize=True, scale_to_abs_max=False, scale_to_max=False, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5, retsdata=False, ret_classtargets=False, classtarget_map={}, nclasses=7):
+	def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=64, ny=64, normalize=True, scale_to_abs_max=False, scale_to_max=False, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5, outdata_choice='cae', ret_classtargets=False, classtarget_map={}, nclasses=7):	
 		""" Generator function reading nsamples images from disk and returning to caller """
 	
 		nb= 0
@@ -986,19 +987,30 @@ class DataLoader(object):
 					#print(inputs.shape)
 
 					logger.debug("Batch size (%d) reached, yielding generated data of size (%d,%d,%d,%d) ..." % (nb,inputs.shape[0],inputs.shape[1],inputs.shape[2],inputs.shape[3]))
-					if retsdata:
-						yield inputs, sdata
-					else:
-						if ret_classtargets:
-							output_targets= to_categorical(np.array(target_ids), num_classes=nclasses)
-							#print("--> output_targets")
-							#print(output_targets)
-							#print("--> output_targets_shape")
-							#print(output_targets.shape)
 
-							yield inputs, output_targets
-						else:
-							yield inputs, inputs
+					if outdata_choice=='sdata':
+						yield inputs, sdata
+					elif outdata_choice=='cae':
+						yield inputs, inputs
+					elif outdata_choice=='cnn':
+						output_targets= to_categorical(np.array(target_ids), num_classes=nclasses)
+						yield inputs, output_targets
+					elif outdata_choice=='simclr':
+						yield inputs, inputs
+					else:
+						logger.warn("Unknown outdata_choice (%s), assuming cae ..." % (outdata_choice))
+						yield inputs, inputs
+
+
+					#if retsdata:
+					#	yield inputs, sdata
+					#else:
+					#	if ret_classtargets:
+					#		output_targets= to_categorical(np.array(target_ids), num_classes=nclasses)
+					#		yield inputs, output_targets
+					#	else:
+					#		yield inputs, inputs
+
 					nb= 0
 
 			except (GeneratorExit):

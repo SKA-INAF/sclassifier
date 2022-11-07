@@ -127,7 +127,7 @@ class DataAERecoChecker(object):
 		#	standardize=self.standardize, means=self.img_means, sigmas=self.img_sigmas,
 		#	chan_divide=self.chan_divide, chan_mins=self.chan_mins,
 		#	erode=self.erode, erode_kernel=self.erode_kernel,
-		#	retsdata=True
+		#	outdata_choice='cae'
 		#)	
 
 		
