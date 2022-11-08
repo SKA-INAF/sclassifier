@@ -294,9 +294,9 @@ class SClassifierNN(object):
 			self.optimizer= opt
 		else:
 			if opt=="rmsprop":
-				self.optimizer= tf.keras.optimizers.RMSprop(learning_rate=self.learning_rate)
+				self.optimizer= tf.keras.optimizers.RMSprop(learning_rate=learning_rate)
 			elif opt=="adam":	
-				self.optimizer= tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
+				self.optimizer= tf.keras.optimizers.Adam(learning_rate=learning_rate)
 			else:
 				logger.warn("Unknown optimizer selected (%s), setting to the default (%s) ..." % (opt, self.optimizer_default))
 				self.optimizer= self.optimizer_default
