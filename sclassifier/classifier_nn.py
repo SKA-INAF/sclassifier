@@ -827,14 +827,18 @@ class SClassifierNN(object):
 				x = layers.MaxPooling2D(pool_size=(self.pool_size,self.pool_size),strides=None,padding=padding)
 				self.model.add(x)
 
-		# - Add flatten layer
-		x = layers.Flatten()
-		self.model.add(x)
+		
 
-		# - Concatenate channel max scale layer?
+		# - Concatenate flattened CNN output + channel max scale layer?
 		if self.add_chanmaxratio_layer:
-			xconcat= layers.Concatenate(axis=1)([x, x_maxratios_flattened])
+			x_flattened= layers.Flatten()(x)
+
+			xconcat= layers.Concatenate(axis=1)([x_flattened=, x_maxratios_flattened])
 			self.model.add(xconcat)
+		else:
+			# - Add flatten layer
+			x = layers.Flatten()
+			self.model.add(x)
 
 		#===========================
 		#==  MODEL OUTPUT LAYERS
