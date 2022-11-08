@@ -983,10 +983,10 @@ class DataLoader(object):
 				if classtarget_map:
 					target_id= classtarget_map[class_id]
 				
-				print("--> class_id")
-				print(class_id)
-				print("--> target_id")
-				print(target_id)
+				#print("--> class_id")
+				#print(class_id)
+				#print("--> target_id")
+				#print(target_id)
 
 				# - Generate pairs of augmented data for SimCLR
 				if outdata_choice=='simclr':
@@ -1058,8 +1058,8 @@ class DataLoader(object):
 						yield inputs, inputs
 					elif outdata_choice=='cnn':
 						output_targets= to_categorical(np.array(target_ids), num_classes=nclasses)
-						print(output_targets)
-						print(output_targets.shape)
+						#print(output_targets)
+						#print(output_targets.shape)
 
 						yield inputs, output_targets
 					elif outdata_choice=='simclr':
