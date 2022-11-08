@@ -476,20 +476,21 @@ class SourceData(object):
 
 		# - Find image min/max	
 		#   NB: Excluding masked pixels (=0)
-		img_cube_mod= []
+		img_cube_mod= np.copy(self.img_cube)
 		
 		for i in range(self.img_cube.shape[-1]):
 			data_masked_ch= np.ma.masked_equal(self.img_cube[:,:,i], 0.0, copy=False)
 			data_min_ch= data_masked_ch.min()
 			data_max_ch= data_masked_ch.max()
 
-			if data_max_ch<=0:
-				img_mod= (self.img_cube[i]-data_min_ch)
-				img_mod[self.img_cube[i]==0]= 0
-				img_cube_mod.append(img_mod)
-			else:
-				img_cube_mod.append(self.img_cube[i])
+			if data_max_ch>0:
+				continue
 
+			img_mod= self.img_cube[:,:,i] - data_min_ch
+			img_mod[self.img_cube[:,:,i]==0]= 0
+			img_cube_mod[:,:,i]= img_mod
+			
+			
 		# - Update data cube
 		self.img_cube= img_cube_mod
 
