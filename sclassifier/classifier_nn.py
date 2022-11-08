@@ -833,7 +833,7 @@ class SClassifierNN(object):
 		if self.add_chanmaxratio_layer:
 			x_flattened= layers.Flatten()(x)
 
-			xconcat= layers.Concatenate(axis=1)([x_flattened=, x_maxratios_flattened])
+			xconcat= layers.Concatenate(axis=1)([x_flattened, x_maxratios_flattened])
 			self.model.add(xconcat)
 		else:
 			# - Add flatten layer
