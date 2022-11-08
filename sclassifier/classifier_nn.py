@@ -758,7 +758,18 @@ class SClassifierNN(object):
 	#####################################
 	def __create_model(self):
 		""" Create the model """
-				
+		
+		if self.add_chanmaxratio_layer:
+			return self.__create_model_nonsequencial()
+		else:
+			return self.__create_model_sequencial()
+
+	#####################################
+	##     CREATE MODEL (SEQUENTIAL)
+	#####################################
+	def __create_model_sequencial(self):
+		""" Create the model in a sequencial way """
+
 		#===========================
 		#==  INIT WEIGHTS
 		#===========================
@@ -784,11 +795,6 @@ class SClassifierNN(object):
 		print("Input data dim=", self.input_data_dim)
 		print("inputs shape")
 		print(K.int_shape(self.inputs))
-
-		# - Compute chan max ratios?
-		if self.add_chanmaxratio_layer:
-			x_maxratios= ChanMaxRatio(name='chanmaxratios')(self.inputs)
-			x_maxratios_flattened= layers.Flatten()(x_maxratios)
 
 		# - Add channel max scale layer?
 		if self.add_chanmaxscale_layer:
@@ -827,18 +833,9 @@ class SClassifierNN(object):
 				x = layers.MaxPooling2D(pool_size=(self.pool_size,self.pool_size),strides=None,padding=padding)
 				self.model.add(x)
 
-		
-
-		# - Concatenate flattened CNN output + channel max scale layer?
-		if self.add_chanmaxratio_layer:
-			x_flattened= layers.Flatten()(x)
-
-			xconcat= layers.Concatenate(axis=1)([x_flattened, x_maxratios_flattened])
-			self.model.add(xconcat)
-		else:
-			# - Add flatten layer
-			x = layers.Flatten()
-			self.model.add(x)
+		# - Add flatten layer
+		x = layers.Flatten()
+		self.model.add(x)
 
 		#===========================
 		#==  MODEL OUTPUT LAYERS
@@ -857,6 +854,108 @@ class SClassifierNN(object):
 		self.outputs = layers.Dense(self.nclasses, name='outputs', activation='softmax')
 		self.model.add(self.outputs)
 		
+		#print("outputs shape")
+		#print(K.int_shape(self.outputs))
+		
+		#===========================
+		#==   BUILD MODEL
+		#===========================
+		# - Define and compile model
+		self.model.compile(optimizer=self.optimizer, loss=self.loss_type, metrics=['accuracy', f1score_metric, precision_metric, recall_metric], run_eagerly=True)
+		
+		# - Print model summary
+		self.model.summary()
+		
+		return 0
+
+
+	########################################
+	##     CREATE MODEL (NON SEQUENTIAL)
+	########################################
+	def __create_model_nonsequencial(self):
+		""" Create the model in a non-sequencial way """
+
+		#===========================
+		#==  INIT WEIGHTS
+		#===========================
+		logger.info("Initializing weights ...")
+		try:
+			weight_initializer = tf.keras.initializers.HeUniform(seed=self.weight_init_seed)
+		except:
+			logger.info("Failed to find tf.keras.initializers.HeUniform, trying with tf.keras.initializers.he_uniform ...")
+			weight_initializer= tf.keras.initializers.he_uniform(seed=self.weight_init_seed) 
+
+		#===========================
+		#==  BUILD MODEL
+		#===========================
+		# - Init model
+		self.model = models.Sequential()
+
+		# - Input layer	
+		inputShape = (self.ny, self.nx, self.nchannels)
+		self.inputs= Input(shape=inputShape, dtype='float', name='inputs')
+		self.input_data_dim= K.int_shape(self.inputs)
+		x= self.inputs
+
+		print("Input data dim=", self.input_data_dim)
+		print("inputs shape")
+		print(K.int_shape(self.inputs))
+
+		# - Compute chan max ratios?
+		if self.add_chanmaxratio_layer:
+			x_maxratios= ChanMaxRatio(name='chanmaxratios')(self.inputs)
+			x_maxratios_flattened= layers.Flatten()(x_maxratios)
+
+		# - Add channel max scale layer?
+		if self.add_chanmaxscale_layer:
+			x= ChanMaxScale(name='norm_input')(x)
+			
+		# - Add a number of CNN layers
+		for k in range(len(self.nfilters_cnn)):
+
+			# - Add a Convolutional 2D layer
+			padding= "same"
+			if k==0:
+				# - Set weights for the first layer
+				x = layers.Conv2D(self.nfilters_cnn[k], (self.kernsizes_cnn[k], self.kernsizes_cnn[k]), strides=self.strides_cnn[k], padding=padding, kernel_initializer=weight_initializer)(x)
+			else:
+				x = layers.Conv2D(self.nfilters_cnn[k], (self.kernsizes_cnn[k], self.kernsizes_cnn[k]), strides=self.strides_cnn[k], padding=padding)(x)
+
+			# - Add batch normalization?
+			if self.add_batchnorm:
+				x = BatchNormalization(axis=-1)(x)
+
+			# - Add Leaky RELU?	
+			if self.add_leakyrelu:
+				x = layers.LeakyReLU(alpha=self.leakyrelu_alpha)(x)
+			else:
+				x = layers.ReLU()(x)
+
+			# - Add max pooling?
+			if self.add_max_pooling:
+				padding= "valid"
+				x = layers.MaxPooling2D(pool_size=(self.pool_size,self.pool_size),strides=None,padding=padding)(x)
+		
+		# - Add flatten layer
+		x = layers.Flatten()(x)
+
+		# - Concatenate flattened CNN output + channel max scale layer?
+		if self.add_chanmaxratio_layer:
+			x= layers.Concatenate(axis=1)([x, x_maxratios_flattened])
+			
+		#===========================
+		#==  MODEL OUTPUT LAYERS
+		#===========================
+		# - Add dense layer?
+		if self.add_dense:
+			for layer_size in self.dense_layer_sizes:
+				x = layers.Dense(layer_size, activation=self.dense_layer_activation)(x)
+
+				if self.add_dropout_layer:
+					x= layers.Dropout(self.dropout_rate)(x)
+			
+		# - Output layer
+		self.outputs = layers.Dense(self.nclasses, name='outputs', activation='softmax')(x)
 		
 		#print("outputs shape")
 		#print(K.int_shape(self.outputs))
@@ -865,8 +964,7 @@ class SClassifierNN(object):
 		#==   BUILD MODEL
 		#===========================
 		# - Define and compile model
-		#self.model = Model(inputs=self.inputs, outputs=self.output_targets, name='classifier')
-		#self.model = Model(inputs=self.inputs, outputs=self.outputs, name='classifier')
+		self.model = Model(inputs=self.inputs, outputs=self.outputs, name='classifier')
 		self.model.compile(optimizer=self.optimizer, loss=self.loss_type, metrics=['accuracy', f1score_metric, precision_metric, recall_metric], run_eagerly=True)
 		
 		# - Print model summary
@@ -874,7 +972,7 @@ class SClassifierNN(object):
 		
 		return 0
 
-	
+
 	###########################
 	##     TRAIN NETWORK
 	###########################
