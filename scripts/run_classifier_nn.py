@@ -123,6 +123,11 @@ def get_args():
 	parser.set_defaults(add_dropout_layer=False)
 	parser.add_argument('-dropout_rate', '--dropout_rate', dest='dropout_rate', required=False, type=float, default=0.5, action='store',help='Dropout rate (default=0.5)')
 
+	parser.add_argument('--add_chanmaxscale_layer', dest='add_chanmaxscale_layer', action='store_true',help='Add chan max scale layer before conv layers')	
+	parser.set_defaults(add_chanmaxscale_layer=False)
+	parser.add_argument('--add_chanmaxratio_layer', dest='add_chanmaxratio_layer', action='store_true',help='Add chan max ratio parameters to dense layers')	
+	parser.set_defaults(add_chanmaxratio_layer=False)
+
 	parser.add_argument('-nfilters_cnn', '--nfilters_cnn', dest='nfilters_cnn', required=False, type=str, default='32,64,128', action='store',help='Number of convolution filters per each layer')
 	parser.add_argument('-kernsizes_cnn', '--kernsizes_cnn', dest='kernsizes_cnn', required=False, type=str, default='3,5,7', action='store',help='Convolution filter kernel sizes per each layer')
 	parser.add_argument('-strides_cnn', '--strides_cnn', dest='strides_cnn', required=False, type=str, default='2,2,2', action='store',help='Convolution strides per each layer')
@@ -193,7 +198,9 @@ def main():
 	add_maxpooling_layer= args.add_maxpooling_layer
 	add_batchnorm_layer= args.add_batchnorm_layer
 	add_leakyrelu= args.add_leakyrelu
-	add_dense_layer= args.add_dense_layer	
+	add_dense_layer= args.add_dense_layer
+	add_chanmaxscale_layer= args.add_chanmaxscale_layer
+	add_chanmaxratio_layer= args.add_chanmaxratio_layer
 	nfilters_cnn= [int(x.strip()) for x in args.nfilters_cnn.split(',')]
 	kernsizes_cnn= [int(x.strip()) for x in args.kernsizes_cnn.split(',')]	
 	strides_cnn= [int(x.strip()) for x in args.strides_cnn.split(',')]
@@ -202,6 +209,7 @@ def main():
 	add_dropout_layer= args.add_dropout_layer
 	dropout_rate= args.dropout_rate
 	
+
 	# - Train options
 	predict= args.predict
 	multiclass= True
@@ -242,7 +250,7 @@ def main():
 	#===========================
 	#==   TRAIN VAE
 	#===========================
-	logger.info("Running VAE classifier training ...")
+	logger.info("Running CNN image classifier training ...")
 	sclass= SClassifierNN(dl, multiclass=multiclass)
 	sclass.modelfile= modelfile
 	sclass.weightfile= weightfile
@@ -274,6 +282,8 @@ def main():
 	sclass.add_batchnorm= add_batchnorm_layer
 	sclass.add_leakyrelu= add_leakyrelu
 	sclass.add_dense= add_dense_layer
+	sclass.add_chanmaxscale_layer= add_chanmaxscale_layer
+	sclass.add_chanmaxratio_layer= add_chanmaxratio_layer
 	sclass.nfilters_cnn= nfilters_cnn
 	sclass.kernsizes_cnn= kernsizes_cnn
 	sclass.strides_cnn= strides_cnn
@@ -291,7 +301,7 @@ def main():
 		status= sclass.run_train()
 	
 	if status<0:
-		logger.error("Classifier run failed!")
+		logger.error("CNN image classifier run failed!")
 		return 1
 
 	return 0

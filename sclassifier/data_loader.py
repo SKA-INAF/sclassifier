@@ -466,6 +466,36 @@ class SourceData(object):
 		return 0
 
 
+	def fix_negative_imgs(self):
+		""" Subtract image min if image has all negative pixels (e.g. max is negative) """
+			
+		# - Return if data cube is None
+		if self.img_cube is None:
+			logger.error("Image data cube is None!")
+			return -1
+
+		# - Find image min/max	
+		#   NB: Excluding masked pixels (=0)
+		img_cube_mod= []
+		
+		for i in range(self.img_cube.shape[-1]):
+			data_masked_ch= np.ma.masked_equal(self.img_cube[:,:,i], 0.0, copy=False)
+			data_min_ch= data_masked_ch.min()
+			data_max_ch= data_masked_ch.max()
+
+			if data_max_ch<=0:
+				img_mod= (self.img_cube[i]-data_min_ch)
+				img_mod[self.img_cube[i]==0]= 0
+				img_cube_mod.append(img_mod)
+			else:
+				img_cube_mod.append(self.img_cube[i])
+
+		# - Update data cube
+		self.img_cube= img_cube_mod
+
+		return 0
+
+
 	def normalize_imgs(self, scale_to_abs_max=False, scale_to_max=False, refch=-1):
 		""" Normalize images in range [0,1] """
 
@@ -644,6 +674,9 @@ class DataLoader(object):
 		self.labels= []
 		self.snames= []
 		self.nchannels= 0
+
+		# - Options
+		self.fix_negative_imgs= True
 
 		# - Define and set augmenter to be used
 		self.__set_augmenters(augmenter_choice)
@@ -839,6 +872,13 @@ class DataLoader(object):
 			logger.debug("Resizing source image data %d ..." % index)
 			if sdata.resize_imgs(nx, ny, preserve_range=True)<0:
 				logger.error("Failed to resize source image %d to size (%d,%d)!" % (index,nx,ny))
+				return None
+
+		# - Fix negative images?
+		if self.fix_negative_imgs:
+			logger.debug("Fixing negative images (if any) in source data %d ..." % index)
+			if sdata.fix_negative_imgs()<0:
+				logger.error("Failed to fix negative images in source data %d!" % index)
 				return None
 
 		# - Rescale image data?

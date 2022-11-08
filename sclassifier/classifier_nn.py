@@ -103,8 +103,11 @@ matplotlib.use('Agg')
 from .utils import Utils
 from .data_loader import DataLoader
 from .data_loader import SourceData
+from .tf_utils import ChanMinMaxNormalization, ChanMaxScale, ChanMaxRatio
 
-
+##################################
+##     METRICS CLASS
+##################################
 def recall_metric(y_true, y_pred):
 	""" Compute recall=TP/(TP+FN) """
 	#y_true = K.ones_like(y_true) 
@@ -155,6 +158,8 @@ def f1score_metric(y_true, y_pred):
 	f1score= f1_score(l_true, l_pred, average='weighted')
 
 	return f1score
+
+
 
 ##################################
 ##     SClassifierNN CLASS
@@ -234,6 +239,8 @@ class SClassifierNN(object):
 		self.dense_layer_activation= 'relu'
 		self.add_dropout_layer= False
 		self.dropout_rate= 0.5
+		self.add_chanmaxscale_layer= False
+		self.add_chanmaxratio_layer= False
 
 		# - Training options
 		self.batch_size= 32
@@ -778,6 +785,16 @@ class SClassifierNN(object):
 		print("inputs shape")
 		print(K.int_shape(self.inputs))
 
+		# - Compute chan max ratios?
+		if self.add_chanmaxratio_layer:
+			x_maxratios= ChanMaxRatio(name='chanmaxratios')(self.inputs)
+			x_maxratios_flattened= layers.Flatten()(x_maxratios)
+
+		# - Add channel max scale layer?
+		if self.add_chanmaxscale_layer:
+			x= ChanMaxScale(name='norm_input')
+			self.model.add(x)
+
 		# - Add a number of CNN layers
 		for k in range(len(self.nfilters_cnn)):
 
@@ -812,7 +829,12 @@ class SClassifierNN(object):
 
 		# - Add flatten layer
 		x = layers.Flatten()
-		self.model.add(x)		
+		self.model.add(x)
+
+		# - Concatenate channel max scale layer?
+		if self.add_chanmaxratio_layer:
+			xconcat= layers.Concatenate(axis=1)([x, x_maxratios_flattened])
+			self.model.add(xconcat)
 
 		#===========================
 		#==  MODEL OUTPUT LAYERS
