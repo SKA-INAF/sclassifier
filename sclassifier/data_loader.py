@@ -875,11 +875,60 @@ class DataLoader(object):
 
 		return sdata
 
+
+	###################################
+	##     GENERATE SIMCLR DATA
+	###################################
+	def __generate_simclr_data(self, data_index):
+		""" Generate augmented data pair for SimCLR """
+
+		# - Read data at index and create pair item no. #1
+		sdata_1= self.read_data(
+			data_index, 
+			resize=resize, nx=nx, ny=ny,
+			normalize=normalize, scale_to_abs_max=scale_to_abs_max, scale_to_max=scale_to_max, 
+			augment=True,
+			log_transform=log_transform,
+			scale=scale, scale_factors=scale_factors,
+			standardize=standardize, means=means, sigmas=sigmas,
+			chan_divide=chan_divide, chan_mins=chan_mins,
+			erode=erode, erode_kernel=erode_kernel
+		)
+		if sdata_1 is None:
+			logger.warn("Failed to read source data at index %d (pair item #1)!" % (data_index))
+			return None
+
+		if sdata_1.img_cube is None:
+			logger.warn("Failed to read source data cube at index %d (pair item #1)!" % (data_index))
+			return None
+
+		# - Read data at index and create pair item no. #2
+		sdata_2= self.read_data(
+			data_index, 
+			resize=resize, nx=nx, ny=ny,
+			normalize=normalize, scale_to_abs_max=scale_to_abs_max, scale_to_max=scale_to_max, 
+			augment=augment,
+			log_transform=log_transform,
+			scale=scale, scale_factors=scale_factors,
+			standardize=standardize, means=means, sigmas=sigmas,
+			chan_divide=chan_divide, chan_mins=chan_mins,
+			erode=erode, erode_kernel=erode_kernel
+		)
+		if sdata_2 is None:
+			logger.warn("Failed to read source data at index %d (pair item #2)!" % (data_index))
+			return None
+
+		if sdata_2.img_cube is None:
+			logger.warn("Failed to read source data cube at index %d (pair item #2)!" % (data_index))
+			return None
+
+		return sdata_1, sdata_2
+
 	###################################
 	##     GENERATE DATA FOR TRAINING
 	###################################
 	#def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=64, ny=64, normalize=True, scale_to_abs_max=False, scale_to_max=False, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5, retsdata=False, ret_classtargets=False, classtarget_map={}, nclasses=7):
-	def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=64, ny=64, normalize=True, scale_to_abs_max=False, scale_to_max=False, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5, outdata_choice='cae', ret_classtargets=False, classtarget_map={}, nclasses=7):	
+	def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=64, ny=64, normalize=True, scale_to_abs_max=False, scale_to_max=False, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5, outdata_choice='cae', classtarget_map={}, nclasses=7):
 		""" Generator function reading nsamples images from disk and returning to caller """
 	
 		nb= 0
@@ -934,18 +983,33 @@ class DataLoader(object):
 				if classtarget_map:
 					target_id= classtarget_map[class_id]
 				
-				#print("--> class_id")
-				#print(class_id)
-				#print("--> target_id")
-				#print(target_id)
+				print("--> class_id")
+				print(class_id)
+				print("--> target_id")
+				print(target_id)
+
+				# - Generate pairs of augmented data for SimCLR
+				if outdata_choice=='simclr':
+					data_pair= self.__generate_simclr_data(data_index)
+					if data_pair is None:
+						logger.warn("Failed to read source data cube at index %d and generate data pairs, skip to next ..." % data_index)
+						continue
+					sdata_1= data_pair[0]
+					sdata_2= data_pair[1]
 
 				# - Initialize return data
 				if nb==0:
 					inputs= np.zeros(inputs_shape, dtype=np.float32)
+					if outdata_choice=='simclr':
+						inputs_1= np.zeros(inputs_shape, dtype=np.float32)
+						inputs_2= np.zeros(inputs_shape, dtype=np.float32)
 					target_ids= []
 				
 				# - Update inputs
 				inputs[nb]= sdata.img_cube
+				if outdata_choice=='simclr':
+					inputs_1[nb]= sdata_1.img_cube
+					inputs_2[nb]= sdata_2.img_cube
 				target_ids.append(target_id)
 				nb+= 1
 
@@ -994,9 +1058,12 @@ class DataLoader(object):
 						yield inputs, inputs
 					elif outdata_choice=='cnn':
 						output_targets= to_categorical(np.array(target_ids), num_classes=nclasses)
+						print(output_targets)
+						print(output_targets.shape)
+
 						yield inputs, output_targets
 					elif outdata_choice=='simclr':
-						yield inputs, inputs
+						yield inputs_1, inputs_2
 					else:
 						logger.warn("Unknown outdata_choice (%s), assuming cae ..." % (outdata_choice))
 						yield inputs, inputs

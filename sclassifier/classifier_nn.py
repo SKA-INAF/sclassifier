@@ -429,29 +429,30 @@ class SClassifierNN(object):
 			target_id= self.classid_remap[obj_id] # remap obj id to target class ids
 				
 			if obj_id!=0 and obj_id!=-1:
-				self.target_ids.append(target_id)	
+				self.target_ids.append(target_id)
 
-		self.class_names= list(set(self.source_labels))
+		#self.class_names= list(set(self.source_labels))
 		self.target_names= []
-		self.nclasses_targets= 0
-		self.output_targets= None
+		#self.nclasses_targets= 0
+		#self.output_targets= None
 		if self.target_ids:
 			self.target_names= [self.target_label_map[item] for item in set(sorted(self.target_ids))]
-			self.nclasses_targets= len(self.target_names)
-			#self.output_targets= to_categorical(np.array(self.target_ids), num_classes=self.nclasses_targets)
-			self.output_targets= to_categorical(np.array(self.target_ids), num_classes=self.nclasses)
+			#self.nclasses_targets= len(self.target_names)
+			####self.output_targets= to_categorical(np.array(self.target_ids), num_classes=self.nclasses_targets)
+			#self.output_targets= to_categorical(np.array(self.target_ids), num_classes=self.nclasses)
 		else:
 			logger.info("No known class found in dataset (not a problem if predicting) ...")
 
-		print("== CLASS NAMES ==")
-		print(self.class_names)
+		#print("== CLASS NAMES ==")
+		#print(self.class_names)
 	
-		print("== TARGET NO/NAMES ==")
-		print(self.nclasses_targets)		
+		print("== TARGET NAMES ==")
+		#print(self.nclasses_targets)		
 		print(self.target_names)
-
-		print("== OUTPUT TARGETS ==")
-		print(self.output_targets)
+		
+		#print("== OUTPUT TARGETS ==")
+		#print(self.output_targets)
+		#print(self.output_targets.shape)
 		
 	
 		# - Create train data generator
