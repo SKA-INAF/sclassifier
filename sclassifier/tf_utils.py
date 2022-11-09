@@ -217,8 +217,8 @@ class ChanMaxScale(layers.Layer):
 		#ch= 0
 		#iy= 31
 		#ix= 31
-		tf.print("data_min (before norm)", data_min, output_stream=sys.stdout)
-		tf.print("data_max (before norm)", data_max, output_stream=sys.stdout)
+		tf.print("data_min (before max scale)", data_min, output_stream=sys.stdout)
+		tf.print("data_max (before max scale)", data_max, output_stream=sys.stdout)
 		#tf.print("data_min[sample,:,:,:] (before norm)", data_min[sample,:,:,:], output_stream=sys.stdout)
 		#tf.print("data_max[sample,:,:,:] (before norm)", data_max[sample,:,:,:], output_stream=sys.stdout)
 		#tf.print("inputs[sample,iy,ix,:] (before norm)", inputs[sample,iy,ix,:], output_stream=sys.stdout)
@@ -237,8 +237,8 @@ class ChanMaxScale(layers.Layer):
 		data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1), axis=1)
 		data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1), axis=1)
 		
-		tf.print("data_min (after norm)", data_min, output_stream=sys.stdout)
-		tf.print("data_max (after norm)", data_max, output_stream=sys.stdout)
+		tf.print("data_min (after max scale)", data_min, output_stream=sys.stdout)
+		tf.print("data_max (after max scale)", data_max, output_stream=sys.stdout)
 		#tf.print("data_min[sample,:,:,:] (after norm)", data_min[sample,:,:,:], output_stream=sys.stdout)
 		#tf.print("data_max[sample,:,:,:] (after norm)", data_max[sample,:,:,:], output_stream=sys.stdout)
 		#tf.print("inputs[sample,iy,ix,:] (after norm)", data_norm[sample,iy,ix,:], output_stream=sys.stdout)
