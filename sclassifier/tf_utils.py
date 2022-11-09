@@ -193,9 +193,6 @@ class ChanMaxScale(layers.Layer):
 		# - Init stuff
 		input_shape = tf.shape(inputs)
 		
-		tf.print("call(): input_shape", input_shape, output_stream=sys.stdout)
-		tf.print("call(): K.int_shape", K.int_shape(inputs), output_stream=sys.stdout)
-
 		# - Compute input data min & max, excluding NANs & zeros
 		cond= tf.logical_and(tf.math.is_finite(inputs), tf.math.not_equal(inputs, 0.))
 		
@@ -205,23 +202,8 @@ class ChanMaxScale(layers.Layer):
 		data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1),axis=1)
 		
 		##### DEBUG ############
-		#tf.print("data_min raw", data_min, output_stream=sys.stdout)
-		#tf.print("data_max raw", data_max, output_stream=sys.stdout)
-		#data_min= data_min.to_tensor()
-		#data_max= data_max.to_tensor()
-
-		#tf.print("data_min shape", K.int_shape(data_min), output_stream=sys.stdout)
-		#tf.print("data_max shape", K.int_shape(data_max), output_stream=sys.stdout)
-		
-		#sample= 0
-		#ch= 0
-		#iy= 31
-		#ix= 31
-		tf.print("data_min (before max scale)", data_min, output_stream=sys.stdout)
-		tf.print("data_max (before max scale)", data_max, output_stream=sys.stdout)
-		#tf.print("data_min[sample,:,:,:] (before norm)", data_min[sample,:,:,:], output_stream=sys.stdout)
-		#tf.print("data_max[sample,:,:,:] (before norm)", data_max[sample,:,:,:], output_stream=sys.stdout)
-		#tf.print("inputs[sample,iy,ix,:] (before norm)", inputs[sample,iy,ix,:], output_stream=sys.stdout)
+		#tf.print("data_min (before max scale)", data_min, output_stream=sys.stdout)
+		#tf.print("data_max (before max scale)", data_max, output_stream=sys.stdout)
 		#########################		
 
 		# - Scale data to max
@@ -237,11 +219,8 @@ class ChanMaxScale(layers.Layer):
 		data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1), axis=1)
 		data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1), axis=1)
 		
-		tf.print("data_min (after max scale)", data_min, output_stream=sys.stdout)
-		tf.print("data_max (after max scale)", data_max, output_stream=sys.stdout)
-		#tf.print("data_min[sample,:,:,:] (after norm)", data_min[sample,:,:,:], output_stream=sys.stdout)
-		#tf.print("data_max[sample,:,:,:] (after norm)", data_max[sample,:,:,:], output_stream=sys.stdout)
-		#tf.print("inputs[sample,iy,ix,:] (after norm)", data_norm[sample,iy,ix,:], output_stream=sys.stdout)
+		#tf.print("data_min (after max scale)", data_min, output_stream=sys.stdout)
+		#tf.print("data_max (after max scale)", data_max, output_stream=sys.stdout)
 		###########################
 
 		return tf.reshape(inputs_scaled, self.compute_output_shape(input_shape))
@@ -281,8 +260,8 @@ class ChanPosDef(layers.Layer):
 		data_max= tf.reduce_max(tf.where(~cond, tf.ones_like(inputs) * -1.e+99, inputs), axis=(1,2))
 		
 		##### DEBUG ############
-		tf.print("data_min (before posdef)", data_min, output_stream=sys.stdout)
-		tf.print("data_max (before posdef)", data_max, output_stream=sys.stdout)
+		#tf.print("data_min (before posdef)", data_min, output_stream=sys.stdout)
+		#tf.print("data_max (before posdef)", data_max, output_stream=sys.stdout)
 		#########################		
 
 		# - Subtract data_min on channels with negative data_min
@@ -298,10 +277,10 @@ class ChanPosDef(layers.Layer):
 		data_max= tf.reduce_max(inputs_scaled, axis=(1,2))
 		data_min_nozeros= tf.reduce_min(tf.where(~cond, tf.ones_like(inputs_scaled) * 1.e+99, inputs_scaled), axis=(1,2))
 		data_max_nozeros= tf.reduce_max(tf.where(~cond, tf.ones_like(inputs_scaled) * -1.e+99, inputs_scaled), axis=(1,2))
-		tf.print("data_min (nozeros, after posdef)", data_min_nozeros, output_stream=sys.stdout)
-		tf.print("data_max (nozeros, after posdef)", data_max_nozeros, output_stream=sys.stdout)
-		tf.print("data_min (after posdef)", data_min, output_stream=sys.stdout)
-		tf.print("data_max (after posdef)", data_max, output_stream=sys.stdout)
+		#tf.print("data_min (nozeros, after posdef)", data_min_nozeros, output_stream=sys.stdout)
+		#tf.print("data_max (nozeros, after posdef)", data_max_nozeros, output_stream=sys.stdout)
+		#tf.print("data_min (after posdef)", data_min, output_stream=sys.stdout)
+		#tf.print("data_max (after posdef)", data_max, output_stream=sys.stdout)
 		###########################
 
 		return tf.reshape(inputs_scaled, self.compute_output_shape(input_shape))
