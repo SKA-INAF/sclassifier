@@ -914,7 +914,7 @@ class SClassifierNN(object):
 
 		# - Add channel to make images always positive
 		if self.add_chanposdef_layer:
-			x= ChanPosDef(name='chan_posdef_maker')
+			x= ChanPosDef(name='chan_posdef_maker')(x)
 			self.model.add(x)
 
 		# - Add channel max scale layer?
