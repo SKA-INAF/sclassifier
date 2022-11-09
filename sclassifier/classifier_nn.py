@@ -894,9 +894,6 @@ class SClassifierNN(object):
 		#===========================
 		#==  BUILD MODEL
 		#===========================
-		# - Init model
-		self.model = models.Sequential()
-
 		# - Input layer	
 		inputShape = (self.ny, self.nx, self.nchannels)
 		self.inputs= Input(shape=inputShape, dtype='float', name='inputs')
@@ -915,7 +912,6 @@ class SClassifierNN(object):
 		# - Add channel to make images always positive
 		if self.add_chanposdef_layer:
 			x= ChanPosDef(name='chan_posdef_maker')(x)
-			self.model.add(x)
 
 		# - Add channel max scale layer?
 		if self.add_chanmaxscale_layer:
