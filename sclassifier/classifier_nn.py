@@ -241,6 +241,7 @@ class SClassifierNN(object):
 		self.dropout_rate= 0.5
 		self.add_chanmaxscale_layer= False
 		self.add_chanmaxratio_layer= False
+		self.add_chanposdef_layer= False
 
 		# - Training options
 		self.batch_size= 32
@@ -796,9 +797,14 @@ class SClassifierNN(object):
 		print("inputs shape")
 		print(K.int_shape(self.inputs))
 
+		# - Add channel to make images always positive
+		if self.add_chanposdef_layer:
+			x= ChanPosDef(name='chan_posdef_maker')
+			self.model.add(x)
+
 		# - Add channel max scale layer?
 		if self.add_chanmaxscale_layer:
-			x= ChanMaxScale(name='norm_input')
+			x= ChanMaxScale(name='chan_max_scaler')
 			self.model.add(x)
 
 		# - Add a number of CNN layers
@@ -906,9 +912,14 @@ class SClassifierNN(object):
 			x_maxratios= ChanMaxRatio(name='chanmaxratios')(self.inputs)
 			x_maxratios_flattened= layers.Flatten()(x_maxratios)
 
+		# - Add channel to make images always positive
+		if self.add_chanposdef_layer:
+			x= ChanPosDef(name='chan_posdef_maker')
+			self.model.add(x)
+
 		# - Add channel max scale layer?
 		if self.add_chanmaxscale_layer:
-			x= ChanMaxScale(name='norm_input')(x)
+			x= ChanMaxScale(name='chan_max_scaler')(x)
 			
 		# - Add a number of CNN layers
 		for k in range(len(self.nfilters_cnn)):

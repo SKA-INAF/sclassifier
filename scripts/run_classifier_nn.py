@@ -127,6 +127,8 @@ def get_args():
 	parser.set_defaults(add_chanmaxscale_layer=False)
 	parser.add_argument('--add_chanmaxratio_layer', dest='add_chanmaxratio_layer', action='store_true',help='Add chan max ratio parameters to dense layers')	
 	parser.set_defaults(add_chanmaxratio_layer=False)
+	parser.add_argument('--add_chanposdef_layer', dest='add_chanposdef_layer', action='store_true',help='Add layer to make images always positive before conv layer')	
+	parser.set_defaults(add_chanposdef_layer=False)
 
 	parser.add_argument('-nfilters_cnn', '--nfilters_cnn', dest='nfilters_cnn', required=False, type=str, default='32,64,128', action='store',help='Number of convolution filters per each layer')
 	parser.add_argument('-kernsizes_cnn', '--kernsizes_cnn', dest='kernsizes_cnn', required=False, type=str, default='3,5,7', action='store',help='Convolution filter kernel sizes per each layer')
@@ -201,6 +203,7 @@ def main():
 	add_dense_layer= args.add_dense_layer
 	add_chanmaxscale_layer= args.add_chanmaxscale_layer
 	add_chanmaxratio_layer= args.add_chanmaxratio_layer
+	add_chanposdef_layer= args.add_chanposdef_layer
 	nfilters_cnn= [int(x.strip()) for x in args.nfilters_cnn.split(',')]
 	kernsizes_cnn= [int(x.strip()) for x in args.kernsizes_cnn.split(',')]	
 	strides_cnn= [int(x.strip()) for x in args.strides_cnn.split(',')]
@@ -284,6 +287,7 @@ def main():
 	sclass.add_dense= add_dense_layer
 	sclass.add_chanmaxscale_layer= add_chanmaxscale_layer
 	sclass.add_chanmaxratio_layer= add_chanmaxratio_layer
+	sclass.add_chanposdef_layer= add_chanposdef_layer
 	sclass.nfilters_cnn= nfilters_cnn
 	sclass.kernsizes_cnn= kernsizes_cnn
 	sclass.strides_cnn= strides_cnn

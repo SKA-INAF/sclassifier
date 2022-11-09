@@ -249,6 +249,67 @@ class ChanMaxScale(layers.Layer):
 	def compute_output_shape(self, input_shape):
 		return input_shape
 
+
+
+
+
+###############################################
+##     ChanPosDef LAYER
+###############################################
+class ChanPosDef(layers.Layer):
+	"""Make images positive, as subtract chan minimum
+	Input shape:
+		Arbitrary.
+	Output shape:
+		Same as input.
+	"""
+
+	def __init__(self, name=None, **kwargs):
+		super(ChanPosDef, self).__init__(name=name, **kwargs)
+
+	def build(self, input_shape):
+		super(ChanPosDef, self).build(input_shape)
+
+	def call(self, inputs, training=False):
+		# - Init stuff
+		input_shape = tf.shape(inputs)
+		
+		# - Compute input data min & max, excluding NANs & zeros
+		cond= tf.logical_and(tf.math.is_finite(inputs), tf.math.not_equal(inputs, 0.))
+		
+		data_min= tf.reduce_min(tf.where(~cond, tf.ones_like(inputs) * 1.e+99, inputs), axis=(1,2))
+		data_max= tf.reduce_max(tf.where(~cond, tf.ones_like(inputs) * -1.e+99, inputs), axis=(1,2))
+		data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1),axis=1)
+		data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1),axis=1)
+		
+		##### DEBUG ############
+		tf.print("data_min (before posdef)", data_min, output_stream=sys.stdout)
+		tf.print("data_max (before posdef)", data_max, output_stream=sys.stdout)
+		#########################		
+
+		# - Subtract data_min on channels with negative data_min
+		cond2= tf.math.greater(data_min, 0)
+		inputs_scaled= tf.where(~cond2, inputs - data_min, inputs)
+
+		# - Set masked values (NANs, zeros) to norm_min
+		norm_min= 0
+		inputs_scaled= tf.where(~cond, tf.ones_like(inputs_scaled) * norm_min, inputs_scaled)
+		
+		#######  DEBUG ###########
+		data_min= tf.reduce_min(inputs_scaled, axis=(1,2))
+		data_max= tf.reduce_max(inputs_scaled, axis=(1,2))
+		data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1), axis=1)
+		data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1), axis=1)
+		
+		tf.print("data_min (after posdef)", data_min, output_stream=sys.stdout)
+		tf.print("data_max (after posdef)", data_max, output_stream=sys.stdout)
+		###########################
+
+		return tf.reshape(inputs_scaled, self.compute_output_shape(input_shape))
+		
+	def compute_output_shape(self, input_shape):
+		return input_shape
+
 	
 ###############################################
 ##     ChanMaxRatio LAYER
