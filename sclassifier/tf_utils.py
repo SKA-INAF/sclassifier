@@ -260,8 +260,8 @@ class ChanPosDef(layers.Layer):
 		data_max= tf.reduce_max(tf.where(~cond, tf.ones_like(inputs) * -1.e+99, inputs), axis=(1,2))
 		
 		##### DEBUG ############
-		#tf.print("data_min (before posdef)", data_min, output_stream=sys.stdout)
-		#tf.print("data_max (before posdef)", data_max, output_stream=sys.stdout)
+		tf.print("data_min (before posdef)", data_min, output_stream=sys.stdout)
+		tf.print("data_max (before posdef)", data_max, output_stream=sys.stdout)
 		#########################		
 
 		# - Subtract data_min on channels with negative data_min
@@ -277,10 +277,10 @@ class ChanPosDef(layers.Layer):
 		data_max= tf.reduce_max(inputs_scaled, axis=(1,2))
 		data_min_nozeros= tf.reduce_min(tf.where(~cond, tf.ones_like(inputs_scaled) * 1.e+99, inputs_scaled), axis=(1,2))
 		data_max_nozeros= tf.reduce_max(tf.where(~cond, tf.ones_like(inputs_scaled) * -1.e+99, inputs_scaled), axis=(1,2))
-		#tf.print("data_min (nozeros, after posdef)", data_min_nozeros, output_stream=sys.stdout)
-		#tf.print("data_max (nozeros, after posdef)", data_max_nozeros, output_stream=sys.stdout)
-		#tf.print("data_min (after posdef)", data_min, output_stream=sys.stdout)
-		#tf.print("data_max (after posdef)", data_max, output_stream=sys.stdout)
+		tf.print("data_min (nozeros, after posdef)", data_min_nozeros, output_stream=sys.stdout)
+		tf.print("data_max (nozeros, after posdef)", data_max_nozeros, output_stream=sys.stdout)
+		tf.print("data_min (after posdef)", data_min, output_stream=sys.stdout)
+		tf.print("data_max (after posdef)", data_max, output_stream=sys.stdout)
 		###########################
 
 		return tf.reshape(inputs_scaled, self.compute_output_shape(input_shape))
