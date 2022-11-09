@@ -279,8 +279,6 @@ class ChanPosDef(layers.Layer):
 		
 		data_min= tf.reduce_min(tf.where(~cond, tf.ones_like(inputs) * 1.e+99, inputs), axis=(1,2))
 		data_max= tf.reduce_max(tf.where(~cond, tf.ones_like(inputs) * -1.e+99, inputs), axis=(1,2))
-		#data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1),axis=1)
-		#data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1),axis=1)
 		
 		##### DEBUG ############
 		tf.print("data_min (before posdef)", data_min, output_stream=sys.stdout)
@@ -289,7 +287,6 @@ class ChanPosDef(layers.Layer):
 
 		# - Subtract data_min on channels with negative data_min
 		cond2= tf.math.less(data_min, 0)
-		tf.print("cond2", cond2, output_stream=sys.stdout)
 		inputs_scaled= tf.where(cond2, inputs - data_min, inputs)
 
 		# - Set masked values (NANs, zeros) to norm_min
@@ -297,11 +294,8 @@ class ChanPosDef(layers.Layer):
 		inputs_scaled= tf.where(~cond, tf.ones_like(inputs_scaled) * norm_min, inputs_scaled)
 		
 		#######  DEBUG ###########
-		data_min= tf.reduce_min(inputs_scaled, axis=(1,2))
-		data_max= tf.reduce_max(inputs_scaled, axis=(1,2))
-		#data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1), axis=1)
-		#data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1), axis=1)
-		
+		data_min= tf.reduce_min(tf.where(~cond, tf.ones_like(inputs_scaled) * 1.e+99, inputs_scaled), axis=(1,2))
+		data_max= tf.reduce_max(tf.where(~cond, tf.ones_like(inputs_scaled) * -1.e+99, inputs_scaled), axis=(1,2))
 		tf.print("data_min (after posdef)", data_min, output_stream=sys.stdout)
 		tf.print("data_max (after posdef)", data_max, output_stream=sys.stdout)
 		###########################
