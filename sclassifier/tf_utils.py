@@ -234,8 +234,8 @@ class ChanMaxScale(layers.Layer):
 		#######  DEBUG ###########
 		data_min= tf.reduce_min(inputs_scaled, axis=(1,2))
 		data_max= tf.reduce_max(inputs_scaled, axis=(1,2))
-		#data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1), axis=1)
-		#data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1), axis=1)
+		data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1), axis=1)
+		data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1), axis=1)
 		
 		tf.print("data_min (after max scale)", data_min, output_stream=sys.stdout)
 		tf.print("data_max (after max scale)", data_max, output_stream=sys.stdout)
