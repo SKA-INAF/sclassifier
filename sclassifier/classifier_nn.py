@@ -1126,11 +1126,17 @@ class SClassifierNN(object):
 		#==============================
 		custom_objects= None
 		if self.add_chanmaxscale_layer:
-			custom_objects['chan_max_scaler']= ChanMaxScale 
+			#custom_objects['chan_max_scaler']= ChanMaxScale
+			custom_objects['ChanMaxScale']= ChanMaxScale 
 		if self.add_chanmaxratio_layer:
-			custom_objects['chanmaxratios']= ChanMaxRatio
+			#custom_objects['chanmaxratios']= ChanMaxRatio
+			custom_objects['ChanMaxRatio']= ChanMaxRatio
 		if self.add_chanposdef_layer:
-			custom_objects['chan_posdef_maker']= ChanPosDef
+			#custom_objects['chan_posdef_maker']= ChanPosDef
+			custom_objects['ChanPosDef']= ChanPosDef
+
+		print("== custom_objects ==")
+		print(custom_objects)
 
 		try:
 			self.model= load_model(modelfile, custom_objects=custom_objects)
@@ -1165,11 +1171,17 @@ class SClassifierNN(object):
 		# - Set custom objects
 		custom_objects={'recall_metric': recall_metric, 'precision_metric': precision_metric, 'f1score_metric': f1score_metric}
 		if self.add_chanmaxscale_layer:
-			custom_objects['chan_max_scaler']= ChanMaxScale 
+			#custom_objects['chan_max_scaler']= ChanMaxScale
+			custom_objects['ChanMaxScale']= ChanMaxScale 
 		if self.add_chanmaxratio_layer:
-			custom_objects['chanmaxratios']= ChanMaxRatio
+			#custom_objects['chanmaxratios']= ChanMaxRatio
+			custom_objects['ChanMaxRatio']= ChanMaxRatio
 		if self.add_chanposdef_layer:
-			custom_objects['chan_posdef_maker']= ChanPosDef
+			#custom_objects['chan_posdef_maker']= ChanPosDef
+			custom_objects['ChanPosDef']= ChanPosDef
+
+		print("== custom_objects ==")
+		print(custom_objects)
 
 		# - Load model
 		try:
