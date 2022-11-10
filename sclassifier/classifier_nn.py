@@ -969,7 +969,10 @@ class SClassifierNN(object):
 		if self.add_chanmeanratio_layer:
 			xconcat_list.append(x_meanratios_flattened)
 		
+		logger.info("self.add_chanmeanratio_layer= %d" % (self.add_chanmeanratio_layer))
+
 		if len(xconcat_list)>1:
+			logger.info("Concatenate layers ...")
 			#x= layers.Concatenate(axis=1)([x, x_maxratios_flattened])
 			x= layers.Concatenate(axis=1)(xconcat_list)
 
