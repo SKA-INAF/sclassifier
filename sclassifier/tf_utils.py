@@ -108,28 +108,28 @@ class ChanMinMaxNorm(layers.Layer):
 		
 		data_min= tf.reduce_min(tf.where(~cond, tf.ones_like(inputs) * 1.e+99, inputs), axis=(1,2))
 		data_max= tf.reduce_max(tf.where(~cond, tf.ones_like(inputs) * -1.e+99, inputs), axis=(1,2))
-		data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1),axis=1)
-		data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1),axis=1)
 		
 		##### DEBUG ############
-		#tf.print("data_min raw", data_min, output_stream=sys.stdout)
-		#tf.print("data_max raw", data_max, output_stream=sys.stdout)
+		tf.print("data_min (before norm)", data_min, output_stream=sys.stdout)
+		tf.print("data_max (before norm)", data_max, output_stream=sys.stdout)
 		#########################		
 
 		# - Normalize data in range (norm_min, norm_max)
+		data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1),axis=1)
+		data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1),axis=1)
 		data_norm= (inputs-data_min)/(data_max-data_min) * (norm_max-norm_min) + norm_min
 		
 		# - Set masked values (NANs, zeros) to norm_min
 		data_norm= tf.where(~cond, tf.ones_like(data_norm) * norm_min, data_norm)
 		
 		#######  DEBUG ###########
-		#data_min= tf.reduce_min(data_norm, axis=(1,2))
-		#data_max= tf.reduce_max(data_norm, axis=(1,2))
+		data_min= tf.reduce_min(data_norm, axis=(1,2))
+		data_max= tf.reduce_max(data_norm, axis=(1,2))
 		#data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1), axis=1)
 		#data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1), axis=1)
 		
-		#tf.print("data_min (after norm)", data_min, output_stream=sys.stdout)
-		#tf.print("data_max (after norm)", data_max, output_stream=sys.stdout)
+		tf.print("data_min (after norm)", data_min, output_stream=sys.stdout)
+		tf.print("data_max (after norm)", data_max, output_stream=sys.stdout)
 		###########################
 
 		return tf.reshape(data_norm, self.compute_output_shape(input_shape))
@@ -339,6 +339,8 @@ class ChanMeanRatio(layers.Layer):
 
 		# - Compute mean ratios
 		data_mean_ratio= data_mean/data_mean_max
+
+		tf.print("data_mean_ratio", data_mean_ratio, output_stream=sys.stdout)
 
 		return data_mean_ratio
 		
