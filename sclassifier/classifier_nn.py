@@ -1124,8 +1124,16 @@ class SClassifierNN(object):
 		#==============================
 		#==   LOAD MODEL ARCHITECTURE
 		#==============================
+		custom_objects= None
+		if self.add_chanmaxscale_layer:
+			custom_objects['chan_max_scaler']= ChanMaxScale 
+		if self.add_chanmaxratio_layer:
+			custom_objects['chanmaxratios']= ChanMaxRatio
+		if self.add_chanposdef_layer:
+			custom_objects['chan_posdef_maker']= ChanPosDef
+
 		try:
-			self.model= load_model(modelfile)
+			self.model= load_model(modelfile, custom_objects=custom_objects)
 			
 		except Exception as e:
 			logger.warn("Failed to load model from file %s (err=%s)!" % (modelfile, str(e)))
@@ -1154,10 +1162,20 @@ class SClassifierNN(object):
 		#==============================
 		#==   LOAD MODEL ARCHITECTURE
 		#==============================
+		# - Set custom objects
+		custom_objects={'recall_metric': recall_metric, 'precision_metric': precision_metric, 'f1score_metric': f1score_metric}
+		if self.add_chanmaxscale_layer:
+			custom_objects['chan_max_scaler']= ChanMaxScale 
+		if self.add_chanmaxratio_layer:
+			custom_objects['chanmaxratios']= ChanMaxRatio
+		if self.add_chanposdef_layer:
+			custom_objects['chan_posdef_maker']= ChanPosDef
+
 		# - Load model
 		try:
-			#self.model = model_from_json(open(modelfile_json).read())
+			####self.model = model_from_json(open(modelfile_json).read())
 			self.model = load_model(modelfile, custom_objects={'recall_metric': recall_metric, 'precision_metric': precision_metric, 'f1score_metric': f1score_metric})
+			self.model = load_model(modelfile, custom_objects=custom_objects)
 			self.model.load_weights(weightfile)
 
 		except Exception as e:
