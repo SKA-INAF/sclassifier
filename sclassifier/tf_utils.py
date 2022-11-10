@@ -330,24 +330,16 @@ class ChanMeanRatio(layers.Layer):
 		
 		# - Compute input data channel max, excluding NANs & zeros
 		cond= tf.logical_and(tf.math.is_finite(inputs), tf.math.not_equal(inputs, 0.))
-		tf.print("cond", cond, output_stream=sys.stdout)
 		npix= tf.reduce_sum( tf.cast(cond, tf.float32), axis=(1,2) )
-		tf.print("npix", npix, output_stream=sys.stdout)
 		pix_sum= tf.reduce_sum(tf.where(~cond, tf.ones_like(inputs) * 0, inputs), axis=(1,2))
-		tf.print("pix_sum", pix_sum, output_stream=sys.stdout)
 		data_mean= tf.math.divide_no_nan(pix_sum, npix)
 		
-		tf.print("data_mean", data_mean, output_stream=sys.stdout)
-
 		# - Compute max of means across channels
 		data_mean_max= tf.reduce_max(data_mean, axis=1)
 		data_mean_max= tf.expand_dims(data_mean_max, axis=1)
-		tf.print("data_mean_max", data_mean_max, output_stream=sys.stdout)
-
+		
 		# - Compute mean ratios
 		data_mean_ratio= data_mean/data_mean_max
-
-		tf.print("data_mean_ratio", data_mean_ratio, output_stream=sys.stdout)
 
 		return data_mean_ratio
 		
