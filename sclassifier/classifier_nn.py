@@ -1150,8 +1150,8 @@ class SClassifierNN(object):
 		#==   LOAD MODEL ARCHITECTURE
 		#==============================
 		custom_objects= None
-		if self.add_chanmeanscale_layer:
-			custom_objects['ChanMeanScale']= ChanMeanScale 
+		if self.add_chanminmaxnorm_layer:
+			custom_objects['ChanMinMaxNorm']= ChanMinMaxNorm 
 		if self.add_chanmaxscale_layer:
 			custom_objects['ChanMaxScale']= ChanMaxScale 
 		if self.add_chanmeanratio_layer:
@@ -1196,8 +1196,8 @@ class SClassifierNN(object):
 		#==============================
 		# - Set custom objects
 		custom_objects={'recall_metric': recall_metric, 'precision_metric': precision_metric, 'f1score_metric': f1score_metric}
-		if self.add_chanmeanscale_layer:
-			custom_objects['ChanMeanScale']= ChanMeanScale 
+		if self.add_chanminmaxnorm_layer:
+			custom_objects['ChanMinMaxNorm']= ChanMinMaxNorm 
 		if self.add_chanmaxscale_layer:
 			custom_objects['ChanMaxScale']= ChanMaxScale 
 		if self.add_chanmeanratio_layer:
