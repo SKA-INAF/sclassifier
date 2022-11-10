@@ -123,10 +123,14 @@ def get_args():
 	parser.set_defaults(add_dropout_layer=False)
 	parser.add_argument('-dropout_rate', '--dropout_rate', dest='dropout_rate', required=False, type=float, default=0.5, action='store',help='Dropout rate (default=0.5)')
 
+	parser.add_argument('--add_chanminmaxnorm_layer', dest='add_chanminmaxnorm_layer', action='store_true',help='Add chan min/max normalization layer before conv layers')	
+	parser.set_defaults(add_chanminmaxnorm_layer=False)
 	parser.add_argument('--add_chanmaxscale_layer', dest='add_chanmaxscale_layer', action='store_true',help='Add chan max scale layer before conv layers')	
 	parser.set_defaults(add_chanmaxscale_layer=False)
 	parser.add_argument('--add_chanmaxratio_layer', dest='add_chanmaxratio_layer', action='store_true',help='Add chan max ratio parameters to dense layers')	
 	parser.set_defaults(add_chanmaxratio_layer=False)
+	parser.add_argument('--add_chanmeanratio_layer', dest='add_chanmeanratio_layer', action='store_true',help='Add chan mean ratio parameters to dense layers')	
+	parser.set_defaults(add_chanmeanratio_layer=False)
 	parser.add_argument('--add_chanposdef_layer', dest='add_chanposdef_layer', action='store_true',help='Add layer to make images always positive before conv layer')	
 	parser.set_defaults(add_chanposdef_layer=False)
 
@@ -201,7 +205,9 @@ def main():
 	add_batchnorm_layer= args.add_batchnorm_layer
 	add_leakyrelu= args.add_leakyrelu
 	add_dense_layer= args.add_dense_layer
+	add_chanminmaxnorm_layer= args.add_chanminmaxnorm_layer
 	add_chanmaxscale_layer= args.add_chanmaxscale_layer
+	add_chanmeanratio_layer= args.add_chanmeanratio_layer
 	add_chanmaxratio_layer= args.add_chanmaxratio_layer
 	add_chanposdef_layer= args.add_chanposdef_layer
 	nfilters_cnn= [int(x.strip()) for x in args.nfilters_cnn.split(',')]
@@ -285,8 +291,10 @@ def main():
 	sclass.add_batchnorm= add_batchnorm_layer
 	sclass.add_leakyrelu= add_leakyrelu
 	sclass.add_dense= add_dense_layer
+	sclass.add_chanminmaxnorm_layer= add_chanminmaxnorm_layer
 	sclass.add_chanmaxscale_layer= add_chanmaxscale_layer
 	sclass.add_chanmaxratio_layer= add_chanmaxratio_layer
+	sclass.add_chanmeanratio_layer= add_chanmeanratio_layer
 	sclass.add_chanposdef_layer= add_chanposdef_layer
 	sclass.nfilters_cnn= nfilters_cnn
 	sclass.kernsizes_cnn= kernsizes_cnn
