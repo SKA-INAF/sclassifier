@@ -110,8 +110,8 @@ class ChanMinMaxNorm(layers.Layer):
 		data_max= tf.reduce_max(tf.where(~cond, tf.ones_like(inputs) * -1.e+99, inputs), axis=(1,2))
 		
 		##### DEBUG ############
-		tf.print("data_min (before norm)", data_min, output_stream=sys.stdout)
-		tf.print("data_max (before norm)", data_max, output_stream=sys.stdout)
+		#tf.print("data_min (before norm)", data_min, output_stream=sys.stdout)
+		#tf.print("data_max (before norm)", data_max, output_stream=sys.stdout)
 		#########################		
 
 		# - Normalize data in range (norm_min, norm_max)
@@ -128,8 +128,8 @@ class ChanMinMaxNorm(layers.Layer):
 		#data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1), axis=1)
 		#data_max= tf.expand_dims(tf.expand_dims(data_max, axis=1), axis=1)
 		
-		tf.print("data_min (after norm)", data_min, output_stream=sys.stdout)
-		tf.print("data_max (after norm)", data_max, output_stream=sys.stdout)
+		#tf.print("data_min (after norm)", data_min, output_stream=sys.stdout)
+		#tf.print("data_max (after norm)", data_max, output_stream=sys.stdout)
 		###########################
 
 		return tf.reshape(data_norm, self.compute_output_shape(input_shape))
