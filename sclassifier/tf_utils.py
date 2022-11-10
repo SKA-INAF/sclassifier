@@ -74,9 +74,9 @@ from tensorflow.keras.utils import to_categorical
 
 
 ###############################################
-##     ChanMinMaxNormalization LAYER
+##     ChanMinMaxNorm LAYER
 ###############################################
-class ChanMinMaxNormalization(layers.Layer):
+class ChanMinMaxNorm(layers.Layer):
 	"""Scale inputs in range.
 	The rescaling is applied both during training and inference.
 	Input shape:
@@ -92,10 +92,10 @@ class ChanMinMaxNormalization(layers.Layer):
 	def __init__(self, norm_min=0., norm_max=1., name=None, **kwargs):
 		self.norm_min = norm_min
 		self.norm_max = norm_max
-		super(ChanMinMaxNormalization, self).__init__(name=name, **kwargs)
+		super(ChanMinMaxNorm, self).__init__(name=name, **kwargs)
 
 	def build(self, input_shape):
-		super(ChanMinMaxNormalization, self).build(input_shape)
+		super(ChanMinMaxNorm, self).build(input_shape)
 
 	def call(self, inputs, training=False):
 		# - Init stuff
@@ -103,15 +103,9 @@ class ChanMinMaxNormalization(layers.Layer):
 		norm_min= self.norm_min
 		norm_max= self.norm_max
 		
-		#tf.print("call(): input_shape", input_shape, output_stream=sys.stdout)
-		#tf.print("call(): K.int_shape", K.int_shape(inputs), output_stream=sys.stdout)
-
 		# - Compute input data min & max, excluding NANs & zeros
 		cond= tf.logical_and(tf.math.is_finite(inputs), tf.math.not_equal(inputs, 0.))
-		#mask= tf.ragged.boolean_mask(inputs, mask=cond)
-		#data_min= tf.reduce_min(mask, axis=(1,2)) ## NB: WRONG not providing correct results with ragged tensor, don't use!!!
-		#data_max= tf.reduce_max(mask, axis=(1,2)) ## NB: WRONG not providing correct results with ragged tensor, don't use!!!
-
+		
 		data_min= tf.reduce_min(tf.where(~cond, tf.ones_like(inputs) * 1.e+99, inputs), axis=(1,2))
 		data_max= tf.reduce_max(tf.where(~cond, tf.ones_like(inputs) * -1.e+99, inputs), axis=(1,2))
 		data_min= tf.expand_dims(tf.expand_dims(data_min, axis=1),axis=1)
@@ -120,21 +114,6 @@ class ChanMinMaxNormalization(layers.Layer):
 		##### DEBUG ############
 		#tf.print("data_min raw", data_min, output_stream=sys.stdout)
 		#tf.print("data_max raw", data_max, output_stream=sys.stdout)
-		#data_min= data_min.to_tensor()
-		#data_max= data_max.to_tensor()
-
-		#tf.print("data_min shape", K.int_shape(data_min), output_stream=sys.stdout)
-		#tf.print("data_max shape", K.int_shape(data_max), output_stream=sys.stdout)
-		
-		#sample= 0
-		#ch= 0
-		#iy= 31
-		#ix= 31
-		#tf.print("data_min (before norm)", data_min, output_stream=sys.stdout)
-		#tf.print("data_max (before norm)", data_max, output_stream=sys.stdout)
-		#tf.print("data_min[sample,:,:,:] (before norm)", data_min[sample,:,:,:], output_stream=sys.stdout)
-		#tf.print("data_max[sample,:,:,:] (before norm)", data_max[sample,:,:,:], output_stream=sys.stdout)
-		#tf.print("inputs[sample,iy,ix,:] (before norm)", inputs[sample,iy,ix,:], output_stream=sys.stdout)
 		#########################		
 
 		# - Normalize data in range (norm_min, norm_max)
@@ -151,9 +130,6 @@ class ChanMinMaxNormalization(layers.Layer):
 		
 		#tf.print("data_min (after norm)", data_min, output_stream=sys.stdout)
 		#tf.print("data_max (after norm)", data_max, output_stream=sys.stdout)
-		#tf.print("data_min[sample,:,:,:] (after norm)", data_min[sample,:,:,:], output_stream=sys.stdout)
-		#tf.print("data_max[sample,:,:,:] (after norm)", data_max[sample,:,:,:], output_stream=sys.stdout)
-		#tf.print("inputs[sample,iy,ix,:] (after norm)", data_norm[sample,iy,ix,:], output_stream=sys.stdout)
 		###########################
 
 		return tf.reshape(data_norm, self.compute_output_shape(input_shape))
@@ -166,7 +142,7 @@ class ChanMinMaxNormalization(layers.Layer):
 			'norm_min': self.norm_min,
 			'norm_max': self.norm_max,
 		}
-		base_config = super(ChanMinMaxNormalization, self).get_config()
+		base_config = super(ChanMinMaxNorm, self).get_config()
 		return dict(list(base_config.items()) + list(config.items()))
 
 
@@ -330,4 +306,83 @@ class ChanMaxRatio(layers.Layer):
 	def compute_output_shape(self, input_shape):
 		return (input_shape[0], input_shape[-1])
 
+
+###############################################
+##     ChanMeanRatio LAYER
+###############################################
+class ChanMeanRatio(layers.Layer):
+	""".
+	Input shape:
+		Arbitrary.
+	Output shape:
+		[nbatches, nchans]
+	"""
+
+	def __init__(self, name=None, **kwargs):
+		super(ChanMeanRatio, self).__init__(name=name, **kwargs)
+
+	def build(self, input_shape):
+		super(ChanMeanRatio, self).build(input_shape)
+
+	def call(self, inputs, training=False):
+		# - Init stuff
+		input_shape = tf.shape(inputs)
+		
+		# - Compute input data channel max, excluding NANs & zeros
+		cond= tf.logical_and(tf.math.is_finite(inputs), tf.math.not_equal(inputs, 0.))
+		data_mean= tf.reduce_mean(tf.where(~cond, tf.ones_like(inputs) * -1.e+99, inputs), axis=(1,2))
+		#data_mean= tf.expand_dims(tf.expand_dims(data_mean, axis=1),axis=1)
+		
+		# - Compute max of means across channels
+		data_mean_max= tf.reduce_max(data_mean, axis=1)
+		data_mean_max= tf.expand_dims(data_mean_max, axis=1)
+
+		# - Compute mean ratios
+		data_mean_ratio= data_mean/data_mean_max
+
+		return data_mean_ratio
+		
+
+	def compute_output_shape(self, input_shape):
+		return (input_shape[0], input_shape[-1])
+
+
+###############################################
+##     ChanSumRatio LAYER
+###############################################
+class ChanSumRatio(layers.Layer):
+	""".
+	Input shape:
+		Arbitrary.
+	Output shape:
+		[nbatches, nchans]
+	"""
+
+	def __init__(self, name=None, **kwargs):
+		super(ChanSumRatio, self).__init__(name=name, **kwargs)
+
+	def build(self, input_shape):
+		super(ChanSumRatio, self).build(input_shape)
+
+	def call(self, inputs, training=False):
+		# - Init stuff
+		input_shape = tf.shape(inputs)
+		
+		# - Compute input data channel max, excluding NANs & zeros
+		cond= tf.logical_and(tf.math.is_finite(inputs), tf.math.not_equal(inputs, 0.))
+		data_sum= tf.reduce_sum(tf.where(~cond, tf.ones_like(inputs) * -1.e+99, inputs), axis=(1,2))
+		#data_sum= tf.expand_dims(tf.expand_dims(data_sum, axis=1),axis=1)
+		
+		# - Compute max of pixel sums across channels
+		data_sum_max= tf.reduce_max(data_sum, axis=1)
+		data_sum_max= tf.expand_dims(data_sum_max, axis=1)
+
+		# - Compute sum ratios
+		data_sum_ratio= data_sum/data_sum_max
+
+		return data_sum_ratio
+		
+
+	def compute_output_shape(self, input_shape):
+		return (input_shape[0], input_shape[-1])
 

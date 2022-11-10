@@ -103,7 +103,7 @@ matplotlib.use('Agg')
 from .utils import Utils
 from .data_loader import DataLoader
 from .data_loader import SourceData
-from .tf_utils import ChanMinMaxNormalization, ChanMaxScale, ChanMaxRatio, ChanPosDef
+from .tf_utils import ChanMinMaxNorm, ChanMaxScale, ChanMaxRatio, ChanPosDef
 
 ##################################
 ##     METRICS CLASS
@@ -239,7 +239,9 @@ class SClassifierNN(object):
 		self.dense_layer_activation= 'relu'
 		self.add_dropout_layer= False
 		self.dropout_rate= 0.5
+		self.add_chanminmaxnorm_layer= False
 		self.add_chanmaxscale_layer= False
+		self.add_chanmeanratio_layer= False
 		self.add_chanmaxratio_layer= False
 		self.add_chanposdef_layer= False
 
@@ -802,6 +804,11 @@ class SClassifierNN(object):
 			x= ChanPosDef(name='chan_posdef_maker')
 			self.model.add(x)
 
+		# - Add channel min-max normalization layer?
+		if self.add_chanminmaxnorm_layer:
+			x= ChanMinMaxNorm(name='chan_minmax_norm')
+			self.model.add(x)
+
 		# - Add channel max scale layer?
 		if self.add_chanmaxscale_layer:
 			x= ChanMaxScale(name='chan_max_scaler')
@@ -909,9 +916,18 @@ class SClassifierNN(object):
 			x_maxratios= ChanMaxRatio(name='chanmaxratios')(self.inputs)
 			x_maxratios_flattened= layers.Flatten()(x_maxratios)
 
+		# - Compute chan mean ratios?
+		if self.add_chanmeanratio_layer:
+			x_meanratios= ChanMeanRatio(name='chanmeanratios')(self.inputs)
+			x_meanratios_flattened= layers.Flatten()(x_meanratios)
+
 		# - Add channel to make images always positive
 		if self.add_chanposdef_layer:
 			x= ChanPosDef(name='chan_posdef_maker')(x)
+
+		# - Add channel min-max normalization layer?
+		if self.add_chanminmaxnorm_layer:
+			x= ChanMinMaxNorm(name='chan_minmax_norm')(x)
 
 		# - Add channel max scale layer?
 		if self.add_chanmaxscale_layer:
@@ -947,9 +963,16 @@ class SClassifierNN(object):
 		x = layers.Flatten()(x)
 
 		# - Concatenate flattened CNN output + channel max scale layer?
+		xconcat_list= [x]
 		if self.add_chanmaxratio_layer:
-			x= layers.Concatenate(axis=1)([x, x_maxratios_flattened])
-			
+			xconcat_list.append(x_maxratios_flattened)
+		if self.add_chanmeanratio_layer:
+			xconcat_list.append(x_meanratios_flattened)
+		
+		if len(xconcat_list)>1:
+			#x= layers.Concatenate(axis=1)([x, x_maxratios_flattened])
+			x= layers.Concatenate(axis=1)(xconcat_list)
+
 		#===========================
 		#==  MODEL OUTPUT LAYERS
 		#===========================
@@ -1125,14 +1148,15 @@ class SClassifierNN(object):
 		#==   LOAD MODEL ARCHITECTURE
 		#==============================
 		custom_objects= None
+		if self.add_chanmeanscale_layer:
+			custom_objects['ChanMeanScale']= ChanMeanScale 
 		if self.add_chanmaxscale_layer:
-			#custom_objects['chan_max_scaler']= ChanMaxScale
 			custom_objects['ChanMaxScale']= ChanMaxScale 
+		if self.add_chanmeanratio_layer:
+			custom_objects['ChanMeanRatio']= ChanMeanRatio
 		if self.add_chanmaxratio_layer:
-			#custom_objects['chanmaxratios']= ChanMaxRatio
 			custom_objects['ChanMaxRatio']= ChanMaxRatio
 		if self.add_chanposdef_layer:
-			#custom_objects['chan_posdef_maker']= ChanPosDef
 			custom_objects['ChanPosDef']= ChanPosDef
 
 		print("== custom_objects ==")
@@ -1170,14 +1194,15 @@ class SClassifierNN(object):
 		#==============================
 		# - Set custom objects
 		custom_objects={'recall_metric': recall_metric, 'precision_metric': precision_metric, 'f1score_metric': f1score_metric}
+		if self.add_chanmeanscale_layer:
+			custom_objects['ChanMeanScale']= ChanMeanScale 
 		if self.add_chanmaxscale_layer:
-			#custom_objects['chan_max_scaler']= ChanMaxScale
 			custom_objects['ChanMaxScale']= ChanMaxScale 
+		if self.add_chanmeanratio_layer:
+			custom_objects['ChanMeanRatio']= ChanMeanRatio
 		if self.add_chanmaxratio_layer:
-			#custom_objects['chanmaxratios']= ChanMaxRatio
 			custom_objects['ChanMaxRatio']= ChanMaxRatio
 		if self.add_chanposdef_layer:
-			#custom_objects['chan_posdef_maker']= ChanPosDef
 			custom_objects['ChanPosDef']= ChanPosDef
 
 		print("== custom_objects ==")
