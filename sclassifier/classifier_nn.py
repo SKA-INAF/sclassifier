@@ -1174,7 +1174,7 @@ class SClassifierNN(object):
 		# - Load model
 		try:
 			####self.model = model_from_json(open(modelfile_json).read())
-			self.model = load_model(modelfile, custom_objects={'recall_metric': recall_metric, 'precision_metric': precision_metric, 'f1score_metric': f1score_metric})
+			#self.model = load_model(modelfile, custom_objects={'recall_metric': recall_metric, 'precision_metric': precision_metric, 'f1score_metric': f1score_metric})
 			self.model = load_model(modelfile, custom_objects=custom_objects)
 			self.model.load_weights(weightfile)
 
