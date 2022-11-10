@@ -330,6 +330,7 @@ class ChanMeanRatio(layers.Layer):
 		
 		# - Compute input data channel max, excluding NANs & zeros
 		cond= tf.logical_and(tf.math.is_finite(inputs), tf.math.not_equal(inputs, 0.))
+		tf.print("cond", cond, output_stream=sys.stdout)
 		npix= tf.reduce_sum( tf.cast(cond, tf.float32), axis=(1,2) )
 		tf.print("npix", npix, output_stream=sys.stdout)
 		pix_sum= tf.reduce_sum(tf.where(~cond, tf.ones_like(inputs) * 0, inputs), axis=(1,2))
