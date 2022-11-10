@@ -333,9 +333,13 @@ class ChanMeanRatio(layers.Layer):
 		data_mean= tf.reduce_mean(tf.where(~cond, tf.ones_like(inputs) * -1.e+99, inputs), axis=(1,2))
 		#data_mean= tf.expand_dims(tf.expand_dims(data_mean, axis=1),axis=1)
 		
+		tf.print("data_mean", data_mean, output_stream=sys.stdout)
+
+
 		# - Compute max of means across channels
 		data_mean_max= tf.reduce_max(data_mean, axis=1)
 		data_mean_max= tf.expand_dims(data_mean_max, axis=1)
+		tf.print("data_mean_max", data_mean_max, output_stream=sys.stdout)
 
 		# - Compute mean ratios
 		data_mean_ratio= data_mean/data_mean_max
