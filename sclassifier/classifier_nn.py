@@ -103,7 +103,7 @@ matplotlib.use('Agg')
 from .utils import Utils
 from .data_loader import DataLoader
 from .data_loader import SourceData
-from .tf_utils import ChanMinMaxNorm, ChanMaxScale, ChanMaxRatio, ChanPosDef
+from .tf_utils import ChanMinMaxNorm, ChanMaxScale, ChanMeanRatio, ChanMaxRatio, ChanPosDef
 
 ##################################
 ##     METRICS CLASS
