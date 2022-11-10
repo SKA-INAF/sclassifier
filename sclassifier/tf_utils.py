@@ -330,11 +330,11 @@ class ChanMeanRatio(layers.Layer):
 		
 		# - Compute input data channel max, excluding NANs & zeros
 		cond= tf.logical_and(tf.math.is_finite(inputs), tf.math.not_equal(inputs, 0.))
-		data_mean= tf.reduce_mean(tf.where(~cond, tf.ones_like(inputs) * -1.e+99, inputs), axis=(1,2))
-		#data_mean= tf.expand_dims(tf.expand_dims(data_mean, axis=1),axis=1)
+		npix= tf.reduce_sum( tf.cast(cond, tf.float32), axis=(1,2) )
+		pix_sum= tf.reduce_sum(tf.where(~cond, tf.ones_like(inputs) * 0, inputs), axis=(1,2)) 
+		data_mean= tf.math.divide_no_nan(pix_sum, npix)
 		
 		tf.print("data_mean", data_mean, output_stream=sys.stdout)
-
 
 		# - Compute max of means across channels
 		data_mean_max= tf.reduce_max(data_mean, axis=1)
@@ -376,8 +376,7 @@ class ChanSumRatio(layers.Layer):
 		
 		# - Compute input data channel max, excluding NANs & zeros
 		cond= tf.logical_and(tf.math.is_finite(inputs), tf.math.not_equal(inputs, 0.))
-		data_sum= tf.reduce_sum(tf.where(~cond, tf.ones_like(inputs) * -1.e+99, inputs), axis=(1,2))
-		#data_sum= tf.expand_dims(tf.expand_dims(data_sum, axis=1),axis=1)
+		data_sum= tf.reduce_sum(tf.where(~cond, tf.ones_like(inputs) * 0, inputs), axis=(1,2))
 		
 		# - Compute max of pixel sums across channels
 		data_sum_max= tf.reduce_max(data_sum, axis=1)
