@@ -27,6 +27,10 @@ import random
 import math
 import logging
 
+## OPENCV
+import cv2
+cv2.setNumThreads(1) # workaround to avoid potential conflicts between TF and OpenCV multithreading (parallel_impl.cpp (240) WorkerThread 18: Can't spawn new thread: res = 11)
+
 ## COMMAND-LINE ARG MODULES
 import getopt
 import argparse

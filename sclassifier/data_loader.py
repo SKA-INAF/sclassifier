@@ -34,6 +34,7 @@ from imgaug import augmenters as iaa
 
 ## OPENCV
 import cv2
+cv2.setNumThreads(1) # workaround to avoid potential conflicts between TF and OpenCV multithreading (parallel_impl.cpp (240) WorkerThread 18: Can't spawn new thread: res = 11)
 
 ## PACKAGE MODULES
 from .utils import Utils
