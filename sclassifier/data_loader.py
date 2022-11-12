@@ -691,20 +691,27 @@ class DataLoader(object):
 		""" Define and set augmenters """
 
 		# - Define augmenter for CAE
-		naugmenters_cae= 2
-		augmenter_cae= iaa.SomeOf((0,naugmenters_cae),
+		#naugmenters_cae= 2
+		#augmenter_cae= iaa.SomeOf((0,naugmenters_cae),
+		#	[
+  	#		iaa.Fliplr(1.0),
+    #		iaa.Flipud(1.0),
+    #		iaa.Affine(rotate=(-90, 90), mode='constant', cval=0.0),
+		#		#iaa.Affine(scale=(0.5, 1.5), mode='constant', cval=0.0),
+		#		iaa.Affine(translate_percent={"x": (-0.1, 0.1), "y": (-0.1, 0.1)}, mode='constant', cval=0.0)
+		#	],
+		#	random_order=True
+		#)
+
+		augmenter_cae= iaa.Sequential(
 			[
-  			iaa.Fliplr(1.0),
-    		iaa.Flipud(1.0),
-    		iaa.Affine(rotate=(-90, 90), mode='constant', cval=0.0),
-				#iaa.Affine(scale=(0.5, 1.5), mode='constant', cval=0.0),
-				iaa.Affine(translate_percent={"x": (-0.1, 0.1), "y": (-0.1, 0.1)}, mode='constant', cval=0.0)
-			],
-			random_order=True
+				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
+  			iaa.Affine(rotate=(-90, 90), mode='constant', cval=0.0),
+				iaa.Sometimes(0.5, iaa.Affine(scale=(0.5, 1.0), mode='constant', cval=0.0))
+			]
 		)
 
 		# - Define augmenter for CNN
-		naugmenters_cnn= 2
 		augmenter_cnn= iaa.Sequential(
 			[
 				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
