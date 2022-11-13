@@ -130,7 +130,6 @@ def main():
 	#==============================
 	#==   RUN UMAP
 	#==============================
-	logger.info("Running UMAP classifier training on input feature data ...")
 	umap_class= FeatExtractorUMAP()
 
 	umap_class.set_encoded_data_unsupervised_outfile(outfile_umap_unsupervised)
@@ -142,10 +141,12 @@ def main():
 
 	status= 0
 	if predict:
+		logger.info("Running UMAP classifier prediction using modelfile %s on input feature data ..." % (modelfile_umap))
 		if umap_class.run_predict(data, class_ids=classids, snames=snames, modelfile=modelfile_umap)<0:
 			logger.error("UMAP prediction failed!")
 			return 1
 	else:
+		logger.info("Running UMAP classifier training on input feature data ...")
 		if umap_class.run_train(data, class_ids=classids, snames=snames)<0:
 			logger.error("UMAP training failed!")
 			return 1
