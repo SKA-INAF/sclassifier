@@ -517,7 +517,7 @@ class FeatExtractorUMAP(object):
 		#================================
 		#==   LOAD MODEL
 		#================================
-		if modelfile is not None:
+		if modelfile!="":
 			logger.info("Loading the UMAP reducer from file %s ..." % modelfile)
 			try:
 				self.reducer= pickle.load((open(modelfile, 'rb')))
