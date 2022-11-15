@@ -114,7 +114,7 @@ class SourceData(object):
 			# - Check image integrity
 			has_bad_pixs= self.has_bad_pixel(data, check_fract=False, thr=0)
 			if has_bad_pixs:
-				logger.warn("Image %s has too many bad pixels (f=%f>%f)!" % (filename,f_badpix,self.f_badpix_thr) )	
+				logger.warn("Image %s has too many bad pixels!" % (filename))
 				return -1
 
 			# - Append image channel data to list
