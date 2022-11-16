@@ -1081,7 +1081,7 @@ class SClassifierNN(object):
 		
 		plt.plot(loss_train, color='b')
 		plt.plot(loss_val, color='r')		
-		plt.title('VAE loss')
+		plt.title('NN loss')
 		plt.ylabel('loss')
 		plt.xlabel('epochs')
 		plt.xlim(left=0)

@@ -688,7 +688,7 @@ class FeatExtractorAE(object):
 	##     BUILD PARAMETRIZED NETWORK
 	#####################################
 	def __build_parametrized_network(self):
-		""" Build VAE model parametrized architecture """
+		""" Build autoencoder model parametrized architecture """
 	
 		#===========================
 		#==   CREATE ENCODER
@@ -707,7 +707,7 @@ class FeatExtractorAE(object):
 			return -1
 
 		#===========================
-		#==   CREATE VAE MODEL
+		#==   CREATE AE MODEL
 		#===========================	
 		# - Build model
 		logger.info("Creating autoencoder model ...")
@@ -1000,7 +1000,7 @@ class FeatExtractorAE(object):
 
 	#@tf.function
 	def kl_loss_fcn(self):
-		""" Kullback-Leibler loss function definition used for VAE latent space regularization """
+		""" Kullback-Leibler loss function definition used for AE latent space regularization """
 
 		kl_loss= - 0.5 * K.sum(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
 		kl_loss_mean= K.mean(kl_loss)
@@ -1123,9 +1123,9 @@ class FeatExtractorAE(object):
 		steps_per_epoch= scale*self.nsamples // self.batch_size
 
 		#===========================
-		#==   TRAIN VAE
+		#==   TRAIN AE
 		#===========================
-		logger.info("Start VAE training (dataset_size=%d, batch_size=%d, steps_per_epoch=%d) ..." % (self.nsamples, self.batch_size, steps_per_epoch))
+		logger.info("Start autoencoder training (dataset_size=%d, batch_size=%d, steps_per_epoch=%d) ..." % (self.nsamples, self.batch_size, steps_per_epoch))
 
 		self.fitout= self.vae.fit(
 			x=self.train_data_generator,
@@ -1189,7 +1189,7 @@ class FeatExtractorAE(object):
 		
 		plt.plot(loss_train, color='b')
 		plt.plot(loss_val, color='r')		
-		plt.title('VAE loss')
+		plt.title('AE loss')
 		plt.ylabel('loss')
 		plt.xlabel('epochs')
 		plt.xlim(left=0)
@@ -1712,7 +1712,7 @@ class FeatExtractorAE(object):
 			return -1
 
 		#==============================
-		#==   RECREATE VAE MODEL
+		#==   RECREATE AE MODEL
 		#==============================
 		# - Build model
 		logger.info("Recreating autoencoder model from loaded encoder/decoder ...")
