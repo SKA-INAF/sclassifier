@@ -261,7 +261,7 @@ def main():
 			return 1
 	
 	#===========================
-	#==   TRAIN VAE
+	#==   TRAIN CNN
 	#===========================
 	logger.info("Running CNN image classifier training ...")
 	sclass= SClassifierNN(dl, multiclass=multiclass)
