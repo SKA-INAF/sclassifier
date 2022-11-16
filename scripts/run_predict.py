@@ -215,14 +215,14 @@ def main():
 	
 	logger.info("Running autoencoder predict ...")
 	if vae_class.predict_model(modelfile_encoder, weightfile_encoder)<0:
-		logger.error("VAE predict failed!")
+		logger.error("Autoencoder predict failed!")
 		return 1
 
 	#===========================
 	#==   RUN UMAP PREDICT
 	#===========================
 	if run_umap:
-		# - Retrieve VAE encoded data
+		# - Retrieve autoencoder latent data
 		logger.info("Retrieve latent data from autoencoder ...")
 		snames= vae_class.source_names
 		classids= vae_class.source_ids
@@ -241,8 +241,8 @@ def main():
 	#==   RUN CLUSTERING
 	#==============================
 	if run_clustering:
-		# - Retrieve VAE encoded data
-		logger.info("Retrieve latent data from VAE ...")
+		# - Retrieve autoencoder latent data
+		logger.info("Retrieve latent data from autoencoder model ...")
 		snames= vae_class.source_names
 		classids= vae_class.source_ids
 		vae_data= vae_class.encoded_data

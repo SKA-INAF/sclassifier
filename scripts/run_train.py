@@ -146,7 +146,7 @@ def get_args():
 	parser.add_argument('--no-ssim_loss', dest='ssim_loss', action='store_false',help='Skip SSIM calculation and exclude SSIM reco loss from total loss')
 	parser.set_defaults(ssim_loss=False)
 
-	parser.add_argument('--kl_loss', dest='kl_loss', action='store_true',help='Compute and include KL reco loss in total loss (effective only for VAE model)')
+	parser.add_argument('--kl_loss', dest='kl_loss', action='store_true',help='Compute and include KL reco loss in total loss (effective only for autoencoder model)')
 	parser.add_argument('--no-kl_loss', dest='kl_loss', action='store_false',help='Skip KL calculation and exclude KL reco loss from total loss')
 	parser.set_defaults(kl_loss=False)	
 
@@ -156,7 +156,7 @@ def get_args():
 	parser.add_argument('-ssim_win_size', '--ssim_win_size', dest='ssim_win_size', required=False, type=int, default=3, action='store',help='SSIM filter window size in pixels (default=3)')
 	
 	# - UMAP classifier options
-	parser.add_argument('--run_umap', dest='run_umap', action='store_true',help='Run UMAP of VAE latent vector')	
+	parser.add_argument('--run_umap', dest='run_umap', action='store_true',help='Run UMAP of autoencoder latent vector')	
 	parser.set_defaults(run_umap=False)	
 	parser.add_argument('-latentdim_umap', '--latentdim_umap', dest='latentdim_umap', required=False, type=int, default=2, action='store',help='Encoded data dim in UMAP (default=2)')
 	parser.add_argument('-mindist_umap', '--mindist_umap', dest='mindist_umap', required=False, type=float, default=0.1, action='store',help='Min dist UMAP par (default=0.1)')
@@ -307,7 +307,7 @@ def main():
 	
 
 	#===========================
-	#==   TRAIN VAE
+	#==   TRAIN AE
 	#===========================
 	vae_class= FeatExtractorAE(dl)
 
@@ -366,7 +366,7 @@ def main():
 
 	logger.info("Running autoencoder training ...")
 	if vae_class.train_model()<0:
-		logger.error("VAE training failed!")
+		logger.error("Autoencoder training failed!")
 		return 1
 
 
@@ -374,14 +374,14 @@ def main():
 	#==   TRAIN UMAP
 	#===========================
 	if run_umap:
-		# - Retrieve VAE encoded data
-		logger.info("Retrieve latent data from VAE ...")
+		# - Retrieve autoencoder latent data
+		logger.info("Retrieve latent data from autoencoder model ...")
 		snames= vae_class.source_names
 		classids= vae_class.source_ids
 		vae_data= vae_class.encoded_data
 
 		# - Run UMAP	
-		logger.info("Running UMAP classifier training on VAE latent data ...")
+		logger.info("Running UMAP classifier training on autoencoder latent data ...")
 		umap_class= FeatExtractorUMAP()
 
 		umap_class.set_encoded_data_unsupervised_outfile(outfile_umap_unsupervised)
@@ -399,8 +399,8 @@ def main():
 	#==   RUN CLUSTERING
 	#==============================
 	if run_clustering:
-		# - Retrieve VAE encoded data
-		logger.info("Retrieve latent data from VAE ...")
+		# - Retrieve autoencoder latent data
+		logger.info("Retrieve latent data from autoencoder ...")
 		snames= vae_class.source_names
 		classids= vae_class.source_ids
 		vae_data= vae_class.encoded_data
