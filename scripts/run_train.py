@@ -309,7 +309,6 @@ def main():
 	#===========================
 	#==   TRAIN VAE
 	#===========================
-	logger.info("Running VAE classifier training ...")
 	vae_class= FeatExtractorAE(dl)
 
 	vae_class.use_vae= use_vae
@@ -365,6 +364,7 @@ def main():
 	vae_class.ssim_win_size= ssim_win_size
 	vae_class.weight_seed= weight_seed
 
+	logger.info("Running autoencoder training ...")
 	if vae_class.train_model()<0:
 		logger.error("VAE training failed!")
 		return 1

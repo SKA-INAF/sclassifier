@@ -169,7 +169,6 @@ def main():
 	weightfile_encoder= args.weightfile_encoder
 	#add_channorm_layer= args.add_channorm_layer
 
-	
 	# - UMAP options
 	run_umap= args.run_umap
 	modelfile_umap= args.modelfile_umap
@@ -197,7 +196,6 @@ def main():
 	#===============================
 	#==   RUN AUTOENCODER PREDICT
 	#===============================
-	logger.info("Running autoencoder classifier predict ...")
 	vae_class= FeatExtractorAE(dl)
 	vae_class.set_image_size(nx, ny)
 	vae_class.normalize= normalize
@@ -215,6 +213,7 @@ def main():
 	vae_class.erode_kernel= erode_kernel
 	#vae_class.add_channorm_layer= add_channorm_layer
 	
+	logger.info("Running autoencoder predict ...")
 	if vae_class.predict_model(modelfile_encoder, weightfile_encoder)<0:
 		logger.error("VAE predict failed!")
 		return 1
