@@ -438,7 +438,7 @@ class FeatExtractorUMAP(object):
 		print("Unsupervised encoded data N=",N)
 
 		snames= np.array(self.source_names).reshape(N,1)
-		objids= np.array(self.data_ids).reshape(N,1)
+		objids= np.array(self.data_classids).reshape(N,1)
 			
 		# - Save unsupervised encoded data
 		enc_data= np.concatenate(
