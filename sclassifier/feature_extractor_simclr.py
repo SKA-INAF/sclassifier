@@ -139,6 +139,7 @@ class FeatExtractorSimCLR(object):
 		self.weightfile= ""
 		self.fitout= None		
 		self.encoder= None
+		self.projhead= None
 		self.add_channorm_layer= False
 		self.channorm_min= 0.0
 		self.channorm_max= 1.0
@@ -314,7 +315,7 @@ class FeatExtractorSimCLR(object):
 	#####################################
 	##     CREATE BASE MODEL
 	#####################################
-	def __create_base_model(self):
+	def __create_base_model(self, inputs):
 		""" Create the encoder base model """
 
 		#===========================
@@ -330,15 +331,8 @@ class FeatExtractorSimCLR(object):
 		#===========================
 		#==  INPUT LAYER
 		#===========================
-		inputShape = (self.ny, self.nx, self.nchannels)
-		self.inputs= Input(shape=inputShape, dtype='float', name='inputs')
-		self.input_data_dim= K.int_shape(self.inputs)
-		x= self.inputs
+		x= inputs
 
-		print("Input data dim=", self.input_data_dim)
-		print("inputs shape")
-		print(K.int_shape(self.inputs))
-		
 		#===========================
 		#==  CONV LAYER
 		#===========================
@@ -369,14 +363,55 @@ class FeatExtractorSimCLR(object):
 				x = layers.MaxPooling2D(pool_size=(self.pool_size,self.pool_size),strides=None,padding=padding)(x)
 			
 		#===========================
+		#==  FLATTEN LAYER
+		#===========================
+		x = layers.Flatten()(x)
+
+		#===========================
 		#==  BUILD MODEL
 		#===========================
 		logger.info("Printing base model ...")
-		self.encoder = Model(self.inputs, x, name='base_model')
+		self.encoder = Model(inputs, x, name='base_model')
 		
 		# - Print and plot model
 		logger.info("Printing base model architecture ...")
 		self.encoder.summary()
+
+	#####################################
+	##     CREATE PROJECTION HEAD MODEL
+	#####################################
+	def __create_projhead_model(self, inputs):
+		""" Create the projection head model """
+
+		#===========================
+		#==  INPUT LAYER
+		#===========================
+		x= inputs
+
+		#===========================
+		#==  DENSE LAYER
+		#===========================
+		num_layers_ph= len(self.dense_layer_sizes)
+
+		for layer_size in self.dense_layer_sizes:
+			if j < num_layers_ph - 1:
+				x = layers.Dense(layer_size, activation=self.dense_layer_activation, kernel_regularizer=l1(self.ph_regul))(x)
+
+				if self.add_dropout_layer:
+					x= layers.Dropout(self.dropout_rate)(x)
+			else:
+				x = layers.Dense(layer_size, kernel_regularizer=l1(self.ph_regul))(x)
+
+		#===========================
+		#==  BUILD MODEL
+		#===========================
+		logger.info("Printing proj head model ...")
+		self.projhead = Model(inputs, x, name='projhead_model')
+		
+		# - Print and plot model
+		logger.info("Printing proj head model architecture ...")
+		self.projhead.summary()			
+		
 
 
 	#####################################
@@ -411,42 +446,63 @@ class FeatExtractorSimCLR(object):
 		#===========================
 		#==  BUILD MODEL
 		#===========================
+		# - Create inputs
+		inputShape = (self.ny, self.nx, self.nchannels)
+		self.inputs= Input(shape=inputShape, dtype='float', name='inputs')
+		self.input_data_dim= K.int_shape(self.inputs)
+		
+		print("Input data dim=", self.input_data_dim)
+		print("inputs shape")
+		print(K.int_shape(self.inputs))
+
 		# - Create encoder base model
-		self.__create_base_model()
+		logger.info("Creating encoder model ...")
+		encoder_inputs= self.inputs
+		self.__create_base_model(encoder_inputs)
+		encoder_outputs= self.encoder(encoder_inputs)
+
+
+		# - Create projection head model
+		logger.info("Creating projection head model ...")
+		projhead_inputs= encoder_outputs
+		self.__create_projhead_model(projhead_inputs)
+		projhead_outputs= self.projhead(projhead_inputs)
 
 		# - Create projection head layers
-		self.__create_projhead_layers()
+		#self.__create_projhead_layers()
 
 		# - Create softmax cosine similarity layer
 		soft_cos_sim = SoftmaxCosineSim(batch_size=self.batch_size, feat_dim=self.latent_dim)
-    
+		outputs= soft_cos_sim(projhead_outputs)    
+
 		# - Create model
-		num_layers_ph= len(self.dense_layer_sizes)
-		i = []  # Inputs (# = 2 x batch_size)
-		f_x = []  # Output base_model
-		h = []  # Flattened feature representation
-		g = []  # Projection head
-		for j in range(num_layers_ph):
-			g.append([])
+		#num_layers_ph= len(self.dense_layer_sizes)
+		#i = []  # Inputs (# = 2 x batch_size)
+		#f_x = []  # Output base_model
+		#h = []  # Flattened feature representation
+		#g = []  # Projection head
+		#for j in range(num_layers_ph):
+		#	g.append([])
 
-		for index in range(2 * self.batch_size):
-			i.append(self.inputs)
-			f_x.append(self.encoder(i[index]))
-			h.append(layers.Flatten()(f_x[index]))
-			for j in range(num_layers_ph):
-				if j == 0:
-					g[j].append(self.ph_l[j](h[index]))
-				else:
-					g[j].append(self.ph_l[j](g[j - 1][index]))
+		#for index in range(2 * self.batch_size):
+		#	i.append(self.inputs)
+		#	f_x.append(self.encoder(i[index]))
+		#	h.append(layers.Flatten()(f_x[index]))
+		#	for j in range(num_layers_ph):
+		#		if j == 0:
+		#			g[j].append(self.ph_l[j](h[index]))
+		#		else:
+		#			g[j].append(self.ph_l[j](g[j - 1][index]))
 
-		o = soft_cos_sim(g[-1])  # Output = Last layer of projection head
+		#o = soft_cos_sim(g[-1])  # Output = Last layer of projection head
      
 		#===========================
 		#==   COMPILE MODEL
 		#===========================
 		# - Define and compile model
 		logger.info("Creating SimCLR model ...")
-		self.model= Model(inputs=i, outputs=o, name='SimCLR')
+		#self.model= Model(inputs=i, outputs=o, name='SimCLR')
+		self.model= Model(inputs=self.inputs, outputs=outputs, name='SimCLR')
 
 		logger.info("Compiling SimCLR model ...")
 		self.model.compile(optimizer=self.optimizer, loss=self.loss_type, run_eagerly=True)	
