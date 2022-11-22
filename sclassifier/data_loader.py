@@ -1050,11 +1050,12 @@ class DataLoader(object):
 				if nb==0:
 					inputs= np.zeros(inputs_shape, dtype=np.float32)
 					if outdata_choice=='simclr':
-						# - Unclear why the ref implementation (https://github.com/mwdhont/SimCLRv1-keras-tensorflow/blob/master/DataGeneratorSimCLR.py)
-						#   uses an extra-dimension of size 1, e.g. (2*batch, 1, imgsize)
+						# - The ref implementation (https://github.com/mwdhont/SimCLRv1-keras-tensorflow/blob/master/DataGeneratorSimCLR.py)
+						#   uses a dimension (2*batch, 1, ny, nx, nchan), so that returned inputs is a list of len(2*batch) and item passed to encoder has shape (1,ny,nx,nchan) (NB: batch size=1)
 						inputs_simclr_shape= (2*batch_size, 1) + data_shape # original ref
-						#inputs_simclr_shape= (2*batch_size,) + data_shape
 						inputs_simclr= np.empty(inputs_simclr_shape, dtype=np.float32)
+						labels_ab_aa = np.zeros((batch_size, 2 * batch_size))
+						labels_ba_bb = np.zeros((batch_size, 2 * batch_size))
 
 					target_ids= []
 				
@@ -1065,6 +1066,9 @@ class DataLoader(object):
 					#   shuffles the position of augmented image pair
 					inputs_simclr[nb]= sdata_1.img_cube
 					inputs_simclr[nb + batch_size]= sdata_2.img_cube
+					labels_ab_aa[nb, nb] = 1
+					labels_ba_bb[nb, nb] = 1
+
 				target_ids.append(target_id)
 				nb+= 1
 
@@ -1119,7 +1123,13 @@ class DataLoader(object):
 						#print(output_targets.shape)
 						yield inputs, output_targets
 					elif outdata_choice=='simclr':
-						yield list(inputs_simclr) # original ref
+						y = tf.concat([labels_ab_aa, labels_ba_bb], 1)
+						#print("== inputs_simclr shape ==")
+        		#print(inputs_simclr.shape)
+						#print("== y shape ==") 
+						#print(y.shape)
+        		#print("")
+						yield list(inputs_simclr), y # original implementation: returns a list (len=2xbatch_size) of arrays of shape (1, ny, nx, nchan). Each Input layer takes one list entryas input.
 						#yield inputs_simclr
 					else:
 						logger.warn("Unknown outdata_choice (%s), returning inputs ..." % (outdata_choice))
