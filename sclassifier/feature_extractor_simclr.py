@@ -475,20 +475,19 @@ class FeatExtractorSimCLR(object):
 		encoder_outputs= self.__create_base_model(encoder_inputs)
 		
 		# - Create projection head model
-		logger.info("Creating projection head model ...")
-		projhead_inputs= encoder_outputs
-		#projhead_inputs= keras.layers.concatenate([encoder_inputs, encoder_outputs])
-		projhead_outputs= self.__create_projhead_model(projhead_inputs)
+		#logger.info("Creating projection head model ...")
+		#projhead_inputs= encoder_outputs
+		#projhead_outputs= self.__create_projhead_model(projhead_inputs)
 
 		# - Create projection head layers
 		self.__create_projhead_layers()
 
 		# - Create softmax cosine similarity layer
 		soft_cos_sim = SoftmaxCosineSim(batch_size=self.batch_size, feat_dim=self.latent_dim)
-		outputs= soft_cos_sim(projhead_outputs)    
+		#outputs= soft_cos_sim(projhead_outputs)    
 
 		# - Create model
-		num_layers_ph= len(self.dense_layer_sizes)
+		num_layers_ph= len(self.ph_l)
 		i = []  # Inputs (# = 2 x batch_size)
 		f_x = []  # Output base_model
 		h = []  # Flattened feature representation
