@@ -523,7 +523,7 @@ class FeatExtractorSimCLR(object):
 		""" Returns callbacks used while training """
 
 		# Time stamp for checkpoint
-		now = datetime.now()
+		now = datetime.datetime.now()
 		dt_string = now.strftime("_%m_%d_%Hh_%M")
 
 		checkpoint = ModelCheckpoint(
