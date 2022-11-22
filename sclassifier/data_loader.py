@@ -1119,7 +1119,7 @@ class DataLoader(object):
 						#print(output_targets.shape)
 						yield inputs, output_targets
 					elif outdata_choice=='simclr':
-						yield [inputs_simclr] # original ref
+						yield list(inputs_simclr) # original ref
 						#yield inputs_simclr
 					else:
 						logger.warn("Unknown outdata_choice (%s), returning inputs ..." % (outdata_choice))
