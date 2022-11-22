@@ -366,7 +366,7 @@ class FeatExtractorSimCLR(object):
 		#===========================
 		#==  FLATTEN LAYER
 		#===========================
-		#x = layers.Flatten()(x)
+		x = layers.Flatten()(x)
 
 		#===========================
 		#==  BUILD MODEL
@@ -490,7 +490,7 @@ class FeatExtractorSimCLR(object):
 		num_layers_ph= len(self.ph_l)
 		i = []  # Inputs (# = 2 x batch_size)
 		f_x = []  # Output base_model
-		h = []  # Flattened feature representation
+		#h = []  # Flattened feature representation
 		g = []  # Projection head
 		for j in range(num_layers_ph):
 			g.append([])
@@ -498,10 +498,11 @@ class FeatExtractorSimCLR(object):
 		for index in range(2 * self.batch_size):
 			i.append(Input(shape=inputShape, dtype='float'))
 			f_x.append(self.encoder(i[index]))
-			h.append(layers.Flatten()(f_x[index]))
+			#h.append(layers.Flatten()(f_x[index]))
 			for j in range(num_layers_ph):
 				if j == 0:
-					g[j].append(self.ph_l[j](h[index]))
+					#g[j].append(self.ph_l[j](h[index]))
+					g[j].append(self.ph_l[j](f_x[index]))
 				else:
 					g[j].append(self.ph_l[j](g[j - 1][index]))
 
@@ -712,7 +713,7 @@ class FeatExtractorSimCLR(object):
     	verbose=2,
     	workers=self.nworkers,
     	use_multiprocessing=self.use_multiprocessing
-		).flatten()
+		)#.flatten()
 
 		print("encoded_data shape")
 		print(self.encoded_data.shape)	
