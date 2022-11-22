@@ -462,9 +462,10 @@ class FeatExtractorSimCLR(object):
 
 		# - Create encoder base model
 		logger.info("Creating encoder model ...")
-		#encoder_inputs= self.inputs
-		#encoder_outputs= self.__create_base_model(encoder_inputs)
-		encoder_outputs= self.__create_base_model(self.input_data_dim)
+		encoder_outputs= self.__create_base_model(inputShape)
+
+		print("== encoder_outputs ==")
+		print(K.int_shape(encoder_outputs))
 		
 		# - Create projection head model
 		logger.info("Creating projection head model ...")
