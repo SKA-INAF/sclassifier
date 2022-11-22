@@ -464,12 +464,11 @@ class FeatExtractorSimCLR(object):
 		logger.info("Creating encoder model ...")
 		encoder_outputs= self.__create_base_model(inputShape)
 
-		print("== encoder_outputs ==")
-		print(K.int_shape(encoder_outputs))
-		
 		# - Create projection head model
 		logger.info("Creating projection head model ...")
-		projhead_input_data_dim= K.int_shape(encoder_outputs)
+		projhead_input_data_dim= K.int_shape(encoder_outputs)[1]
+		print("== projhead_input_data_dim ==")
+		print(projhead_input_data_dim)
 		projhead_outputs= self.__create_projhead_model(projhead_input_data_dim)
 
 		# - Create softmax cosine similarity layer
