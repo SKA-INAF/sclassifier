@@ -506,6 +506,9 @@ class FeatExtractorSimCLR(object):
 					g[j].append(self.ph_l[j](g[j - 1][index]))
 
 		o = soft_cos_sim(g[-1])  # Output = Last layer of projection head
+
+		logger.info("isinstance(i, list)? " % (isinstance(i, list)))
+    logger.info("isinstance(o, list)? " % (isinstance(o, list)))
      
 		#===========================
 		#==   COMPILE MODEL
