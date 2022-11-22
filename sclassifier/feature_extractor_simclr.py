@@ -153,6 +153,7 @@ class FeatExtractorSimCLR(object):
 		self.add_batchnorm= True
 		self.activation_fcn_cnn= "relu"
 		self.add_dense= False
+		self.add_dropout_layer= False
 		self.dense_layer_sizes= [16] 
 		self.dense_layer_activation= 'relu'
 		self.latent_dim= 2
@@ -393,11 +394,12 @@ class FeatExtractorSimCLR(object):
 		#===========================
 		#==  DENSE LAYER
 		#===========================
-		for layer_size in self.dense_layer_sizes:
-			x = layers.Dense(layer_size, activation=self.dense_layer_activation, kernel_regularizer=l1(self.ph_regul))(x)
+		if self.add_dense:
+			for layer_size in self.dense_layer_sizes:
+				x = layers.Dense(layer_size, activation=self.dense_layer_activation, kernel_regularizer=l1(self.ph_regul))(x)
 
-			if self.add_dropout_layer:
-				x= layers.Dropout(self.dropout_rate)(x)
+				if self.add_dropout_layer:
+					x= layers.Dropout(self.dropout_rate)(x)
 
 		x = layers.Dense(self.latent_dim, kernel_regularizer=l1(self.ph_regul), name='projhead_output')(x)
 

@@ -928,7 +928,7 @@ class DataLoader(object):
 	###################################
 	##     GENERATE SIMCLR DATA
 	###################################
-	def __generate_simclr_data(self, data_index):
+	def __generate_simclr_data(self, data_index, resize=True, nx=64, ny=64, normalize=True, scale_to_abs_max=False, scale_to_max=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5):
 		""" Generate augmented data pair for SimCLR """
 
 		# - Read data at index and create pair item no. #1
@@ -956,7 +956,7 @@ class DataLoader(object):
 			data_index, 
 			resize=resize, nx=nx, ny=ny,
 			normalize=normalize, scale_to_abs_max=scale_to_abs_max, scale_to_max=scale_to_max, 
-			augment=augment,
+			augment=True,
 			log_transform=log_transform,
 			scale=scale, scale_factors=scale_factors,
 			standardize=standardize, means=means, sigmas=sigmas,
@@ -1052,7 +1052,8 @@ class DataLoader(object):
 					if outdata_choice=='simclr':
 						# - Unclear why the ref implementation (https://github.com/mwdhont/SimCLRv1-keras-tensorflow/blob/master/DataGeneratorSimCLR.py)
 						#   uses an extra-dimension of size 1, e.g. (2*batch, 1, imgsize)
-						inputs_simclr_shape= (2*batch_size, 1) + data_shape # 
+						#inputs_simclr_shape= (2*batch_size, 1) + data_shape # original ref
+						inputs_simclr_shape= (2*batch_size,) + data_shape # 
 						inputs_simclr= np.empty(inputs_simclr_shape, dtype=np.float32)
 
 					target_ids= []
@@ -1118,7 +1119,8 @@ class DataLoader(object):
 						#print(output_targets.shape)
 						yield inputs, output_targets
 					elif outdata_choice=='simclr':
-						yield [inputs_simclr]
+						#yield [inputs_simclr] # original ref
+						yield inputs_simclr
 					else:
 						logger.warn("Unknown outdata_choice (%s), returning inputs ..." % (outdata_choice))
 						yield inputs
