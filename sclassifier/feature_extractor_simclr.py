@@ -124,7 +124,6 @@ class FeatExtractorSimCLR(object):
 		self.train_data_generator= None
 		self.crossval_data_generator= None
 		self.test_data_generator= None
-		self.data_generator= None
 		self.augmentation= False	
 		self.validation_steps= 10
 		self.use_multiprocessing= True
@@ -283,21 +282,6 @@ class FeatExtractorSimCLR(object):
 		# - Create test data generator
 		self.test_data_generator= self.dl.data_generator(
 			batch_size=self.nsamples, 
-			shuffle=False,
-			resize=self.resize, nx=self.nx, ny=self.ny, 
-			normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
-			augment=False,
-			log_transform=self.log_transform_img,
-			scale=self.scale_img, scale_factors=self.scale_img_factors,
-			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
-			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
-			erode=self.erode, erode_kernel=self.erode_kernel,
-			outdata_choice='inputs'
-		)
-
-		# - Create standard generator (for prediction)
-		self.data_generator= self.dl.data_generator(
-			batch_size=1, 
 			shuffle=False,
 			resize=self.resize, nx=self.nx, ny=self.ny, 
 			normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
@@ -705,8 +689,7 @@ class FeatExtractorSimCLR(object):
 		#================================
 		#==   SAVE ENCODED DATA
 		#================================
-		logger.info("Saving encoded data to file %s ..." % (self.outfile_encoded_data))
-		
+		logger.info("Running SimCLR prediction on input data ...")
 		self.encoded_data= self.encoder.predict(
 			x=self.test_data_generator,	
 			steps=1,
@@ -722,6 +705,7 @@ class FeatExtractorSimCLR(object):
 		Nvar= self.encoded_data.shape[1]
 		
 		# - Merge encoded data
+		logger.info("Adding source info data to encoded data ...")
 		obj_names= np.array(self.source_names).reshape(N,1)
 		obj_ids= np.array(self.source_ids).reshape(N,1)
 		enc_data= np.concatenate(
@@ -729,6 +713,8 @@ class FeatExtractorSimCLR(object):
 			axis=1
 		)
 
+		# - Save to file
+		logger.info("Saving encoded data to file %s ..." % (self.outfile_encoded_data))
 		znames_counter= list(range(1,Nvar+1))
 		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
 		head= '{} {} {}'.format("# sname",znames,"id")
@@ -764,13 +750,14 @@ class FeatExtractorSimCLR(object):
 		#===========================
 		#==   PREDICT
 		#===========================
+		logger.info("Running SimCLR prediction on input data ...")
 		predout= self.encoder.predict(
 			x=self.test_data_generator,	
 			steps=1,
     	verbose=2,
     	workers=self.nworkers,
     	use_multiprocessing=self.use_multiprocessing
-		).flatten()
+		)#.flatten()
 
 		if type(predout)==tuple and len(predout)>0:
 			self.encoded_data= predout[0]
@@ -784,6 +771,7 @@ class FeatExtractorSimCLR(object):
 		Nvar= self.encoded_data.shape[1]
 		
 		# - Merge encoded data
+		logger.info("Adding source info data to encoded data ...")
 		obj_names= np.array(self.source_names).reshape(N,1)
 		obj_ids= np.array(self.source_ids).reshape(N,1)
 		enc_data= np.concatenate(
