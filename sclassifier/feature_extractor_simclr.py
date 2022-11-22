@@ -586,6 +586,8 @@ class FeatExtractorSimCLR(object):
 			logger.error("Model training failed!")
 			return -1
 
+		logger.info("End training run")
+
 		return 0
 
 	#####################################
@@ -785,6 +787,8 @@ class FeatExtractorSimCLR(object):
 		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
 		head= '{} {} {}'.format("# sname", znames, "id")
 		Utils.write_ascii(enc_data, self.outfile_encoded_data, head)	
+
+		logger.info("End predict run")
 
 		return 0
 
