@@ -1123,7 +1123,8 @@ class DataLoader(object):
 						#print(output_targets.shape)
 						yield inputs, output_targets
 					elif outdata_choice=='simclr':
-						y = tf.concat([labels_ab_aa, labels_ba_bb], 1)
+						#y = tf.concat([labels_ab_aa, labels_ba_bb], 1)
+						y= np.concatenate([labels_ab_aa, labels_ba_bb], 1)
 						#print("== inputs_simclr shape ==")
         		#print(inputs_simclr.shape)
 						#print("== y shape ==") 
