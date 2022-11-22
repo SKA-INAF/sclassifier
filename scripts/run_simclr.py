@@ -267,7 +267,6 @@ def main():
 	simclr.add_batchnorm= add_batchnorm_layer
 	simclr.add_leakyrelu= add_leakyrelu
 	simclr.add_dense= add_dense_layer
-	simclr.add_channorm_layer= add_channorm_layer
 	simclr.nfilters_cnn= nfilters_cnn
 	simclr.kernsizes_cnn= kernsizes_cnn
 	simclr.strides_cnn= strides_cnn
