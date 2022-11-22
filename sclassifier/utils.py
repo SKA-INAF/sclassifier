@@ -27,16 +27,18 @@ from collections import OrderedDict
 from collections import defaultdict
 
 ## ASTRO MODULES
+import warnings
 from astropy.io import fits
+warnings.filterwarnings('ignore', category=UserWarning, append=True)
+# Suppress `Invalid 'BLANK' keyword in header.` warnings
+#from astropy.io.fits.verify import VerifyWarning
+#warnings.simplefilter('ignore', category=VerifyWarning)
+
 from astropy.wcs import WCS
 from astropy.io import ascii
 from astropy.table import Column
 import regions
 
-# Suppress `Invalid 'BLANK' keyword in header.` warnings
-import warnings
-from astropy.io.fits.verify import VerifyWarning
-warnings.simplefilter('ignore', category=VerifyWarning)
 
 ## MONTAGE MODULES
 from montage_wrapper.commands import mImgtbl

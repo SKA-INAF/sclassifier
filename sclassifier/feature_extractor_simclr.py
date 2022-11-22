@@ -366,7 +366,7 @@ class FeatExtractorSimCLR(object):
 		#===========================
 		#==  FLATTEN LAYER
 		#===========================
-		x = layers.Flatten()(x)
+		#x = layers.Flatten()(x)
 
 		#===========================
 		#==  BUILD MODEL
