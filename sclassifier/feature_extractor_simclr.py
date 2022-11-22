@@ -440,13 +440,14 @@ class FeatExtractorSimCLR(object):
 		#		)
 
 		if self.add_dense:
-			for layer_size in self.dense_layer_sizes:
+			for j in range(num_layers_ph):	
+				layer_size= self.dense_layer_sizes[j]
 				self.ph_l.append(
-					x = layers.Dense(layer_size, activation=self.dense_layer_activation, kernel_regularizer=l1(self.ph_regul))(x)
+					layers.Dense(layer_size, activation=self.dense_layer_activation, kernel_regularizer=l1(self.ph_regul))
 				)
 
-		self.ph_l.append(		
-			x = layers.Dense(self.latent_dim, kernel_regularizer=l1(self.ph_regul), name='projhead_output')(x)
+		self.ph_l.append(
+			layers.Dense(self.latent_dim, kernel_regularizer=l1(self.ph_regul), name='projhead_output')
 		)
 
 
