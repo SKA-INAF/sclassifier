@@ -1091,7 +1091,7 @@ class FeatExtractorAE(object):
 		# - Compute KL loss term (ONLY FOR VAE)
 		kl_loss= tf.zeros((),dtype=tf.float32)
 		if self.use_vae and self.use_kl_loss and self.kl_loss_weight>0:
-			logger.info("Computing the KL loss ...")
+			logger.debug("Computing the KL loss ...")
 			kl_loss= self.kl_loss_weight*self.kl_loss_fcn()
 		kl_loss= tf.cast(kl_loss, tf.float32)
 

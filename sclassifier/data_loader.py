@@ -1024,7 +1024,7 @@ class DataLoader(object):
 				
 				#print("Generating batch %d/%d ..." % (nb, batch_size))
 				#print(inputs_shape)
-				logger.debug("Data %d shape=(%d,%d,%d)" % (data_index,data_shape[0],data_shape[1],data_shape[2]))
+				logger.debug("Data %d shape=(%d,%d,%d)" % (data_index, data_shape[0], data_shape[1], data_shape[2]))
 				
 				# - Set class targets
 				class_id= sdata.id
@@ -1050,15 +1050,20 @@ class DataLoader(object):
 				if nb==0:
 					inputs= np.zeros(inputs_shape, dtype=np.float32)
 					if outdata_choice=='simclr':
-						inputs_1= np.zeros(inputs_shape, dtype=np.float32)
-						inputs_2= np.zeros(inputs_shape, dtype=np.float32)
+						# - Unclear why the ref implementation (https://github.com/mwdhont/SimCLRv1-keras-tensorflow/blob/master/DataGeneratorSimCLR.py)
+						#   uses an extra-dimension of size 1, e.g. (2*batch, 1, imgsize)
+						inputs_simclr_shape= (2*batch_size, 1) + data_shape # 
+						inputs_simclr= np.empty(inputs_simclr_shape, dtype=np.float32)
+
 					target_ids= []
 				
 				# - Update inputs
 				inputs[nb]= sdata.img_cube
 				if outdata_choice=='simclr':
-					inputs_1[nb]= sdata_1.img_cube
-					inputs_2[nb]= sdata_2.img_cube
+					# - The ref implementation (https://github.com/mwdhont/SimCLRv1-keras-tensorflow/blob/master/DataGeneratorSimCLR.py)
+					#   shuffles the position of augmented image pair
+					inputs_simclr[nb]= sdata_1.img_cube
+					inputs_simclr[nb + batch_size]= sdata_2.img_cube
 				target_ids.append(target_id)
 				nb+= 1
 
@@ -1103,19 +1108,20 @@ class DataLoader(object):
 
 					if outdata_choice=='sdata':
 						yield inputs, sdata
+					elif outdata_choice=='inputs':
+						yield inputs
 					elif outdata_choice=='cae':
 						yield inputs, inputs
 					elif outdata_choice=='cnn':
 						output_targets= to_categorical(np.array(target_ids), num_classes=nclasses)
 						#print(output_targets)
 						#print(output_targets.shape)
-
 						yield inputs, output_targets
 					elif outdata_choice=='simclr':
-						yield inputs_1, inputs_2
+						yield [inputs_simclr]
 					else:
-						logger.warn("Unknown outdata_choice (%s), assuming cae ..." % (outdata_choice))
-						yield inputs, inputs
+						logger.warn("Unknown outdata_choice (%s), returning inputs ..." % (outdata_choice))
+						yield inputs
 
 
 					#if retsdata:
