@@ -394,9 +394,10 @@ class FeatExtractorSimCLR(object):
 		num_layers_ph= len(self.dense_layer_sizes)
 
 		for j in range(num_layers_ph):
+			layer_size= self.dense_layer_sizes[j]
+
 			if j < num_layers_ph - 1:
 				x = layers.Dense(layer_size, activation=self.dense_layer_activation, kernel_regularizer=l1(self.ph_regul))(x)
-
 				if self.add_dropout_layer:
 					x= layers.Dropout(self.dropout_rate)(x)
 			else:
