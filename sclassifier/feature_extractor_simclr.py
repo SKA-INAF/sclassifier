@@ -377,6 +377,8 @@ class FeatExtractorSimCLR(object):
 		logger.info("Printing base model architecture ...")
 		self.encoder.summary()
 
+		return x
+
 	#####################################
 	##     CREATE PROJECTION HEAD MODEL
 	#####################################
@@ -413,6 +415,7 @@ class FeatExtractorSimCLR(object):
 		logger.info("Printing proj head model architecture ...")
 		self.projhead.summary()			
 		
+		return x
 
 
 	#####################################
@@ -459,15 +462,12 @@ class FeatExtractorSimCLR(object):
 		# - Create encoder base model
 		logger.info("Creating encoder model ...")
 		encoder_inputs= self.inputs
-		self.__create_base_model(encoder_inputs)
-		encoder_outputs= self.encoder(encoder_inputs)
-
-
+		encoder_outputs= self.__create_base_model(encoder_inputs)
+		
 		# - Create projection head model
 		logger.info("Creating projection head model ...")
 		projhead_inputs= encoder_outputs
-		self.__create_projhead_model(projhead_inputs)
-		projhead_outputs= self.projhead(projhead_inputs)
+		projhead_outputs= self.__create_projhead_model(projhead_inputs)
 
 		# - Create projection head layers
 		#self.__create_projhead_layers()
