@@ -635,7 +635,7 @@ class FeatExtractorSimCLR(object):
 			steps_per_epoch=steps_per_epoch,
 			validation_data=self.crossval_data_generator,
 			validation_steps=val_steps_per_epoch,
-			#callbacks=[checkpoint, earlyStopping, reduce_lr],
+			callbacks=[checkpoint, earlyStopping, reduce_lr],
 			use_multiprocessing=self.use_multiprocessing,
 			workers=self.nworkers,
 			verbose=2
