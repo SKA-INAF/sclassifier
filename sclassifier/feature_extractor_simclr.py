@@ -408,12 +408,12 @@ class FeatExtractorSimCLR(object):
 		#===========================
 		#==  BUILD MODEL
 		#===========================
-		logger.info("Printing proj head model ...")
-		self.projhead = Model(inputs, x, name='projhead_model')
+		#logger.info("Printing proj head model ...")
+		#self.projhead = Model(inputs, x, name='projhead_model')
 		
 		# - Print and plot model
-		logger.info("Printing proj head model architecture ...")
-		self.projhead.summary()			
+		#logger.info("Printing proj head model architecture ...")
+		#self.projhead.summary()			
 		
 		return x
 
@@ -467,6 +467,7 @@ class FeatExtractorSimCLR(object):
 		# - Create projection head model
 		logger.info("Creating projection head model ...")
 		projhead_inputs= encoder_outputs
+		#projhead_inputs= keras.layers.concatenate([encoder_inputs, encoder_outputs])
 		projhead_outputs= self.__create_projhead_model(projhead_inputs)
 
 		# - Create projection head layers
