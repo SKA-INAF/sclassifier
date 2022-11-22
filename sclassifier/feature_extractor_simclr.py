@@ -496,7 +496,7 @@ class FeatExtractorSimCLR(object):
 			g.append([])
 
 		for index in range(2 * self.batch_size):
-			i.append(self.inputs)
+			i.append(Input(shape=inputShape, dtype='float'))
 			f_x.append(self.encoder(i[index]))
 			h.append(layers.Flatten()(f_x[index]))
 			for j in range(num_layers_ph):
