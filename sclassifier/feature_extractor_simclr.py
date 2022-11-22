@@ -470,40 +470,40 @@ class FeatExtractorSimCLR(object):
 		projhead_outputs= self.__create_projhead_model(projhead_inputs)
 
 		# - Create projection head layers
-		#self.__create_projhead_layers()
+		self.__create_projhead_layers()
 
 		# - Create softmax cosine similarity layer
 		soft_cos_sim = SoftmaxCosineSim(batch_size=self.batch_size, feat_dim=self.latent_dim)
 		outputs= soft_cos_sim(projhead_outputs)    
 
 		# - Create model
-		#num_layers_ph= len(self.dense_layer_sizes)
-		#i = []  # Inputs (# = 2 x batch_size)
-		#f_x = []  # Output base_model
-		#h = []  # Flattened feature representation
-		#g = []  # Projection head
-		#for j in range(num_layers_ph):
-		#	g.append([])
+		num_layers_ph= len(self.dense_layer_sizes)
+		i = []  # Inputs (# = 2 x batch_size)
+		f_x = []  # Output base_model
+		h = []  # Flattened feature representation
+		g = []  # Projection head
+		for j in range(num_layers_ph):
+			g.append([])
 
-		#for index in range(2 * self.batch_size):
-		#	i.append(self.inputs)
-		#	f_x.append(self.encoder(i[index]))
-		#	h.append(layers.Flatten()(f_x[index]))
-		#	for j in range(num_layers_ph):
-		#		if j == 0:
-		#			g[j].append(self.ph_l[j](h[index]))
-		#		else:
-		#			g[j].append(self.ph_l[j](g[j - 1][index]))
+		for index in range(2 * self.batch_size):
+			i.append(self.inputs)
+			f_x.append(self.encoder(i[index]))
+			h.append(layers.Flatten()(f_x[index]))
+			for j in range(num_layers_ph):
+				if j == 0:
+					g[j].append(self.ph_l[j](h[index]))
+				else:
+					g[j].append(self.ph_l[j](g[j - 1][index]))
 
-		#o = soft_cos_sim(g[-1])  # Output = Last layer of projection head
+		o = soft_cos_sim(g[-1])  # Output = Last layer of projection head
      
 		#===========================
 		#==   COMPILE MODEL
 		#===========================
 		# - Define and compile model
 		logger.info("Creating SimCLR model ...")
-		#self.model= Model(inputs=i, outputs=o, name='SimCLR')
-		self.model= Model(inputs=self.inputs, outputs=outputs, name='SimCLR')
+		self.model= Model(inputs=i, outputs=o, name='SimCLR')
+		#self.model= Model(inputs=self.inputs, outputs=outputs, name='SimCLR')
 
 		logger.info("Compiling SimCLR model ...")
 		self.model.compile(optimizer=self.optimizer, loss=self.loss_type, run_eagerly=True)	
