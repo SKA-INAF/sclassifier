@@ -769,7 +769,7 @@ class FeatExtractorSimCLR(object):
 		#===========================
 		#==   SET LOSS & METRICS
 		#===========================	
-		self.model.compile(optimizer=self.optimizer, loss=self.loss_type, run_eagerly=True))		
+		self.model.compile(optimizer=self.optimizer, loss=self.loss_type, run_eagerly=True)
 
 		# - Print and draw model
 		self.model.summary()
