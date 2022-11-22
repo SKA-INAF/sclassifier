@@ -449,7 +449,7 @@ class FeatExtractorSimCLR(object):
 		self.model= Model(inputs=i, outputs=o, name='SimCLR')
 
 		logger.info("Compiling SimCLR model ...")
-    self.model.compile(optimizer=self.optimizer, loss=self.loss_type, run_eagerly=True))		
+		self.model.compile(optimizer=self.optimizer, loss=self.loss_type, run_eagerly=True))		
 
 		# - Print model summary
 		logger.info("Printing SimCLR model architecture ...")
