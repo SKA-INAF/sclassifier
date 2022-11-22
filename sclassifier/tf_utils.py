@@ -450,10 +450,12 @@ class SoftmaxCosineSim(layers.Layer):
 		for index in range(self.batch_size):
 			# 0-index assumes that batch_size in generator is equal to 1
 			z1.append(
-				tf.math.l2_normalize(inputs[index][0], -1)
+				#tf.math.l2_normalize(inputs[index][0], -1)
+				tf.math.l2_normalize(inputs[index], -1)
 			)
 			z2.append(
-				tf.math.l2_normalize(inputs[self.batch_size + index][0], -1)
+				#tf.math.l2_normalize(inputs[self.batch_size + index][0], -1)
+				tf.math.l2_normalize(inputs[self.batch_size + index], -1)
 			)
 
 		# Gather hidden1/hidden2 across replicas and create local labels.
