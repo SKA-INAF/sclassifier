@@ -393,17 +393,13 @@ class FeatExtractorSimCLR(object):
 		#===========================
 		#==  DENSE LAYER
 		#===========================
-		num_layers_ph= len(self.dense_layer_sizes)
+		for layer_size in self.dense_layer_sizes:
+			x = layers.Dense(layer_size, activation=self.dense_layer_activation, kernel_regularizer=l1(self.ph_regul))(x)
 
-		for j in range(num_layers_ph):
-			layer_size= self.dense_layer_sizes[j]
+			if self.add_dropout_layer:
+				x= layers.Dropout(self.dropout_rate)(x)
 
-			if j < num_layers_ph - 1:
-				x = layers.Dense(layer_size, activation=self.dense_layer_activation, kernel_regularizer=l1(self.ph_regul))(x)
-				if self.add_dropout_layer:
-					x= layers.Dropout(self.dropout_rate)(x)
-			else:
-				x = layers.Dense(layer_size, kernel_regularizer=l1(self.ph_regul))(x)
+		x = layers.Dense(self.latent_dim, kernel_regularizer=l1(self.ph_regul), name='projhead_output')(x)
 
 		#===========================
 		#==  BUILD MODEL
@@ -440,6 +436,7 @@ class FeatExtractorSimCLR(object):
 				self.ph_l.append(
 					layers.Dense(layer_size, kernel_regularizer=l1(self.ph_regul))
 				)
+
 
 	#####################################
 	##     CREATE MODEL
