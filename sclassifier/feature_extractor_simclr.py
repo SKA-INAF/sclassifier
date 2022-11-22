@@ -300,7 +300,7 @@ class FeatExtractorSimCLR(object):
 	#####################################
 	##     CREATE BASE MODEL
 	#####################################
-	def __create_base_model(self, inputs):
+	def __create_base_model(self, inputShape):
 		""" Create the encoder base model """
 
 		#===========================
@@ -316,8 +316,12 @@ class FeatExtractorSimCLR(object):
 		#===========================
 		#==  INPUT LAYER
 		#===========================
+		#x= inputs
+		inputs= Input(shape=inputShape)
+		input_data_dim= K.int_shape(inputs)
 		x= inputs
-
+		print("Base model input data dim=", input_data_dim)
+		
 		#===========================
 		#==  CONV LAYER
 		#===========================
@@ -367,13 +371,16 @@ class FeatExtractorSimCLR(object):
 	#####################################
 	##     CREATE PROJECTION HEAD MODEL
 	#####################################
-	def __create_projhead_model(self, inputs):
+	def __create_projhead_model(self, inputShape):
 		""" Create the projection head model """
 
 		#===========================
 		#==  INPUT LAYER
 		#===========================
+		inputs= Input(shape=inputShape)
+		input_data_dim= K.int_shape(inputs)
 		x= inputs
+		print("Projection head model input data dim=", input_data_dim)
 
 		#===========================
 		#==  DENSE LAYER
@@ -390,12 +397,12 @@ class FeatExtractorSimCLR(object):
 		#===========================
 		#==  BUILD MODEL
 		#===========================
-		#logger.info("Printing proj head model ...")
-		#self.projhead = Model(inputs, x, name='projhead_model')
+		logger.info("Printing proj head model ...")
+		self.projhead = Model(inputs, x, name='projhead_model')
 		
 		# - Print and plot model
-		#logger.info("Printing proj head model architecture ...")
-		#self.projhead.summary()			
+		logger.info("Printing proj head model architecture ...")
+		self.projhead.summary()			
 		
 		return x
 
@@ -455,53 +462,75 @@ class FeatExtractorSimCLR(object):
 
 		# - Create encoder base model
 		logger.info("Creating encoder model ...")
-		encoder_inputs= self.inputs
-		encoder_outputs= self.__create_base_model(encoder_inputs)
+		#encoder_inputs= self.inputs
+		#encoder_outputs= self.__create_base_model(encoder_inputs)
+		encoder_outputs= self.__create_base_model(self.input_data_dim)
 		
 		# - Create projection head model
-		#logger.info("Creating projection head model ...")
-		#projhead_inputs= encoder_outputs
-		#projhead_outputs= self.__create_projhead_model(projhead_inputs)
-
-		# - Create projection head layers
-		self.__create_projhead_layers()
+		logger.info("Creating projection head model ...")
+		projhead_input_data_dim= K.int_shape(encoder_outputs)
+		projhead_outputs= self.__create_projhead_model(projhead_input_data_dim)
 
 		# - Create softmax cosine similarity layer
-		soft_cos_sim = SoftmaxCosineSim(batch_size=self.batch_size, feat_dim=self.latent_dim)
-		#outputs= soft_cos_sim(projhead_outputs)    
-
+		soft_cos_sim= SoftmaxCosineSim(batch_size=self.batch_size, feat_dim=self.latent_dim) # NB: Dn't understand why in original code feat_dim is equal to encoder output shape
+		
 		# - Create model
-		num_layers_ph= len(self.ph_l)
-		i = []  # Inputs (# = 2 x batch_size)
-		f_x = []  # Output base_model
-		#h = []  # Flattened feature representation
-		g = []  # Projection head
-		for j in range(num_layers_ph):
-			g.append([])
+		#   Inputs: list of 2xbatch_size inputs
+		model_inputs= []
+		projhead_outputs= []
+		for i in range(2 * self.batch_size):
+			model_inputs.append( Input(shape=inputShape) )
+			projhead_outputs.append(self.projhead(self.encoder(model_inputs[i])))
+		
+		print("== projhead_outputs shape ==")
+		print(type(projhead_outputs))
+		print(len(projhead_outputs))
+		print(K.int_shape(projhead_outputs[0]))
 
-		for index in range(2 * self.batch_size):
-			i.append(Input(shape=inputShape, dtype='float'))
-			f_x.append(self.encoder(i[index]))
-			#h.append(layers.Flatten()(f_x[index]))
-			for j in range(num_layers_ph):
-				if j == 0:
-					#g[j].append(self.ph_l[j](h[index]))
-					g[j].append(self.ph_l[j](f_x[index]))
-				else:
-					g[j].append(self.ph_l[j](g[j - 1][index]))
+		model_outputs= soft_cos_sim(projhead_outputs)
 
-		o = soft_cos_sim(g[-1])  # Output = Last layer of projection head
+		print("== model_outputs shape ==")
+		print(type(model_outputs))
+		print(K.int_shape(model_outputs))
 
-		logger.info("isinstance(i, list)? %d" % (isinstance(i, list)))
-		logger.info("isinstance(o, list)? %d" % (isinstance(o, list)))
+		# - Create projection head layers
+		#self.__create_projhead_layers()
+
+		# - Create softmax cosine similarity layer
+		#soft_cos_sim = SoftmaxCosineSim(batch_size=self.batch_size, feat_dim=self.latent_dim)
+		
+		# - Create model
+		#num_layers_ph= len(self.ph_l)
+		#i = []  # Inputs (# = 2 x batch_size)
+		#f_x = []  # Output base_model
+		###h = []  # Flattened feature representation
+		#g = []  # Projection head
+		#for j in range(num_layers_ph):
+		#	g.append([])
+
+		#for index in range(2 * self.batch_size):
+		#	i.append(Input(shape=inputShape, dtype='float'))
+		#	f_x.append(self.encoder(i[index]))
+		#	###h.append(layers.Flatten()(f_x[index]))
+		#	for j in range(num_layers_ph):
+		#		if j == 0:
+		#			###g[j].append(self.ph_l[j](h[index]))
+		#			g[j].append(self.ph_l[j](f_x[index]))
+		#		else:
+		#			g[j].append(self.ph_l[j](g[j - 1][index]))
+
+		#o = soft_cos_sim(g[-1])  # Output = Last layer of projection head
+
+		#logger.info("isinstance(i, list)? %d" % (isinstance(i, list)))
+		#logger.info("isinstance(o, list)? %d" % (isinstance(o, list)))
      
 		#===========================
 		#==   COMPILE MODEL
 		#===========================
 		# - Define and compile model
 		logger.info("Creating SimCLR model ...")
-		self.model= Model(inputs=i, outputs=o, name='SimCLR')
-		#self.model= Model(inputs=self.inputs, outputs=outputs, name='SimCLR')
+		#self.model= Model(inputs=i, outputs=o, name='SimCLR')
+		self.model= Model(inputs=model_inputs, outputs=model_outputs, name='SimCLR')
 
 		logger.info("Compiling SimCLR model ...")
 		self.model.compile(optimizer=self.optimizer, loss=self.loss_type, run_eagerly=True)	
