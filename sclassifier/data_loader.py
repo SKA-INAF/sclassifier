@@ -1039,7 +1039,16 @@ class DataLoader(object):
 
 				# - Generate pairs of augmented data for SimCLR
 				if outdata_choice=='simclr':
-					data_pair= self.__generate_simclr_data(data_index)
+					data_pair= self.__generate_simclr_data(
+						data_index,
+						resize=resize, nx=nx, ny=ny, 
+						normalize=normalize, scale_to_abs_max=scale_to_abs_max, scale_to_max=scale_to_max, 
+						log_transform=log_transform, 
+						scale=scale, scale_factors=scale_factors, 
+						standardize=standardize, means=means, sigmas=sigmas,
+						chan_divide=chan_divide, chan_mins=chan_mins,
+						erode=erode, erode_kernel=erode_kernel
+					)
 					if data_pair is None:
 						logger.warn("Failed to read source data cube at index %d and generate data pairs, skip to next ..." % data_index)
 						continue
