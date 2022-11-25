@@ -422,36 +422,23 @@ class FeatExtractorSimCLR(object):
 	#####################################
 	##     CREATE PROJECTION HEAD
 	#####################################
-	def __create_projhead_layers(self):
-		""" Create the projection head layers """
-
-		# - Init layers
-		self.ph_l = []
-		num_layers_ph= len(self.dense_layer_sizes)
-
-		# - Add dense layers to list
-		#for j in range(num_layers_ph):
-		#	layer_size= self.dense_layer_sizes[j]
-
-		#	if j < num_layers_ph - 1:
-		#		self.ph_l.append(
-		#			layers.Dense(layer_size, activation=self.dense_layer_activation, kernel_regularizer=l1(self.ph_regul))
-		#		)
-		#	else:
-		#		self.ph_l.append(
-		#			layers.Dense(layer_size, kernel_regularizer=l1(self.ph_regul))
-		#		)
-
-		if self.add_dense:
-			for j in range(num_layers_ph):	
-				layer_size= self.dense_layer_sizes[j]
-				self.ph_l.append(
-					layers.Dense(layer_size, activation=self.dense_layer_activation, kernel_regularizer=l1(self.ph_regul))
-				)
-
-		self.ph_l.append(
-			layers.Dense(self.latent_dim, kernel_regularizer=l1(self.ph_regul), name='projhead_output')
-		)
+	#def __create_projhead_layers(self):
+	#	""" Create the projection head layers """
+	#
+	#	# - Init layers
+	#	self.ph_l = []
+	#	num_layers_ph= len(self.dense_layer_sizes)
+	#
+	#	if self.add_dense:
+	#		for j in range(num_layers_ph):	
+	#			layer_size= self.dense_layer_sizes[j]
+	#			self.ph_l.append(
+	#				layers.Dense(layer_size, activation=self.dense_layer_activation, kernel_regularizer=l1(self.ph_regul))
+	#			)
+	#
+	#	self.ph_l.append(
+	#		layers.Dense(self.latent_dim, kernel_regularizer=l1(self.ph_regul), name='projhead_output')
+	#	)
 
 
 	#####################################
