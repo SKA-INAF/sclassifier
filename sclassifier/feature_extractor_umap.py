@@ -90,43 +90,11 @@ class FeatExtractorUMAP(object):
 		self.nepochs= None # default=None
 		self.random_seed= 42
 
-		self.classid_label_map= {
-			0: "UNKNOWN",
-			-1: "MIXED_TYPE",
-			1: "STAR",
-			2: "GALAXY",
-			3: "PN",
-			6: "HII",
-			23: "PULSAR",
-			24: "YSO",			
-			6000: "QSO",
-		}
+		self.classid_label_map= {}
 
 		# - Draw options
-		self.marker_mapping= {
-			'UNKNOWN': 'o', # unknown
-			'MIXED_TYPE': 'X', # mixed type
-			'STAR': 'x', # star
-			'GALAXY': 'D', # galaxy
-			'PN': '+', # PN
-			'HII': 's', # HII
-			'YSO': 'P', # YSO
-			'QSO': 'v', # QSO
-			'PULSAR': 'd', # pulsar
-		}
-
-		self.marker_color_mapping= {
-			'UNKNOWN': 'k', # unknown
-			'MIXED_TYPE': 'tab:gray', # mixed type
-			'STAR': 'r', # star
-			'GALAXY': 'm', # galaxy
-			'PN': 'g', # PN
-			'HII': 'b', # HII
-			'YSO': 'y', # YSO
-			'QSO': 'c', # QSO
-			'PULSAR': 'tab:orange', # pulsar
-		}
-		
+		self.marker_mapping= {}
+		self.marker_color_mapping= {}
 
 		# - Output data
 		self.outfile_encoded_data_unsupervised= 'encoded_data_unsupervised.dat'
@@ -159,6 +127,58 @@ class FeatExtractorUMAP(object):
 	def set_min_dist(self,d):
 		""" Set min distance parameter"""
 		self.min_dist= d
+
+
+	def set_classid_label_map_astroclass(self):
+		""" Set class id-label map """
+
+		self.classid_label_map= {
+			0: "UNKNOWN",
+			-1: "MIXED_TYPE",
+			1: "STAR",
+			2: "GALAXY",
+			3: "PN",
+			6: "HII",
+			23: "PULSAR",
+			24: "YSO",			
+			6000: "QSO",
+		}
+
+		self.marker_mapping= {
+			'UNKNOWN': 'o', # unknown
+			'MIXED_TYPE': 'X', # mixed type
+			'STAR': 'x', # star
+			'GALAXY': 'D', # galaxy
+			'PN': '+', # PN
+			'HII': 's', # HII
+			'YSO': 'P', # YSO
+			'QSO': 'v', # QSO
+			'PULSAR': 'd', # pulsar
+		}
+
+		self.marker_color_mapping= {
+			'UNKNOWN': 'k', # unknown
+			'MIXED_TYPE': 'tab:gray', # mixed type
+			'STAR': 'r', # star
+			'GALAXY': 'm', # galaxy
+			'PN': 'g', # PN
+			'HII': 'b', # HII
+			'YSO': 'y', # YSO
+			'QSO': 'c', # QSO
+			'PULSAR': 'tab:orange', # pulsar
+		}
+
+	def set_classid_label_map_morphclass(self):
+		""" Set class id-label map """
+
+		self.classid_label_map= {
+			0: "UNKNOWN",
+			1: "POINT-LIKE",
+			2: "COMPACT",
+			3: "EXTENDED",
+			4: "EXTENDED-MULTISLAND",
+			5: "DIFFUSE"
+		}
 
 	def __set_preclass_data(self):
 		""" Set pre-classified data """
@@ -220,7 +240,10 @@ class FeatExtractorUMAP(object):
 		for data in table:
 			sname= data[0]
 			classid= data[ncols-1]
-			label= self.classid_label_map[classid]
+			if self.classid_label_map:
+				label= self.classid_label_map[classid]
+			else:
+				label= str(classid)
 
 			self.source_names.append(sname)
 			self.data_labels.append(label)
@@ -271,7 +294,10 @@ class FeatExtractorUMAP(object):
 			self.data_classids= class_ids
 
 			for classid in self.data_classids:
-				label= self.classid_label_map[classid]
+				if self.classid_label_map:
+					label= self.classid_label_map[classid]
+				else:
+					label= str(classid)
 				self.data_labels.append(label)
 
 		else:
