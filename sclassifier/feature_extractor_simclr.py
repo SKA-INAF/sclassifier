@@ -839,9 +839,9 @@ class FeatExtractorSimCLR(object):
 			logger.error("Model object is None, loading failed!")
 			return -1
 
-		if not self.encoder or self.encoder is None:
-			logger.error("Encoder model object is None, loading failed!")
-			return -1
+		#if not self.encoder or self.encoder is None:
+		#	logger.error("Encoder model object is None, loading failed!")
+		#	return -1
 
 		#==============================
 		#==   LOAD MODEL WEIGHTS
