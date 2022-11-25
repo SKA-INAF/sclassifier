@@ -39,6 +39,9 @@ from astropy.io import ascii
 from astropy.table import Column
 import regions
 
+import fitsio
+from fitsio import FITS, FITSHDR
+
 
 ## MONTAGE MODULES
 from montage_wrapper.commands import mImgtbl
@@ -311,7 +314,9 @@ class Utils(object):
 
 		return d
 
-
+	#===========================
+	#==   WRITE FITS FILE
+	#===========================
 	@classmethod
 	def write_fits(cls,data,filename):
 		""" Read data to FITS image """
@@ -320,6 +325,9 @@ class Utils(object):
 		hdul= fits.HDUList([hdu])
 		hdul.writeto(filename,overwrite=True)
 
+	#===========================
+	#==   READ FITS FILE
+	#===========================
 	@classmethod
 	def read_fits(cls, filename):
 		""" Read FITS image and return data """
@@ -359,9 +367,99 @@ class Utils(object):
 		# - Close file
 		hdu.close()
 
-		#return output_data, header
 		return output_data, header, wcs
 
+	@classmethod
+	def read_fits_crop(cls, filename, ixmin, ixmax, iymin, iymax):
+		""" Read a portion of FITS image specified by x-y ranges and return data. Using fitsio module and not astropy. NB: xmax/ymax pixel are excluded """
+
+		# - Open file
+		try:
+			f= fitsio.FITS(filename)
+		except Exception as e:
+			logger.error("Failed to open file %s (err=%s)!" % (filename, str(e)))
+			return None
+
+		# - Read image chunk
+		hdu_id= 0
+		data_dims= f[hdu_id].get_dims()
+		nchan= len(data_dims)
+		try:
+			if nchan==4:
+				data= f[hdu_id][0, 0, iymin:iymax, ixmin:ixmax]
+				data= data[0,0,:,:]
+			elif nchan==2:
+				data= f[hdu_id][iymin:iymax, ixmin:ixmax]
+			else:
+				logger.error("Invalid/unsupported number of channels (nchan=%d) found in file %s!" % (nchan, filename))
+				f.close()
+				return None
+
+		except Exception as e:
+			logger.error("Failed to read data in range[%d:%d,%d:%d] from file %s (err=%s)!" % (iymin, iymax, ixmin, ixmax, filename, str(e)))
+			f.close()
+			return None
+		
+		# - Close file
+		f.close()
+
+		return data
+
+
+	@classmethod
+	def read_fits_random_crop(cls, filename, dx, dy):
+		""" Read a random portion of FITS image of size (dx, dy) and return data. Using fitsio module and not astropy. """
+	
+		# - Open file
+		try:
+			f= fitsio.FITS(filename)
+		except Exception as e:
+			logger.error("Failed to open file %s (err=%s)!" % (filename, str(e)))
+			return None
+
+		# - Get image info
+		hdu_id= 0
+		data_dims= f[hdu_id].get_dims()
+		nchan= len(data_dims)
+		if nchan==4:
+			nx= data_dims[3]
+			ny= data_dims[2]
+		elif nchan==2:
+			nx= data_dims[1]
+			ny= data_dims[0]
+		else:
+			logger.error("Invalid/unsupported number of channels (nchan=%d) found in file %s!" % (nchan, filename))
+			f.close()
+			return None
+
+		# - Generate random xmin & ymin and read cutout
+		#   NB: max value is included in randint 
+		ixmin= random.randint(0, nx-dx-1)
+		iymin= random.randint(0, ny-dy-1)
+		ixmax= ixmin + dx
+		iymax= iymin + dy
+
+		# - Read image chunk
+		try:
+			if nchan==4:
+				data= f[hdu_id][0, 0, iymin:iymax, ixmin:ixmax]
+				data= data[0,0,:,:]
+			elif nchan==2:
+				data= f[hdu_id][iymin:iymax, ixmin:ixmax]
+			else:
+				logger.error("Invalid/unsupported number of channels (nchan=%d) found in file %s!" % (nchan, filename))
+				f.close()
+				return None
+
+		except Exception as e:
+			logger.error("Failed to read data in range[%d:%d,%d:%d] from file %s (err=%s)!" % (iymin, iymax, ixmin, ixmax, filename, str(e)))
+			f.close()
+			return None
+
+		# - Close file
+		f.close()
+
+		return data, (ixmin, ixmax, iymin, iymax)
 
 	#===========================
 	#==   MAKE IMG METADATA

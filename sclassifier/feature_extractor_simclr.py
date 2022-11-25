@@ -828,7 +828,8 @@ class FeatExtractorSimCLR(object):
 		#==============================
 		#==   LOAD MODEL ARCHITECTURE
 		#==============================
-		custom_objects= None
+		#custom_objects= None
+		custom_objects['SoftmaxCosineSim']= SoftmaxCosineSim 
 		
 		try:
 			self.model= load_model(modelfile, custom_objects=custom_objects)
