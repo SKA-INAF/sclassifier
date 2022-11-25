@@ -362,8 +362,6 @@ class FeatExtractorSimCLR(object):
 		if self.add_dense:
 			x = layers.Dense(self.latent_dim, activation=self.dense_layer_activation)(x)
 
-		x.name= "encoder_output"
-
 		#===========================
 		#==  BUILD MODEL
 		#===========================
