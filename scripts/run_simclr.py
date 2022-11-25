@@ -104,6 +104,8 @@ def get_args():
 	# - Network architecture options
 	parser.add_argument('-weightfile', '--weightfile', dest='weightfile', required=False, type=str, default="", action='store',help='Weight file (hd5) to be loaded (default=no)')	
 	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=False, type=str, default="", action='store',help='Model architecture file (json) to be loaded (default=no)')
+	parser.add_argument('-weightfile_encoder', '--weightfile_encoder', dest='weightfile_encoder', required=False, type=str, default="", action='store',help='Encoder weight file (hd5) to be loaded (default=no)')	
+	parser.add_argument('-modelfile_encoder', '--modelfile_encoder', dest='modelfile_encoder', required=False, type=str, default="", action='store',help='Encoder model architecture file (json) to be loaded (default=no)')
 	parser.add_argument('-latentdim', '--latentdim', dest='latentdim', required=False, type=int, default=2, action='store',help='Dimension of latent vector (default=2)')	
 	parser.add_argument('--add_maxpooling_layer', dest='add_maxpooling_layer', action='store_true',help='Add max pooling layer after conv layers ')	
 	parser.set_defaults(add_maxpooling_layer=False)	
@@ -186,6 +188,8 @@ def main():
 	# - Model architecture
 	modelfile= args.modelfile
 	weightfile= args.weightfile
+	modelfile_encoder= args.modelfile_encoder
+	weightfile_encoder= args.weightfile_encoder
 	latentdim= args.latentdim
 	add_maxpooling_layer= args.add_maxpooling_layer
 	add_batchnorm_layer= args.add_batchnorm_layer
@@ -239,6 +243,8 @@ def main():
 
 	simclr.modelfile= modelfile
 	simclr.weightfile= weightfile
+	simclr.modelfile_encoder= modelfile_encoder
+	simclr.weightfile_encoder= weightfile_encoder
 	simclr.set_image_size(nx, ny)
 	simclr.latent_dim= latentdim
 
@@ -281,7 +287,7 @@ def main():
 	if predict:
 		status= simclr.run_predict(modelfile, weightfile)
 	else:
-		status= simclr.run_train()
+		status= simclr.run_train(modelfile, weightfile, modelfile_encoder, weightfile_encoder)
 	
 	if status<0:
 		logger.error("SimCLR run failed!")

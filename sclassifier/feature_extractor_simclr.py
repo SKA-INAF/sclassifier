@@ -135,7 +135,9 @@ class FeatExtractorSimCLR(object):
 		# - NN architecture
 		self.model= None
 		self.modelfile= ""
+		self.modelfile_encoder= ""
 		self.weightfile= ""
+		self.weightfile_encoder= ""
 		self.fitout= None		
 		self.encoder= None
 		self.projhead= None
@@ -576,7 +578,7 @@ class FeatExtractorSimCLR(object):
 	#####################################
 	##     RUN TRAIN
 	#####################################
-	def run_train(self):
+	def run_train(self, modelfile="", weightfile="", modelfile_encoder="", weightfile_encoder=""):
 		""" Run network training """
 
 		#===========================
@@ -592,11 +594,24 @@ class FeatExtractorSimCLR(object):
 		#==   BUILD MODEL
 		#===========================
 		#- Create the network or load it from file?
-		if self.modelfile!="":
-			logger.info("Loading network architecture from file: %s, %s ..." % (self.modelfile, self.weightfile))
-			if self.__load_model(self.modelfile, self.weightfile)<0:
+		if modelfile!="":
+			logger.info("Loading network architecture from file: %s, %s ..." % (modelfile, weightfile))
+			if self.__load_model(modelfile, weightfile)<0:
 				logger.error("Model loading failed!")
 				return -1
+
+			self.modelfile= modelfile
+			self.weightfile= weightfile
+
+			# - Load encoder?
+			if modelfile_encoder!="":
+				if self.__load_encoder(modelfile_encoder, weightfile_encoder)<0:
+					logger.error("Encoder model loading failed!")
+					return -1
+
+				self.modelfile_encoder= modelfile_encoder
+				self.weightfile_encoder= weightfile_encoder
+
 		else:
 			logger.info("Building network architecture ...")
 			if self.__create_model()<0:
@@ -660,24 +675,29 @@ class FeatExtractorSimCLR(object):
 		#- Save the model weights
 		logger.info("Saving model weights ...")
 		self.model.save_weights('model_weights.h5')
-		self.encoder.save_weights('encoder_weights.h5')
-		
+				
 		# -Save the model architecture in json format
 		logger.info("Saving model architecture in json format ...")
 		with open('model_architecture.json', 'w') as f:
 			f.write(self.model.to_json())
 
-		with open('encoder_architecture.json', 'w') as f:
-			f.write(self.encoder.to_json())
-
 		#- Save the model
 		logger.info("Saving full model ...")
 		self.model.save('model.h5')
-		self.encoder.save('encoder.h5')
 		
 		# - Save the network architecture diagram
 		logger.info("Saving model architecture to file %s ..." % (self.outfile_model))
 		plot_model(self.model, to_file=self.outfile_model, show_shapes=True)
+
+		# - Save encoder
+		if self.encoder:
+			self.encoder.save_weights('encoder_weights.h5')
+
+			with open('encoder_architecture.json', 'w') as f:
+				f.write(self.encoder.to_json())
+
+			self.encoder.save('encoder.h5')
+
 		
 		#================================
 		#==   SAVE TRAIN METRICS
@@ -759,7 +779,7 @@ class FeatExtractorSimCLR(object):
 	#####################################
 	##     RUN PREDICT
 	#####################################
-	def run_predict(self, modelfile, weightfile):
+	def run_predict(self, modelfile_encoder, weightfile_encoder):
 		""" Run model prediction """
 
 		#===========================
@@ -775,10 +795,13 @@ class FeatExtractorSimCLR(object):
 		#==   LOAD MODEL
 		#===========================
 		#- Create the network architecture and weights from file
-		logger.info("Loading model architecture and weights from files %s %s ..." % (modelfile, weightfile))
-		if self.__load_model(modelfile, weightfile)<0:
-			logger.warn("Failed to load model from files!")
+		logger.info("Loading encoder model architecture and weights from files %s %s ..." % (modelfile_encoder, weightfile_encoder))
+		if self.__load_encoder(modelfile_encoder, weightfile_encoder)<0:
+			logger.warn("Failed to load encoder model from files!")
 			return -1
+
+		self.modelfile_encoder= modelfile_encoder
+		self.weightfile_encoder= weightfile_encoder			
 
 		#===========================
 		#==   PREDICT
@@ -855,7 +878,7 @@ class FeatExtractorSimCLR(object):
 			try:
 				self.model.load_weights(weightfile)
 			except Exception as e:
-				logger.warn("Failed to load model wegiths from file %s (err=%s)!" % (weightfile, str(e)))
+				logger.warn("Failed to load model weights from file %s (err=%s)!" % (weightfile, str(e)))
 				return -1
 		
 		#===========================
@@ -866,6 +889,38 @@ class FeatExtractorSimCLR(object):
 		# - Print and draw model
 		self.model.summary()
 		plot_model(self.model, to_file=self.outfile_model, show_shapes=True)
+
+		return 0
+
+	#####################################
+	##     LOAD ENCODER MODEL
+	#####################################
+	def __load_encoder(self, modelfile, weightfile=""):
+		""" Load encoder model and weights from input h5 file """
+
+		#==============================
+		#==   LOAD MODEL ARCHITECTURE
+		#==============================
+		try:
+			self.encoder= load_model(modelfile)
+			
+		except Exception as e:
+			logger.warn("Failed to load encoder model from file %s (err=%s)!" % (modelfile, str(e)))
+			return -1
+
+		if not self.model or self.model is None:
+			logger.error("Model object is None, loading failed!")
+			return -1
+
+		#==============================
+		#==   LOAD MODEL WEIGHTS
+		#==============================
+		if weightfile:
+			try:
+				self.encoder.load_weights(weightfile)
+			except Exception as e:
+				logger.warn("Failed to load encoder model weights from file %s (err=%s)!" % (weightfile, str(e)))
+				return -1
 
 		return 0
 	
