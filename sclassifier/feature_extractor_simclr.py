@@ -349,12 +349,20 @@ class FeatExtractorSimCLR(object):
 			# - Add max pooling?
 			if self.add_max_pooling:
 				padding= "valid"
-				x = layers.MaxPooling2D(pool_size=(self.pool_size,self.pool_size),strides=None,padding=padding)(x)
+				x = layers.MaxPooling2D(pool_size=(self.pool_size,self.pool_size), strides=None, padding=padding)(x)
 			
 		#===========================
 		#==  FLATTEN LAYER
 		#===========================
 		x = layers.Flatten()(x)
+
+		#===========================
+		#==  DENSE LAYER
+		#===========================
+		if self.add_dense:
+			x = layers.Dense(self.latent_dim, activation=self.dense_layer_activation)(x)
+
+		x.name= "encoder_output"
 
 		#===========================
 		#==  BUILD MODEL
@@ -385,14 +393,18 @@ class FeatExtractorSimCLR(object):
 		#===========================
 		#==  DENSE LAYER
 		#===========================
-		if self.add_dense:
-			for layer_size in self.dense_layer_sizes:
-				x = layers.Dense(layer_size, activation=self.dense_layer_activation, kernel_regularizer=l1(self.ph_regul))(x)
+		num_layers_ph= len(self.dense_layer_sizes)
 
+		for j in range(num_layers_ph):
+			layer_size= self.dense_layer_sizes[j]
+
+			if j < num_layers_ph - 1:
+				x = layers.Dense(layer_size, activation=self.dense_layer_activation, kernel_regularizer=l1(self.ph_regul))(x)
 				if self.add_dropout_layer:
 					x= layers.Dropout(self.dropout_rate)(x)
-
-		x = layers.Dense(self.latent_dim, kernel_regularizer=l1(self.ph_regul), name='projhead_output')(x)
+			else:
+				x = layers.Dense(layer_size, name='projhead_output')(x)
+		
 
 		#===========================
 		#==  BUILD MODEL
