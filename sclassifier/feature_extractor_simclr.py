@@ -660,15 +660,20 @@ class FeatExtractorSimCLR(object):
 		#- Save the model weights
 		logger.info("Saving model weights ...")
 		self.model.save_weights('model_weights.h5')
+		self.encoder.save_weights('encoder_weights.h5')
 		
 		# -Save the model architecture in json format
 		logger.info("Saving model architecture in json format ...")
 		with open('model_architecture.json', 'w') as f:
 			f.write(self.model.to_json())
 
+		with open('encoder_architecture.json', 'w') as f:
+			f.write(self.encoder.to_json())
+
 		#- Save the model
 		logger.info("Saving full model ...")
 		self.model.save('model.h5')
+		self.encoder.save('encoder.h5')
 		
 		# - Save the network architecture diagram
 		logger.info("Saving model architecture to file %s ..." % (self.outfile_model))
