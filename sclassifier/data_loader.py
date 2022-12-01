@@ -474,7 +474,7 @@ class SourceData(object):
 			if i==chref:
 				data_norm[:,:,i]= np.copy(data_ref)
 			else:
-				logger.info("Divide channel %d by reference channel %d ..." % (i, refch))
+				logger.info("Divide channel %d by reference channel %d ..." % (i, chref))
 				dn= data_norm[:,:,i]/data_denom
 				dn[~cond]= 0 # set ratio to zero if ref pixel flux was zero or nan
 				data_norm[:,:,i]= dn
@@ -494,7 +494,7 @@ class SourceData(object):
 				data_transf[data_transf>trim_max]= trim_max
 				data_transf[data_transf<trim_min]= trim_min
 
-			data_transf[:,:,refch]= data_norm[:,:,refch]
+			data_transf[:,:,chref]= data_norm[:,:,chref]
 			data_norm= data_transf
 
 		# - Check data cube integrity
