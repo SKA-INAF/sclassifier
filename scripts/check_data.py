@@ -229,7 +229,7 @@ def main():
 		chan_divide=chan_divide, chan_mins=chan_mins,
 		erode=erode, erode_kernel=erode_kernel,
 		subtract_bkg_and_clip=subtract_bkg_and_clip,
-		outdata_choice='cae'
+		outdata_choice='sdata'
 	)	
 
 	img_counter= 0
