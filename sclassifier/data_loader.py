@@ -447,6 +447,7 @@ class SourceData(object):
 			return None
 
 		# - Mask all channels at border
+		logger.info("Masking all channels at border (fract=%f) ..." % (mask_fract))
 		for i in range(self.img_cube.shape[-1]):
 			#data= self.img_cube[:,:,i]
 			data_shape= self.img_cube[:,:,i].shape
