@@ -329,8 +329,33 @@ class SourceData(object):
 
 		return 0
 		
-
 	def log_transform_imgs(self):
+		""" Apply log transform to images """
+	
+		# - Return if data cube is None
+		if self.img_cube is None:
+			logger.error("Image data cube is None!")
+			return -1
+
+		# - Apply log
+		cond= np.logical_and(self.img_cube>0, np.isfinite(self.img_cube))
+		data_transf= np.log10(self.img_cube, where=cond)
+
+		# - Set to zero neg or nan pixels
+		data_transf[~cond]= 0
+
+		# - Check data cube integrity
+		has_bad_pixs= self.has_bad_pixel(data_transf, check_fract=False, thr=0)
+		if has_bad_pixs:
+			logger.warn("Log-transformed data cube has bad pixels!")	
+			return -1
+
+		# - Update data cube
+		self.img_cube= data_norm
+
+		return 0
+
+	def log_transform_imgs_old(self):
 		""" Apply log transform to images """
 
 		# - Return if data cube is None
@@ -949,6 +974,12 @@ class DataLoader(object):
 				logger.error("Failed to chan divide source image %d!" % index)
 				return None
 
+		# - Log-tranform image?
+		if log_transform:
+			if sdata.log_transform_imgs()<0:
+				logger.error("Failed to log-transform source image %d!" % index)
+				return None
+
 		# - Channel division?
 		#   NB: Prefer to do it before image augmentation and resize
 		if chan_divide:
@@ -1004,12 +1035,7 @@ class DataLoader(object):
 				logger.error("Failed to normalize source image %d!" % index)
 				return None
 
-		# - Log-tranform image?
-		#if log_transform:
-		#	if sdata.log_transform_imgs()<0:
-		#		logger.error("Failed to log-transform source image %d!" % index)
-		#		return None
-
+		
 		return sdata
 
 
