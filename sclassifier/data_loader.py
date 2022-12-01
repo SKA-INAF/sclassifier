@@ -465,7 +465,7 @@ class SourceData(object):
 			data[mask==0]= 0
 			print("data")
 			print(data)
-			self.img_cube[:,:,i]= data
+			self.img_cube[:,:,i]= np.copy(data)
 	
 		return 0
 
