@@ -329,7 +329,7 @@ class SourceData(object):
 
 		return 0
 		
-	def log_transform_imgs(self, skip_chref=True, chref=0=0):
+	def log_transform_imgs(self, skip_chref=True, chref=0):
 		""" Apply log transform to images """
 	
 		# - Return if data cube is None
