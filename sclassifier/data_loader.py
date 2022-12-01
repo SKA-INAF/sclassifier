@@ -461,31 +461,6 @@ class SourceData(object):
 			logger.error("Image data cube is None!")
 			return -1
 
-		# - Subtract mean bkg in reference channel
-		#data_ref= np.copy(self.img_cube[:,:,chref])
-		#if bkgsub:
-		#	logger.info("Subtracting bkg in reference channel ...")
-		#	cond= np.logical_and(data_ref!=0, np.isfinite(data_ref))
-		#	data_ref_1d= data_ref[cond]
-		#	clipmean, _, _ = sigma_clipped_stats(data_ref, sigma=bkgsub_sigma)
-		#	data_ref-= clipmean
-		#	data_ref[cond]= 0
-		#	print("data ref min/max (after bkgsub)")
-		#	print(data_ref.min())
-		#	print(data_ref.max())
-
-		# - Set to zero all pixels in reference channel that are below sigma clip
-		#if sigmaclip:
-		#	logger.info("Set to zero all pixels in reference channel that are below sigma clip ...")
-		#	cond= np.logical_and(data_ref!=0, np.isfinite(data_ref))
-		#	data_ref_1d= data_ref[cond]
-		#	clipmean, _, _ = sigma_clipped_stats(data_ref, sigma=sigma)
-		#	data_ref[data_ref<clipmean]= 0
-		#	data_ref[cond]= 0
-		#	print("data ref min/max (after sigmaclip)")
-		#	print(data_ref.min())
-		#	print(data_ref.max())
-
 		# - Divide other channels by reference channel
 		data_ref= np.copy(self.img_cube[:,:,chref])
 		data_norm= np.copy(self.img_cube)
@@ -962,7 +937,7 @@ class DataLoader(object):
 		# - Subtract bkg from ref channel?
 		#   NB: Prefer to do it before image augmentation and resize
 		if subtract_bkg_and_clip:
-			if sdata.subtract_bkg_and_clip(chref=0, bkgsub_sigma=3, sigma=1)<0:
+			if sdata.subtract_bkg_and_clip(chref=0, sigma_bkgsub=3, sigma_clip=1)<0:
 				logger.error("Failed to chan divide source image %d!" % index)
 				return None
 
