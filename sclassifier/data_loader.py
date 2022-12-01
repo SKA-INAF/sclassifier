@@ -438,34 +438,53 @@ class SourceData(object):
 		return 0
 
 
-	def __subtract_bkg_and_clip(self, data, sigma_bkg=3, sigma_clip=1, use_mask=False, mask_fract=0.2):
+	def __subtract_bkg_and_clip(self, data, sigma_bkg=3, sigma_clip=1, use_mask=False, mask_fract=0.8):
 		""" Subtract background and clip below a given sigma in input data """
 
-		# - Return if data cube is None
+		# - Return if input data is None
 		if data is None:
 			logger.error("Input data is None!")
 			return None
 		
+		cond= np.logical_and(data!=0, np.isfinite(data))
+		
+		# - Mask region at image center (where source is supposed to be)?
+		bkgdata= np.copy(data) 
+		if use_mask:
+			data_shape= data.shape
+			xc= data_shape[1]/2
+			yc= data_shape[0]/2
+			dy= int(data_shape[0]*mask_fract/2.)
+			dx= int(data_shape[1]*mask_fract/2.)
+			xmin= xc - dx
+			xmax= xc + dx
+			ymin= yc - dy
+			ymax= yc + dy
+			bkgdata[ymin:ymax, xmin:xmax]= 0
+	
 		# - Retrieve chref data
-		data_ref= np.copy(data)
-		cond= np.logical_and(data_ref!=0, np.isfinite(data_ref))
-		data_ref_1d= data_ref[cond]
-		logger.info("--> data ref min/max (before bkgsub)=%s/%s" % (str(data_ref_1d.min()), str(data_ref_1d.max())))
+		#cond= np.logical_and(data_ref!=0, np.isfinite(data_ref))
+		#data_ref_1d= data_ref[cond]
+		#logger.info("--> data ref min/max (before bkgsub)=%s/%s" % (str(data_ref_1d.min()), str(data_ref_1d.max())))
 
-		# - Subtract mean bkg in reference channel
+		# - Compute and subtract mean bkg from data
 		logger.info("Subtracting bkg ...")
-		bkgval, _, _ = sigma_clipped_stats(data_ref_1d, sigma=sigma_bkg)
+		cond_bkg= np.logical_and(bkgdata!=0, np.isfinite(bkgdata))
+		bkgdata_1d= bkgdata[cond_bkg]
+		logger.info("--> bkgdata min/max=%s/%s" % (str(bkgdata_1d.min()), str(bkgdata_1d.max())))
 
-		data_bkgsub= np.copy(data_ref)
+		bkgval, _, _ = sigma_clipped_stats(bkgdata_1d, sigma=sigma_bkg)
+
+		data_bkgsub= np.copy(data)
 		data_bkgsub-= bkgval
 		data_bkgsub[~cond]= 0
 		cond_bkgsub= np.logical_and(data_bkgsub!=0, np.isfinite(data_bkgsub))
 		data_bkgsub_1d= data_bkgsub[cond_bkgsub]
 
-		logger.info("--> data ref min/max (after bkgsub)=%s/%s (bkg=%s)" % (str(data_bkgsub_1d.min()), str(data_bkgsub_1d.max()), str(bkgval)))
+		logger.info("--> data min/max (after bkgsub)=%s/%s (bkg=%s)" % (str(data_bkgsub_1d.min()), str(data_bkgsub_1d.max()), str(bkgval)))
 
 		# - Set to zero all pixels in reference channel that are below sigma clip
-		clipval= 0
+		#clipval= 0
 		logger.info("Clipping all pixels in reference channel that are below %f sigma ..." % (sigma_clip))
 		clipmean, _, _ = sigma_clipped_stats(data_bkgsub_1d, sigma=sigma_clip)
 		data_clipped= np.copy(data_bkgsub)
@@ -475,7 +494,7 @@ class SourceData(object):
 		cond_clipped= np.logical_and(data_clipped!=0, np.isfinite(data_clipped))
 		data_clipped_1d= data_clipped[cond_clipped]
 
-		logger.info("--> data ref min/max (after sigmaclip)=%s/%s (clipmean=%s)" % (str(data_clipped_1d.min()), str(data_clipped_1d.max()), str(clipmean)))
+		logger.info("--> data min/max (after sigmaclip)=%s/%s (clipmean=%s)" % (str(data_clipped_1d.min()), str(data_clipped_1d.max()), str(clipmean)))
 
 		return data_clipped 
 
