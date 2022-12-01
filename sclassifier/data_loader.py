@@ -493,7 +493,7 @@ class SourceData(object):
 			if limit_to_chref and i!=chref:
 				continue
 			
-			data_clipped= __subtract_bkg_and_clip(self.img_cube[:,:,i], sigma_bkg, sigma_clip, use_mask, mask_fract)
+			data_clipped= self.__subtract_bkg_and_clip(self.img_cube[:,:,i], sigma_bkg, sigma_clip, use_mask, mask_fract)
 			self.img_cube[:,:,i]= data_clipped
 		
 		# - Retrieve chref data
@@ -1025,7 +1025,7 @@ class DataLoader(object):
 		# - Subtract bkg from ref channel?
 		#   NB: Prefer to do it before image augmentation and resize
 		if subtract_bkg_and_clip:
-			if sdata.subtract_bkg_and_clip(chref=0, sigma_bkg=3, sigma_clip=1)<0:
+			if sdata.subtract_bkg_and_clip(limit_to_chref=True, chref=0, sigma_bkg=3, sigma_clip=1)<0:
 				logger.error("Failed to chan divide source image %d!" % index)
 				return None
 
