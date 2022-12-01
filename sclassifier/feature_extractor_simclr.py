@@ -595,7 +595,7 @@ class FeatExtractorSimCLR(object):
 		#===========================
 		#- Create the network or load it from file?
 		if modelfile!="":
-			logger.info("Loading network architecture from file: %s, %s ..." % (modelfile, weightfile))
+			logger.info("Loading model architecture from file: %s, %s ..." % (modelfile, weightfile))
 			if self.__load_model(modelfile, weightfile)<0:
 				logger.error("Model loading failed!")
 				return -1
@@ -605,6 +605,7 @@ class FeatExtractorSimCLR(object):
 
 			# - Load encoder?
 			if modelfile_encoder!="":
+				logger.info("Loading encoder model architecture from file: %s, %s ..." % (modelfile_encoder, weightfile_encoder))
 				if self.__load_encoder(modelfile_encoder, weightfile_encoder)<0:
 					logger.error("Encoder model loading failed!")
 					return -1

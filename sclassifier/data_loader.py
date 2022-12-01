@@ -26,6 +26,7 @@ from tensorflow.keras.utils import to_categorical
 
 ## ASTROPY MODULES 
 from astropy.io import ascii
+from astropy.stats import sigma_clipped_stats
 
 ## ADDON ML MODULES
 from sklearn.model_selection import train_test_split
@@ -407,7 +408,81 @@ class SourceData(object):
 		return 0
 
 
-	def divide_imgs(self, chref=0, logtransf=False, make_positive=True, chan_mins=[], strip_chref=True, trim=True, trim_min=-6, trim_max=6):
+	def divide_imgs(self, chref=0, bkgsub=True, bkgsub_sigma=3, sigmaclip=True, sigma=1, logtransf=False, strip_chref=False, trim=False, trim_min=-6, trim_max=6):
+		""" Normalize images by dividing for a given channel id """
+
+		# - Return if data cube is None
+		if self.img_cube is None:
+			logger.error("Image data cube is None!")
+			return -1
+
+		# - Subtract mean bkg in reference channel
+		data_ref= np.copy(self.img_cube[:,:,chref])
+		if bkgsub:
+			cond= np.logical_and(data_ref!=0, np.isfinite(data_ref))
+			data_ref_1d= data_ref[cond]
+			clipmean, _, _ = sigma_clipped_stats(data_ref, sigma=bkgsub_sigma)
+			data_ref-= clipmean
+			data_ref[cond]= 0
+			print("data ref min/max (after bkgsub)")
+			print(data_ref.min())
+			print(data_ref.max())
+
+		# - Set to zero all pixels in reference channel that are below sigma clip
+		if sigmaclip:
+			cond= np.logical_and(data_ref!=0, np.isfinite(data_ref))
+			data_ref_1d= data_ref[cond]
+			clipmean, _, _ = sigma_clipped_stats(data_ref, sigma=sigma)
+			data_ref[data_ref<clipmean]= 0
+			data_ref[cond]= 0
+			print("data ref min/max (after sigmaclip)")
+			print(data_ref.min())
+			print(data_ref.max())
+
+		# - Divide other channels by reference channel
+		data_norm= np.copy(self.img_cube)
+		data_denom= np.copy(data_ref)
+		data_denom[data_denom==0]= 1
+		for i in range(data_norm.shape[-1]):
+			if i==chref:
+				data_norm[:,:,i]= np.copy(data_ref)
+			else:
+				dn= data_norm[:,:,i]/data_denom
+				dn[data_ref==0]= 0 # set ratio to zero if ref pixel flux is zero			
+				data_norm[:,:,i]= dn
+
+		data_norm[self.img_cube==0]= 0
+
+		# - Apply log transform to ratio channels?
+		if logtransf:
+			data_norm[data_norm<=0]= 1
+			data_norm_lg= np.log10(data_norm)
+			data_norm= data_norm_lg
+
+			data_norm[self.img_cube==0]= 0
+
+			if trim:
+				data_norm[data_norm>trim_max]= trim_max
+				data_norm[data_norm<trim_min]= trim_min
+
+		# - Check data cube integrity
+		has_bad_pixs= self.has_bad_pixel(data_norm, check_fract=False, thr=0)
+		if has_bad_pixs:
+			logger.warn("Normalized data cube after chan division has bad pixels!")	
+			return -1
+
+		# - Update data cube 
+		if strip_chref:
+			self.img_cube= np.delete(data_norm, chref, axis=2)
+			self.nchannels= self.img_cube.shape[-1]
+		else:
+			self.img_cube= data_norm
+
+		return 0
+
+
+
+	def divide_imgs_old(self, chref=0, logtransf=False, make_positive=True, chan_mins=[], strip_chref=True, trim=True, trim_min=-6, trim_max=6):
 		""" Normalize images by dividing for a given channel id """
 
 		# - Return if data cube is None
@@ -427,25 +502,12 @@ class SourceData(object):
 			data_norm[:,:,i]/= data_denom
 		data_norm[self.img_cube==0]= 0
 
-		#data_min= data_norm.min()
-		#data_max= data_norm.max()
-
-		#print("== data min/max ==")
-		#print(data_min)
-		#print(data_max)
-
 		if logtransf:
 			data_norm[data_norm<=0]= 1
 			data_norm_lg= np.log10(data_norm)
 			data_norm= data_norm_lg
 
 			data_norm[self.img_cube==0]= 0
-
-			#data_min= data_norm.min()
-			#data_max= data_norm.max()
-			#print("== lg data min/max ==")
-			#print(data_min)
-			#print(data_max)
 
 			if trim:
 				data_norm[data_norm>trim_max]= trim_max
@@ -828,7 +890,7 @@ class DataLoader(object):
 
 		return 0
 
-	def read_data(self, index, resize=True, nx=64, ny=64, normalize=True, scale_to_abs_max=False, scale_to_max=False, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False,chan_mins=[], erode=False, erode_kernel=5):	
+	def read_data(self, index, resize=True, nx=64, ny=64, normalize=True, scale_to_abs_max=False, scale_to_max=False, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5):	
 		""" Read data at given index """
 
 		# - Check index
@@ -848,19 +910,12 @@ class DataLoader(object):
 			logger.error("Failed to read source images %d!" % index)
 			return None
 
-		# - Rescale image data?
-		#if scale and scale_factors:
-		#	logger.debug("Rescaling source image data %d ..." % index)
-		#	if sdata.scale_imgs(scale_factors)<0:
-		#		logger.error("Failed to re-scale source image %d!" % index)
-		#		return None
-
-		# - Standardize image data?
-		#if standardize and means:
-		#	logger.debug("Standardizing source image data %d ..." % index)
-		#	if sdata.standardize_imgs(means, sigmas)<0:
-		#		logger.error("Failed to standardize source image %d!" % index)
-		#		return None
+		# - Channel division?
+		#   NB: Prefer to do it before image augmentation and resize
+		if chan_divide:
+			if sdata.divide_imgs(chref=0, bkgsub=True, bkgsub_sigma=3, sigmaclip=True, sigma=1, logtransf=log_transform, strip_chref=False, trim=False, trim_min=-6, trim_max=6)<0:
+				logger.error("Failed to chan divide source image %d!" % index)
+				return None
 
 		# - Erode image?
 		if erode:
@@ -908,12 +963,6 @@ class DataLoader(object):
 		if normalize:
 			if sdata.normalize_imgs(scale_to_abs_max, scale_to_max)<0:
 				logger.error("Failed to normalize source image %d!" % index)
-				return None
-
-		# - Channel division?
-		if chan_divide:
-			if sdata.divide_imgs(chref=0, logtransf=log_transform, make_positive=True, chan_mins=chan_mins)<0:
-				logger.error("Failed to chan divide source image %d!" % index)
 				return None
 
 		# - Log-tranform image?
