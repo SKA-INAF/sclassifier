@@ -438,7 +438,7 @@ class SourceData(object):
 		return 0
 
 
-	def __subtract_bkg_and_clip(self, data, sigma_bkg=3, sigma_clip=1, use_mask=False, mask_fract=0.8):
+	def __subtract_bkg_and_clip(self, data, sigma_bkg=3, sigma_clip=1, use_mask=True, mask_fract=0.7):
 		""" Subtract background and clip below a given sigma in input data """
 
 		# - Return if input data is None
