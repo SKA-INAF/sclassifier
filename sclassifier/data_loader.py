@@ -449,7 +449,7 @@ class SourceData(object):
 		# - Mask all channels at border
 		logger.info("Masking all channels at border (fract=%f) ..." % (mask_fract))
 		for i in range(self.img_cube.shape[-1]):
-			data= self.img_cube[:,:,i]
+			data= np.copy(self.img_cube[:,:,i])
 			data_shape= data.shape
 			mask= np.zeros(data_shape)
 			xc= int(data_shape[1]/2)
