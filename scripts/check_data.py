@@ -92,7 +92,6 @@ def get_args():
 	parser.set_defaults(erode=False)	
 	parser.add_argument('-erode_kernel', '--erode_kernel', dest='erode_kernel', required=False, type=int, default=5, action='store',help='Erosion kernel size in pixels (default=5)')	
 	
-	
 	parser.add_argument('--augment', dest='augment', action='store_true',help='Augment images')	
 	parser.set_defaults(augment=False)
 	
@@ -101,6 +100,9 @@ def get_args():
 
 	parser.add_argument('--resize', dest='resize', action='store_true',help='Resize images')	
 	parser.set_defaults(resize=False)
+
+	parser.add_argument('--subtract_bkg_and_clip', dest='subtract_bkg_and_clip', action='store_true',help='Subtract bkg from ref channel image and do sigma clipping')	
+	parser.set_defaults(subtract_bkg_and_clip=False)
 
 	parser.add_argument('--draw', dest='draw', action='store_true',help='Draw images')	
 	parser.set_defaults(draw=False)
@@ -160,6 +162,7 @@ def main():
 	scale_to_max= args.scale_to_max
 	log_transform= args.log_transform
 	resize= args.resize
+	subtract_bkg_and_clip= args.subtract_bkg_and_clip
 	augment= args.augment
 	shuffle= args.shuffle
 	draw= args.draw
@@ -225,6 +228,7 @@ def main():
 		standardize=standardize, means=img_means, sigmas=img_sigmas,
 		chan_divide=chan_divide, chan_mins=chan_mins,
 		erode=erode, erode_kernel=erode_kernel,
+		subtract_bkg_and_clip=subtract_bkg_and_clip,
 		outdata_choice='cae'
 	)	
 

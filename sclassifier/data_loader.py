@@ -1027,7 +1027,7 @@ class DataLoader(object):
 	###################################
 	##     GENERATE SIMCLR DATA
 	###################################
-	def __generate_simclr_data(self, data_index, resize=True, nx=64, ny=64, normalize=True, scale_to_abs_max=False, scale_to_max=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5):
+	def __generate_simclr_data(self, data_index, resize=True, nx=64, ny=64, normalize=True, scale_to_abs_max=False, scale_to_max=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5, subtract_bkg_and_clip=False):
 		""" Generate augmented data pair for SimCLR """
 
 		# - Read data at index and create pair item no. #1
@@ -1040,7 +1040,8 @@ class DataLoader(object):
 			scale=scale, scale_factors=scale_factors,
 			standardize=standardize, means=means, sigmas=sigmas,
 			chan_divide=chan_divide, chan_mins=chan_mins,
-			erode=erode, erode_kernel=erode_kernel
+			erode=erode, erode_kernel=erode_kernel,
+			subtract_bkg_and_clip=subtract_bkg_and_clip
 		)
 		if sdata_1 is None:
 			logger.warn("Failed to read source data at index %d (pair item #1)!" % (data_index))
@@ -1060,7 +1061,8 @@ class DataLoader(object):
 			scale=scale, scale_factors=scale_factors,
 			standardize=standardize, means=means, sigmas=sigmas,
 			chan_divide=chan_divide, chan_mins=chan_mins,
-			erode=erode, erode_kernel=erode_kernel
+			erode=erode, erode_kernel=erode_kernel,
+			subtract_bkg_and_clip=subtract_bkg_and_clip
 		)
 		if sdata_2 is None:
 			logger.warn("Failed to read source data at index %d (pair item #2)!" % (data_index))
@@ -1075,8 +1077,7 @@ class DataLoader(object):
 	###################################
 	##     GENERATE DATA FOR TRAINING
 	###################################
-	#def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=64, ny=64, normalize=True, scale_to_abs_max=False, scale_to_max=False, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5, retsdata=False, ret_classtargets=False, classtarget_map={}, nclasses=7):
-	def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=64, ny=64, normalize=True, scale_to_abs_max=False, scale_to_max=False, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5, outdata_choice='cae', classtarget_map={}, nclasses=7):
+	def data_generator(self, batch_size=32, shuffle=True, resize=True, nx=64, ny=64, normalize=True, scale_to_abs_max=False, scale_to_max=False, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5, outdata_choice='cae', classtarget_map={}, nclasses=7, subtract_bkg_and_clip=False):
 		""" Generator function reading nsamples images from disk and returning to caller """
 	
 		nb= 0
@@ -1108,7 +1109,8 @@ class DataLoader(object):
 					scale=scale, scale_factors=scale_factors,
 					standardize=standardize, means=means, sigmas=sigmas,
 					chan_divide=chan_divide, chan_mins=chan_mins,
-					erode=erode, erode_kernel=erode_kernel
+					erode=erode, erode_kernel=erode_kernel,
+					subtract_bkg_and_clip=subtract_bkg_and_clip
 				)
 				if sdata is None:
 					logger.warn("Failed to read source data at index %d, skip to next ..." % data_index)
@@ -1146,7 +1148,8 @@ class DataLoader(object):
 						scale=scale, scale_factors=scale_factors, 
 						standardize=standardize, means=means, sigmas=sigmas,
 						chan_divide=chan_divide, chan_mins=chan_mins,
-						erode=erode, erode_kernel=erode_kernel
+						erode=erode, erode_kernel=erode_kernel,
+						subtract_bkg_and_clip=subtract_bkg_and_clip
 					)
 					if data_pair is None:
 						logger.warn("Failed to read source data cube at index %d and generate data pairs, skip to next ..." % data_index)
