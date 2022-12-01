@@ -440,11 +440,11 @@ class SourceData(object):
 
 	def mask_borders(self, mask_fract=0.7):
 		""" Mask input data at borders """
-		
-		# - Return if input data is None
-		if data is None:
-			logger.error("Input data is None!")
-			return None
+			
+		# - Return if data cube is None
+		if self.img_cube is None:
+			logger.error("Image data cube is None!")
+			return -1
 
 		# - Mask all channels at border
 		logger.info("Masking all channels at border (fract=%f) ..." % (mask_fract))
