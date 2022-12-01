@@ -408,7 +408,46 @@ class SourceData(object):
 		return 0
 
 
-	def divide_imgs(self, chref=0, bkgsub=True, bkgsub_sigma=3, sigmaclip=True, sigma=1, logtransf=False, strip_chref=False, trim=False, trim_min=-6, trim_max=6):
+	def subtract_bkg_and_clip(self, chref, bkgsub_sigma=3, sigma=1):
+		""" Subtract background from reference channel and clip below a given sigma """
+		
+		# - Return if data cube is None
+		if self.img_cube is None:
+			logger.error("Image data cube is None!")
+			return -1
+
+		# - Subtract mean bkg in reference channel
+		logger.info("Subtracting bkg in reference channel ...")
+		data_ref= np.copy(self.img_cube[:,:,chref])
+		cond= np.logical_and(data_ref!=0, np.isfinite(data_ref))
+		data_ref_1d= data_ref[cond]
+		clipmean, _, _ = sigma_clipped_stats(data_ref, sigma=bkgsub_sigma)
+		data_ref-= clipmean
+		data_ref[cond]= 0
+
+		print("data ref min/max (after bkgsub)")
+		print(data_ref.min())
+		print(data_ref.max())
+
+		# - Set to zero all pixels in reference channel that are below sigma clip
+		logger.info("Set to zero all pixels in reference channel that are below sigma clip ...")
+		cond= np.logical_and(data_ref!=0, np.isfinite(data_ref))
+		data_ref_1d= data_ref[cond]
+		clipmean, _, _ = sigma_clipped_stats(data_ref, sigma=sigma)
+		data_ref[data_ref<clipmean]= 0
+		data_ref[cond]= 0
+
+		print("data ref min/max (after sigmaclip)")
+		print(data_ref.min())
+		print(data_ref.max())
+
+		# - Update data cube
+		self.img_cube[:,:,chref]= data_ref
+
+		return 0 
+
+
+	def divide_imgs(self, chref=0, logtransf=False, strip_chref=False, trim=False, trim_min=-6, trim_max=6):
 		""" Normalize images by dividing for a given channel id """
 
 		# - Return if data cube is None
@@ -417,33 +456,37 @@ class SourceData(object):
 			return -1
 
 		# - Subtract mean bkg in reference channel
-		data_ref= np.copy(self.img_cube[:,:,chref])
-		if bkgsub:
-			cond= np.logical_and(data_ref!=0, np.isfinite(data_ref))
-			data_ref_1d= data_ref[cond]
-			clipmean, _, _ = sigma_clipped_stats(data_ref, sigma=bkgsub_sigma)
-			data_ref-= clipmean
-			data_ref[cond]= 0
-			print("data ref min/max (after bkgsub)")
-			print(data_ref.min())
-			print(data_ref.max())
+		#data_ref= np.copy(self.img_cube[:,:,chref])
+		#if bkgsub:
+		#	logger.info("Subtracting bkg in reference channel ...")
+		#	cond= np.logical_and(data_ref!=0, np.isfinite(data_ref))
+		#	data_ref_1d= data_ref[cond]
+		#	clipmean, _, _ = sigma_clipped_stats(data_ref, sigma=bkgsub_sigma)
+		#	data_ref-= clipmean
+		#	data_ref[cond]= 0
+		#	print("data ref min/max (after bkgsub)")
+		#	print(data_ref.min())
+		#	print(data_ref.max())
 
 		# - Set to zero all pixels in reference channel that are below sigma clip
-		if sigmaclip:
-			cond= np.logical_and(data_ref!=0, np.isfinite(data_ref))
-			data_ref_1d= data_ref[cond]
-			clipmean, _, _ = sigma_clipped_stats(data_ref, sigma=sigma)
-			data_ref[data_ref<clipmean]= 0
-			data_ref[cond]= 0
-			print("data ref min/max (after sigmaclip)")
-			print(data_ref.min())
-			print(data_ref.max())
+		#if sigmaclip:
+		#	logger.info("Set to zero all pixels in reference channel that are below sigma clip ...")
+		#	cond= np.logical_and(data_ref!=0, np.isfinite(data_ref))
+		#	data_ref_1d= data_ref[cond]
+		#	clipmean, _, _ = sigma_clipped_stats(data_ref, sigma=sigma)
+		#	data_ref[data_ref<clipmean]= 0
+		#	data_ref[cond]= 0
+		#	print("data ref min/max (after sigmaclip)")
+		#	print(data_ref.min())
+		#	print(data_ref.max())
 
 		# - Divide other channels by reference channel
+		data_ref= np.copy(self.img_cube[:,:,chref])
 		data_norm= np.copy(self.img_cube)
 		data_denom= np.copy(data_ref)
 		data_denom[data_denom==0]= 1
 		for i in range(data_norm.shape[-1]):
+			logger.info("Divide other channels by reference channel ...")
 			if i==chref:
 				data_norm[:,:,i]= np.copy(data_ref)
 			else:
@@ -890,7 +933,7 @@ class DataLoader(object):
 
 		return 0
 
-	def read_data(self, index, resize=True, nx=64, ny=64, normalize=True, scale_to_abs_max=False, scale_to_max=False, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5):	
+	def read_data(self, index, resize=True, nx=64, ny=64, normalize=True, scale_to_abs_max=False, scale_to_max=False, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5, subtract_bkg_and_clip=False):	
 		""" Read data at given index """
 
 		# - Check index
@@ -910,10 +953,17 @@ class DataLoader(object):
 			logger.error("Failed to read source images %d!" % index)
 			return None
 
+		# - Subtract bkg from ref channel?
+		#   NB: Prefer to do it before image augmentation and resize
+		if subtract_bkg_and_clip:
+			if sdata.subtract_bkg_and_clip(chref=0, bkgsub_sigma=3, sigma=1)<0:
+				logger.error("Failed to chan divide source image %d!" % index)
+				return None
+
 		# - Channel division?
 		#   NB: Prefer to do it before image augmentation and resize
 		if chan_divide:
-			if sdata.divide_imgs(chref=0, bkgsub=True, bkgsub_sigma=3, sigmaclip=True, sigma=1, logtransf=log_transform, strip_chref=False, trim=False, trim_min=-6, trim_max=6)<0:
+			if sdata.divide_imgs(chref=0, logtransf=log_transform, strip_chref=False, trim=False, trim_min=-6, trim_max=6)<0:
 				logger.error("Failed to chan divide source image %d!" % index)
 				return None
 
