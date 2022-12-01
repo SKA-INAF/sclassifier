@@ -408,7 +408,7 @@ class SourceData(object):
 		return 0
 
 
-	def subtract_bkg_and_clip(self, chref, bkgsub_sigma=3, sigma=1, clipval=0):
+	def subtract_bkg_and_clip(self, chref=0, bkgsub_sigma=3, sigma=1, clipval=0):
 		""" Subtract background from reference channel and clip below a given sigma """
 		
 		# - Return if data cube is None
@@ -424,14 +424,15 @@ class SourceData(object):
 
 		# - Subtract mean bkg in reference channel
 		logger.info("Subtracting bkg in reference channel ...")
-		clipmean, _, _ = sigma_clipped_stats(data_ref_1d, sigma=bkgsub_sigma)
+		bkgval, _, _ = sigma_clipped_stats(data_ref_1d, sigma=bkgsub_sigma)
 
-		data_bkgsub= np.copy(data_ref) - clipmean
-		data_bkgsub[cond]= 0
+		data_bkgsub= np.copy(data_ref)
+		data_bkgsub-= bkgval
+		data_bkgsub[~cond]= 0
 		cond_bkgsub= np.logical_and(data_bkgsub!=0, np.isfinite(data_bkgsub))
 		data_bkgsub_1d= data_bkgsub[cond_bkgsub]
 
-		logger.info("--> data ref min/max (after bkgsub)=%f/%f (clipmean=%f)" % (data_bkgsub_1d.min(), data_bkgsub_1d.max(), clipmean))
+		logger.info("--> data ref min/max (after bkgsub)=%f/%f (bkg=%f)" % (data_bkgsub_1d.min(), data_bkgsub_1d.max(), bkgval))
 
 		# - Set to zero all pixels in reference channel that are below sigma clip
 		logger.info("Setting all pixels in reference channel that are below sigma clip to clipval=%f ..." % (clipval))
@@ -440,7 +441,7 @@ class SourceData(object):
 		clipmean, _, _ = sigma_clipped_stats(data_bkgsub_1d, sigma=sigma)
 		data_clipped= np.copy(data_bkgsub)
 		data_clipped[data_clipped<clipmean]= clipval
-		data_clipped[cond]= 0
+		data_clipped[~cond]= 0
 		cond_clipped= np.logical_and(data_clipped!=0, np.isfinite(data_clipped))
 		data_clipped_1d= data_clipped[cond_clipped]
 
