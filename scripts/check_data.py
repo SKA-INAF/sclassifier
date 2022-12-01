@@ -431,11 +431,11 @@ def main():
 				logger.info("Drawing data ...")
 				fig = plt.figure(figsize=(20, 10))
 				for i in range(nchannels):
-					data_ch= data[0,:,:,i] 
+					data_ch= data[0,:,:,i]
 					data_masked= np.ma.masked_equal(data_ch, 0.0, copy=False)
 					data_min= data_masked.min()
 					data_max= data_masked.max()
-					data_ch[data_ch==0]= data_min
+					#data_ch[data_ch==0]= data_min
 
 					#logger.info("Reading nchan %d ..." % i+1)
 					plt.subplot(1, nchannels, i+1)
