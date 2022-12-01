@@ -452,15 +452,15 @@ class SourceData(object):
 		bkgdata= np.copy(data) 
 		if use_mask:
 			data_shape= data.shape
-			xc= data_shape[1]/2
-			yc= data_shape[0]/2
+			xc= int(data_shape[1]/2)
+			yc= int(data_shape[0]/2)
 			dy= int(data_shape[0]*mask_fract/2.)
 			dx= int(data_shape[1]*mask_fract/2.)
 			xmin= xc - dx
 			xmax= xc + dx
 			ymin= yc - dy
 			ymax= yc + dy
-			logger.info("Masking data in range x[%d,%d] y[%d,%d]" % (xmin, xmax, ymin, ymax))
+			logger.info("Masking data (%d,%d) in range x[%d,%d] y[%d,%d]" % (data_shape[0], data_shape[1], xmin, xmax, ymin, ymax))
 			bkgdata[ymin:ymax, xmin:xmax]= 0
 	
 		# - Retrieve chref data
