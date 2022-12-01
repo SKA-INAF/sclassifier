@@ -500,7 +500,7 @@ class SourceData(object):
 		return data_clipped 
 
 
-	def subtract_bkg_and_clip(self, limit_to_chref=True, chref=0, sigma_bkg=3, sigma_clip=1, use_mask=False, mask_fract=0.2):
+	def subtract_bkg_and_clip(self, limit_to_chref=True, chref=0, sigma_bkg=3, sigma_clip=1, use_mask=True, mask_fract=0.7):
 		""" Subtract background from reference channel and clip below a given sigma """
 		
 		# - Return if data cube is None
