@@ -420,7 +420,7 @@ class SourceData(object):
 		data_ref= np.copy(self.img_cube[:,:,chref])
 		cond= np.logical_and(data_ref!=0, np.isfinite(data_ref))
 		data_ref_1d= data_ref[cond]
-		logger.info("--> data ref min/max (before bkgsub)=%f/%f" % (data_ref_1d.min(), data_ref_1d.max()))
+		logger.info("--> data ref min/max (before bkgsub)=%s/%s" % (str(data_ref_1d.min()), str(data_ref_1d.max())))
 
 		# - Subtract mean bkg in reference channel
 		logger.info("Subtracting bkg in reference channel ...")
@@ -432,7 +432,7 @@ class SourceData(object):
 		cond_bkgsub= np.logical_and(data_bkgsub!=0, np.isfinite(data_bkgsub))
 		data_bkgsub_1d= data_bkgsub[cond_bkgsub]
 
-		logger.info("--> data ref min/max (after bkgsub)=%f/%f (bkg=%f)" % (data_bkgsub_1d.min(), data_bkgsub_1d.max(), bkgval))
+		logger.info("--> data ref min/max (after bkgsub)=%s/%s (bkg=%s)" % (str(data_bkgsub_1d.min()), str(data_bkgsub_1d.max()), str(bkgval)))
 
 		# - Set to zero all pixels in reference channel that are below sigma clip
 		clipval= 0
@@ -445,7 +445,7 @@ class SourceData(object):
 		cond_clipped= np.logical_and(data_clipped!=0, np.isfinite(data_clipped))
 		data_clipped_1d= data_clipped[cond_clipped]
 
-		logger.info("--> data ref min/max (after sigmaclip)=%f/%f (clipmean=%f)" % (data_clipped_1d.min(), data_clipped_1d.max(), clipmean))
+		logger.info("--> data ref min/max (after sigmaclip)=%s/%s (clipmean=%s)" % (str(data_clipped_1d.min()), str(data_clipped_1d.max()), str(clipmean)))
 
 		# - Update data cube
 		self.img_cube[:,:,chref]= data_clipped
