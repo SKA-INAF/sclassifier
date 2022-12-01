@@ -351,7 +351,7 @@ class SourceData(object):
 			return -1
 
 		# - Update data cube
-		self.img_cube= data_norm
+		self.img_cube= data_transf
 
 		return 0
 
