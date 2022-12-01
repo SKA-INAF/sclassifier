@@ -449,8 +449,8 @@ class SourceData(object):
 		# - Mask all channels at border
 		for i in range(self.img_cube.shape[-1]):
 			#data= self.img_cube[:,:,i]
-			data_shape= data.shape
-			data= np.zeros(data_shape, dtype=data.dtype)
+			data_shape= self.img_cube[:,:,i].shape
+			data= np.zeros(data_shape, dtype=self.img_cube[:,:,i].dtype)
 			xc= int(data_shape[1]/2)
 			yc= int(data_shape[0]/2)
 			dy= int(data_shape[0]*mask_fract/2.)
