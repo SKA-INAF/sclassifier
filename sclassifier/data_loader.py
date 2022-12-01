@@ -329,7 +329,7 @@ class SourceData(object):
 
 		return 0
 		
-	def log_transform_imgs(self):
+	def log_transform_imgs(self, skip_chref=True, chref=0=0):
 		""" Apply log transform to images """
 	
 		# - Return if data cube is None
@@ -351,7 +351,12 @@ class SourceData(object):
 			return -1
 
 		# - Update data cube
-		self.img_cube= data_transf
+		if skip_chref:
+			data_ref= np.copy(self.img_cube[:,:,chref])
+			self.img_cube= data_transf
+			self.img_cube[:,:,chref]= data_ref
+		else:
+			self.img_cube= data_transf
 
 		return 0
 
