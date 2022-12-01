@@ -463,6 +463,8 @@ class SourceData(object):
 			logger.info("Masking chan %d (%d,%d) in range x[%d,%d] y[%d,%d]" % (i, data_shape[0], data_shape[1], xmin, xmax, ymin, ymax))
 			mask[ymin:ymax, xmin:xmax]= 1
 			data[mask==0]= 0
+			print("data")
+			print(data)
 			self.img_cube[:,:,i]= data
 	
 		return 0
