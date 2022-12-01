@@ -438,6 +438,34 @@ class SourceData(object):
 		return 0
 
 
+	def mask_borders(self, mask_fract=0.7):
+		""" Mask input data at borders """
+		
+		# - Return if input data is None
+		if data is None:
+			logger.error("Input data is None!")
+			return None
+
+		# - Mask all channels at border
+		for i in range(self.img_cube.shape[-1]):
+			#data= self.img_cube[:,:,i]
+			data_shape= data.shape
+			data= np.zeros(data_shape, dtype=data.dtype)
+			xc= int(data_shape[1]/2)
+			yc= int(data_shape[0]/2)
+			dy= int(data_shape[0]*mask_fract/2.)
+			dx= int(data_shape[1]*mask_fract/2.)
+			xmin= xc - dx
+			xmax= xc + dx
+			ymin= yc - dy
+			ymax= yc + dy
+			logger.info("Masking chan %d (%d,%d) in range x[%d,%d] y[%d,%d]" % (i, data_shape[0], data_shape[1], xmin, xmax, ymin, ymax))
+			data[ymin:ymax, xmin:xmax, i]= self.img_cube[ymin:ymax, xmin:xmax, i]
+			self.img_cube[i]= data
+	
+		return 0
+
+
 	def __subtract_bkg_and_clip(self, data, sigma_bkg=3, sigma_clip=1, use_mask=True, mask_fract=0.7):
 		""" Subtract background and clip below a given sigma in input data """
 
@@ -1109,6 +1137,11 @@ class DataLoader(object):
 			if sdata.normalize_imgs(scale_to_abs_max, scale_to_max)<0:
 				logger.error("Failed to normalize source image %d!" % index)
 				return None
+
+		# - Mask image borders?
+		if sdata.mask_borders(mask_fract=0.7)<0:
+			logger.error("Failed to mask source image borders %d!" % index)
+			return None
 
 		
 		return sdata
