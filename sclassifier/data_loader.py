@@ -449,9 +449,9 @@ class SourceData(object):
 		# - Mask all channels at border
 		logger.info("Masking all channels at border (fract=%f) ..." % (mask_fract))
 		for i in range(self.img_cube.shape[-1]):
-			#data= self.img_cube[:,:,i]
-			data_shape= self.img_cube[:,:,i].shape
-			data= np.zeros(data_shape, dtype=self.img_cube[:,:,i].dtype)
+			data= self.img_cube[:,:,i]
+			data_shape= data.shape
+			mask= np.zeros(data_shape)
 			xc= int(data_shape[1]/2)
 			yc= int(data_shape[0]/2)
 			dy= int(data_shape[0]*mask_fract/2.)
@@ -461,7 +461,8 @@ class SourceData(object):
 			ymin= yc - dy
 			ymax= yc + dy
 			logger.info("Masking chan %d (%d,%d) in range x[%d,%d] y[%d,%d]" % (i, data_shape[0], data_shape[1], xmin, xmax, ymin, ymax))
-			data[ymin:ymax, xmin:xmax]= self.img_cube[ymin:ymax, xmin:xmax, i]
+			mask[ymin:ymax, xmin:xmax]= 1
+			data[mask==0]= 0
 			self.img_cube[:,:,i]= data
 	
 		return 0
