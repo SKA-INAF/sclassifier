@@ -937,7 +937,7 @@ class DataLoader(object):
 		# - Subtract bkg from ref channel?
 		#   NB: Prefer to do it before image augmentation and resize
 		if subtract_bkg_and_clip:
-			if sdata.subtract_bkg_and_clip(chref=0, sigma_bkgsub=3, sigma_clip=1)<0:
+			if sdata.subtract_bkg_and_clip(chref=0, sigma_bkg=3, sigma_clip=1)<0:
 				logger.error("Failed to chan divide source image %d!" % index)
 				return None
 
