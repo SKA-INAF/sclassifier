@@ -460,6 +460,7 @@ class SourceData(object):
 			xmax= xc + dx
 			ymin= yc - dy
 			ymax= yc + dy
+			logger.info("Masking data in range x[%d,%d] y[%d,%d]" % (xmin, xmax, ymin, ymax))
 			bkgdata[ymin:ymax, xmin:xmax]= 0
 	
 		# - Retrieve chref data
