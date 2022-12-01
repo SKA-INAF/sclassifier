@@ -461,33 +461,41 @@ class SourceData(object):
 			logger.error("Image data cube is None!")
 			return -1
 
-		# - Divide other channels by reference channel
+		# - Init ref channel
 		data_ref= np.copy(self.img_cube[:,:,chref])
+		cond= np.logical_and(data_ref!=0, np.isfinite(data_ref))
+
+		# - Divide other channels by reference channel
 		data_norm= np.copy(self.img_cube)
 		data_denom= np.copy(data_ref)
 		data_denom[data_denom==0]= 1
+
 		for i in range(data_norm.shape[-1]):
-			logger.info("Divide other channels by reference channel ...")
 			if i==chref:
 				data_norm[:,:,i]= np.copy(data_ref)
 			else:
+				logger.info("Divide channel %d by reference channel %d ..." % (i, refch))
 				dn= data_norm[:,:,i]/data_denom
-				dn[data_ref==0]= 0 # set ratio to zero if ref pixel flux is zero			
+				dn[~cond]= 0 # set ratio to zero if ref pixel flux was zero or nan
 				data_norm[:,:,i]= dn
 
 		data_norm[self.img_cube==0]= 0
 
 		# - Apply log transform to ratio channels?
 		if logtransf:
-			data_norm[data_norm<=0]= 1
-			data_norm_lg= np.log10(data_norm)
-			data_norm= data_norm_lg
-
-			data_norm[self.img_cube==0]= 0
+			logger.info("Applying log-transform to channel ratios ...")
+			data_transf= np.copy(data_norm)
+			data_transf[data_transf<=0]= 1
+			data_transf_lg= np.log10(data_transf)
+			data_transf= data_transf_lg
+			data_transf[self.img_cube==0]= 0
 
 			if trim:
-				data_norm[data_norm>trim_max]= trim_max
-				data_norm[data_norm<trim_min]= trim_min
+				data_transf[data_transf>trim_max]= trim_max
+				data_transf[data_transf<trim_min]= trim_min
+
+			data_transf[:,:,refch]= data_norm[:,:,refch]
+			data_norm= data_transf
 
 		# - Check data cube integrity
 		has_bad_pixs= self.has_bad_pixel(data_norm, check_fract=False, thr=0)
