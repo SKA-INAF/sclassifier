@@ -461,7 +461,7 @@ class SourceData(object):
 			ymin= yc - dy
 			ymax= yc + dy
 			logger.info("Masking chan %d (%d,%d) in range x[%d,%d] y[%d,%d]" % (i, data_shape[0], data_shape[1], xmin, xmax, ymin, ymax))
-			data[ymin:ymax, xmin:xmax, i]= self.img_cube[ymin:ymax, xmin:xmax, i]
+			data[ymin:ymax, xmin:xmax]= self.img_cube[ymin:ymax, xmin:xmax, i]
 			self.img_cube[i]= data
 	
 		return 0
