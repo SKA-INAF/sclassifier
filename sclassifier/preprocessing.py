@@ -543,7 +543,7 @@ class SigmaClipper(object):
 
 		# - Set parameters
 		self.sigma= sigma
-		self.chid= self.chid # -1=do for all channels, otherwise skip selected channel
+		self.chid= chid # -1=do for all channels, otherwise skip selected channel
 
 	def __clip(self, data):
 		""" Clip channel input """
