@@ -157,6 +157,8 @@ class DataGenerator(object):
 			logger.warn("Source image data %d has bad pixels!" % index)	
 			return None
 
+		logger.info("Returning sdata ...")
+
 		return sdata
 
 
@@ -405,6 +407,7 @@ class DataGenerator(object):
 
 				# - Return data if number of batch is reached and restart the batch
 				if nb>=batch_size:
+					logger.info("Returning generator data ...")
 					yield inputs, sdata
 					
 					nb= 0
