@@ -409,7 +409,12 @@ class LogStretcher(object):
 		# - Apply log
 		cond= np.logical_and(data>0, np.isfinite(data))
 		data_transf= np.log10(data, where=cond)
-		data_transf[~cond]= 0
+
+		data_transf_1d= data_transf[cond]
+		data_transf_min= data_transf_1d.min()
+
+		#data_transf[~cond]= 0
+		data_transf[~cond]= data_transf_min
 
 		if self.chid!=-1:
 			data_transf[:,:,self.chid]= data[:,:,self.chid]
