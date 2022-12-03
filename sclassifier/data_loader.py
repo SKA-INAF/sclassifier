@@ -334,7 +334,7 @@ class SourceData(object):
 			#check= self.check_img_data(data, check_fract, thr) 
 			check= self.__has_bad_pixel(data, check_fract, thr) 
 			if not check:
-				logger.warn("Channel %d in cube has bad pixels ..." % i+1)
+				logger.warn("Channel %d in cube has bad pixels ..." % (i+1))
 				status= False	
 
 		return status
