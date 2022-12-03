@@ -502,7 +502,7 @@ class BkgSubtractor(object):
 		bkgdata_1d= bkgdata[cond_bkg]
 		logger.info("--> bkgdata min/max=%s/%s" % (str(bkgdata_1d.min()), str(bkgdata_1d.max())))
 
-		bkgval, _, _ = sigma_clipped_stats(bkgdata_1d, sigma=sigma_bkg)
+		bkgval, _, _ = sigma_clipped_stats(bkgdata_1d, sigma=self.sigma)
 
 		data_bkgsub= data - bkgval
 		data_bkgsub[~cond]= 0
