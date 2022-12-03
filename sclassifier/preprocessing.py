@@ -472,7 +472,7 @@ class BkgSubtractor(object):
 		self.sigma= sigma
 		self.use_mask_box= use_mask_box
 		self.mask_fract= mask_fract
-		self.chid= chid # -1=do for all channels, otherwise skip selected channel
+		self.chid= chid # -1=do for all channels, otherwise subtract only from selected channel
 
 	def __subtract_bkg(self, data):
 		""" Subtract background from channel input """
@@ -524,7 +524,7 @@ class BkgSubtractor(object):
 		data_bkgsub= np.copy(data)
 
 		for i in range(data.shape[-1]):
-			if self.chid!=-1 and i==self.chid:
+			if self.chid!=-1 and i!=self.chid:
 				continue	
 			data_ch_bkgsub= self.__subtract_bkg(data[:,:,i])
 			data_bkgsub[:,:,i]= data_ch_bkgsub
@@ -543,7 +543,7 @@ class SigmaClipper(object):
 
 		# - Set parameters
 		self.sigma= sigma
-		self.chid= chid # -1=do for all channels, otherwise skip selected channel
+		self.chid= chid # -1=do for all channels, otherwise clip only selected channel
 
 	def __clip(self, data):
 		""" Clip channel input """
@@ -578,7 +578,7 @@ class SigmaClipper(object):
 		data_clipped= np.copy(data)
 
 		for i in range(data.shape[-1]):
-			if self.chid!=-1 and i==self.chid:
+			if self.chid!=-1 and i!=self.chid:
 				continue	
 			data_ch_clipped= self.__clip(data[:,:,i])
 			data_clipped[:,:,i]= data_ch_clipped

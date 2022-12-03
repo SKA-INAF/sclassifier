@@ -117,11 +117,14 @@ def get_args():
 	parser.add_argument('-sigma_bkg', '--sigma_bkg', dest='sigma_bkg', required=False, type=float, default=3, action='store',help='Sigma clip to be used in bkg calculation (default=3)')
 	parser.add_argument('--use_box_mask_in_bkg', dest='use_box_mask_in_bkg', action='store_true',help='Compute bkg value in borders left from box mask')	
 	parser.set_defaults(use_box_mask_in_bkg=False)	
-	parser.add_argument('-bkg_box_mask_fract', '--bkg_box_mask_fract', dest='bkg_box_mask_fract', required=False, type=float, default=0.7, action='store',help='Size of mask box dimensions with respect to image size used in bkg calculation (default=0.7)')	
+	parser.add_argument('-bkg_box_mask_fract', '--bkg_box_mask_fract', dest='bkg_box_mask_fract', required=False, type=float, default=0.7, action='store',help='Size of mask box dimensions with respect to image size used in bkg calculation (default=0.7)')
+	parser.add_argument('-bkg_chid', '--bkg_chid', dest='bkg_chid', required=False, type=int, default=-1, action='store',help='Channel to subtract background (-1=all) (default=-1)')
 
 	parser.add_argument('--clip_data', dest='clip_data', action='store_true',help='Do sigma clipping')	
 	parser.set_defaults(clip_data=False)
 	parser.add_argument('-sigma_clip', '--sigma_clip', dest='sigma_clip', required=False, type=float, default=1, action='store',help='Sigma threshold to be used for clipping pixels (default=1)')
+	parser.add_argument('-clip_chid', '--clip_chid', dest='clip_chid', required=False, type=int, default=-1, action='store',help='Channel to clip data (-1=all) (default=-1)')
+
 
 	parser.add_argument('--mask_borders', dest='mask_borders', action='store_true',help='Mask image borders by desired width/height fraction')
 	parser.set_defaults(mask_borders=False)
@@ -191,8 +194,10 @@ def main():
 	sigma_bkg= args.sigma_bkg
 	use_box_mask_in_bkg= args.use_box_mask_in_bkg
 	bkg_box_mask_fract= args.bkg_box_mask_fract
+	bkg_chid= args.bkg_chid
 	clip_data= args.clip_data
 	sigma_clip= args.sigma_clip
+	clip_chid= args.clip_chid
 	augment= args.augment
 	augmenter= args.augmenter
 	shuffle= args.shuffle
@@ -245,10 +250,10 @@ def main():
 	preprocess_stages= []
 
 	if subtract_bkg:
-		preprocess_stages.append(BkgSubtractor(sigma=sigma_bkg, use_mask_box=use_box_mask_in_bkg, mask_fract=bkg_box_mask_fract))
+		preprocess_stages.append(BkgSubtractor(sigma=sigma_bkg, use_mask_box=use_box_mask_in_bkg, mask_fract=bkg_box_mask_fract, chid=bkg_chid))
 
 	if clip_data:
-		preprocess_stages.append(SigmaClipper(sigma=sigma_clip))
+		preprocess_stages.append(SigmaClipper(sigma=sigma_clip, chid=clip_chid))
 
 	if scale:
 		preprocess_stages.append(Scaler(scale_factors))
