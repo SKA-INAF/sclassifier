@@ -419,20 +419,23 @@ def main():
 							break
 			
 			# - Check correct norm
-			if normalize:
-				data_min= np.min(data[0,:,:,:])
-				data_max= np.max(data[0,:,:,:])
-				if scale_to_max:
-					correct_norm= (data_max==1)
+			correct_norm= True
+			data_min= np.min(data[0,:,:,:])
+			data_max= np.max(data[0,:,:,:])
+
+			if normalize_minmax or normalize_absminmax:				
+				correct_norm= (data_min==0 and data_max==1)
+
+			if scale_to_max or scale_to_abs_max:
+				correct_norm= (data_max==1)
+
+			if not correct_norm:
+				logger.error("Image %d chan %d (name=%s, label=%s) has invalid norm (%f,%f), check!" % (img_counter, i+1, sname, label, data_min, data_max))
+				if exit_on_fault:
+					return 1
 				else:
-					correct_norm= (data_min==0 and data_max==1)
-				if not correct_norm:
-					logger.error("Image %d chan %d (name=%s, label=%s) has invalid norm (%f,%f), check!" % (img_counter, i+1, sname, label, data_min, data_max))
-					if exit_on_fault:
-						return 1
-					else:
-						if skip_on_fault:
-							break
+					if skip_on_fault:
+						break
 
 			# - Dump image flags
 			if dump_flags:
