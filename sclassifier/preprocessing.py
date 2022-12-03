@@ -442,7 +442,7 @@ class BorderMasker(object):
 
 		for i in range(data.shape[-1]):
 			data_ch= data[:,:,i]
-			data_shape= data.shape
+			data_shape= data_ch.shape
 			mask= np.zeros(data_shape)
 			xc= int(data_shape[1]/2)
 			yc= int(data_shape[0]/2)
