@@ -249,11 +249,15 @@ def main():
 	#   8) min/max (abs) norm, standardize, mean shift
 	preprocess_stages= []
 
+
 	if subtract_bkg:
 		preprocess_stages.append(BkgSubtractor(sigma=sigma_bkg, use_mask_box=use_box_mask_in_bkg, mask_fract=bkg_box_mask_fract, chid=bkg_chid))
 
 	if clip_data:
 		preprocess_stages.append(SigmaClipper(sigma=sigma_clip, chid=clip_chid))
+
+	if scale_to_abs_max:
+		preprocess_stages.append(AbsMaxScaler())
 
 	if scale:
 		preprocess_stages.append(Scaler(scale_factors))
@@ -282,8 +286,8 @@ def main():
 	if scale_to_max:
 		preprocess_stages.append(MaxScaler())
 
-	if scale_to_abs_max:
-		preprocess_stages.append(AbsMaxScaler())
+	#if scale_to_abs_max:
+	#	preprocess_stages.append(AbsMaxScaler())
 
 	if meanshift:
 		preprocess_stages.append(Shifter(offsets=img_means))
