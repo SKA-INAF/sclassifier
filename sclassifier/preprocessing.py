@@ -557,7 +557,7 @@ class SigmaClipper(object):
 
 		# - Clip all pixels that are below sigma clip
 		logger.info("Clipping all pixels below %f sigma ..." % (self.sigma))
-		clipmean, _, _ = sigma_clipped_stats(data_1d, sigma=sigma_clip)
+		clipmean, _, _ = sigma_clipped_stats(data_1d, sigma=self.sigma)
 
 		data_clipped= np.copy(data)
 		data_clipped[data_clipped<clipmean]= clipmean
