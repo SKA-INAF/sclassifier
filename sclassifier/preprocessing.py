@@ -465,16 +465,14 @@ class BorderMasker(object):
 class BkgSubtractor(object):
 	""" Subtract background from input data """
 
-	def __init__(self, sigma=3, use_mask_box=False, mask_fract=0.7, **kwparams):
+	def __init__(self, sigma=3, use_mask_box=False, mask_fract=0.7, chid=-1, **kwparams):
 		""" Create a data pre-processor object """
 
 		# - Set parameters
 		self.sigma= sigma
 		self.use_mask_box= use_mask_box
 		self.mask_fract= mask_fract
-		self.chid= -1 # do for all channels, otherwise skip selected channel
-		if 'chid' in kwparams:	
-			self.chid= kwparams['chid']
+		self.chid= chid # -1=do for all channels, otherwise skip selected channel
 
 	def __subtract_bkg(self, data):
 		""" Subtract background from channel input """
@@ -540,14 +538,12 @@ class BkgSubtractor(object):
 class SigmaClipper(object):
 	""" Clip all pixels below input sigma """
 
-	def __init__(self, sigma=1, **kwparams):
+	def __init__(self, sigma=1.0, chid=-1, **kwparams):
 		""" Create a data pre-processor object """
 
 		# - Set parameters
 		self.sigma= sigma
-		self.chid= -1 # do for all channels, otherwise skip selected channel
-		if 'chid' in kwparams:	
-			self.chid= kwparams['chid']
+		self.chid= self.chid # -1=do for all channels, otherwise skip selected channel
 
 	def __clip(self, data):
 		""" Clip channel input """
