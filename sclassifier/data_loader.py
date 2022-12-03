@@ -328,14 +328,13 @@ class SourceData(object):
 			return False
 		
 		nchannels= datacube.shape[2]
-		status= 0
+		status= False
 		for i in range(nchannels):
 			data= datacube[:,:,i]
-			#check= self.check_img_data(data, check_fract, thr) 
 			check= self.__has_bad_pixel(data, check_fract, thr) 
-			if not check:
+			if check:
 				logger.warn("Channel %d in cube has bad pixels ..." % (i+1))
-				status= False	
+				status= True
 
 		return status
 
