@@ -28,6 +28,8 @@ from tensorflow.keras.utils import to_categorical
 from astropy.io import ascii
 from astropy.stats import sigma_clipped_stats
 
+from sclassifier.data_loader import SourceData
+
 ##############################
 ##     GLOBAL VARS
 ##############################
