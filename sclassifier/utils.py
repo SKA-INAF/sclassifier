@@ -25,6 +25,7 @@ import json
 import collections
 from collections import OrderedDict
 from collections import defaultdict
+import functools
 
 ## ASTRO MODULES
 import warnings
@@ -120,6 +121,12 @@ class Utils(object):
 				return -1
 
 		return 0
+
+	@classmethod
+	def compose_fcns(csl, *funcs):
+		""" Compose a list of functions like (f . g . h)(x) = f(g(h(x)) """
+		return functools.reduce(lambda f, g: lambda x: f(g(x)), funcs)
+		
 
 	@classmethod
 	def write_ascii(cls,data,filename,header=''):

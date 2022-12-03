@@ -69,18 +69,148 @@ class SourceData(object):
 		self.nx= 0
 		self.ny= 0
 		self.nchannels= 0
+		self.ixmin= -1
+		self.ixmax= -1
+		self.iymin= -1
+		self.iymax= -1
+
 
 		
 	def set_from_dict(self, d):
 		""" Set source data from input dictionary """ 
 		try:
 			self.filepaths= d["filepaths"]
-			self.sname= d["sname"]
-			self.label= d["label"]
-			self.id= d["id"]
+			if "sname" in d:
+				self.sname= d["sname"]
+			if "label" in d:
+				self.label= d["label"]
+			if "id" in d:
+				self.id= d["id"]
 		except:
 			logger.warn("Failed to read values from given dictionary, check keys!")
 			return -1
+
+		return 0
+
+	
+	def read_random_img_crops(self, crop_size):
+		""" Read cropped image data from paths """
+
+		# - Check data filelists
+		if not self.filepaths:
+			logger.error("Empty filelists given!")
+			return -1
+
+		# - Read images
+		nimgs= len(self.filepaths)
+		self.nchannels= nimgs
+
+		for i in range(len(self.filepaths)):
+			filename= self.filepaths[i]
+
+			# - Read random crop from first channel
+			if i==0:
+				retdata= Utils.read_fits_random_crop(filename, crop_size, crop_size)
+				if retdata is None:
+					logger.error("Failed to read random image crop data from file %s (err=%s)!" % (filename,str(e)))
+					return -1
+				data= retdata[0]
+				crop_range= retdata[1]
+			else:
+				self.ixmin= croprange[0]
+				self.ixmax= croprange[1]
+				self.iymin= croprange[2]
+				self.iymax= croprange[3]
+				data= Utils.read_fits_crop(filename, self.ixmin, self.ixmax, self.iymin, self.iymax)
+
+			if data is None:
+				logger.error("Failed to read random image crop data from file %s!" % (filename))
+				return -1
+
+			# - Compute data mask
+			#   NB: =1 good values, =0 bad (pix=0 or pix=inf or pix=nan)
+			data_mask= np.logical_and(data!=0,np.isfinite(data)).astype(np.uint8)
+				
+			# - Check image integrity
+			has_bad_pixs= self.__has_bad_pixel(data, check_fract=False, thr=0)
+			if has_bad_pixs:
+				logger.warn("Image %s has too many bad pixels!" % (filename))
+				return -1
+
+			# - Append image channel data to list
+			self.img_data.append(data)
+			##self.img_heads.append(header)
+			self.img_data_mask.append(data_mask)
+		
+		# - Check image sizes
+		if not self.check_img_sizes():
+			logger.error("Image channels for source %s do not have the same size, check your dataset!" % self.sname)
+			return -1
+
+		# - Set data cube
+		self.img_cube= np.dstack(self.img_data)
+		self.img_cube= self.img_cube.astype(np.float32) # convert otherwise skimage resize fails for 1d image
+		self.img_cube_mask= np.dstack(self.img_data_mask)
+		self.nx= self.img_cube.shape[1]
+		self.ny= self.img_cube.shape[0]
+		self.nchannels= self.img_cube.shape[-1]
+
+		return 0
+	
+
+	def read_img_crops(self, ixmin, ixmax, iymin, iymax):
+		""" Read cropped image data from paths """
+
+		# - Check data filelists
+		if not self.filepaths:
+			logger.error("Empty filelists given!")
+			return -1
+
+		# - Read images
+		nimgs= len(self.filepaths)
+		self.nchannels= nimgs
+
+		for i in range(len(self.filepaths)):
+			filename= self.filepaths[i]
+
+			# - Read random crop from first channel
+			data= Utils.read_fits_crop(filename, ixmin, ixmax, iymin, iymax)
+			if data is None:
+				logger.error("Failed to read random image crop data from file %s!" % (filename))
+				return -1
+
+			self.ixmin= ixmin
+			self.ixmax= ixmax
+			self.iymin= iymin
+			self.iymax= iymax
+
+			# - Compute data mask
+			#   NB: =1 good values, =0 bad (pix=0 or pix=inf or pix=nan)
+			data_mask= np.logical_and(data!=0,np.isfinite(data)).astype(np.uint8)
+				
+			# - Check image integrity
+			has_bad_pixs= self.__has_bad_pixel(data, check_fract=False, thr=0)
+			if has_bad_pixs:
+				logger.warn("Image %s has too many bad pixels!" % (filename))
+				return -1
+
+			# - Append image channel data to list
+			self.img_data.append(data)
+			##self.img_heads.append(header)
+			self.img_data_mask.append(data_mask)
+		
+		# - Check image sizes
+		if not self.check_img_sizes():
+			logger.error("Image channels for source %s do not have the same size, check your dataset!" % self.sname)
+			return -1
+
+		# - Set data cube
+		self.img_cube= np.dstack(self.img_data)
+		self.img_cube= self.img_cube.astype(np.float32) # convert otherwise skimage resize fails for 1d image
+		self.img_cube_mask= np.dstack(self.img_data_mask)
+		self.nx= self.img_cube.shape[1]
+		self.ny= self.img_cube.shape[0]
+		self.nchannels= self.img_cube.shape[-1]
 
 		return 0
 
@@ -113,7 +243,7 @@ class SourceData(object):
 			data_mask= np.logical_and(data!=0,np.isfinite(data)).astype(np.uint8)
 		
 			# - Check image integrity
-			has_bad_pixs= self.has_bad_pixel(data, check_fract=False, thr=0)
+			has_bad_pixs= self.__has_bad_pixel(data, check_fract=False, thr=0)
 			if has_bad_pixs:
 				logger.warn("Image %s has too many bad pixels!" % (filename))
 				return -1
@@ -164,7 +294,13 @@ class SourceData(object):
 		return same_size
 
 
-	def has_bad_pixel(self, data, check_fract=True, thr=0.1):
+	def has_bad_pixels(self, check_fract=True, thr=0.1):
+		""" Check if image data cube has bad pixels """ 
+		
+		return self.__has_bad_pixel_cube(self.img_cube, check_fract, thr)
+
+
+	def __has_bad_pixel(self, data, check_fract=True, thr=0.1):
 		""" Check image data values """ 
 		
 		npixels= data.size
@@ -184,7 +320,7 @@ class SourceData(object):
 		return False
 
 
-	def has_bad_pixel_cube(self, datacube, check_fract=True, thr=0.1):
+	def __has_bad_pixel_cube(self, datacube, check_fract=True, thr=0.1):
 		""" Check image data cube values """ 
 		
 		if datacube.ndim!=3:
@@ -195,7 +331,8 @@ class SourceData(object):
 		status= 0
 		for i in range(nchannels):
 			data= datacube[:,:,i]
-			check= self.check_img_data(data, check_fract, thr) 
+			#check= self.check_img_data(data, check_fract, thr) 
+			check= self.__has_bad_pixel(data, check_fract, thr) 
 			if not check:
 				logger.warn("Channel %d in cube has bad pixels ..." % i+1)
 				status= False	
@@ -232,12 +369,12 @@ class SourceData(object):
 			return -1
 
 		# - Check data cube integrity
-		has_bad_pixs= self.has_bad_pixel(data_resized, check_fract=False, thr=0)
+		has_bad_pixs= self.__has_bad_pixel(data_resized, check_fract=False, thr=0)
 		if has_bad_pixs:
 			logger.warn("Resized data cube has bad pixels!")	
 			return -1
 
-		has_bad_pixs= self.has_bad_pixel(data_mask_resized, check_fract=False, thr=0)
+		has_bad_pixs= self.__has_bad_pixel(data_mask_resized, check_fract=False, thr=0)
 		if has_bad_pixs:
 			logger.warn("Resized data cube mask has bad pixels!")	
 			return -1
@@ -345,7 +482,7 @@ class SourceData(object):
 		data_transf[~cond]= 0
 
 		# - Check data cube integrity
-		has_bad_pixs= self.has_bad_pixel(data_transf, check_fract=False, thr=0)
+		has_bad_pixs= self.__has_bad_pixel(data_transf, check_fract=False, thr=0)
 		if has_bad_pixs:
 			logger.warn("Log-transformed data cube has bad pixels!")	
 			return -1
@@ -380,7 +517,7 @@ class SourceData(object):
 		data_transf[self.img_cube==0]= 0
 
 		# - Check data cube integrity
-		has_bad_pixs= self.has_bad_pixel(data_transf, check_fract=False, thr=0)
+		has_bad_pixs= self.__has_bad_pixel(data_transf, check_fract=False, thr=0)
 		if has_bad_pixs:
 			logger.warn("Log-transformed data cube has bad pixels!")	
 			return -1
@@ -394,7 +531,7 @@ class SourceData(object):
 		data_norm[self.img_cube==0]= 0
 
 		# - Check data cube integrity
-		has_bad_pixs= self.has_bad_pixel(data_norm, check_fract=False, thr=0)
+		has_bad_pixs= self.__has_bad_pixel(data_norm, check_fract=False, thr=0)
 		if has_bad_pixs:
 			logger.warn("Log-transformed and normalized data cube has bad pixels!")	
 			return -1
@@ -628,7 +765,7 @@ class SourceData(object):
 			data_norm= data_transf
 
 		# - Check data cube integrity
-		has_bad_pixs= self.has_bad_pixel(data_norm, check_fract=False, thr=0)
+		has_bad_pixs= self.__has_bad_pixel(data_norm, check_fract=False, thr=0)
 		if has_bad_pixs:
 			logger.warn("Normalized data cube after chan division has bad pixels!")	
 			return -1
@@ -676,7 +813,7 @@ class SourceData(object):
 				data_norm[data_norm<trim_min]= trim_min	
 					
 		# - Check data cube integrity
-		has_bad_pixs= self.has_bad_pixel(data_norm, check_fract=False, thr=0)
+		has_bad_pixs= self.__has_bad_pixel(data_norm, check_fract=False, thr=0)
 		if has_bad_pixs:
 			logger.warn("Normalized data cube has bad pixels!")	
 			return -1
@@ -788,7 +925,7 @@ class SourceData(object):
 		data_norm[self.img_cube==0]= 0
 
 		# - Check data cube integrity
-		has_bad_pixs= self.has_bad_pixel(data_norm, check_fract=False, thr=0)
+		has_bad_pixs= self.__has_bad_pixel(data_norm, check_fract=False, thr=0)
 		if has_bad_pixs:
 			logger.warn("Normalized data cube has bad pixels!")	
 			return -1
@@ -860,12 +997,12 @@ class SourceData(object):
 			return -1
 
 		# - Check data cube integrity
-		has_bad_pixs= self.has_bad_pixel(data_aug, check_fract=False, thr=0)
+		has_bad_pixs= self.__has_bad_pixel(data_aug, check_fract=False, thr=0)
 		if has_bad_pixs:
 			logger.warn("Augmented data cube has bad pixels!")	
 			return -1
 
-		has_bad_pixs= self.has_bad_pixel(data_mask_aug, check_fract=False, thr=0)
+		has_bad_pixs= self.__has_bad_pixel(data_mask_aug, check_fract=False, thr=0)
 		if has_bad_pixs:
 			logger.warn("Augmented data cube mask has bad pixels!")	
 			return -1
@@ -1052,7 +1189,7 @@ class DataLoader(object):
 
 		return 0
 
-	def read_data(self, index, resize=True, nx=64, ny=64, normalize=True, scale_to_abs_max=False, scale_to_max=False, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5, subtract_bkg_and_clip=False):	
+	def read_data(self, index, resize=True, nx=64, ny=64, normalize=True, scale_to_abs_max=False, scale_to_max=False, augment=False, log_transform=False, scale=False, scale_factors=[], standardize=False, means=[], sigmas=[], chan_divide=False, chan_mins=[], erode=False, erode_kernel=5, subtract_bkg_and_clip=False, mask_borders=False, mask_fract=0.7):	
 		""" Read data at given index """
 
 		# - Check index
@@ -1141,9 +1278,10 @@ class DataLoader(object):
 				return None
 
 		# - Mask image borders?
-		if sdata.mask_borders(mask_fract=0.7)<0:
-			logger.error("Failed to mask source image borders %d!" % index)
-			return None
+		if mask_borders:
+			if sdata.mask_borders(mask_fract=mask_fract)<0:
+				logger.error("Failed to mask source image borders %d!" % index)
+				return None
 
 		
 		return sdata
