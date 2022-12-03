@@ -108,15 +108,15 @@ class DataGenerator(object):
 
 		# - Check index
 		if index<0 or index>=self.datasize:
-			logger.error("Invalid index %d given!" % index)
+			logger.error("Invalid index %d given!" % (index))
 			return None
 
 		# - Read source filelist
-		logger.debug("Reading source image data %d ..." % index)
+		logger.debug("Reading source image data %d ..." % (index))
 		d= self.datalist["data"][index]
 		sdata= SourceData()
 		if sdata.set_from_dict(d)<0:
-			logger.error("Failed to set source image data %d!" % index)
+			logger.error("Failed to set source image data %d!" % (index))
 			return None
 
 		# - Read source image data
@@ -134,11 +134,11 @@ class DataGenerator(object):
 			status= sdata.read_imgs()
 				
 		if status<0:
-			logger.error("Failed to read source images %d!" % index)
+			logger.error("Failed to read source images %d!" % (index))
 			return None
 
 		if sdata.img_cube is None:
-			logger.error("Source image %d read data cube is None!" % index)
+			logger.error("Source image %d read data cube is None!" % (index))
 			return None
 
 		# - Apply pre-processing?
@@ -146,16 +146,16 @@ class DataGenerator(object):
 			logger.info("Apply pre-processing ...")
 			data_proc= self.preprocessor(sdata.img_cube)
 			if data_proc is None:
-				logger.error("Failed to pre-process source image data %d!" % index)
+				logger.error("Failed to pre-process source image data %d!" % (index))
 				return None
 			sdata.img_cube= data_proc
 
 		# - Check data cube integrity
-		logger.info("Check bad pixels ...")
-		has_bad_pixs= sdata.has_bad_pixels(check_fract=False, thr=0)
-		if has_bad_pixs:
-			logger.warn("Source image data %d has bad pixels!" % index)	
-			return None
+		#logger.info("Check bad pixels ...")
+		#has_bad_pixs= sdata.has_bad_pixels(check_fract=False, thr=0)
+		#if has_bad_pixs:
+		#	logger.warn("Source image data %d has bad pixels!" % index)	
+		#	return None
 
 		logger.info("Returning sdata ...")
 
