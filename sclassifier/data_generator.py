@@ -151,11 +151,11 @@ class DataGenerator(object):
 			sdata.img_cube= data_proc
 
 		# - Check data cube integrity
-		#logger.info("Check bad pixels ...")
-		#has_bad_pixs= sdata.has_bad_pixels(check_fract=False, thr=0)
-		#if has_bad_pixs:
-		#	logger.warn("Source image data %d has bad pixels!" % index)	
-		#	return None
+		logger.info("Check bad pixels ...")
+		has_bad_pixs= sdata.has_bad_pixels(check_fract=False, thr=0)
+		if has_bad_pixs:
+			logger.warn("Source image data %d has bad pixels!" % (index))	
+			return None
 
 		logger.info("Returning sdata ...")
 
