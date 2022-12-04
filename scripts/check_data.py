@@ -40,7 +40,7 @@ from sclassifier.utils import Utils
 from sclassifier.data_generator import DataGenerator
 from sclassifier.preprocessing import DataPreprocessor
 from sclassifier.preprocessing import BkgSubtractor, SigmaClipper, Scaler, LogStretcher, Augmenter
-from sclassifier.preprocessing import Resizer, MinMaxNormalizer, AbsMinMaxNormalizer, MaxScaler, AbsMaxScaler
+from sclassifier.preprocessing import Resizer, MinMaxNormalizer, AbsMinMaxNormalizer, MaxScaler, AbsMaxScaler, ChanMaxScaler
 from sclassifier.preprocessing import Shifter, Standardizer, ChanDivider, MaskShrinker, BorderMasker
 
 import matplotlib.pyplot as plt
@@ -74,10 +74,16 @@ def get_args():
 	parser.add_argument('--normalize_absminmax', dest='normalize_absminmax', action='store_true',help='Normalize each channel in range using absolute min/max computed over all channels [0,1]')	
 	parser.set_defaults(normalize_absminmax=False)
 
-	parser.add_argument('--scale_to_abs_max', dest='scale_to_abs_max', action='store_true',help='In normalization, if scale_to_max is active, scale to global max across all channels')	
+	parser.add_argument('--scale_to_abs_max', dest='scale_to_abs_max', action='store_true',help='Scale to global max across all channels')	
 	parser.set_defaults(scale_to_abs_max=False)
-	parser.add_argument('--scale_to_max', dest='scale_to_max', action='store_true',help='In normalization, scale to max not to min-max range')	
+	parser.add_argument('--scale_to_max', dest='scale_to_max', action='store_true',help='Scale to max not to min-max range')	
 	parser.set_defaults(scale_to_max=False)
+	parser.add_argument('--scale_to_selch_max', dest='scale_to_selch_max', action='store_true',help='Scale to selected channel max not to min-max range')	
+	parser.set_defaults(scale_to_selch_max=False)
+	parser.add_argument('--use_box_mask_in_chan_max_scaler', dest='use_box_mask_in_chan_max_scaler', action='store_true',help='Find chan max for scaling inside box mask')	
+	parser.set_defaults(use_box_mask_in_chan_max_scaler=False)	
+	parser.add_argument('-chan_max_scaler_box_mask_fract', '--chan_max_scaler_box_mask_fract', dest='chan_max_scaler_box_mask_fract', required=False, type=float, default=0.5, action='store',help='Size of mask box dimensions with respect to image size used in chan max scaler (default=0.5)')
+	
 
 	parser.add_argument('--log_transform', dest='log_transform', action='store_true',help='Apply log transform to images')	
 	parser.set_defaults(log_transform=False)
@@ -96,7 +102,7 @@ def get_args():
 
 	parser.add_argument('--chan_divide', dest='chan_divide', action='store_true',help='Apply channel division to images')	
 	parser.set_defaults(chan_divide=False)
-	parser.add_argument('-chref', '--chref', dest='chref', required=False, type=int, default=0, action='store',help='Image channel reference to be used in chan divide (default=0)')
+	parser.add_argument('-chref', '--chref', dest='chref', required=False, type=int, default=0, action='store',help='Image channel reference to be used in chan divide or scale to selch (default=0)')
 
 	parser.add_argument('--erode', dest='erode', action='store_true',help='Apply erosion to image sourve mask')	
 	parser.set_defaults(erode=False)	
@@ -187,6 +193,9 @@ def main():
 	normalize_absminmax= args.normalize_absminmax
 	scale_to_abs_max= args.scale_to_abs_max
 	scale_to_max= args.scale_to_max
+	scale_to_selch_max= args.scale_to_selch_max
+	use_box_mask_in_chan_max_scaler= args.use_box_mask_in_chan_max_scaler
+	chan_max_scaler_box_mask_fract= args.chan_max_scaler_box_mask_fract
 	log_transform= args.log_transform
 	log_transform_chid= args.log_transform_chid
 	resize= args.resize
@@ -249,7 +258,6 @@ def main():
 	#   8) min/max (abs) norm, standardize, mean shift
 	preprocess_stages= []
 
-
 	if subtract_bkg:
 		preprocess_stages.append(BkgSubtractor(sigma=sigma_bkg, use_mask_box=use_box_mask_in_bkg, mask_fract=bkg_box_mask_fract, chid=bkg_chid))
 
@@ -258,6 +266,9 @@ def main():
 
 	if scale_to_abs_max:
 		preprocess_stages.append(AbsMaxScaler())
+
+	if scale_to_selch_max:
+		preprocess_stages.append(ChanMaxScaler(chref=chref, use_mask_box=use_box_mask_in_chan_max_scaler, mask_fract=chan_max_scaler_box_mask_fract))
 
 	if scale:
 		preprocess_stages.append(Scaler(scale_factors))

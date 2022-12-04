@@ -200,6 +200,53 @@ class AbsMaxScaler(object):
 		
 		return data_scaled
 
+
+##############################
+##   ChanMaxScaler
+##############################
+class ChanMaxScaler(object):
+	""" Divide each image channel by selected channel maximum value """
+
+	def __init__(self, chref, use_mask_box=False, mask_fract=0.5, **kwparams):
+		""" Create a data pre-processor object """
+
+		self.chref= chref
+
+	def __call__(self, data):
+		""" Apply transformation and return transformed data """
+
+		# - Check data
+		if data is None:
+			logger.error("Input data is None!")
+			return None
+
+		cond= np.logical_and(data!=0, np.isfinite(data))
+
+		# - Find selected channel max
+		#   NB: Excluding masked pixels (=0, & NANs)
+		data_ch= data[:,:,self.chref]
+		if self.use_mask_box:
+			data_shape= data_ch.shape
+			xc= int(data_shape[1]/2)
+			yc= int(data_shape[0]/2)
+			dy= int(data_shape[0]*self.mask_fract/2.)
+			dx= int(data_shape[1]*self.mask_fract/2.)
+			xmin= xc - dx
+			xmax= xc + dx
+			ymin= yc - dy
+			ymax= yc + dy
+			data_ch= data[ymin:ymax, xmin:xmax, self.chref]
+		
+		cond_ch= np.logical_and(data_ch!=0, np.isfinite(data_ch))		
+		data_masked= np.ma.masked_where(~cond_ch, data_ch, copy=False)
+		data_max= data_masked.max()
+
+		# - Scale data
+		data_scaled= data/data_max
+		data_scaled[~cond]= 0 # Restore 0 and nans set in original data
+
+		return data_scaled
+
 ##############################
 ##   MinShifter
 ##############################
