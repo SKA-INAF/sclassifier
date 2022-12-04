@@ -461,18 +461,45 @@ class LogStretcher(object):
 			logger.error("Input data is None!")
 			return None
 
+		# - Loop over channel and convert to lg
+		data_transf= np.copy(data)
+
+		for i in range(data.shape[-1]):
+			# - Exclude channel?
+			if self.chid!=-1 and i==self.chid:
+				continue
+
+			data_ch= data[:,:,i]
+			cond_ch= np.logical_and(data>0, np.isfinite(data))
+
+			# - Check that there are pixel >0 for log transform
+			data_ch_1d= data_ch[cond_ch]
+			if data_ch_1d.size<=0:
+				logger.warn("All pixels in channel %d are negative and cannot be log transformed, returning None!" % (i))
+				return None
+
+			# - Apply log
+			data_ch_lg= np.log10(data_ch, where=cond_ch)
+			data_ch_lg_1d= data_ch_lg[cond_ch]
+			data_ch_lg_min= data_ch_lg_1d.min()
+			##data_ch_lg[~cond_ch]= 0
+			data_ch_lg[~cond_ch]= data_ch_lg_min
+
+			# - Set in cube
+			data_transf[:,:,i]= data_ch_lg
+
 		# - Apply log
-		cond= np.logical_and(data>0, np.isfinite(data))
-		data_transf= np.log10(data, where=cond)
+		#cond= np.logical_and(data>0, np.isfinite(data))
+		#data_transf= np.log10(data, where=cond)
 
-		data_transf_1d= data_transf[cond]
-		data_transf_min= data_transf_1d.min()
+		#data_transf_1d= data_transf[cond]
+		#data_transf_min= data_transf_1d.min()
 
-		#data_transf[~cond]= 0
-		data_transf[~cond]= data_transf_min
+		###data_transf[~cond]= 0
+		#data_transf[~cond]= data_transf_min
 
-		if self.chid!=-1:
-			data_transf[:,:,self.chid]= data[:,:,self.chid]
+		#if self.chid!=-1:
+		#	data_transf[:,:,self.chid]= data[:,:,self.chid]
 
 		return data_transf
 
