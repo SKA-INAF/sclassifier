@@ -244,8 +244,8 @@ class ChanMaxScaler(object):
 		data_max= data_masked.max()
 		logger.info("Chan %d max: %s" % (self.chref, str(data_max)))
 	
-		if data_max<=0:
-			logger.warn("Chan %d max is <=0, returning None!" % (self.chref))
+		if data_max<=0 or not np.isfinite(data_max):
+			logger.warn("Chan %d max is <=0 or not finite, returning None!" % (self.chref))
 			return None
 
 		# - Scale data
