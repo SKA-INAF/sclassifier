@@ -245,9 +245,17 @@ class ChanMaxScaler(object):
 		data_max= data_masked.max()
 		logger.info("Chan %d max: %s" % (self.chref, str(data_max)))
 	
-		if data_max<=0 or not np.isfinite(data_max):
-			logger.warn("Chan %d max is <=0 or not finite, returning None!" % (self.chref))
-			return None
+		# - Check that channels are not entirely negatives
+		for i in range(data.shape[-1]):
+			data_ch= data[:,:,i]
+			if self.use_mask_box:
+				data_ch= data[ymin:ymax, xmin:xmax,i]
+			cond_ch= np.logical_and(data_ch!=0, np.isfinite(data_ch))
+			data_ch_1d= data_ch[cond_ch]
+			data_ch_max= data_ch_1d.max()
+			if data_ch_max<=0 or not np.isfinite(data_ch_max):
+				logger.warn("Chan %d max is <=0 or not finite, returning None!" % (i))
+				return None
 
 		# - Scale data
 		data_scaled= data/data_max
