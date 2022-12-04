@@ -211,6 +211,8 @@ class ChanMaxScaler(object):
 		""" Create a data pre-processor object """
 
 		self.chref= chref
+		self.use_mask_box= use_mask_box
+		self.mask_fract= mask_fract
 
 	def __call__(self, data):
 		""" Apply transformation and return transformed data """
