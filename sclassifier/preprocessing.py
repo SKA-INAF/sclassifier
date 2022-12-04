@@ -470,7 +470,7 @@ class LogStretcher(object):
 				continue
 
 			data_ch= data[:,:,i]
-			cond_ch= np.logical_and(data>0, np.isfinite(data))
+			cond_ch= np.logical_and(data_ch>0, np.isfinite(data_ch))
 
 			# - Check that there are pixel >0 for log transform
 			data_ch_1d= data_ch[cond_ch]
