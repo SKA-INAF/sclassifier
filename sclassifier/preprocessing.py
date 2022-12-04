@@ -237,7 +237,7 @@ class ChanMaxScaler(object):
 			xmax= xc + dx
 			ymin= yc - dy
 			ymax= yc + dy
-			logger.info("Using box x[] y[] to compute chan max ..." % (xmin,xmax,ymin,ymax))
+			logger.info("Using box x[%d,%d] y[%d,%d] to compute chan max ..." % (xmin,xmax,ymin,ymax))
 			data_ch= data[ymin:ymax, xmin:xmax, self.chref]
 		
 		cond_ch= np.logical_and(data_ch!=0, np.isfinite(data_ch))		
