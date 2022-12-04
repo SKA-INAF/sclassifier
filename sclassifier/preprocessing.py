@@ -447,7 +447,10 @@ class BorderMasker(object):
 
 		for i in range(data.shape[-1]):
 			data_ch= data[:,:,i]
+			cond= np.logical_and(data_ch!=0, np.isfinite(data_ch))
 			data_shape= data_ch.shape
+			data_ch_1d= data_ch[cond]
+			data_min= data_ch_1d.min()
 			mask= np.zeros(data_shape)
 			xc= int(data_shape[1]/2)
 			yc= int(data_shape[0]/2)
@@ -459,7 +462,8 @@ class BorderMasker(object):
 			ymax= yc + dy
 			logger.info("Masking chan %d (%d,%d) in range x[%d,%d] y[%d,%d]" % (i, data_shape[0], data_shape[1], xmin, xmax, ymin, ymax))
 			mask[ymin:ymax, xmin:xmax]= 1
-			data_ch[mask==0]= 0
+			#data_ch[mask==0]= 0
+			data_ch[mask==0]= data_min
 			data_masked[:,:,i]= data_ch
 	
 		return data_masked
