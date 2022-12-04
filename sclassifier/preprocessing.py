@@ -207,7 +207,7 @@ class AbsMaxScaler(object):
 class ChanMaxScaler(object):
 	""" Divide each image channel by selected channel maximum value """
 
-	def __init__(self, chref, use_mask_box=False, mask_fract=0.5, **kwparams):
+	def __init__(self, chref=0, use_mask_box=False, mask_fract=0.5, **kwparams):
 		""" Create a data pre-processor object """
 
 		self.chref= chref
