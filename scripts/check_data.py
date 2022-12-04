@@ -397,6 +397,11 @@ def main():
 			#print("data shape")
 			#print(data.shape)
 
+			# - Check if data is None
+			if data is None:
+				logger.warn("Image %d (name=%s, label=%s) is None (hint: some pre-processing stage failed, see logs), skipping it ..." % (img_counter, sname, label))
+				continue
+
 			nchannels= data.shape[3]
 			
 			# - Check for NANs
