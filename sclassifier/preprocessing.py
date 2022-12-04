@@ -129,7 +129,7 @@ class AbsMinMaxNormalizer(object):
 		# - Find absolute min & max across all channels
 		#   NB: Excluding masked pixels (=0, & NANs)
 		cond= np.logical_and(data!=0, np.isfinite(data))
-		data_masked= np.ma.masked_where(cond, data, copy=False)
+		data_masked= np.ma.masked_where(~cond, data, copy=False)
 		data_min= data_masked.min()
 		data_max= data_masked.max()
 
@@ -161,7 +161,7 @@ class MaxScaler(object):
 		# - Find max for each channel
 		#   NB: Excluding masked pixels (=0, & NANs)
 		cond= np.logical_and(data!=0, np.isfinite(data))
-		data_masked= np.ma.masked_where(cond, data, copy=False)
+		data_masked= np.ma.masked_where(~cond, data, copy=False)
 		data_max= data_masked.max(axis=(0,1)).data
 
 		# - Scale data
@@ -191,7 +191,7 @@ class AbsMaxScaler(object):
 		# - Find absolute max
 		#   NB: Excluding masked pixels (=0, & NANs)
 		cond= np.logical_and(data!=0, np.isfinite(data))
-		data_masked= np.ma.masked_where(cond, data, copy=False)
+		data_masked= np.ma.masked_where(~cond, data, copy=False)
 		data_max= data_masked.max()
 
 		# - Scale data
@@ -237,10 +237,11 @@ class ChanMaxScaler(object):
 			xmax= xc + dx
 			ymin= yc - dy
 			ymax= yc + dy
+			logger.info("Using box x[] y[] to compute chan max ..." % (xmin,xmax,ymin,ymax))
 			data_ch= data[ymin:ymax, xmin:xmax, self.chref]
 		
 		cond_ch= np.logical_and(data_ch!=0, np.isfinite(data_ch))		
-		data_masked= np.ma.masked_where(cond_ch, data_ch, copy=False)
+		data_masked= np.ma.masked_where(~cond_ch, data_ch, copy=False)
 		data_max= data_masked.max()
 		logger.info("Chan %d max: %s" % (self.chref, str(data_max)))
 	
