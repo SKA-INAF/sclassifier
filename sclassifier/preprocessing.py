@@ -242,6 +242,7 @@ class ChanMaxScaler(object):
 		cond_ch= np.logical_and(data_ch!=0, np.isfinite(data_ch))		
 		data_masked= np.ma.masked_where(~cond_ch, data_ch, copy=False)
 		data_max= data_masked.max()
+		logger.info("Chan %d max: %s" % (self.chref, str(data_max)))
 
 		# - Scale data
 		data_scaled= data/data_max
