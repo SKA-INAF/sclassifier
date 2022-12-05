@@ -69,8 +69,8 @@ def get_args():
 	parser.add_argument('-datalist_cv','--datalist_cv', dest='datalist_cv', required=False, default="", type=str, help='Input data json filelist for validation') 
 	
 	# - Data pre-processing options
-	parser.add_argument('--resize', dest='resize', action='store_true',help='Resize images')	
-	parser.set_defaults(resize=False)
+	parser.add_argument('--no-resize', dest='resize', action='store_false',help='Resize images')	
+	parser.set_defaults(resize=True)
 	parser.add_argument('-nx', '--nx', dest='nx', required=False, type=int, default=64, action='store',help='Image resize width in pixels (default=64)')
 	parser.add_argument('-ny', '--ny', dest='ny', required=False, type=int, default=64, action='store',help='Image resize height in pixels (default=64)')	
 	parser.add_argument('--augment', dest='augment', action='store_true',help='Augment images')	
@@ -183,8 +183,6 @@ def get_args():
 	parser.add_argument('-dense_layer_sizes', '--dense_layer_sizes', dest='dense_layer_sizes', required=False, type=str, default='16', action='store',help='Dense layer sizes used (default=16)')
 	parser.add_argument('-dense_layer_activation', '--dense_layer_activation', dest='dense_layer_activation', required=False, type=str, default='relu', action='store',help='Dense layer activation used {relu,softmax} (default=relu)')
 	
-	
-	
 	args = parser.parse_args()	
 
 	return args
@@ -277,7 +275,6 @@ def main():
 	add_dropout_layer= args.add_dropout_layer
 	dropout_rate= args.dropout_rate
 	
-
 	# - Train options
 	predict= args.predict
 	multiclass= True
@@ -292,8 +289,6 @@ def main():
 	weight_seed= args.weight_seed
 	reproducible= args.reproducible
 	validation_steps= args.validation_steps
-
-
 
 	#===============================
 	#==  CREATE DATA PRE-PROCESSOR
@@ -412,25 +407,26 @@ def main():
 	#==   TRAIN CNN
 	#===========================
 	logger.info("Running CNN image classifier training ...")
-	sclass= SClassifierNN(dl, multiclass=multiclass)
+	sclass= SClassifierNN(dg, multiclass=multiclass)
 	sclass.modelfile= modelfile
 	sclass.weightfile= weightfile
 	sclass.set_image_size(nx, ny)
 	sclass.augmentation= augment
 	sclass.augment_scale_factor= augment_scale_factor
-	sclass.normalize= normalize	
-	sclass.scale_to_abs_max= scale_to_abs_max
-	sclass.scale_to_max= scale_to_max
-	sclass.log_transform_img= log_transform
-	sclass.scale_img= scale
-	sclass.scale_img_factors= scale_factors
-	sclass.standardize_img= standardize
-	sclass.img_means= img_means
-	sclass.img_sigmas= img_sigmas
-	sclass.chan_divide= chan_divide
-	sclass.chan_mins= chan_mins
-	sclass.erode= erode
-	sclass.erode_kernel= erode_kernel
+
+	#sclass.normalize= normalize	
+	#sclass.scale_to_abs_max= scale_to_abs_max
+	#sclass.scale_to_max= scale_to_max
+	#sclass.log_transform_img= log_transform
+	#sclass.scale_img= scale
+	#sclass.scale_img_factors= scale_factors
+	#sclass.standardize_img= standardize
+	#sclass.img_means= img_means
+	#sclass.img_sigmas= img_sigmas
+	#sclass.chan_divide= chan_divide
+	#sclass.chan_mins= chan_mins
+	#sclass.erode= erode
+	#sclass.erode_kernel= erode_kernel
 
 	sclass.batch_size= batch_size
 	sclass.nepochs= nepochs
@@ -457,7 +453,7 @@ def main():
 	sclass.dropout_rate= dropout_rate
 	sclass.weight_seed= weight_seed
 
-	sclass.dl_cv= dl_cv
+	sclass.dg_cv= dg_cv
 
 	if predict:
 		status= sclass.run_predict(modelfile, weightfile)

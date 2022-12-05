@@ -265,20 +265,20 @@ class SClassifierNN(object):
 		# *****************************
 		# ** Pre-processing
 		# *****************************
-		self.normalize= False
-		self.scale_to_abs_max= False
-		self.scale_to_max= False
-		self.resize= True
-		self.log_transform_img= False
-		self.scale_img= False
-		self.scale_img_factors= []
-		self.standardize_img= False		
-		self.img_means= []
-		self.img_sigmas= []	
-		self.chan_divide= False
-		self.chan_mins= []
-		self.erode= False
-		self.erode_kernel= 5
+		#self.normalize= False
+		#self.scale_to_abs_max= False
+		#self.scale_to_max= False
+		#self.resize= True
+		#self.log_transform_img= False
+		#self.scale_img= False
+		#self.scale_img_factors= []
+		#self.standardize_img= False		
+		#self.img_means= []
+		#self.img_sigmas= []	
+		#self.chan_divide= False
+		#self.chan_mins= []
+		#self.erode= False
+		#self.erode_kernel= 5
 
 
 		# *****************************
