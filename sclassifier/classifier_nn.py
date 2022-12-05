@@ -21,6 +21,7 @@ import logging
 import collections
 import csv
 import pickle
+from copy import deepcopy
 
 ##############################
 ##     GLOBAL VARS
@@ -521,7 +522,7 @@ class SClassifierNN(object):
 		#)	
 
 		# - Create test data generator
-		self.dg_test= np.copy(self.dg)
+		self.dg_test= deepcopy(self.dg)
 		self.dg_test.disable_augmentation()
 
 		self.test_data_generator= self.dg_test.generate_cnn_data(
