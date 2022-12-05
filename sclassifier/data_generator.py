@@ -71,7 +71,7 @@ class DataGenerator(object):
 	def disable_augmentation(self):
 		""" Disable augmentation """
 
-		if self.processor is None:
+		if self.preprocessor is None:
 			logger.warn("Pre-processor is None, nothing will be done...")
 			return -1
 
