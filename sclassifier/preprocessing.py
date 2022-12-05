@@ -258,13 +258,13 @@ class ChanMaxScaler(object):
 			xmax= xc + dx
 			ymin= yc - dy
 			ymax= yc + dy
-			logger.info("Using box x[%d,%d] y[%d,%d] to compute chan max ..." % (xmin,xmax,ymin,ymax))
+			logger.debug("Using box x[%d,%d] y[%d,%d] to compute chan max ..." % (xmin,xmax,ymin,ymax))
 			data_ch= data[ymin:ymax, xmin:xmax, self.chref]
 		
 		cond_ch= np.logical_and(data_ch!=0, np.isfinite(data_ch))		
 		data_masked= np.ma.masked_where(~cond_ch, data_ch, copy=False)
 		data_max= data_masked.max()
-		logger.info("Chan %d max: %s" % (self.chref, str(data_max)))
+		logger.debug("Chan %d max: %s" % (self.chref, str(data_max)))
 	
 		# - Check that channels are not entirely negatives
 		for i in range(data.shape[-1]):
@@ -553,7 +553,7 @@ class BorderMasker(object):
 			return None
 
 		# - Mask all channels at border
-		logger.info("Masking all channels at border (fract=%f) ..." % (self.mask_fract))
+		logger.debug("Masking all channels at border (fract=%f) ..." % (self.mask_fract))
 		data_masked= np.copy(data)
 
 		for i in range(data.shape[-1]):
@@ -571,7 +571,7 @@ class BorderMasker(object):
 			xmax= xc + dx
 			ymin= yc - dy
 			ymax= yc + dy
-			logger.info("Masking chan %d (%d,%d) in range x[%d,%d] y[%d,%d]" % (i, data_shape[0], data_shape[1], xmin, xmax, ymin, ymax))
+			logger.debug("Masking chan %d (%d,%d) in range x[%d,%d] y[%d,%d]" % (i, data_shape[0], data_shape[1], xmin, xmax, ymin, ymax))
 			mask[ymin:ymax, xmin:xmax]= 1
 			#data_ch[mask==0]= 0
 			data_ch[mask==0]= data_min
@@ -611,14 +611,14 @@ class BkgSubtractor(object):
 			xmax= xc + dx
 			ymin= yc - dy
 			ymax= yc + dy
-			logger.info("Masking data (%d,%d) in range x[%d,%d] y[%d,%d]" % (data_shape[0], data_shape[1], xmin, xmax, ymin, ymax))
+			logger.debug("Masking data (%d,%d) in range x[%d,%d] y[%d,%d]" % (data_shape[0], data_shape[1], xmin, xmax, ymin, ymax))
 			bkgdata[ymin:ymax, xmin:xmax]= 0
 	
 		# - Compute and subtract mean bkg from data
-		logger.info("Subtracting bkg ...")
+		logger.debug("Subtracting bkg ...")
 		cond_bkg= np.logical_and(bkgdata!=0, np.isfinite(bkgdata))
 		bkgdata_1d= bkgdata[cond_bkg]
-		logger.info("--> bkgdata min/max=%s/%s" % (str(bkgdata_1d.min()), str(bkgdata_1d.max())))
+		logger.debug("--> bkgdata min/max=%s/%s" % (str(bkgdata_1d.min()), str(bkgdata_1d.max())))
 
 		bkgval, _, _ = sigma_clipped_stats(bkgdata_1d, sigma=self.sigma)
 
@@ -627,7 +627,7 @@ class BkgSubtractor(object):
 		cond_bkgsub= np.logical_and(data_bkgsub!=0, np.isfinite(data_bkgsub))
 		data_bkgsub_1d= data_bkgsub[cond_bkgsub]
 
-		logger.info("--> data min/max (after bkgsub)=%s/%s (bkg=%s)" % (str(data_bkgsub_1d.min()), str(data_bkgsub_1d.max()), str(bkgval)))
+		logger.debug("--> data min/max (after bkgsub)=%s/%s (bkg=%s)" % (str(data_bkgsub_1d.min()), str(data_bkgsub_1d.max()), str(bkgval)))
 
 		return data_bkgsub
 
@@ -672,7 +672,7 @@ class SigmaClipper(object):
 		data_1d= data[cond]
 
 		# - Clip all pixels that are below sigma clip
-		logger.info("Clipping all pixels below %f sigma ..." % (self.sigma))
+		logger.debug("Clipping all pixels below %f sigma ..." % (self.sigma))
 		clipmean, _, _ = sigma_clipped_stats(data_1d, sigma=self.sigma)
 
 		data_clipped= np.copy(data)
@@ -681,7 +681,7 @@ class SigmaClipper(object):
 		cond_clipped= np.logical_and(data_clipped!=0, np.isfinite(data_clipped))
 		data_clipped_1d= data_clipped[cond_clipped]
 
-		logger.info("--> data min/max (after sigmaclip)=%s/%s (clipmean=%s)" % (str(data_clipped_1d.min()), str(data_clipped_1d.max()), str(clipmean)))
+		logger.debug("--> data min/max (after sigmaclip)=%s/%s (clipmean=%s)" % (str(data_clipped_1d.min()), str(data_clipped_1d.max()), str(clipmean)))
 
 		return data_clipped 
 		
@@ -789,7 +789,7 @@ class ChanDivider(object):
 			if i==self.chref:
 				data_norm[:,:,i]= np.copy(data_ref)
 			else:
-				logger.info("Divide channel %d by reference channel %d ..." % (i, self.chref))
+				logger.debug("Divide channel %d by reference channel %d ..." % (i, self.chref))
 				dn= data_norm[:,:,i]/data_denom
 				dn[~cond_ref]= 0 # set ratio to zero if ref pixel flux was zero or nan
 				data_norm[:,:,i]= dn
@@ -798,7 +798,7 @@ class ChanDivider(object):
 
 		# - Apply log transform to ratio channels?
 		if self.logtransf:
-			logger.info("Applying log-transform to channel ratios ...")
+			logger.debug("Applying log-transform to channel ratios ...")
 			data_transf= np.copy(data_norm)
 			data_transf[data_transf<=0]= 1
 			data_transf_lg= np.log10(data_transf)
