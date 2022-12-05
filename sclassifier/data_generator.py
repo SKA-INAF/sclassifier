@@ -161,7 +161,7 @@ class DataGenerator(object):
 
 		# - Apply pre-processing?
 		if self.preprocessor is not None:
-			logger.info("Apply pre-processing ...")
+			logger.debug("Apply pre-processing ...")
 			data_proc= self.preprocessor(sdata.img_cube)
 			if data_proc is None:
 				logger.error("Failed to pre-process source image data at index %d (sname=%s, label=%s, classid=%d)!" % (index, sname, label, classid))
@@ -169,13 +169,11 @@ class DataGenerator(object):
 			sdata.img_cube= data_proc
 
 		# - Check data cube integrity
-		logger.info("Check bad pixels ...")
+		logger.debug("Check bad pixels ...")
 		has_bad_pixs= sdata.has_bad_pixels(check_fract=False, thr=0)
 		if has_bad_pixs:
 			logger.warn("Source image data at index %d (sname=%s, label=%s, classid=%d) has bad pixels!" % (index, sname, label, classid))	
 			return None
-
-		logger.info("Returning sdata ...")
 
 		return sdata
 
