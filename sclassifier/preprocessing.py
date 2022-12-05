@@ -724,6 +724,7 @@ class Resizer(object):
 		self.preserve_range= preserve_range
 		self.upscale= upscale # Upscale images to resize size when original image size is smaller than desired size. If false, pad to reach desired size
 		self.downscale_with_antialiasing=downscale_with_antialiasing  # Use antialiasing when down-scaling an image
+		self.set_pad_val_to_min= set_pad_val_to_min
 		
 	def __call__(self, data):
 		""" Apply transformation and return transformed data """
@@ -786,7 +787,7 @@ class Resizer(object):
 		if data_resized is None:
 			logger.warn("Resized data is None, failed to resize to size (%d,%d) (see logs)!" % (self.resize_size, self.resize_size))
 
-		if set_pad_val_to_min:
+		if self.set_pad_val_to_min:
 			for i in range(data_resized.shape[-1]):
 				data_ch= data_resized[:,:,i]
 				cond_ch= np.logical_and(data_ch!=0, np.isfinite(data_ch))
