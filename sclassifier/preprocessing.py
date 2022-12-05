@@ -716,13 +716,13 @@ class SigmaClipper(object):
 class Resizer(object):
 	""" Resize image to desired size """
 
-	def __init__(self, resize_size, preserve_range=True, upscale=False, downscale_with_antialiasing=False, **kwparams):
+	def __init__(self, resize_size, preserve_range=True, upscale=False, downscale_with_antialiasing=False, set_pad_val_to_min=True, **kwparams):
 		""" Create a data pre-processor object """
 
 		# - Set parameters
 		self.resize_size= resize_size
 		self.preserve_range= preserve_range
-		self.upscale= upscale # Upscale images to resize size when source size is smaller
+		self.upscale= upscale # Upscale images to resize size when original image size is smaller than desired size. If false, pad to reach desired size
 		self.downscale_with_antialiasing=downscale_with_antialiasing  # Use antialiasing when down-scaling an image
 		
 	def __call__(self, data):
@@ -785,6 +785,15 @@ class Resizer(object):
 
 		if data_resized is None:
 			logger.warn("Resized data is None, failed to resize to size (%d,%d) (see logs)!" % (self.resize_size, self.resize_size))
+
+		if set_pad_val_to_min:
+			for i in range(data_resized.shape[-1]):
+				data_ch= data_resized[:,:,i]
+				cond_ch= np.logical_and(data_ch!=0, np.isfinite(data_ch))
+				data_ch_1d= data_ch[cond_ch]
+				data_min= data_ch_1d.min()
+				data_ch[~cond_ch]= data_min
+				data_resized[:,:,i]= data_ch
 
 		return data_resized
 
