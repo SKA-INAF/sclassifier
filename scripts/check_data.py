@@ -84,7 +84,6 @@ def get_args():
 	parser.set_defaults(use_box_mask_in_chan_max_scaler=False)	
 	parser.add_argument('-chan_max_scaler_box_mask_fract', '--chan_max_scaler_box_mask_fract', dest='chan_max_scaler_box_mask_fract', required=False, type=float, default=0.5, action='store',help='Size of mask box dimensions with respect to image size used in chan max scaler (default=0.5)')
 	
-
 	parser.add_argument('--log_transform', dest='log_transform', action='store_true',help='Apply log transform to images')	
 	parser.set_defaults(log_transform=False)
 	parser.add_argument('-log_transform_chid', '--log_transform_chid', dest='log_transform_chid', required=False, type=int, default=-1, action='store',help='Channel id to be excluded from log-transformed. -1=transform all (default=-1)')

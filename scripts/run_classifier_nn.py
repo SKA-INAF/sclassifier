@@ -41,6 +41,12 @@ from sclassifier import __version__, __date__
 from sclassifier import logger
 from sclassifier.data_loader import DataLoader
 from sclassifier.classifier_nn import SClassifierNN
+from sclassifier.data_generator import DataGenerator
+from sclassifier.preprocessing import DataPreprocessor
+from sclassifier.preprocessing import BkgSubtractor, SigmaClipper, Scaler, LogStretcher, Augmenter
+from sclassifier.preprocessing import Resizer, MinMaxNormalizer, AbsMinMaxNormalizer, MaxScaler, AbsMaxScaler, ChanMaxScaler
+from sclassifier.preprocessing import Shifter, Standardizer, ChanDivider, MaskShrinker, BorderMasker
+
 
 #### GET SCRIPT ARGS ####
 def str2bool(v):
@@ -63,21 +69,33 @@ def get_args():
 	parser.add_argument('-datalist_cv','--datalist_cv', dest='datalist_cv', required=False, default="", type=str, help='Input data json filelist for validation') 
 	
 	# - Data pre-processing options
+	parser.add_argument('--resize', dest='resize', action='store_true',help='Resize images')	
+	parser.set_defaults(resize=False)
 	parser.add_argument('-nx', '--nx', dest='nx', required=False, type=int, default=64, action='store',help='Image resize width in pixels (default=64)')
 	parser.add_argument('-ny', '--ny', dest='ny', required=False, type=int, default=64, action='store',help='Image resize height in pixels (default=64)')	
 	parser.add_argument('--augment', dest='augment', action='store_true',help='Augment images')	
 	parser.set_defaults(augment=False)
+	parser.add_argument('-augmenter', '--augmenter', dest='augmenter', required=False, type=str, default='cnn', action='store',help='Predefined augmenter to be used (default=cnn)')
 	parser.add_argument('-augment_scale_factor', '--augment_scale_factor', dest='augment_scale_factor', required=False, type=int, default=1, action='store',help='Number of times images are augmented. E.g. if 2, nsteps_per_epoch=2*nsamples/batch_size (default=1)')
 	
-	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize input images in range [0,1]')	
-	parser.set_defaults(normalize=False)
-	parser.add_argument('--scale_to_abs_max', dest='scale_to_abs_max', action='store_true',help='In normalization, if scale_to_max is active, scale to global max across all channels')	
-	parser.set_defaults(scale_to_abs_max=False)
-	parser.add_argument('--scale_to_max', dest='scale_to_max', action='store_true',help='In normalization, scale to max not to min-max range')	
-	parser.set_defaults(scale_to_max=False)
+	parser.add_argument('--normalize_minmax', dest='normalize_minmax', action='store_true',help='Normalize each channel in range [0,1]')	
+	parser.set_defaults(normalize_minmax=False)
+	parser.add_argument('--normalize_absminmax', dest='normalize_absminmax', action='store_true',help='Normalize each channel in range using absolute min/max computed over all channels [0,1]')	
+	parser.set_defaults(normalize_absminmax=False)
 
+	parser.add_argument('--scale_to_abs_max', dest='scale_to_abs_max', action='store_true',help='Scale to global max across all channels')	
+	parser.set_defaults(scale_to_abs_max=False)
+	parser.add_argument('--scale_to_max', dest='scale_to_max', action='store_true',help='Scale to max not to min-max range')	
+	parser.set_defaults(scale_to_max=False)
+	parser.add_argument('--scale_to_selch_max', dest='scale_to_selch_max', action='store_true',help='Scale to selected channel max not to min-max range')	
+	parser.set_defaults(scale_to_selch_max=False)
+	parser.add_argument('--use_box_mask_in_chan_max_scaler', dest='use_box_mask_in_chan_max_scaler', action='store_true',help='Find chan max for scaling inside box mask')	
+	parser.set_defaults(use_box_mask_in_chan_max_scaler=False)	
+	parser.add_argument('-chan_max_scaler_box_mask_fract', '--chan_max_scaler_box_mask_fract', dest='chan_max_scaler_box_mask_fract', required=False, type=float, default=0.5, action='store',help='Size of mask box dimensions with respect to image size used in chan max scaler (default=0.5)')
+	
 	parser.add_argument('--log_transform', dest='log_transform', action='store_true',help='Apply log transform to images')	
 	parser.set_defaults(log_transform=False)
+	parser.add_argument('-log_transform_chid', '--log_transform_chid', dest='log_transform_chid', required=False, type=int, default=-1, action='store',help='Channel id to be excluded from log-transformed. -1=transform all (default=-1)')
 
 	parser.add_argument('--scale', dest='scale', action='store_true',help='Apply scale factors to images')	
 	parser.set_defaults(scale=False)
@@ -85,16 +103,36 @@ def get_args():
 
 	parser.add_argument('--standardize', dest='standardize', action='store_true',help='Apply standardization to images')	
 	parser.set_defaults(standardize=False)
+	parser.add_argument('--meanshift', dest='meanshift', action='store_true',help='Apply mean shift to images')	
+	parser.set_defaults(meanshift=False)
 	parser.add_argument('-img_means', '--img_means', dest='img_means', required=False, type=str, default='', action='store',help='Image means (separated by commas) to be used in standardization (default=empty)')
 	parser.add_argument('-img_sigmas', '--img_sigmas', dest='img_sigmas', required=False, type=str, default='', action='store',help='Image sigmas (separated by commas) to be used in standardization (default=empty)')
 
 	parser.add_argument('--chan_divide', dest='chan_divide', action='store_true',help='Apply channel division to images')	
 	parser.set_defaults(chan_divide=False)
-	parser.add_argument('-chan_mins', '--chan_mins', dest='chan_mins', required=False, type=str, default='', action='store',help='Image channel means (separated by commas) to be used in chan divide (default=empty)')
+	parser.add_argument('-chref', '--chref', dest='chref', required=False, type=int, default=0, action='store',help='Image channel reference to be used in chan divide or scale to selch (default=0)')
 
 	parser.add_argument('--erode', dest='erode', action='store_true',help='Apply erosion to image sourve mask')	
 	parser.set_defaults(erode=False)	
 	parser.add_argument('-erode_kernel', '--erode_kernel', dest='erode_kernel', required=False, type=int, default=5, action='store',help='Erosion kernel size in pixels (default=5)')	
+
+	parser.add_argument('--subtract_bkg', dest='subtract_bkg', action='store_true',help='Subtract bkg from ref channel image')	
+	parser.set_defaults(subtract_bkg=False)
+	parser.add_argument('-sigma_bkg', '--sigma_bkg', dest='sigma_bkg', required=False, type=float, default=3, action='store',help='Sigma clip to be used in bkg calculation (default=3)')
+	parser.add_argument('--use_box_mask_in_bkg', dest='use_box_mask_in_bkg', action='store_true',help='Compute bkg value in borders left from box mask')	
+	parser.set_defaults(use_box_mask_in_bkg=False)	
+	parser.add_argument('-bkg_box_mask_fract', '--bkg_box_mask_fract', dest='bkg_box_mask_fract', required=False, type=float, default=0.7, action='store',help='Size of mask box dimensions with respect to image size used in bkg calculation (default=0.7)')
+	parser.add_argument('-bkg_chid', '--bkg_chid', dest='bkg_chid', required=False, type=int, default=-1, action='store',help='Channel to subtract background (-1=all) (default=-1)')
+
+	parser.add_argument('--clip_data', dest='clip_data', action='store_true',help='Do sigma clipping')	
+	parser.set_defaults(clip_data=False)
+	parser.add_argument('-sigma_clip', '--sigma_clip', dest='sigma_clip', required=False, type=float, default=1, action='store',help='Sigma threshold to be used for clipping pixels (default=1)')
+	parser.add_argument('-clip_chid', '--clip_chid', dest='clip_chid', required=False, type=int, default=-1, action='store',help='Channel to clip data (-1=all) (default=-1)')
+
+
+	parser.add_argument('--mask_borders', dest='mask_borders', action='store_true',help='Mask image borders by desired width/height fraction')
+	parser.set_defaults(mask_borders=False)
+	parser.add_argument('-mask_border_fract', '--mask_border_fract', dest='mask_border_fract', required=False, type=float, default=0.7, action='store',help='Size of non-masked box dimensions with respect to image size (default=0.7)')
 
 	# - Network training options
 	parser.add_argument('--binary_class', dest='binary_class', action='store_true',help='Perform a binary classification {0=EGAL,1=GAL} (default=multiclass)')	
@@ -177,18 +215,26 @@ def main():
 	# - Data process options	
 	nx= args.nx
 	ny= args.ny
+	resize= args.resize
 	augment= args.augment
+	augmenter= args.augmenter
 	augment_scale_factor= args.augment_scale_factor
 	scale= args.scale
 	scale_factors= []
 	if args.scale_factors!="":
 		scale_factors= [float(x.strip()) for x in args.scale_factors.split(',')]
 
-	normalize= args.normalize
+	normalize_minmax= args.normalize_minmax
+	normalize_absminmax= args.normalize_absminmax
 	scale_to_abs_max= args.scale_to_abs_max
 	scale_to_max= args.scale_to_max
+	scale_to_selch_max= args.scale_to_selch_max
+	use_box_mask_in_chan_max_scaler= args.use_box_mask_in_chan_max_scaler
+	chan_max_scaler_box_mask_fract= args.chan_max_scaler_box_mask_fract
 	log_transform= args.log_transform
+	log_transform_chid= args.log_transform_chid
 	standardize= args.standardize
+	meanshift= args.meanshift
 	img_means= []
 	img_sigmas= []
 	if args.img_means!="":
@@ -197,11 +243,20 @@ def main():
 		img_sigmas= [float(x.strip()) for x in args.img_sigmas.split(',')]
 
 	chan_divide= args.chan_divide
-	chan_mins= []
-	if args.chan_mins!="":
-		chan_mins= [float(x.strip()) for x in args.chan_mins.split(',')]
+	chref= args.chref
 	erode= args.erode	
 	erode_kernel= args.erode_kernel
+
+	subtract_bkg= args.subtract_bkg
+	sigma_bkg= args.sigma_bkg
+	use_box_mask_in_bkg= args.use_box_mask_in_bkg
+	bkg_box_mask_fract= args.bkg_box_mask_fract
+	bkg_chid= args.bkg_chid
+	clip_data= args.clip_data
+	sigma_clip= args.sigma_clip
+	clip_chid= args.clip_chid
+	mask_borders= args.mask_borders
+	mask_border_fract= args.mask_border_fract
 
 	# - NN architecture
 	modelfile= args.modelfile
@@ -239,26 +294,119 @@ def main():
 	validation_steps= args.validation_steps
 
 
+
+	#===============================
+	#==  CREATE DATA PRE-PROCESSOR
+	#===============================
+	# - Pre-process stage order
+	#   1) Bkg sub
+	#   2) Sigma clip
+	#   3) Scale
+	#   4) Stretch (e.g. log transform)
+	#   5) Mask ops (shrinker, border masking)
+	#   6) Augmentation
+	#   7) Resize
+	#   8) min/max (abs) norm, standardize, mean shift
+	preprocess_stages= []
+
+	if subtract_bkg:
+		preprocess_stages.append(BkgSubtractor(sigma=sigma_bkg, use_mask_box=use_box_mask_in_bkg, mask_fract=bkg_box_mask_fract, chid=bkg_chid))
+
+	if clip_data:
+		preprocess_stages.append(SigmaClipper(sigma=sigma_clip, chid=clip_chid))
+
+	if scale_to_abs_max:
+		preprocess_stages.append(AbsMaxScaler())
+
+	if scale_to_selch_max:
+		preprocess_stages.append(ChanMaxScaler(chref=chref, use_mask_box=use_box_mask_in_chan_max_scaler, mask_fract=chan_max_scaler_box_mask_fract))
+
+	if scale:
+		preprocess_stages.append(Scaler(scale_factors))
+
+	if log_transform:
+		preprocess_stages.append(LogStretcher(chid=log_transform_chid))
+	
+	if erode:
+		preprocess_stages.append(MaskShrinker(kernel=erode_kernel))
+	
+	if mask_borders:
+		preprocess_stages.append(BorderMasker(mask_border_fract))
+	
+	if augment:
+		preprocess_stages.append(Augmenter(augmenter_choice=augmenter))
+
+	if resize:
+		preprocess_stages.append(Resizer(nx=nx, ny=ny))
+
+	if normalize_minmax:
+		preprocess_stages.append(MinMaxNormalizer())
+
+	if normalize_absminmax:
+		preprocess_stages.append(AbsMinMaxNormalizer())
+
+	if scale_to_max:
+		preprocess_stages.append(MaxScaler())
+
+	#if scale_to_abs_max:
+	#	preprocess_stages.append(AbsMaxScaler())
+
+	if meanshift:
+		preprocess_stages.append(Shifter(offsets=img_means))
+	
+	if standardize:
+		preprocess_stages.append(Standardizer(means=img_means, sigmas=img_sigmas))
+	
+	if chan_divide:
+		preprocess_stages.append(ChanDivider(chref=chref))
+
+	print("== PRE-PROCESSING STAGES ==")
+	print(preprocess_stages)
+
+	dp= DataPreprocessor(preprocess_stages)
+
+
+	#===============================
+	#==  DATA GENERATOR
+	#===============================
+	# - Create train data generator
+	dg= DataGenerator(filename=datalist, preprocessor=dp)
+
+	logger.info("Reading datalist %s ..." % datalist)
+	if dg.read_datalist()<0:
+		logger.error("Failed to read input datalist!")
+		return 1
+
+	# - Create validation data generator
+	dg_cv= None
+	if datalist_cv!="":
+		dg_cv= DataGenerator(filename=datalist_cv, preprocessor=dp)
+		
+		logger.info("Reading datalist_cv %s ..." % (datalist_cv))
+		if dg_cv.read_datalist()<0:
+			logger.error("Failed to read input datalist for validation!")
+			return 1
+
 	#===========================
 	#==   READ DATALIST
 	#===========================
 	# - Create data loader
-	dl= DataLoader(filename=datalist, augmenter_choice='cnn')
+	#dl= DataLoader(filename=datalist, augmenter_choice='cnn')
 
 	# - Read datalist	
-	logger.info("Reading datalist %s ..." % (datalist))
-	if dl.read_datalist()<0:
-		logger.error("Failed to read input datalist!")
-		return 1
+	#logger.info("Reading datalist %s ..." % (datalist))
+	#if dl.read_datalist()<0:
+	#	logger.error("Failed to read input datalist!")
+	#	return 1
 
 	# - Create data loader for validation
-	dl_cv= None
-	if datalist_cv!="":
-		logger.info("Reading datalist_cv %s ..." % (datalist_cv))
-		dl_cv= DataLoader(filename=datalist_cv, augmenter_choice='cnn')
-		if dl_cv.read_datalist()<0:
-			logger.error("Failed to read input datalist for validation!")
-			return 1
+	#dl_cv= None
+	#if datalist_cv!="":
+	#	logger.info("Reading datalist_cv %s ..." % (datalist_cv))
+	#	dl_cv= DataLoader(filename=datalist_cv, augmenter_choice='cnn')
+	#	if dl_cv.read_datalist()<0:
+	#		logger.error("Failed to read input datalist for validation!")
+	#		return 1
 	
 	#===========================
 	#==   TRAIN CNN

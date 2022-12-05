@@ -66,6 +66,20 @@ class DataGenerator(object):
 
 
 	#############################
+	##     DISABLE AUGMENTATION
+	#############################
+	def disable_augmentation(self):
+		""" Disable augmentation """
+
+		if self.processor is None:
+			logger.warn("Pre-processor is None, nothing will be done...")
+			return -1
+
+		self.preprocessor.disable_augmentation()		
+
+		return 0
+
+	#############################
 	##     READ DATALIST
 	#############################
 	def read_datalist(self):

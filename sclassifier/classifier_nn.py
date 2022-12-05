@@ -103,6 +103,7 @@ matplotlib.use('Agg')
 from .utils import Utils
 from .data_loader import DataLoader
 from .data_loader import SourceData
+from .data_generator import DataGenerator
 from .tf_utils import ChanMinMaxNorm, ChanMaxScale, ChanMeanRatio, ChanMaxRatio, ChanPosDef
 
 ##################################
@@ -167,12 +168,15 @@ def f1score_metric(y_true, y_pred):
 class SClassifierNN(object):
 	""" Source classifier class """
 	
-	def __init__(self, data_loader, multiclass=True):
+	#def __init__(self, data_loader, multiclass=True):
+	def __init__(self, data_generator, multiclass=True):
 		""" Return a SClassifierNN object """
 
 
-		self.dl= data_loader
-		self.dl_cv= None
+		#self.dl= data_loader
+		#self.dl_cv= None
+		self.dg= data_generator
+		self.dg_cv= None
 		self.has_cvdata= False
 		self.multiclass= multiclass
 
@@ -193,7 +197,6 @@ class SClassifierNN(object):
 		self.train_data_generator= None
 		self.crossval_data_generator= None
 		self.test_data_generator= None
-		self.data_generator= None
 		self.augmentation= False	
 		self.validation_steps= 10
 		self.use_multiprocessing= True
@@ -421,12 +424,12 @@ class SClassifierNN(object):
 		""" Set train data & generator from loader """
 
 		# - Retrieve info from data loader
-		self.nchannels= self.dl.nchannels
+		self.nchannels= self.dg.nchannels
 		if self.chan_divide:
 			self.nchannels-= 1
-		self.source_labels= self.dl.labels
-		self.source_ids= self.dl.classids
-		self.source_names= self.dl.snames
+		self.source_labels= self.dg.labels
+		self.source_ids= self.dg.classids
+		self.source_names= self.dg.snames
 		self.nsamples= len(self.source_labels)
 
 		# - Set model targets
@@ -466,61 +469,81 @@ class SClassifierNN(object):
 		
 	
 		# - Create train data generator
-		self.train_data_generator= self.dl.data_generator(
+		self.train_data_generator= self.dg.generate_cnn_data(
 			batch_size=self.batch_size, 
 			shuffle=self.shuffle_train_data,
-			resize=self.resize, nx=self.nx, ny=self.ny, 
-			normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
-			augment=self.augmentation,
-			log_transform=self.log_transform_img,
-			scale=self.scale_img, scale_factors=self.scale_img_factors,
-			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
-			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
-			erode=self.erode, erode_kernel=self.erode_kernel,
-			outdata_choice='cnn',
 			classtarget_map=self.classid_remap, nclasses=self.nclasses
 		)
+		#self.train_data_generator= self.dl.data_generator(
+		#	batch_size=self.batch_size, 
+		#	shuffle=self.shuffle_train_data,
+		#	resize=self.resize, nx=self.nx, ny=self.ny, 
+		#	normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
+		#	augment=self.augmentation,
+		#	log_transform=self.log_transform_img,
+		#	scale=self.scale_img, scale_factors=self.scale_img_factors,
+		#	standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
+		#	chan_divide=self.chan_divide, chan_mins=self.chan_mins,
+		#	erode=self.erode, erode_kernel=self.erode_kernel,
+		#	outdata_choice='cnn',
+		#	classtarget_map=self.classid_remap, nclasses=self.nclasses
+		#)
 
 		# - Create cross validation data generator
-		if self.dl_cv is None:
-			self.dl_cv= self.dl
+		if self.dg_cv is None:
+			self.dg_cv= self.dg
 			self.has_cvdata= False
 			self.nsamples_cv= 0
 		else:
 			self.has_cvdata= True
-			self.nsamples_cv= len(self.dl_cv.labels)
+			self.nsamples_cv= len(self.dg_cv.labels)
 			logger.info("#nsamples_cv=%d" % (self.nsamples_cv))
 
-		self.crossval_data_generator= self.dl_cv.data_generator(
+		self.crossval_data_generator= self.dg_cv.generate_cnn_data(
 			batch_size=self.batch_size, 
 			shuffle=self.shuffle_train_data,
-			resize=self.resize, nx=self.nx, ny=self.ny, 
-			normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
-			augment=self.augmentation,
-			log_transform=self.log_transform_img,
-			scale=self.scale_img, scale_factors=self.scale_img_factors,
-			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
-			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
-			erode=self.erode, erode_kernel=self.erode_kernel,
-			outdata_choice='cnn',
-			classtarget_map=self.classid_remap, nclasses=self.nclasses	
-		)	
-
-		# - Create test data generator
-		self.test_data_generator= self.dl.data_generator(
-			batch_size=self.nsamples, 
-			shuffle=False,
-			resize=self.resize, nx=self.nx, ny=self.ny, 
-			normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
-			augment=False,
-			log_transform=self.log_transform_img,
-			scale=self.scale_img, scale_factors=self.scale_img_factors,
-			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
-			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
-			erode=self.erode, erode_kernel=self.erode_kernel,
-			outdata_choice='cnn', 
 			classtarget_map=self.classid_remap, nclasses=self.nclasses
 		)
+
+		#self.crossval_data_generator= self.dl_cv.data_generator(
+		#	batch_size=self.batch_size, 
+		#	shuffle=self.shuffle_train_data,
+		#	resize=self.resize, nx=self.nx, ny=self.ny, 
+		#	normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
+		#	augment=self.augmentation,
+		#	log_transform=self.log_transform_img,
+		#	scale=self.scale_img, scale_factors=self.scale_img_factors,
+		#	standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
+		#	chan_divide=self.chan_divide, chan_mins=self.chan_mins,
+		#	erode=self.erode, erode_kernel=self.erode_kernel,
+		#	outdata_choice='cnn',
+		#	classtarget_map=self.classid_remap, nclasses=self.nclasses	
+		#)	
+
+		# - Create test data generator
+		self.dg_test= np.copy(self.dg)
+		self.dg_test.disable_augmentation()
+
+		self.test_data_generator= self.dg_test.generate_cnn_data(
+			batch_size=self.nsamples, 
+			shuffle=False,
+			classtarget_map=self.classid_remap, nclasses=self.nclasses
+		)
+
+		#self.test_data_generator= self.dl.data_generator(
+		#	batch_size=self.nsamples, 
+		#	shuffle=False,
+		#	resize=self.resize, nx=self.nx, ny=self.ny, 
+		#	normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
+		#	augment=False,
+		#	log_transform=self.log_transform_img,
+		#	scale=self.scale_img, scale_factors=self.scale_img_factors,
+		#	standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
+		#	chan_divide=self.chan_divide, chan_mins=self.chan_mins,
+		#	erode=self.erode, erode_kernel=self.erode_kernel,
+		#	outdata_choice='cnn', 
+		#	classtarget_map=self.classid_remap, nclasses=self.nclasses
+		#)
 
 		return 0
 	

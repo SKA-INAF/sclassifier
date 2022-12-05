@@ -68,6 +68,27 @@ class DataPreprocessor(object):
 		""" Apply sequence of pre-processing steps """
 		return self.pipeline(data)
 
+	def disable_augmentation(self):
+		""" Disable augmentation pre-processing (if existing) """
+
+		# - Create a list without augmenter method
+		recreate_pipeline= False
+		fcns_new= []
+		for i in range(len(self.fcns)):
+			is_augmenter= isinstance(self.fcns[i].__self__, Augmenter)
+			if is_augmenter:
+				recreate_pipeline= True
+			else:
+				fcns_new.append(self.fcns[i])
+
+		# - Recreate pipeline?
+		if recreate_pipeline:
+			logger.info("Recreating pipeline with these pre-processing stages ...")
+			print(fcns_new)
+			self.fcns= fcns_new
+			self.pipeline= Utils.compose_fcns(*self.fcns)
+		
+
 ##############################
 ##     MinMaxNormalizer
 ##############################
