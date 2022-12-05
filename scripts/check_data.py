@@ -66,9 +66,17 @@ def get_args():
 	parser.add_argument('-nmax', '--nmax', dest='nmax', required=False, type=int, default=-1, action='store',help='Max number of images to be read (-1=all) (default=-1)')
 	
 	# - Data pre-processing options
-	parser.add_argument('-nx', '--nx', dest='nx', required=False, type=int, default=64, action='store',help='Image resize width in pixels (default=64)')
-	parser.add_argument('-ny', '--ny', dest='ny', required=False, type=int, default=64, action='store',help='Image resize height in pixels (default=64)')	
-	
+	parser.add_argument('--resize', dest='resize', action='store_true',help='Resize images')	
+	parser.set_defaults(resize=False)
+
+	#parser.add_argument('-nx', '--nx', dest='nx', required=False, type=int, default=64, action='store',help='Image resize width in pixels (default=64)')
+	#parser.add_argument('-nx', '--nx', dest='nx', required=False, type=int, default=64, action='store',help='Image resize width in pixels (default=64)')
+	parser.add_argument('-resize_size', '--resize_size', dest='resize_size', required=False, type=int, default=64, action='store',help='Image resize in pixels (default=64)')	
+	parser.add_argument('--downscale_with_antialiasing', dest='downscale_with_antialiasing', action='store_true', help='Use anti-aliasing when downsampling the image (default=no)')	
+	parser.set_defaults(downscale_with_antialiasing=False)
+	parser.add_argument('--upscale', dest='upscale', action='store_true', help='Upscale images to resize size when source size is smaller (default=no)')	
+	parser.set_defaults(upscale=False)
+
 	parser.add_argument('--normalize_minmax', dest='normalize_minmax', action='store_true',help='Normalize each channel in range [0,1]')	
 	parser.set_defaults(normalize_minmax=False)
 	parser.add_argument('--normalize_absminmax', dest='normalize_absminmax', action='store_true',help='Normalize each channel in range using absolute min/max computed over all channels [0,1]')	
@@ -114,9 +122,7 @@ def get_args():
 	parser.add_argument('--shuffle', dest='shuffle', action='store_true',help='Shuffle images')	
 	parser.set_defaults(shuffle=False)
 
-	parser.add_argument('--resize', dest='resize', action='store_true',help='Resize images')	
-	parser.set_defaults(resize=False)
-
+	
 	parser.add_argument('--subtract_bkg', dest='subtract_bkg', action='store_true',help='Subtract bkg from ref channel image')	
 	parser.set_defaults(subtract_bkg=False)
 	parser.add_argument('-sigma_bkg', '--sigma_bkg', dest='sigma_bkg', required=False, type=float, default=3, action='store',help='Sigma clip to be used in bkg calculation (default=3)')
@@ -186,8 +192,8 @@ def main():
 	nmax= args.nmax
 
 	# - Data process options	
-	nx= args.nx
-	ny= args.ny
+	#nx= args.nx
+	#ny= args.ny
 	normalize_minmax= args.normalize_minmax
 	normalize_absminmax= args.normalize_absminmax
 	scale_to_abs_max= args.scale_to_abs_max
@@ -198,6 +204,9 @@ def main():
 	log_transform= args.log_transform
 	log_transform_chid= args.log_transform_chid
 	resize= args.resize
+	resize_size= args.resize_size
+	downscale_with_antialiasing= args.downscale_with_antialiasing
+	upscale= args.upscale
 	subtract_bkg= args.subtract_bkg
 	sigma_bkg= args.sigma_bkg
 	use_box_mask_in_bkg= args.use_box_mask_in_bkg
@@ -285,7 +294,8 @@ def main():
 		preprocess_stages.append(Augmenter(augmenter_choice=augmenter))
 
 	if resize:
-		preprocess_stages.append(Resizer(nx=nx, ny=ny))
+		#preprocess_stages.append(Resizer(nx=nx, ny=ny))
+		preprocess_stages.append(Resizer(resize_size=resize_size, upscale=upscale, downscale_with_antialiasing=downscale_with_antialiasing))
 
 	if normalize_minmax:
 		preprocess_stages.append(MinMaxNormalizer())

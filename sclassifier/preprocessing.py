@@ -25,6 +25,9 @@ import json
 from astropy.io import ascii
 from astropy.stats import sigma_clipped_stats
 
+## SKIMAGE
+from skimage.util import img_as_float64
+
 ## IMG AUG
 import imgaug
 from imgaug import augmenters as iaa
@@ -713,13 +716,14 @@ class SigmaClipper(object):
 class Resizer(object):
 	""" Resize image to desired size """
 
-	def __init__(self, nx, ny, preserve_range=True, **kwparams):
+	def __init__(self, resize_size, preserve_range=True, upscale=False, downscale_with_antialiasing=False, **kwparams):
 		""" Create a data pre-processor object """
 
 		# - Set parameters
-		self.nx= nx
-		self.ny= ny
+		self.resize_size= resize_size
 		self.preserve_range= preserve_range
+		self.upscale= upscale # Upscale images to resize size when source size is smaller
+		self.downscale_with_antialiasing # Use antialiasing when down-scaling an image
 		
 	def __call__(self, data):
 		""" Apply transformation and return transformed data """
@@ -734,17 +738,53 @@ class Resizer(object):
 		nx= data_shape[1]
 		ny= data_shape[0]
 		nchannels= data_shape[2]
-		is_same_size= (nx==self.nx) and (ny==self.ny)
+		is_same_size= (nx==self.resize_size) and (ny==self.resize_size)
 		if is_same_size:
-			logger.debug("Images have already the desired size (%d,%d), nothing to be done..." % (self.nx,self.ny))
+			logger.debug("Images have already the desired size (%d,%d), nothing to be done..." % (ny, nx))
 			return data
+
+		# - Select resizing options
+		max_dim= self.resize_size
+		min_dim= self.resize_size
+		if not self.upscale:
+			min_dim=None
+
+		downscaling= (nx>self.resize_size) and (ny>self.resize_size)
+		antialiasing= False
+		if downscaling and self.downscale_with_antialiasing:
+			antialiasing= True
+
+		interp_order= 1 # 1=bilinear, 2=biquadratic, 3=bicubic, 4=biquartic, 5=biquintic
 
 		# - Resize data
 		try:
-			data_resized= Utils.resize_img(data, (self.ny, self.nx, nchannels), preserve_range=self.preserve_range)
+			#data_resized= Utils.resize_img(data, (self.ny, self.nx, nchannels), preserve_range=self.preserve_range)
+			
+			try: # work for skimage<=0.15.0
+				ret= Utils.resize_img_v2(data, 
+					min_dim=min_dim, max_dim=max_dim, min_scale=None, mode="square", 
+					order=interp_order, anti_aliasing=antialiasing, 
+					preserve_range=self.preserve_range
+				)
+			except:
+				ret= Utils.resize_img_v2(img_as_float64(data), 
+					min_dim=min_dim, max_dim=max_dim, min_scale=None, mode="square", 
+					order=interp_order, anti_aliasing=antialiasing, 
+					preserve_range=self.preserve_range
+				)
+
+			data_resized= ret[0]
+			#window= ret[1]
+			#scale= ret[2] 
+			#padding= ret[3] 
+			#crop= ret[4]
+
 		except Exception as e:
-			logger.warn("Failed to resize data to size (%d,%d) (err=%s)!" % (self.nx,self.ny,str(e)))
+			logger.warn("Failed to resize data to size (%d,%d) (err=%s)!" % (self.resize_size, self.resize_size, str(e)))
 			return None
+
+		if data_resized is None:
+			logger.warn("Resized data is None, failed to resize to size (%d,%d) (see logs)!" % (self.resize_size, self.resize_size))
 
 		return data_resized
 

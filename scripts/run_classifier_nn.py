@@ -71,8 +71,14 @@ def get_args():
 	# - Data pre-processing options
 	parser.add_argument('--no-resize', dest='resize', action='store_false',help='Resize images')	
 	parser.set_defaults(resize=True)
-	parser.add_argument('-nx', '--nx', dest='nx', required=False, type=int, default=64, action='store',help='Image resize width in pixels (default=64)')
-	parser.add_argument('-ny', '--ny', dest='ny', required=False, type=int, default=64, action='store',help='Image resize height in pixels (default=64)')	
+	#parser.add_argument('-nx', '--nx', dest='nx', required=False, type=int, default=64, action='store',help='Image resize width in pixels (default=64)')
+	#parser.add_argument('-ny', '--ny', dest='ny', required=False, type=int, default=64, action='store',help='Image resize height in pixels (default=64)')	
+	parser.add_argument('-resize_size', '--resize_size', dest='resize_size', required=False, type=int, default=64, action='store',help='Image resize in pixels (default=64)')	
+	parser.add_argument('--downscale_with_antialiasing', dest='downscale_with_antialiasing', action='store_true', help='Use anti-aliasing when downsampling the image (default=no)')	
+	parser.set_defaults(downscale_with_antialiasing=False)
+	parser.add_argument('--upscale', dest='upscale', action='store_true', help='Upscale images to resize size when source size is smaller (default=no)')	
+	parser.set_defaults(upscale=False)
+
 	parser.add_argument('--augment', dest='augment', action='store_true',help='Augment images')	
 	parser.set_defaults(augment=False)
 	parser.add_argument('-augmenter', '--augmenter', dest='augmenter', required=False, type=str, default='cnn', action='store',help='Predefined augmenter to be used (default=cnn)')
@@ -211,9 +217,12 @@ def main():
 	datalist_cv= args.datalist_cv
 	
 	# - Data process options	
-	nx= args.nx
-	ny= args.ny
+	#nx= args.nx
+	#ny= args.ny
 	resize= args.resize
+	resize_size= args.resize_size
+	downscale_with_antialiasing= args.downscale_with_antialiasing
+	upscale= args.upscale
 	augment= args.augment
 	augmenter= args.augmenter
 	augment_scale_factor= args.augment_scale_factor
@@ -332,7 +341,8 @@ def main():
 		preprocess_stages.append(Augmenter(augmenter_choice=augmenter))
 
 	if resize:
-		preprocess_stages.append(Resizer(nx=nx, ny=ny))
+		#preprocess_stages.append(Resizer(nx=nx, ny=ny))
+		preprocess_stages.append(Resizer(resize_size=resize_size, upscale=upscale, downscale_with_antialiasing=downscale_with_antialiasing))
 
 	if normalize_minmax:
 		preprocess_stages.append(MinMaxNormalizer())
@@ -410,7 +420,8 @@ def main():
 	sclass= SClassifierNN(dg, multiclass=multiclass)
 	sclass.modelfile= modelfile
 	sclass.weightfile= weightfile
-	sclass.set_image_size(nx, ny)
+	#sclass.set_image_size(nx, ny)
+	sclass.set_image_size(resize_size, resize_size)
 	sclass.augmentation= augment
 	sclass.augment_scale_factor= augment_scale_factor
 
