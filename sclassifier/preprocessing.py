@@ -723,7 +723,7 @@ class Resizer(object):
 		self.resize_size= resize_size
 		self.preserve_range= preserve_range
 		self.upscale= upscale # Upscale images to resize size when source size is smaller
-		self.downscale_with_antialiasing # Use antialiasing when down-scaling an image
+		self.downscale_with_antialiasing=downscale_with_antialiasing  # Use antialiasing when down-scaling an image
 		
 	def __call__(self, data):
 		""" Apply transformation and return transformed data """
