@@ -39,10 +39,10 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.models import load_model
 from tensorflow.keras.models import model_from_json
 try:
-	from tensorflow.keras.layers.normalization import BatchNormalization
+	from tensorflow.keras.layers import BatchNormalization
 except Exception as e:
 	logger.warn("Failed to import BatchNormalization (err=%s), trying in another way ..." % str(e))
-	from tensorflow.keras.layers import BatchNormalization
+	from tensorflow.keras.layers.normalization import BatchNormalization	
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import MaxPooling2D, UpSampling2D
 from tensorflow.keras.layers import Activation
