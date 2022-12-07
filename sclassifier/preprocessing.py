@@ -895,8 +895,8 @@ class Augmenter(object):
 		augmenter_cnn= iaa.Sequential(
 			[
 				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
-  			iaa.Affine(rotate=(-90, 90), mode='constant', cval=0.0),
-				iaa.Sometimes(0.5, iaa.Affine(translate_percent={"x": (-0.1, 0.1), "y": (-0.1, 0.1)}, mode='constant', cval=0.0))
+  			iaa.Affine(rotate=(-90, 90), mode='constant', cval=0.0)
+				#iaa.Sometimes(0.5, iaa.Affine(translate_percent={"x": (-0.1, 0.1), "y": (-0.1, 0.1)}, mode='constant', cval=0.0))
 			]
 		)
 
