@@ -227,6 +227,8 @@ class SClassifierNN(object):
 		self.weightfile= ""
 		self.fitout= None		
 		self.model= None
+		self.use_predefined_arch= False
+		self.predefined_arch= "resnet50"
 		self.channorm_min= 0.0
 		self.channorm_max= 1.0
 		self.nfilters_cnn= [32,64,128]
@@ -780,23 +782,118 @@ class SClassifierNN(object):
 
 		return 0
 
+
 	#####################################
 	##     CREATE MODEL
 	#####################################
 	def __create_model(self):
+		""" Create model (custom vs predefined) """
+
+		if self.use_predefined_arch:
+			return self.__create_predefined_model()
+		else:
+			return self.__create_custom_model()
+
+	#####################################
+	##     CREATE PREDEFINED MODEL
+	#####################################
+	def __create_predefined_model(self):
+		""" Create model using a predefined architecture as backbone """
+
+		#===========================
+		#==  INIT MODEL
+		#===========================
+		# - Init model
+		self.model = models.Sequential()
+
+		# - Input layer	
+		inputShape = (self.ny, self.nx, self.nchannels)
+		self.inputs= Input(shape=inputShape, dtype='float', name='inputs')
+		self.input_data_dim= K.int_shape(self.inputs)
+		self.model.add(self.inputs)
+
+		print("Input data dim=", self.input_data_dim)
+		print("inputs shape")
+		print(K.int_shape(self.inputs))
+
+		#===========================
+		#==  BACKBONE NET
+		#===========================
+		# - Add backbone net
+		if self.predefined_arch=="resnet50":
+			backbone= tf.keras.applications.resnet50.ResNet50(
+				include_top=False, # disgard the fully-connected layer as we are training from scratch
+				weights=None,  # random initialization
+				input_tensor=self.inputs,
+				input_shape=inputShape,
+				pooling=None
+			)
+		elif self.predefined_arch=="resnet101":
+			backbone= tf.keras.applications.resnet50.ResNet50(
+				include_top=False, # disgard the fully-connected layer as we are training from scratch
+				weights=None,  # random initialization
+				input_tensor=self.inputs,
+				input_shape=inputShape,
+				pooling=None
+			)
+		else:
+			logger.error("Unknown/unsupported predefined backbone architecture given (%s)!" % (self.predefined_arch))
+			return -1
+	
+		self.model.add(backbone)
+
+		# - Add flatten layer
+		x = layers.Flatten()
+		self.model.add(x)
+
+		#===========================
+		#==  MODEL OUTPUT LAYERS
+		#===========================
+		# - Add dense layer?
+		if self.add_dense:
+			for layer_size in self.dense_layer_sizes:
+				x = layers.Dense(layer_size, activation=self.dense_layer_activation)
+				self.model.add(x)
+
+				if self.add_dropout_layer:
+					x= layers.Dropout(self.dropout_rate)
+					self.model.add(x)
+			
+		# - Output layer
+		self.outputs = layers.Dense(self.nclasses, name='outputs', activation='softmax')
+		self.model.add(self.outputs)
+		
+		#print("outputs shape")
+		#print(K.int_shape(self.outputs))
+		
+		#===========================
+		#==   BUILD MODEL
+		#===========================
+		# - Define and compile model
+		self.model.compile(optimizer=self.optimizer, loss=self.loss_type, metrics=['accuracy', f1score_metric, precision_metric, recall_metric], run_eagerly=True)
+		
+		# - Print model summary
+		self.model.summary()
+		
+		return 0
+
+	#####################################
+	##     CREATE CUSTOM MODEL
+	#####################################
+	def __create_custom_model(self):
 		""" Create the model """
 		
 		if self.add_chanmaxratio_layer:
-			return self.__create_model_nonsequencial()
+			return self.__create_custom_model_nonsequencial()
 		elif self.add_chanmeanratio_layer:
-			return self.__create_model_nonsequencial()
+			return self.__create_custom_model_nonsequencial()
 		else:
-			return self.__create_model_sequencial()
+			return self.__create_custom_model_sequencial()
 
 	#####################################
-	##     CREATE MODEL (SEQUENTIAL)
+	##     CREATE CUSTOM MODEL (SEQUENTIAL)
 	#####################################
-	def __create_model_sequencial(self):
+	def __create_custom_model_sequencial(self):
 		""" Create the model in a sequencial way """
 
 		#===========================
@@ -909,9 +1006,9 @@ class SClassifierNN(object):
 
 
 	########################################
-	##     CREATE MODEL (NON SEQUENTIAL)
+	##     CREATE CUSTOM MODEL (NON SEQUENTIAL)
 	########################################
-	def __create_model_nonsequencial(self):
+	def __create_custom_model_nonsequencial(self):
 		""" Create the model in a non-sequencial way """
 
 		#===========================

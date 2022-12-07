@@ -159,6 +159,11 @@ def get_args():
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
 	parser.set_defaults(predict=False)
 	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=False, type=str, default="", action='store',help='Model architecture file (json) to be loaded (default=no)')
+
+	parser.add_argument('--use_predefined_arch', dest='use_predefined_arch', action='store_true',help='Use pre-defined conv architecture and not a custom ones (default=false)')	
+	parser.set_defaults(use_predefined_arch=False)
+	parser.add_argument('-predefined_arch', '--predefined_arch', dest='predefined_arch', required=False, type=str, default='resnet50', action='store',help='Predefined architecture to be used {resnet50, resnet101}')
+
 	parser.add_argument('--add_maxpooling_layer', dest='add_maxpooling_layer', action='store_true',help='Add max pooling layer after conv layers ')	
 	parser.set_defaults(add_maxpooling_layer=False)	
 	parser.add_argument('--add_batchnorm_layer', dest='add_batchnorm_layer', action='store_true',help='Add batch normalization layer after conv layers ')	
@@ -267,6 +272,8 @@ def main():
 
 	# - NN architecture
 	modelfile= args.modelfile
+	use_predefined_arch= args.use_predefined_arch
+	predefined_arch= args.predefined_arch
 	add_maxpooling_layer= args.add_maxpooling_layer
 	add_batchnorm_layer= args.add_batchnorm_layer
 	add_leakyrelu= args.add_leakyrelu
@@ -463,6 +470,9 @@ def main():
 	sclass.add_dropout_layer= add_dropout_layer
 	sclass.dropout_rate= dropout_rate
 	sclass.weight_seed= weight_seed
+
+	sclass.use_predefined_arch= use_predefined_arch
+	sclass.predefined_arch= predefined_arch
 
 	sclass.dg_cv= dg_cv
 
