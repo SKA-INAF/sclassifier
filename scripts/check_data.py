@@ -294,7 +294,6 @@ def main():
 		preprocess_stages.append(BorderMasker(mask_border_fract))
 
 	if resize:
-		#preprocess_stages.append(Resizer(nx=nx, ny=ny))
 		preprocess_stages.append(Resizer(resize_size=resize_size, upscale=upscale, downscale_with_antialiasing=downscale_with_antialiasing))
 
 	if normalize_minmax:

@@ -341,14 +341,13 @@ def main():
 	if erode:
 		preprocess_stages.append(MaskShrinker(kernel=erode_kernel))
 	
-	if mask_borders:
-		preprocess_stages.append(BorderMasker(mask_border_fract))
-	
 	if augment:
 		preprocess_stages.append(Augmenter(augmenter_choice=augmenter))
 
+	if mask_borders:
+		preprocess_stages.append(BorderMasker(mask_border_fract))
+	
 	if resize:
-		#preprocess_stages.append(Resizer(nx=nx, ny=ny))
 		preprocess_stages.append(Resizer(resize_size=resize_size, upscale=upscale, downscale_with_antialiasing=downscale_with_antialiasing))
 
 	if normalize_minmax:
