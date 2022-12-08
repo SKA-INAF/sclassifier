@@ -322,6 +322,7 @@ def main():
 	#   6) Augmentation
 	#   7) Resize
 	#   8) min/max (abs) norm, standardize, mean shift
+	logger.info("Create train data pre-processor ...")
 	preprocess_stages= []
 
 	if subtract_bkg:
@@ -391,7 +392,7 @@ def main():
 	print("== PRE-PROCESSING STAGES (VAL) ==")
 	print(preprocess_stages)
 
-	dp_val= DataPreprocessor(preprocess_stages)
+	dp_val= DataPreprocessor(preprocess_stages_val)
 
 	#===============================
 	#==  DATA GENERATOR
