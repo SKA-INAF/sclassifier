@@ -375,11 +375,23 @@ def main():
 	if chan_divide:
 		preprocess_stages.append(ChanDivider(chref=chref))
 
-	print("== PRE-PROCESSING STAGES ==")
+	print("== PRE-PROCESSING STAGES (TRAIN) ==")
 	print(preprocess_stages)
 
 	dp= DataPreprocessor(preprocess_stages)
 
+	# - Creating data pre-processor for validation/test data
+	logger.info("Creating data pre-processor for validation data ...")
+	preprocess_stages_val= []
+	for stage in preprocess_stages:
+		if isinstance(stage, Augmenter):
+			continue
+		preprocess_stages_val.append(stage)
+
+	print("== PRE-PROCESSING STAGES (VAL) ==")
+	print(preprocess_stages)
+
+	dp_val= DataPreprocessor(preprocess_stages)
 
 	#===============================
 	#==  DATA GENERATOR
@@ -395,7 +407,7 @@ def main():
 	# - Create validation data generator
 	dg_cv= None
 	if datalist_cv!="":
-		dg_cv= DataGenerator(filename=datalist_cv, preprocessor=dp)
+		dg_cv= DataGenerator(filename=datalist_cv, preprocessor=dp_val)
 		
 		logger.info("Reading datalist_cv %s ..." % (datalist_cv))
 		if dg_cv.read_datalist()<0:

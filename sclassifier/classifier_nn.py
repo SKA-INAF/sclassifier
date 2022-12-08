@@ -494,15 +494,16 @@ class SClassifierNN(object):
 
 		# - Create cross validation data generator
 		if self.dg_cv is None:
+			logger.info("Creating validation data generator (deep-copying train data generator) ...")
 			self.dg_cv= deepcopy(self.dg)
+			logger.info("Disabling data augmentation in validation data generator ...")
+			self.dg_cv.disable_augmentation()
 			self.has_cvdata= False
 			self.nsamples_cv= 0
 		else:
 			self.has_cvdata= True
 			self.nsamples_cv= len(self.dg_cv.labels)
 			logger.info("#nsamples_cv=%d" % (self.nsamples_cv))
-
-		self.dg_cv.disable_augmentation()
 
 		self.crossval_data_generator= self.dg_cv.generate_cnn_data(
 			batch_size=self.batch_size, 
@@ -527,7 +528,9 @@ class SClassifierNN(object):
 		#)	
 
 		# - Create test data generator
+		logger.info("Creating test data generator (deep-copying train data generator) ...")
 		self.dg_test= deepcopy(self.dg)
+		logger.info("Disabling data augmentation in test data generator ...")
 		self.dg_test.disable_augmentation()
 
 		self.test_data_generator= self.dg_test.generate_cnn_data(
