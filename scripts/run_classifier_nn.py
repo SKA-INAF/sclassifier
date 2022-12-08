@@ -390,7 +390,7 @@ def main():
 		preprocess_stages_val.append(stage)
 
 	print("== PRE-PROCESSING STAGES (VAL) ==")
-	print(preprocess_stages)
+	print(preprocess_stages_val)
 
 	dp_val= DataPreprocessor(preprocess_stages_val)
 
