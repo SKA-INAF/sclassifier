@@ -307,11 +307,14 @@ class SClassifierNN(object):
 		""" Set optimizer """
 
 		if learning_rate is None or learning_rate<=0:
+			logger.info("Setting %s optimizer (no lr given) ..." % (opt))
 			self.optimizer= opt
 		else:
 			if opt=="rmsprop":
+				logger.info("Setting rmsprop optimizer with lr=%f ..." % (learning_rate))
 				self.optimizer= tf.keras.optimizers.RMSprop(learning_rate=learning_rate)
-			elif opt=="adam":	
+			elif opt=="adam":
+				logger.info("Setting adam optimizer with lr=%f ..." % (learning_rate))
 				self.optimizer= tf.keras.optimizers.Adam(learning_rate=learning_rate)
 			else:
 				logger.warn("Unknown optimizer selected (%s), setting to the default (%s) ..." % (opt, self.optimizer_default))
