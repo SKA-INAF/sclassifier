@@ -155,6 +155,9 @@ def get_args():
 	parser.set_defaults(reproducible=False)
 	parser.add_argument('-validation_steps', '--validation_steps', dest='validation_steps', required=False, type=int, default=10, action='store',help='Number of validation steps used in each epoch (default=10)')
 
+	parser.add_argument('--no-multiprocessing', dest='multiprocessing', action='store_false',help='Disable multiprocessing in TF fit method (default=enabled)')	
+	parser.set_defaults(multiprocessing=True)
+
 	# - Network architecture options
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
 	parser.set_defaults(predict=False)
@@ -305,6 +308,7 @@ def main():
 	weight_seed= args.weight_seed
 	reproducible= args.reproducible
 	validation_steps= args.validation_steps
+	multiprocessing= args.multiprocessing
 
 	#===============================
 	#==  CREATE DATA PRE-PROCESSOR
@@ -472,7 +476,7 @@ def main():
 
 	sclass.use_predefined_arch= use_predefined_arch
 	sclass.predefined_arch= predefined_arch
-
+	sclass.use_multiprocessing= multiprocessing
 	sclass.dg_cv= dg_cv
 
 	if predict:
