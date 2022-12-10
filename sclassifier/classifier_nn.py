@@ -261,7 +261,7 @@ class SClassifierNN(object):
 		self.shuffle_train_data= True
 		self.augment_scale_factor= 1
 		self.loss_type= "categorical_crossentropy"
-		
+		self.load_cv_data_in_batches= True
 
 		self.__set_target_labels(multiclass)
 
@@ -508,8 +508,15 @@ class SClassifierNN(object):
 			self.nsamples_cv= len(self.dg_cv.labels)
 			logger.info("#nsamples_cv=%d" % (self.nsamples_cv))
 
+		if self.load_cv_data_in_batches:
+			batch_size_cv= self.batch_size
+		else:
+			batch_size_cv= self.nsamples_cv
+
+		logger.info("Loading cv data in batches? %d (batch_size_cv=%d") % (self.load_cv_data_in_batches, batch_size_cv))
+
 		self.crossval_data_generator= self.dg_cv.generate_cnn_data(
-			batch_size=self.batch_size, 
+			batch_size=batch_size_cv, 
 			##shuffle=self.shuffle_train_data,
 			shuffle=False,
 			classtarget_map=self.classid_remap, nclasses=self.nclasses
@@ -1153,7 +1160,10 @@ class SClassifierNN(object):
 		# - Set validation steps
 		val_steps_per_epoch= self.validation_steps
 		if self.has_cvdata:
-			val_steps_per_epoch= self.nsamples_cv // self.batch_size
+			if self.load_cv_data_in_batches:
+				val_steps_per_epoch= self.nsamples_cv // self.batch_size
+			else:
+				val_steps_per_epoch= 1				
 
 		#===========================
 		#==   TRAIN MODEL

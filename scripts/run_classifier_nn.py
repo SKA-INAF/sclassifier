@@ -158,6 +158,10 @@ def get_args():
 	parser.add_argument('--no-multiprocessing', dest='multiprocessing', action='store_false',help='Disable multiprocessing in TF fit method (default=enabled)')	
 	parser.set_defaults(multiprocessing=True)
 
+	parser.add_argument('--load_cv_data_in_batches', dest='load_cv_data_in_batches', action='store_true',help='Load validation data in batches using train batch size (default=load all data in a single step)')	
+	parser.set_defaults(load_cv_data_in_batches=False)
+	
+
 	# - Network architecture options
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
 	parser.set_defaults(predict=False)
@@ -308,6 +312,7 @@ def main():
 	weight_seed= args.weight_seed
 	reproducible= args.reproducible
 	validation_steps= args.validation_steps
+	load_cv_data_in_batches= args.load_cv_data_in_batches
 	multiprocessing= args.multiprocessing
 
 	#===============================
@@ -491,6 +496,7 @@ def main():
 	sclass.predefined_arch= predefined_arch
 	sclass.use_multiprocessing= multiprocessing
 	sclass.dg_cv= dg_cv
+	sclass.load_cv_data_in_batches= load_cv_data_in_batches
 
 	if predict:
 		status= sclass.run_predict(modelfile, weightfile)
