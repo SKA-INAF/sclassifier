@@ -250,6 +250,7 @@ class SClassifierNN(object):
 		self.add_chanmeanratio_layer= False
 		self.add_chanmaxratio_layer= False
 		self.add_chanposdef_layer= False
+		self.use_global_avg_pooling= False
 
 		# - Training options
 		self.batch_size= 32
@@ -858,8 +859,11 @@ class SClassifierNN(object):
 	
 		self.model.add(backbone)
 
-		# - Add flatten layer
-		x = layers.Flatten()
+		# - Add flatten layer or global average pooling?
+		if self.use_global_avg_pooling:
+			x= layers.GlobalAveragePooling2D()
+		else:
+			x = layers.Flatten()
 		self.model.add(x)
 
 		#===========================
@@ -985,8 +989,11 @@ class SClassifierNN(object):
 				x = layers.MaxPooling2D(pool_size=(self.pool_size,self.pool_size),strides=None,padding=padding)
 				self.model.add(x)
 
-		# - Add flatten layer
-		x = layers.Flatten()
+		# - Add flatten layer or global average pooling
+		if self.use_global_avg_pooling:
+			x= layers.GlobalAveragePooling2D()
+		else:
+			x = layers.Flatten()
 		self.model.add(x)
 
 		#===========================
@@ -1099,7 +1106,10 @@ class SClassifierNN(object):
 				x = layers.MaxPooling2D(pool_size=(self.pool_size,self.pool_size),strides=None,padding=padding)(x)
 		
 		# - Add flatten layer
-		x = layers.Flatten()(x)
+		if self.use_global_avg_pooling:
+			x= layers.GlobalAveragePooling2D()(x)
+		else:
+			x = layers.Flatten()(x)
 
 		# - Concatenate flattened CNN output + channel max scale layer?
 		xconcat_list= [x]

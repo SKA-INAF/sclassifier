@@ -200,6 +200,10 @@ def get_args():
 	
 	parser.add_argument('-dense_layer_sizes', '--dense_layer_sizes', dest='dense_layer_sizes', required=False, type=str, default='16', action='store',help='Dense layer sizes used (default=16)')
 	parser.add_argument('-dense_layer_activation', '--dense_layer_activation', dest='dense_layer_activation', required=False, type=str, default='relu', action='store',help='Dense layer activation used {relu,softmax} (default=relu)')
+
+	parser.add_argument('--use_global_avg_pooling', dest='use_global_avg_pooling', action='store_true',help='Use global avergae pooling instead of flatten layer (default=false)')	
+	parser.set_defaults(use_global_avg_pooling=False)
+	
 	
 	args = parser.parse_args()	
 
@@ -297,6 +301,7 @@ def main():
 	dense_layer_activation= args.dense_layer_activation
 	add_dropout_layer= args.add_dropout_layer
 	dropout_rate= args.dropout_rate
+	use_global_avg_pooling= args.use_global_avg_pooling
 	
 	# - Train options
 	predict= args.predict
@@ -491,6 +496,7 @@ def main():
 	sclass.add_dropout_layer= add_dropout_layer
 	sclass.dropout_rate= dropout_rate
 	sclass.weight_seed= weight_seed
+	sclass.use_global_avg_pooling= use_global_avg_pooling
 
 	sclass.use_predefined_arch= use_predefined_arch
 	sclass.predefined_arch= predefined_arch
