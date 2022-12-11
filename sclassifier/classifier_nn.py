@@ -514,7 +514,7 @@ class SClassifierNN(object):
 		else:
 			batch_size_cv= self.nsamples_cv
 
-		logger.info("Loading cv data in batches? %d (batch_size_cv=%d") % (self.load_cv_data_in_batches, batch_size_cv))
+		logger.info("Loading cv data in batches? %d (batch_size_cv=%d)" % (self.load_cv_data_in_batches, batch_size_cv))
 
 		self.crossval_data_generator= self.dg_cv.generate_cnn_data(
 			batch_size=batch_size_cv, 
