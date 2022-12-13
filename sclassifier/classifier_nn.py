@@ -263,6 +263,7 @@ class SClassifierNN(object):
 		self.augment_scale_factor= 1
 		self.loss_type= "categorical_crossentropy"
 		self.load_cv_data_in_batches= True
+		self.save_model_period= 100
 
 		self.__set_target_labels(multiclass)
 
@@ -1175,6 +1176,9 @@ class SClassifierNN(object):
 			else:
 				val_steps_per_epoch= 1				
 
+		# - Set callback
+		cb= tf.keras.callbacks.ModelCheckpoint('weights{epoch:08d}.h5', save_weights_only=False, period=self.save_model_period)
+
 		#===========================
 		#==   TRAIN MODEL
 		#===========================
@@ -1186,6 +1190,7 @@ class SClassifierNN(object):
 			steps_per_epoch=steps_per_epoch,
 			validation_data=self.crossval_data_generator,
 			validation_steps=val_steps_per_epoch,
+			#callbacks=[cb],
 			use_multiprocessing=self.use_multiprocessing,
 			workers=self.nworkers,
 			verbose=2

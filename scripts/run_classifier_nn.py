@@ -161,6 +161,7 @@ def get_args():
 	parser.add_argument('--load_cv_data_in_batches', dest='load_cv_data_in_batches', action='store_true',help='Load validation data in batches using train batch size (default=load all data in a single step)')	
 	parser.set_defaults(load_cv_data_in_batches=False)
 	
+	parser.add_argument('-save_model_period', '--save_model_period', dest='save_model_period', required=False, type=int, default=100, action='store', help='Save model every given epochs (default=100)')
 
 	# - Network architecture options
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
@@ -318,6 +319,7 @@ def main():
 	reproducible= args.reproducible
 	validation_steps= args.validation_steps
 	load_cv_data_in_batches= args.load_cv_data_in_batches
+	save_model_period= args.save_model_period
 	multiprocessing= args.multiprocessing
 
 	#===============================
@@ -503,6 +505,7 @@ def main():
 	sclass.use_multiprocessing= multiprocessing
 	sclass.dg_cv= dg_cv
 	sclass.load_cv_data_in_batches= load_cv_data_in_batches
+	sclass.save_model_period= save_model_period
 
 	if predict:
 		status= sclass.run_predict(modelfile, weightfile)
