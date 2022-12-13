@@ -79,6 +79,10 @@ def get_args():
 	parser.add_argument('--upscale', dest='upscale', action='store_true', help='Upscale images to resize size when source size is smaller (default=no)')	
 	parser.set_defaults(upscale=False)
 
+	parser.add_argument('--set_pad_val_to_min', dest='set_pad_val_to_min', action='store_true', help='Set masked value in resized image to min, otherwise leave to masked values (default=no)')	
+	parser.set_defaults(set_pad_val_to_min=False)
+	
+
 	parser.add_argument('--augment', dest='augment', action='store_true',help='Augment images')	
 	parser.set_defaults(augment=False)
 	parser.add_argument('-augmenter', '--augmenter', dest='augmenter', required=False, type=str, default='cnn', action='store',help='Predefined augmenter to be used (default=cnn)')
@@ -147,7 +151,7 @@ def get_args():
 	parser.add_argument('-weightfile', '--weightfile', dest='weightfile', required=False, type=str, default="", action='store',help='Weight file (hd5) to be loaded (default=no)')	
 	
 	parser.add_argument('-nepochs', '--nepochs', dest='nepochs', required=False, type=int, default=100, action='store',help='Number of epochs used in network training (default=100)')	
-	parser.add_argument('-optimizer', '--optimizer', dest='optimizer', required=False, type=str, default='rmsprop', action='store',help='Optimizer used (default=rmsprop)')
+	parser.add_argument('-optimizer', '--optimizer', dest='optimizer', required=False, type=str, default='adam', action='store',help='Optimizer used (default=adam)')
 	parser.add_argument('-learning_rate', '--learning_rate', dest='learning_rate', required=False, type=float, default=None, action='store',help='Learning rate. If None, use default for the selected optimizer (default=None)')
 	parser.add_argument('-batch_size', '--batch_size', dest='batch_size', required=False, type=int, default=32, action='store',help='Batch size used in training (default=32)')
 	parser.add_argument('-weight_seed', '--weight_seed', dest='weight_seed', required=False, type=int, default=None, action='store',help='Weight seed to set reproducible training (default=None)')
@@ -240,6 +244,7 @@ def main():
 	resize_size= args.resize_size
 	downscale_with_antialiasing= args.downscale_with_antialiasing
 	upscale= args.upscale
+	set_pad_val_to_min= args.set_pad_val_to_min
 	augment= args.augment
 	augmenter= args.augmenter
 	augment_scale_factor= args.augment_scale_factor
@@ -365,7 +370,7 @@ def main():
 		preprocess_stages.append(BorderMasker(mask_border_fract))
 	
 	if resize:
-		preprocess_stages.append(Resizer(resize_size=resize_size, upscale=upscale, downscale_with_antialiasing=downscale_with_antialiasing))
+		preprocess_stages.append(Resizer(resize_size=resize_size, upscale=upscale, downscale_with_antialiasing=downscale_with_antialiasing, set_pad_val_to_min=set_pad_val_to_min))
 
 	if normalize_minmax:
 		preprocess_stages.append(MinMaxNormalizer())

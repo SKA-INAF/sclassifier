@@ -76,6 +76,8 @@ def get_args():
 	parser.set_defaults(downscale_with_antialiasing=False)
 	parser.add_argument('--upscale', dest='upscale', action='store_true', help='Upscale images to resize size when source size is smaller (default=no)')	
 	parser.set_defaults(upscale=False)
+	parser.add_argument('--set_pad_val_to_min', dest='set_pad_val_to_min', action='store_true', help='Set masked value in resized image to min, otherwise leave to masked values (default=no)')	
+	parser.set_defaults(set_pad_val_to_min=False)
 
 	parser.add_argument('--normalize_minmax', dest='normalize_minmax', action='store_true',help='Normalize each channel in range [0,1]')	
 	parser.set_defaults(normalize_minmax=False)
@@ -207,6 +209,7 @@ def main():
 	resize_size= args.resize_size
 	downscale_with_antialiasing= args.downscale_with_antialiasing
 	upscale= args.upscale
+	set_pad_val_to_min= args.set_pad_val_to_min
 	subtract_bkg= args.subtract_bkg
 	sigma_bkg= args.sigma_bkg
 	use_box_mask_in_bkg= args.use_box_mask_in_bkg
@@ -294,7 +297,7 @@ def main():
 		preprocess_stages.append(BorderMasker(mask_border_fract))
 
 	if resize:
-		preprocess_stages.append(Resizer(resize_size=resize_size, upscale=upscale, downscale_with_antialiasing=downscale_with_antialiasing))
+		preprocess_stages.append(Resizer(resize_size=resize_size, upscale=upscale, downscale_with_antialiasing=downscale_with_antialiasing, set_pad_val_to_min=set_pad_val_to_min))
 
 	if normalize_minmax:
 		preprocess_stages.append(MinMaxNormalizer())
