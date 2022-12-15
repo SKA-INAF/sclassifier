@@ -97,6 +97,12 @@ def get_args():
 	parser.add_argument('--log_transform', dest='log_transform', action='store_true',help='Apply log transform to images')	
 	parser.set_defaults(log_transform=False)
 	parser.add_argument('-log_transform_chid', '--log_transform_chid', dest='log_transform_chid', required=False, type=int, default=-1, action='store',help='Channel id to be excluded from log-transformed. -1=transform all (default=-1)')
+	parser.add_argument('--log_transform_minmaxnorm', dest='log_transform_minmaxnorm', action='store_true',help='Apply min/max normalization after log transform to images')	
+	parser.set_defaults(log_transform_minmaxnorm=False)
+	parser.add_argument('-log_transform_normmin', '--log_transform_normmin', dest='log_transform_normmin', required=False, type=float, default=-6, action='store',help='Min data normalization value to be applied if log_transform_minmaxnorm is enabled (default=-6)')
+	parser.add_argument('-log_transform_normmax', '--log_transform_normmax', dest='log_transform_normmax', required=False, type=float, default=6, action='store',help='Max data normalization value to be applied if log_transform_minmaxnorm is enabled (default=6)')
+	parser.add_argument('--log_transform_clipneg', dest='log_transform_clipneg', action='store_true',help='Clip negative values to 0 after min/max norm')	
+	parser.set_defaults(log_transform_clipneg=False)
 
 	parser.add_argument('--scale', dest='scale', action='store_true',help='Apply scale factors to images')	
 	parser.set_defaults(scale=False)
@@ -205,6 +211,10 @@ def main():
 	chan_max_scaler_box_mask_fract= args.chan_max_scaler_box_mask_fract
 	log_transform= args.log_transform
 	log_transform_chid= args.log_transform_chid
+	log_transform_minmaxnorm= args.log_transform_minmaxnorm
+	log_transform_normmin= args.log_transform_normmin
+	log_transform_normmax= args.log_transform_normmax
+	log_transform_clipneg= args.log_transform_clipneg
 	resize= args.resize
 	resize_size= args.resize_size
 	downscale_with_antialiasing= args.downscale_with_antialiasing
@@ -285,7 +295,7 @@ def main():
 		preprocess_stages.append(Scaler(scale_factors))
 
 	if log_transform:
-		preprocess_stages.append(LogStretcher(chid=log_transform_chid))
+		preprocess_stages.append(LogStretcher(chid=log_transform_chid, minmaxnorm=log_transform_minmaxnorm, data_norm_min=log_transform_normmin, log_transform_normmax=log_transform_normmax, clip_neg=log_transform_clipneg))
 	
 	if erode:
 		preprocess_stages.append(MaskShrinker(kernel=erode_kernel))
