@@ -615,8 +615,9 @@ def main():
 
 					#logger.info("Reading nchan %d ..." % i+1)
 					plt.subplot(1, nchannels, i+1)
-					plt.imshow(data_ch, origin='lower')
-			
+					im= plt.imshow(data_ch, origin='lower')
+					cbar= plt.colorbar(im)			
+
 				plt.tight_layout()
 				plt.show()
 
