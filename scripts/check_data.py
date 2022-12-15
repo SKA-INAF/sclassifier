@@ -295,7 +295,7 @@ def main():
 		preprocess_stages.append(Scaler(scale_factors))
 
 	if log_transform:
-		preprocess_stages.append(LogStretcher(chid=log_transform_chid, minmaxnorm=log_transform_minmaxnorm, data_norm_min=log_transform_normmin, log_transform_normmax=log_transform_normmax, clip_neg=log_transform_clipneg))
+		preprocess_stages.append(LogStretcher(chid=log_transform_chid, minmaxnorm=log_transform_minmaxnorm, data_norm_min=log_transform_normmin, data_norm_max=log_transform_normmax, clip_neg=log_transform_clipneg))
 	
 	if erode:
 		preprocess_stages.append(MaskShrinker(kernel=erode_kernel))
