@@ -524,7 +524,7 @@ class LogStretcher(object):
 			# - Apply min/max norm data using input parameters
 			if self.minmaxnorm:
 				data_ch_lg_norm= (data_ch_lg-self.data_norm_min)/(self.data_norm_max-self.data_norm_min)
-				if self.self.clip_neg:
+				if self.clip_neg:
 					data_ch_lg_norm[data_ch_lg_norm<0]= 0
 				data_ch_lg= data_ch_lg_norm
 				data_ch_lg[~cond_ch]= 0
