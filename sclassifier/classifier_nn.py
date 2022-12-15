@@ -245,6 +245,8 @@ class SClassifierNN(object):
 		self.dense_layer_activation= 'relu'
 		self.add_dropout_layer= False
 		self.dropout_rate= 0.5
+		self.add_conv_dropout_layer= False
+		self.conv_dropout_rate= 0.2
 		self.add_chanminmaxnorm_layer= False
 		self.add_chanmaxscale_layer= False
 		self.add_chanmeanratio_layer= False
@@ -987,8 +989,14 @@ class SClassifierNN(object):
 			# - Add max pooling?
 			if self.add_max_pooling:
 				padding= "valid"
-				x = layers.MaxPooling2D(pool_size=(self.pool_size,self.pool_size),strides=None,padding=padding)
+				x = layers.MaxPooling2D(pool_size=(self.pool_size,self.pool_size), strides=None, padding=padding)
 				self.model.add(x)
+
+			# - Add dropout?
+			if self.add_conv_dropout_layer:
+				x= layers.Dropout(self.conv_dropout_rate)
+				self.model.add(x)
+			
 
 		# - Add flatten layer or global average pooling
 		if self.use_global_avg_pooling:
@@ -1106,6 +1114,10 @@ class SClassifierNN(object):
 				padding= "valid"
 				x = layers.MaxPooling2D(pool_size=(self.pool_size,self.pool_size),strides=None,padding=padding)(x)
 		
+			# - Add dropout?
+			if self.add_conv_dropout_layer:
+				x= layers.Dropout(self.conv_dropout_rate)(x)
+
 		# - Add flatten layer
 		if self.use_global_avg_pooling:
 			x= layers.GlobalAveragePooling2D()(x)

@@ -188,6 +188,11 @@ def get_args():
 	parser.set_defaults(add_dropout_layer=False)
 	parser.add_argument('-dropout_rate', '--dropout_rate', dest='dropout_rate', required=False, type=float, default=0.5, action='store',help='Dropout rate (default=0.5)')
 
+	parser.add_argument('--add_conv_dropout_layer', dest='add_conv_dropout_layer', action='store_true',help='Add dropout layers after conv max pool layers')	
+	parser.set_defaults(add_conv_dropout_layer=False)
+	parser.add_argument('-conv_dropout_rate', '--conv_dropout_rate', dest='conv_dropout_rate', required=False, type=float, default=0.2, action='store',help='Dropout rate after conv layers (default=0.2)')
+
+
 	parser.add_argument('--add_chanminmaxnorm_layer', dest='add_chanminmaxnorm_layer', action='store_true',help='Add chan min/max normalization layer before conv layers')	
 	parser.set_defaults(add_chanminmaxnorm_layer=False)
 	parser.add_argument('--add_chanmaxscale_layer', dest='add_chanmaxscale_layer', action='store_true',help='Add chan max scale layer before conv layers')	
@@ -307,6 +312,8 @@ def main():
 	dense_layer_activation= args.dense_layer_activation
 	add_dropout_layer= args.add_dropout_layer
 	dropout_rate= args.dropout_rate
+	add_conv_dropout_layer= args.add_conv_dropout_layer
+	conv_dropout_rate= args.conv_dropout_rate
 	use_global_avg_pooling= args.use_global_avg_pooling
 	
 	# - Train options
@@ -502,6 +509,8 @@ def main():
 	sclass.dense_layer_activation= dense_layer_activation
 	sclass.add_dropout_layer= add_dropout_layer
 	sclass.dropout_rate= dropout_rate
+	sclass.add_conv_dropout_layer= add_conv_dropout_layer
+	sclass.conv_dropout_rate= conv_dropout_rate
 	sclass.weight_seed= weight_seed
 	sclass.use_global_avg_pooling= use_global_avg_pooling
 
