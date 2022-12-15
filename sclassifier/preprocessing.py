@@ -506,6 +506,7 @@ class LogStretcher(object):
 				continue
 
 			data_ch= data[:,:,i]
+			badpix_cond= np.logical_or(data_ch==0, ~np.isfinite(data_ch))
 			cond_ch= np.logical_and(data_ch>0, np.isfinite(data_ch))
 
 			# - Check that there are pixel >0 for log transform
@@ -518,8 +519,8 @@ class LogStretcher(object):
 			data_ch_lg= np.log10(data_ch, where=cond_ch)
 			data_ch_lg_1d= data_ch_lg[cond_ch]
 			data_ch_lg_min= data_ch_lg_1d.min()
-			data_ch_lg[~cond_ch]= 0
-			##data_ch_lg[~cond_ch]= data_ch_lg_min
+			##data_ch_lg[~cond_ch]= 0
+			data_ch_lg[~cond_ch]= data_ch_lg_min
 
 			# - Apply min/max norm data using input parameters
 			if self.minmaxnorm:
@@ -527,7 +528,8 @@ class LogStretcher(object):
 				if self.clip_neg:
 					data_ch_lg_norm[data_ch_lg_norm<0]= 0
 				data_ch_lg= data_ch_lg_norm
-				data_ch_lg[~cond_ch]= 0
+				#data_ch_lg[~cond_ch]= 0
+				data_ch_lg[badpix_cond]= 0
 				
 			# - Set in cube
 			data_transf[:,:,i]= data_ch_lg
