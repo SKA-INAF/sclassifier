@@ -479,11 +479,15 @@ class Scaler(object):
 class LogStretcher(object):
 	""" Apply log transform to data """
 
-	def __init__(self, chid=-1, **kwparams):
+	def __init__(self, chid=-1, minmaxnorm=False, data_norm_min=-6, data_norm_max=6, clip_neg=False, **kwparams):
 		""" Create a data pre-processor object """
 
 		# - Set parameters
 		self.chid= chid # do for all channels, otherwise skip selected channel
+		self.minmaxnorm= minmaxnorm
+		self.data_norm_min= data_norm_min
+		self.data_norm_max= data_norm_max
+		self.clip_neg= clip_neg
 
 	def __call__(self, data):
 		""" Apply transformation and return transformed data """
@@ -517,11 +521,16 @@ class LogStretcher(object):
 			##data_ch_lg[~cond_ch]= 0
 			data_ch_lg[~cond_ch]= data_ch_lg_min
 
+			# - Apply min/max norm data using input parameters
+			if self.minmaxnorm:
+				data_ch_lg_norm= (data_ch_lg-self.data_norm_min)/(self.data_norm_max-self.data_norm_min)
+				if self.self.clip_neg:
+					data_ch_lg_norm[data_ch_lg_norm<0]= 0
+				data_ch_lg= data_ch_lg_norm
+				
 			# - Set in cube
 			data_transf[:,:,i]= data_ch_lg
 
-		# - Normalize to [0,1]?
-		# ...
 
 		return data_transf
 
