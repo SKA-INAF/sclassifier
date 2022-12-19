@@ -598,8 +598,8 @@ class BorderMasker(object):
 			ymax= yc + dy
 			logger.debug("Masking chan %d (%d,%d) in range x[%d,%d] y[%d,%d]" % (i, data_shape[0], data_shape[1], xmin, xmax, ymin, ymax))
 			mask[ymin:ymax, xmin:xmax]= 1
-			#data_ch[mask==0]= 0
-			data_ch[mask==0]= data_min
+			data_ch[mask==0]= 0
+			##data_ch[mask==0]= data_min
 			data_masked[:,:,i]= data_ch
 	
 		return data_masked
