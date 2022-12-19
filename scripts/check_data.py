@@ -286,7 +286,7 @@ def main():
 		preprocess_stages.append(SigmaClipper(sigma=sigma_clip, chid=clip_chid))
 
 	if scale_to_abs_max:
-		preprocess_stages.append(AbsMaxScaler())
+		preprocess_stages.append(AbsMaxScaler(use_mask_box=use_box_mask_in_chan_max_scaler, mask_fract=chan_max_scaler_box_mask_fract))
 
 	if scale_to_selch_max:
 		preprocess_stages.append(ChanMaxScaler(chref=chref, use_mask_box=use_box_mask_in_chan_max_scaler, mask_fract=chan_max_scaler_box_mask_fract))

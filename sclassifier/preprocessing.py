@@ -201,8 +201,11 @@ class MaxScaler(object):
 class AbsMaxScaler(object):
 	""" Divide each image channel by their absolute maximum value """
 
-	def __init__(self, **kwparams):
+	def __init__(self, use_mask_box=False, mask_fract=0.5, **kwparams):
 		""" Create a data pre-processor object """
+
+		self.use_mask_box= use_mask_box
+		self.mask_fract= mask_fract
 
 	def __call__(self, data):
 		""" Apply transformation and return transformed data """
@@ -215,7 +218,24 @@ class AbsMaxScaler(object):
 		# - Find absolute max
 		#   NB: Excluding masked pixels (=0, & NANs)
 		cond= np.logical_and(data!=0, np.isfinite(data))
-		data_masked= np.ma.masked_where(~cond, data, copy=False)
+
+		if self.use_mask_box:
+			data_shape= data.shape
+			xc= int(data_shape[1]/2)
+			yc= int(data_shape[0]/2)
+			dy= int(data_shape[0]*self.mask_fract/2.)
+			dx= int(data_shape[1]*self.mask_fract/2.)
+			xmin= xc - dx
+			xmax= xc + dx
+			ymin= yc - dy
+			ymax= yc + dy
+			border_mask= np.zeros(data.shape)
+			border_mask[ymin:ymax, xmin:xmax, :]= 1
+			cond_max= np.logical_and(cond, border_mask==1)
+		else:
+			cond_max= cond
+
+		data_masked= np.ma.masked_where(~cond_max, data, copy=False)
 		data_max= data_masked.max()
 
 		# - Scale data
