@@ -183,7 +183,7 @@ class DataGenerator(object):
 	#####################################
 	##     GENERATE CNN TRAIN DATA
 	#####################################
-	def generate_cnn_data(self, batch_size=32, shuffle=True, read_crop=False, crop_size=32, classtarget_map={}, nclasses=7):
+	def generate_cnn_data(self, batch_size=32, shuffle=True, read_crop=False, crop_size=32, classtarget_map={}, nclasses=7, balance_classes=False, class_probs={}):
 		""" Generator function for CNN classification task """
 
 		nb= 0
@@ -220,19 +220,37 @@ class DataGenerator(object):
 				target_id= class_id
 				if classtarget_map:
 					target_id= classtarget_map[class_id]
-				
+
+				# - Apply class rebalancing?
+				if balance_classes and class_probs:
+					prob= class_probs[class_id]
+					r= random.uniform(0, 1)
+					accept= r<prob
+					if not accept:
+						continue
+					
 				# - Initialize return data
 				if nb==0:
 					inputs= np.zeros(inputs_shape, dtype=np.float32)
 					target_ids= []
+					class_ids= []
 				
 				# - Update inputs
 				inputs[nb]= sdata.img_cube
 				target_ids.append(target_id)
+				class_ids.append(class_id)
 				nb+= 1
 
 				# - Return data if number of batch is reached and restart the batch
 				if nb>=batch_size:
+					# - Compute class abundances in batch
+					class_counts= np.bincount(class_ids)
+					class_fracts= class_count/len(class_ids)
+					class_counts_str= ' '.join([str(x) for x in class_counts])
+					class_fracts_str= ' '.join([str(x) for x in class_fracts])
+					logger.info("Class counts/fract in batch: counts=[%s], fract=[%s]" % (class_counts_str, class_fracts_str))
+
+					# - Return data
 					logger.debug("Batch size (%d) reached, yielding generated data of size (%d,%d,%d,%d) ..." % (nb,inputs.shape[0],inputs.shape[1],inputs.shape[2],inputs.shape[3]))
 					output_targets= to_categorical(np.array(target_ids), num_classes=nclasses)
 					yield inputs, output_targets
@@ -252,7 +270,7 @@ class DataGenerator(object):
 	#####################################
 	##     GENERATE CAE TRAIN DATA
 	#####################################
-	def generate_cae_data(self, batch_size=32, shuffle=True, read_crop=False, crop_size=32):
+	def generate_cae_data(self, batch_size=32, shuffle=True, read_crop=False, crop_size=32, balance_classes=False, class_probs={}):
 		""" Generator function for CAE task """
 	
 		nb= 0
@@ -280,16 +298,35 @@ class DataGenerator(object):
 				data_shape= sdata.img_cube.shape
 				inputs_shape= (batch_size,) + data_shape
 				
+				# - Apply class rebalancing?
+				class_id= sdata.id
+				if balance_classes and class_probs:					
+					prob= class_probs[class_id]
+					r= random.uniform(0, 1)
+					accept= r<prob
+					if not accept:
+						continue
+
 				# - Initialize return data
 				if nb==0:
 					inputs= np.zeros(inputs_shape, dtype=np.float32)
+					class_ids= []
 				
 				# - Update inputs
 				inputs[nb]= sdata.img_cube
+				class_ids.append(class_id)
 				nb+= 1
 
 				# - Return data if number of batch is reached and restart the batch
 				if nb>=batch_size:
+					# - Compute class abundances in batch
+					class_counts= np.bincount(class_ids)
+					class_fracts= class_count/len(class_ids)
+					class_counts_str= ' '.join([str(x) for x in class_counts])
+					class_fracts_str= ' '.join([str(x) for x in class_fracts])
+					logger.info("Class counts/fract in batch: counts=[%s], fract=[%s]" % (class_counts_str, class_fracts_str))
+
+					# - Return data
 					yield inputs, inputs
 					nb= 0
 
