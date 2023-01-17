@@ -297,6 +297,15 @@ class DataGenerator(object):
 
 				data_shape= sdata.img_cube.shape
 				inputs_shape= (batch_size,) + data_shape
+
+				print("datasize")
+				print(self.datasize)
+				print("batch_size")
+				print(batch_size)
+				print("data_shape")
+				print(data_shape)
+				print("inputs_shape")
+				print(inputs_shape)
 				
 				# - Apply class rebalancing?
 				class_id= sdata.id
