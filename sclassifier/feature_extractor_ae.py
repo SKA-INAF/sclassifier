@@ -658,22 +658,25 @@ class FeatExtractorAE(object):
 			self.dg_cv.disable_augmentation()
 			self.has_cvdata= False
 			self.nsamples_cv= 0
+			batch_size_cv= 0
+			self.crossval_data_generator= None
+
 		else:
 			self.has_cvdata= True
 			self.nsamples_cv= len(self.dg_cv.labels)
 			logger.info("#nsamples_cv=%d" % (self.nsamples_cv))
 
-		if self.load_cv_data_in_batches:
-			batch_size_cv= self.batch_size
-		else:
-			batch_size_cv= self.nsamples_cv
+			if self.load_cv_data_in_batches:
+				batch_size_cv= self.batch_size
+			else:
+				batch_size_cv= self.nsamples_cv
 
-		logger.info("Loading cv data in batches? %d (batch_size_cv=%d)" % (self.load_cv_data_in_batches, batch_size_cv))
+			logger.info("Loading cv data in batches? %d (batch_size_cv=%d)" % (self.load_cv_data_in_batches, batch_size_cv))
 
-		self.crossval_data_generator= self.dg_cv.generate_cae_data(
-			batch_size=batch_size_cv, 
-			shuffle=False
-		)
+			self.crossval_data_generator= self.dg_cv.generate_cae_data(
+				batch_size=batch_size_cv, 
+				shuffle=False
+			)
 
 		#self.crossval_data_generator= self.dl.data_generator(
 		#	batch_size=self.batch_size, 
