@@ -622,8 +622,8 @@ class FeatExtractorAE(object):
 
 		# - Retrieve info from data loader
 		self.nchannels= self.dg.nchannels
-		if self.chan_divide:
-			self.nchannels-= 1
+		#if self.chan_divide:
+		#	self.nchannels-= 1
 		self.source_labels= self.dg.labels
 		self.source_ids= self.dg.classids
 		self.source_names= self.dg.snames
