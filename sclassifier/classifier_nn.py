@@ -1186,7 +1186,7 @@ class SClassifierNN(object):
 			if self.load_cv_data_in_batches:
 				val_steps_per_epoch= self.nsamples_cv // self.batch_size
 			else:
-				val_steps_per_epoch= 1				
+				val_steps_per_epoch= 1
 
 		# - Set callback
 		cb= tf.keras.callbacks.ModelCheckpoint('weights{epoch:08d}.h5', save_weights_only=False, period=self.save_model_period)
