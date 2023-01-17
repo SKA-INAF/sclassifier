@@ -418,16 +418,22 @@ class FeatExtractorAE(object):
 				- DataLoader class
 	"""
 	
-	def __init__(self, data_loader):
+	#def __init__(self, data_loader):
+	def __init__(self, data_generator):	
 		""" Return a feature extractor AE object """
 
 		# - Input data
 		self.encoder_nnarc_file= ''
 		self.decoder_nnarc_file= ''
-		self.dl= data_loader
+		#self.dl= data_loader
+		self.dg= data_generator
+		self.dg_cv= None
 
-		# - Train data	
+		# *****************************
+		# ** Input data
+		# *****************************
 		self.nsamples= 0
+		self.nsamples_cv= 0
 		self.nx= 128 
 		self.ny= 128
 		self.nchannels= 0
@@ -447,6 +453,9 @@ class FeatExtractorAE(object):
 		self.use_multiprocessing= True
 		self.nworkers= 1
 		
+		# *****************************
+		# ** Model
+		# *****************************
 		# - NN architecture
 		self.use_vae= False # create variational autoencoder, otherwise standard autoencoder
 		#self.modelfile= ""
@@ -456,7 +465,7 @@ class FeatExtractorAE(object):
 		self.weightfile_encoder= ""
 		self.weightfile_decoder= ""
 		self.fitout= None		
-		self.vae= None
+		self.cae= None
 		self.encoder= None
 		self.decoder= None	
 		self.add_channorm_layer= False
@@ -471,20 +480,19 @@ class FeatExtractorAE(object):
 		self.leakyrelu_alpha= 0.2
 		self.add_batchnorm= True
 		self.activation_fcn_cnn= "relu"
-
 		self.add_dense= False
 		self.dense_layer_sizes= [16] 
 		self.dense_layer_activation= 'relu'
-		
 		self.decoder_output_layer_activation= 'sigmoid'
 		self.z_mean = None
 		self.z_log_var = None
 		self.z = None
-		self.shape_before_flattening= 0
-		self.batch_size= 32
+		self.shape_before_flattening= 0		
 		self.latent_dim= 2
+
+		# - Training options		
 		self.nepochs= 10
-		
+		self.batch_size= 32
 		self.learning_rate= 1.e-4
 		self.optimizer_default= 'adam'
 		self.optimizer= 'adam' # 'rmsprop'
@@ -501,21 +509,29 @@ class FeatExtractorAE(object):
 		self.shuffle_train_data= True
 		self.augment_scale_factor= 1
 
-		self.normalize= False
-		self.scale_to_abs_max= False
-		self.scale_to_max= False
-		self.resize= True
-		self.log_transform_img= False
-		self.scale_img= False
-		self.scale_img_factors= []
-		self.standardize_img= False		
-		self.img_means= []
-		self.img_sigmas= []	
-		self.chan_divide= False
-		self.chan_mins= []
-		self.erode= False
-		self.erode_kernel= 5
+		self.load_cv_data_in_batches= True
 
+		# *****************************
+		# ** Pre-processing
+		# *****************************
+		#self.normalize= False
+		#self.scale_to_abs_max= False
+		#self.scale_to_max= False
+		#self.resize= True
+		#self.log_transform_img= False
+		#self.scale_img= False
+		#self.scale_img_factors= []
+		#self.standardize_img= False		
+		#self.img_means= []
+		#self.img_sigmas= []	
+		#self.chan_divide= False
+		#self.chan_mins= []
+		#self.erode= False
+		#self.erode_kernel= 5
+
+		# *****************************
+		# ** Draw
+		# *****************************
 		# - Draw options
 		self.marker_mapping= {
 			'UNKNOWN': 'o', # unknown
@@ -541,7 +557,9 @@ class FeatExtractorAE(object):
 			'PULSAR': 'tab:orange', # pulsar
 		}
 		
-
+		# *****************************
+		# ** Output
+		# *****************************
 		# - Output data
 		self.outfile_loss= 'losses.png'
 		self.outfile_model= 'model.png'
@@ -560,12 +578,15 @@ class FeatExtractorAE(object):
 		""" Set optimizer """
 
 		if learning_rate is None or learning_rate<=0:
+			logger.info("Setting %s optimizer (no lr given) ..." % (opt))
 			self.optimizer= opt
 		else:
 			if opt=="rmsprop":
-				self.optimizer= tf.keras.optimizers.RMSprop(learning_rate=self.learning_rate)
-			elif opt=="adam":	
-				self.optimizer= tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
+				logger.info("Setting rmsprop optimizer with lr=%f ..." % (learning_rate))
+				self.optimizer= tf.keras.optimizers.RMSprop(learning_rate=learning_rate)
+			elif opt=="adam":
+				logger.info("Setting adam optimizer with lr=%f ..." % (learning_rate))
+				self.optimizer= tf.keras.optimizers.Adam(learning_rate=learning_rate)
 			else:
 				logger.warn("Unknown optimizer selected (%s), setting to the default (%s) ..." % (opt, self.optimizer_default))
 				self.optimizer= self.optimizer_default
@@ -594,69 +615,113 @@ class FeatExtractorAE(object):
 		""" Set train data & generator from loader """
 
 		# - Retrieve info from data loader
-		self.nchannels= self.dl.nchannels
+		self.nchannels= self.dg.nchannels
 		if self.chan_divide:
 			self.nchannels-= 1
-		self.source_labels= self.dl.labels
-		self.source_ids= self.dl.classids
-		self.source_names= self.dl.snames
+		self.source_labels= self.dg.labels
+		self.source_ids= self.dg.classids
+		self.source_names= self.dg.snames
 		self.nsamples= len(self.source_labels)
 
 		# - Create train data generator
-		self.train_data_generator= self.dl.data_generator(
+		self.train_data_generator= self.dg.generate_cae_data(
 			batch_size=self.batch_size, 
-			shuffle=self.shuffle_train_data,
-			resize=self.resize, nx=self.nx, ny=self.ny, 
-			normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
-			augment=self.augmentation,
-			log_transform=self.log_transform_img,
-			scale=self.scale_img, scale_factors=self.scale_img_factors,
-			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
-			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
-			erode=self.erode, erode_kernel=self.erode_kernel
+			shuffle=self.shuffle_train_data
 		)
+
+		#self.train_data_generator= self.dl.data_generator(
+		#	batch_size=self.batch_size, 
+		#	shuffle=self.shuffle_train_data,
+		#	resize=self.resize, nx=self.nx, ny=self.ny, 
+		#	normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
+		#	augment=self.augmentation,
+		#	log_transform=self.log_transform_img,
+		#	scale=self.scale_img, scale_factors=self.scale_img_factors,
+		#	standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
+		#	chan_divide=self.chan_divide, chan_mins=self.chan_mins,
+		#	erode=self.erode, erode_kernel=self.erode_kernel
+		#)
 
 		# - Create cross validation data generator
-		self.crossval_data_generator= self.dl.data_generator(
-			batch_size=self.batch_size, 
-			shuffle=self.shuffle_train_data,
-			resize=self.resize, nx=self.nx, ny=self.ny, 
-			normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
-			augment=self.augmentation,
-			log_transform=self.log_transform_img,
-			scale=self.scale_img, scale_factors=self.scale_img_factors,
-			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
-			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
-			erode=self.erode, erode_kernel=self.erode_kernel	
-		)	
+		if self.dg_cv is None:
+			logger.info("Creating validation data generator (deep-copying train data generator) ...")
+			self.dg_cv= deepcopy(self.dg)
+			logger.info("Disabling data augmentation in validation data generator ...")
+			self.dg_cv.disable_augmentation()
+			self.has_cvdata= False
+			self.nsamples_cv= 0
+		else:
+			self.has_cvdata= True
+			self.nsamples_cv= len(self.dg_cv.labels)
+			logger.info("#nsamples_cv=%d" % (self.nsamples_cv))
+
+		if self.load_cv_data_in_batches:
+			batch_size_cv= self.batch_size
+		else:
+			batch_size_cv= self.nsamples_cv
+
+		logger.info("Loading cv data in batches? %d (batch_size_cv=%d)" % (self.load_cv_data_in_batches, batch_size_cv))
+
+		self.crossval_data_generator= self.dg_cv.generate_cae_data(
+			batch_size=batch_size_cv, 
+			shuffle=False
+		)
+
+		#self.crossval_data_generator= self.dl.data_generator(
+		#	batch_size=self.batch_size, 
+		#	shuffle=self.shuffle_train_data,
+		#	resize=self.resize, nx=self.nx, ny=self.ny, 
+		#	normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
+		#	augment=self.augmentation,
+		#	log_transform=self.log_transform_img,
+		#	scale=self.scale_img, scale_factors=self.scale_img_factors,
+		#	standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
+		#	chan_divide=self.chan_divide, chan_mins=self.chan_mins,
+		#	erode=self.erode, erode_kernel=self.erode_kernel	
+		#)	
 
 		# - Create test data generator
-		self.test_data_generator= self.dl.data_generator(
+		logger.info("Creating test data generator (deep-copying train data generator) ...")
+		self.dg_test= deepcopy(self.dg)
+		logger.info("Disabling data augmentation in test data generator ...")
+		self.dg_test.disable_augmentation()
+
+		self.test_data_generator= self.dg_test.generate_cae_data(
 			batch_size=self.nsamples, 
-			shuffle=False,
-			resize=self.resize, nx=self.nx, ny=self.ny, 
-			normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
-			augment=False,
-			log_transform=self.log_transform_img,
-			scale=self.scale_img, scale_factors=self.scale_img_factors,
-			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
-			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
-			erode=self.erode, erode_kernel=self.erode_kernel
+			shuffle=False
 		)
 
+		#self.test_data_generator= self.dl.data_generator(
+		#	batch_size=self.nsamples, 
+		#	shuffle=False,
+		#	resize=self.resize, nx=self.nx, ny=self.ny, 
+		#	normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
+		#	augment=False,
+		#	log_transform=self.log_transform_img,
+		#	scale=self.scale_img, scale_factors=self.scale_img_factors,
+		#	standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
+		#	chan_divide=self.chan_divide, chan_mins=self.chan_mins,
+		#	erode=self.erode, erode_kernel=self.erode_kernel
+		#)
+
 		# - Create standard generator (for reconstruction)
-		self.data_generator= self.dl.data_generator(
+		self.data_generator= self.dg_test.generate_cae_data(
 			batch_size=1, 
-			shuffle=False,
-			resize=self.resize, nx=self.nx, ny=self.ny, 
-			normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
-			augment=False,
-			log_transform=self.log_transform_img,
-			scale=self.scale_img, scale_factors=self.scale_img_factors,
-			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
-			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
-			erode=self.erode, erode_kernel=self.erode_kernel
+			shuffle=False
 		)
+
+		#self.data_generator= self.dl.data_generator(
+		#	batch_size=1, 
+		#	shuffle=False,
+		#	resize=self.resize, nx=self.nx, ny=self.ny, 
+		#	normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
+		#	augment=False,
+		#	log_transform=self.log_transform_img,
+		#	scale=self.scale_img, scale_factors=self.scale_img_factors,
+		#	standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
+		#	chan_divide=self.chan_divide, chan_mins=self.chan_mins,
+		#	erode=self.erode, erode_kernel=self.erode_kernel
+		#)
 		
 		return 0
 
@@ -712,14 +777,6 @@ class FeatExtractorAE(object):
 		# - Build model
 		logger.info("Creating autoencoder model ...")
 
-		#vae_encoder_output = self.encoder(self.inputs)
-		#print("vae_encoder_output shape")
-		#print(K.int_shape(vae_encoder_output))
-
-		#vae_decoder_output = self.decoder(vae_encoder_output)
-		#print("vae_decoder_output shape")
-		#print(K.int_shape(vae_decoder_output))
-
 		if self.use_vae:
 			self.outputs= self.decoder(self.encoder(self.inputs)[2])
 		else:
@@ -740,21 +797,21 @@ class FeatExtractorAE(object):
 
 		#self.flattened_outputs = self.decoder(self.encoder(self.inputs)[2])
 		#self.outputs= layers.Reshape( (self.ny,self.nx,self.nchannels) )(self.flattened_outputs)
-		#self.vae = Model(self.inputs, self.outputs, name='vae_mlp')
-		self.vae = Model(inputs=self.inputs, outputs=self.outputs, name='vae')
+		#self.cae = Model(self.inputs, self.outputs, name='cae_mlp')
+		self.cae = Model(inputs=self.inputs, outputs=self.outputs, name='cae')
 		
 		#===========================
 		#==   SET LOSS & METRICS
 		#===========================	
-		###self.vae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
+		###self.cae.compile(optimizer=self.optimizer, loss=self.loss, experimental_run_tf_function=False)
 		##if not tf.executing_eagerly():
-		self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True) ### CORRECT
-		#self.vae.compile(optimizer=self.optimizer, loss=self.loss)
-		#self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=False)
+		self.cae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True) ### CORRECT
+		#self.cae.compile(optimizer=self.optimizer, loss=self.loss)
+		#self.cae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=False)
 		
 		# - Print and draw model
-		self.vae.summary()
-		plot_model(self.vae,to_file='vae.png',show_shapes=True)
+		self.cae.summary()
+		plot_model(self.cae, to_file='cae.png', show_shapes=True)
 
 		return 0
 
@@ -1122,12 +1179,20 @@ class FeatExtractorAE(object):
 			scale= self.augment_scale_factor
 		steps_per_epoch= scale*self.nsamples // self.batch_size
 
+		# - Set validation steps
+		val_steps_per_epoch= self.validation_steps
+		if self.has_cvdata:
+			if self.load_cv_data_in_batches:
+				val_steps_per_epoch= self.nsamples_cv // self.batch_size
+			else:
+				val_steps_per_epoch= 1
+
 		#===========================
 		#==   TRAIN AE
 		#===========================
 		logger.info("Start autoencoder training (dataset_size=%d, batch_size=%d, steps_per_epoch=%d) ..." % (self.nsamples, self.batch_size, steps_per_epoch))
 
-		self.fitout= self.vae.fit(
+		self.fitout= self.cae.fit(
 			x=self.train_data_generator,
 			epochs=self.nepochs,
 			steps_per_epoch=steps_per_epoch,
@@ -1144,14 +1209,14 @@ class FeatExtractorAE(object):
 		#===========================
 		#- Save the model weights
 		logger.info("Saving NN weights ...")
-		self.vae.save_weights('model_weights.h5')
+		self.cae.save_weights('model_weights.h5')
 		self.encoder.save_weights('encoder_weights.h5')
 		self.decoder.save_weights('decoder_weights.h5')
 
 		# -Save the model architecture in json format
 		logger.info("Saving NN architecture in json format ...")
 		with open('model_architecture.json', 'w') as f:
-			f.write(self.vae.to_json())
+			f.write(self.cae.to_json())
 
 		with open('encoder_architecture.json', 'w') as f:
 			f.write(self.encoder.to_json())
@@ -1161,13 +1226,13 @@ class FeatExtractorAE(object):
 		
 		#- Save the model
 		logger.info("Saving full NN model ...")
-		self.vae.save('model.h5')
+		self.cae.save('model.h5')
 		self.encoder.save('encoder.h5')
 		self.decoder.save('decoder.h5')
 
 		# - Save the network architecture diagram
 		logger.info("Saving network model architecture to file ...")
-		plot_model(self.vae, to_file=self.outfile_model)
+		plot_model(self.cae, to_file=self.outfile_model)
 
 
 		#================================
@@ -1625,28 +1690,28 @@ class FeatExtractorAE(object):
 		#==============================
 		try:
 			if self.add_channorm_layer:
-				#self.vae= load_model(modelfile,	custom_objects={'encoder_norm_input': ChanNormalization, 'denorm_output': ChanDeNormalization})
-				self.vae= load_model(modelfile,	custom_objects={'ChanNormalization': ChanNormalization, 'ChanDeNormalization': ChanDeNormalization})
+				#self.cae= load_model(modelfile,	custom_objects={'encoder_norm_input': ChanNormalization, 'denorm_output': ChanDeNormalization})
+				self.cae= load_model(modelfile,	custom_objects={'ChanNormalization': ChanNormalization, 'ChanDeNormalization': ChanDeNormalization})
 			else:
-				self.vae= load_model(modelfile)
+				self.cae= load_model(modelfile)
 			
 		except Exception as e:
 			logger.warn("Failed to load model from file %s (err=%s)!" % (modelfile, str(e)))
 			return -1
 
-		if not self.vae or self.vae is None:
-			logger.error("vae object is None, loading failed!")
+		if not self.cae or self.cae is None:
+			logger.error("cae object is None, loading failed!")
 			return -1
 
 		
 		#===========================
 		#==   SET LOSS & METRICS
 		#===========================	
-		self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True) ### CORRECT
+		self.cae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True) ### CORRECT
 		
 		# - Print and draw model
-		self.vae.summary()
-		plot_model(self.vae,to_file='vae.png',show_shapes=True)
+		self.cae.summary()
+		plot_model(self.cae, to_file='cae.png', show_shapes=True)
 
 		return 0
 
@@ -1660,24 +1725,24 @@ class FeatExtractorAE(object):
 		# - Load model
 		try:
 			if self.add_channorm_layer:
-				#self.vae = model_from_json(open(modelfile_json).read(), custom_objects={'encoder_norm_input': ChanNormalization, 'denorm_output': ChanDeNormalization})
-				self.vae = model_from_json(open(modelfile_json).read(), custom_objects={'ChanNormalization': ChanNormalization, 'ChanDeNormalization': ChanDeNormalization})
+				#self.cae = model_from_json(open(modelfile_json).read(), custom_objects={'encoder_norm_input': ChanNormalization, 'denorm_output': ChanDeNormalization})
+				self.cae = model_from_json(open(modelfile_json).read(), custom_objects={'ChanNormalization': ChanNormalization, 'ChanDeNormalization': ChanDeNormalization})
 			else:
-				self.vae = model_from_json(open(modelfile_json).read())
-			self.vae.load_weights(weightfile)
+				self.cae = model_from_json(open(modelfile_json).read())
+			self.cae.load_weights(weightfile)
 
 		except Exception as e:
 			logger.warn("Failed to load model from file %s (err=%s)!" % (modelfile_json, str(e)))
 			return -1
 
-		if not self.vae or self.vae is None:
-			logger.error("vae object is None, loading failed!")
+		if not self.cae or self.cae is None:
+			logger.error("cae object is None, loading failed!")
 			return -1
 
 		#===========================
 		#==   SET LOSS & METRICS
 		#===========================	
-		self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True) ### CORRECT
+		self.cae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True) ### CORRECT
 		
 		return 0
 
@@ -1728,16 +1793,16 @@ class FeatExtractorAE(object):
 			else:
 				self.outputs= self.decoder(self.encoder(self.inputs))
 	
-		self.vae = Model(inputs=self.inputs, outputs=self.outputs, name='vae')
+		self.cae = Model(inputs=self.inputs, outputs=self.outputs, name='cae')
 		
 		#===========================
 		#==   SET LOSS & METRICS
 		#===========================	
-		self.vae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True) ### CORRECT
+		self.cae.compile(optimizer=self.optimizer, loss=self.loss, run_eagerly=True) ### CORRECT
 		
 		# - Print and draw model
-		self.vae.summary()
-		plot_model(self.vae,to_file='vae.png',show_shapes=True)
+		self.cae.summary()
+		plot_model(self.cae, to_file='cae.png', show_shapes=True)
 
 		return 0
 
