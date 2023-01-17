@@ -82,7 +82,7 @@ def get_args():
 
 	parser.add_argument('--augment', dest='augment', action='store_true',help='Augment images')	
 	parser.set_defaults(augment=False)
-	parser.add_argument('-augmenter', '--augmenter', dest='augmenter', required=False, type=str, default='cnn', action='store',help='Predefined augmenter to be used (default=cnn)')
+	parser.add_argument('-augmenter', '--augmenter', dest='augmenter', required=False, type=str, default='cae', action='store',help='Predefined augmenter to be used (default=cnn)')
 	parser.add_argument('-augment_scale_factor', '--augment_scale_factor', dest='augment_scale_factor', required=False, type=int, default=1, action='store',help='Number of times images are augmented. E.g. if 2, nsteps_per_epoch=2*nsamples/batch_size (default=1)')
 	
 
