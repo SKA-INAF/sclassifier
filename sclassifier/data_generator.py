@@ -245,7 +245,7 @@ class DataGenerator(object):
 				if nb>=batch_size:
 					# - Compute class abundances in batch
 					class_counts= np.bincount(class_ids)
-					class_fracts= class_count/len(class_ids)
+					class_fracts= class_counts/len(class_ids)
 					class_counts_str= ' '.join([str(x) for x in class_counts])
 					class_fracts_str= ' '.join([str(x) for x in class_fracts])
 					logger.info("Class counts/fract in batch: counts=[%s], fract=[%s]" % (class_counts_str, class_fracts_str))
@@ -321,7 +321,7 @@ class DataGenerator(object):
 				if nb>=batch_size:
 					# - Compute class abundances in batch
 					class_counts= np.bincount(class_ids)
-					class_fracts= class_count/len(class_ids)
+					class_fracts= class_counts/len(class_ids)
 					class_counts_str= ' '.join([str(x) for x in class_counts])
 					class_fracts_str= ' '.join([str(x) for x in class_fracts])
 					logger.info("Class counts/fract in batch: counts=[%s], fract=[%s]" % (class_counts_str, class_fracts_str))
