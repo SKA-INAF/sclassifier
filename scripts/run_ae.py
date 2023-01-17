@@ -379,16 +379,14 @@ def main():
 	multiprocessing= args.multiprocessing
 
 	balance_classes_in_batch= args.balance_classes_in_batch
-	class_probs= {}
+	class_probs_dict= {}
 	if args.class_probs!="":
-		try:
-			class_probs= json.loads(args.class_probs)
-		except:
-			logger.error("Failed to convert class probs dict string to dict!")
-			return 1
+		class_probs= [float(x.strip()) for x in args.class_probs.split(',')]
+		for i in range(len(class_probs)):
+			class_probs_dict[i]= class_probs[i]
 
 		print("== class_probs ==")
-		print(class_probs)
+		print(class_probs_dict)
 
 	# - Reco metrics & plot options
 	winsize= args.winsize
@@ -567,7 +565,7 @@ def main():
 	ae.load_cv_data_in_batches= load_cv_data_in_batches
 
 	ae.balance_classes= balance_classes_in_batch
-	ae.class_probs= class_probs
+	ae.class_probs= class_probs_dict
 
 	if predict:
 		logger.info("Running autoencoder predict ...")
