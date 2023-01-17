@@ -248,7 +248,7 @@ class DataGenerator(object):
 					class_fracts= class_counts/len(class_ids)
 					class_counts_str= ' '.join([str(x) for x in class_counts])
 					class_fracts_str= ' '.join([str(x) for x in class_fracts])
-					logger.info("Class counts/fract in batch: counts=[%s], fract=[%s]" % (class_counts_str, class_fracts_str))
+					logger.debug("Class counts/fract in batch: counts=[%s], fract=[%s]" % (class_counts_str, class_fracts_str))
 
 					# - Return data
 					logger.debug("Batch size (%d) reached, yielding generated data of size (%d,%d,%d,%d) ..." % (nb,inputs.shape[0],inputs.shape[1],inputs.shape[2],inputs.shape[3]))
@@ -348,7 +348,7 @@ class DataGenerator(object):
 					class_fracts= class_counts/len(class_ids)
 					class_counts_str= ' '.join([str(x) for x in class_counts])
 					class_fracts_str= ' '.join([str(x) for x in class_fracts])
-					logger.info("Class counts/fract in batch: counts=[%s], fract=[%s]" % (class_counts_str, class_fracts_str))
+					logger.debug("Class counts/fract in batch: counts=[%s], fract=[%s]" % (class_counts_str, class_fracts_str))
 
 					# - Return data
 					yield inputs, inputs

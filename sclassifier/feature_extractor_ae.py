@@ -501,7 +501,7 @@ class FeatExtractorAE(object):
 		self.learning_rate= 1.e-4
 		self.optimizer_default= 'adam'
 		self.optimizer= 'adam' # 'rmsprop'
-		self.scale_chan_mse_loss= True
+		self.scale_chan_mse_loss= False
 		self.use_mse_loss= True
 		self.use_kl_loss= False
 		self.use_ssim_loss= False
