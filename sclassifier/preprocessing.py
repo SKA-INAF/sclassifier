@@ -919,7 +919,7 @@ class Augmenter(object):
 			[
 				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
   			iaa.Affine(rotate=(-90, 90), mode='constant', cval=0.0),
-				iaa.Sometimes(0.5, iaa.Affine(scale=(0.5, 1.0), mode='constant', cval=0.0))
+				#iaa.Sometimes(0.5, iaa.Affine(scale=(0.5, 1.0), mode='constant', cval=0.0))
 			]
 		)
 
