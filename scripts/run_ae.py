@@ -171,6 +171,11 @@ def get_args():
 	parser.add_argument('--load_cv_data_in_batches', dest='load_cv_data_in_batches', action='store_true',help='Load validation data in batches using train batch size (default=load all data in a single step)')	
 	parser.set_defaults(load_cv_data_in_batches=False)
 
+	parser.add_argument('--balance_classes_in_batch', dest='balance_classes_in_batch', action='store_true',help='Balance classes in batch generation')	
+	parser.set_defaults(balance_classes_in_batch=False)
+	#parser.add_argument('--class_probs', dest='class_probs', required=False, type=str, default='{0:1, 1:0.1, 2:0.5}', help='Class weights used in batch rebalance') 
+	parser.add_argument('--class_probs', dest='class_probs', required=False, type=str, default='', help='Class probs used in batch class resampling. If rand<prob accept generated data.') 
+	
 	parser.add_argument('--mse_loss', dest='mse_loss', action='store_true',help='Compute and include MSE reco loss in total loss')
 	parser.add_argument('--no-mse_loss', dest='mse_loss', action='store_false',help='Skip MSE calculation and exclude MSE reco loss from total loss')
 	parser.set_defaults(mse_loss=True)
@@ -373,6 +378,18 @@ def main():
 	load_cv_data_in_batches= args.load_cv_data_in_batches
 	multiprocessing= args.multiprocessing
 
+	balance_classes_in_batch= args.balance_classes_in_batch
+	class_probs= {}
+	if args.class_probs!="":
+		try:
+			class_probs= json.loads(args.class_probs)
+		except:
+			logger.error("Failed to convert class probs dict string to dict!")
+			return 1
+
+		print("== class_probs ==")
+		print(class_probs)
+
 	# - Reco metrics & plot options
 	winsize= args.winsize
 	save_plots= args.save_plots
@@ -548,6 +565,9 @@ def main():
 	ae.use_multiprocessing= multiprocessing
 	ae.dg_cv= dg_cv
 	ae.load_cv_data_in_batches= load_cv_data_in_batches
+
+	ae.balance_classes= balance_classes_in_batch
+	ae.class_probs= class_probs
 
 	if predict:
 		logger.info("Running autoencoder predict ...")

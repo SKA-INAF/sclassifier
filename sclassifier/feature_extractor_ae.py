@@ -483,6 +483,10 @@ class FeatExtractorAE(object):
 		self.add_dense= False
 		self.dense_layer_sizes= [16] 
 		self.dense_layer_activation= 'relu'
+		self.add_dropout_layer= False
+		self.dropout_rate= 0.5
+		self.add_conv_dropout_layer= False
+		self.conv_dropout_rate= 0.2
 		self.decoder_output_layer_activation= 'sigmoid'
 		self.z_mean = None
 		self.z_log_var = None
@@ -510,6 +514,8 @@ class FeatExtractorAE(object):
 		self.augment_scale_factor= 1
 
 		self.load_cv_data_in_batches= True
+		self.balance_classes= False
+		self.class_probs= {}
 
 		# *****************************
 		# ** Pre-processing
@@ -626,7 +632,8 @@ class FeatExtractorAE(object):
 		# - Create train data generator
 		self.train_data_generator= self.dg.generate_cae_data(
 			batch_size=self.batch_size, 
-			shuffle=self.shuffle_train_data
+			shuffle=self.shuffle_train_data,
+			balance_classes=self.balance_classes, class_probs=self.class_probs
 		)
 
 		#self.train_data_generator= self.dl.data_generator(
@@ -850,7 +857,6 @@ class FeatExtractorAE(object):
 			padding= "same"
 			if k==0:
 				# - Set weights for the first layer
-				#x = layers.Conv2D(self.nfilters_cnn[k], (self.kernsizes_cnn[k], self.kernsizes_cnn[k]), strides=self.strides_cnn[k], activation=self.activation_fcn_cnn, padding=padding, kernel_initializer=weight_initializer)(x)
 				x = layers.Conv2D(self.nfilters_cnn[k], (self.kernsizes_cnn[k], self.kernsizes_cnn[k]), strides=self.strides_cnn[k], padding=padding, kernel_initializer=weight_initializer)(x)
 			else:
 				x = layers.Conv2D(self.nfilters_cnn[k], (self.kernsizes_cnn[k], self.kernsizes_cnn[k]), strides=self.strides_cnn[k], padding=padding)(x)
@@ -869,14 +875,10 @@ class FeatExtractorAE(object):
 			if self.add_max_pooling:
 				padding= "valid"
 				x = layers.MaxPooling2D(pool_size=(self.pool_size,self.pool_size),strides=None,padding=padding)(x)
-					
-			# - Add Leaky RELU?	
-			#if self.add_leakyrelu:
-			#	x = layers.LeakyReLU(alpha=self.leakyrelu_alpha)(x)
-
-			# - Add batch normalization?
-			#if self.add_batchnorm:
-			#	x = BatchNormalization(axis=-1)(x)
+				
+			# - Add dropout?
+			if self.add_conv_dropout_layer:
+				x= layers.Dropout(self.conv_dropout_rate)(x)
 			
 
 		# - Store layer size before flattening (needed for decoder network)
@@ -892,6 +894,9 @@ class FeatExtractorAE(object):
 		if self.add_dense:
 			for layer_size in self.dense_layer_sizes:
 				x = layers.Dense(layer_size, activation=self.dense_layer_activation)(x)
+
+				if self.add_dropout_layer:
+					x= layers.Dropout(self.dropout_rate)(x)
 
 		# - Output layers
 		if self.use_vae:
