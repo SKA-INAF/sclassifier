@@ -298,14 +298,14 @@ class DataGenerator(object):
 				data_shape= sdata.img_cube.shape
 				inputs_shape= (batch_size,) + data_shape
 
-				print("datasize")
-				print(self.datasize)
-				print("batch_size")
-				print(batch_size)
-				print("data_shape")
-				print(data_shape)
-				print("inputs_shape")
-				print(inputs_shape)
+				#print("datasize")
+				#print(self.datasize)
+				#print("batch_size")
+				#print(batch_size)
+				#print("data_shape")
+				#print(data_shape)
+				#print("inputs_shape")
+				#print(inputs_shape)
 				
 				# - Apply class rebalancing?
 				class_id= sdata.id
@@ -322,7 +322,22 @@ class DataGenerator(object):
 					class_ids= []
 				
 				# - Update inputs
-				inputs[nb]= sdata.img_cube
+				try:
+					inputs[nb]= sdata.img_cube
+				except Exception as e:
+					logger.error("Exception occurred while filling input data (nb=%d), exit generator!" % (nb))
+					print("datasize")
+					print(self.datasize)
+					print("data_index")
+					print(data_index)
+					print("batch_size")
+					print(batch_size)
+					print("data_shape")
+					print(data_shape)
+					print("inputs_shape")
+					print(inputs_shape)
+					break
+
 				class_ids.append(class_id)
 				nb+= 1
 
