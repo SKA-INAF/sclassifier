@@ -121,6 +121,10 @@ class MinMaxNormalizer(object):
 			data_ch= data[:,:,i]
 			cond= np.logical_and(data_ch!=0, np.isfinite(data_ch))
 			data_ch_1d= data_ch[cond]
+			if data_ch_1d.size==0:
+				logger.warn("Size of data_ch%d is zero, returning None!" % (i))
+				return None
+
 			data_ch_min= data_ch_1d.min()
 			data_ch_max= data_ch_1d.max()
 			data_ch_norm= (data_ch-data_ch_min)/(data_ch_max-data_ch_min) * (self.norm_max-self.norm_min) + self.norm_min
