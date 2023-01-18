@@ -698,7 +698,8 @@ class FeatExtractorAE(object):
 		self.dg_test.disable_augmentation()
 
 		self.test_data_generator= self.dg_test.generate_cae_data(
-			batch_size=self.nsamples, 
+			#batch_size=self.nsamples,
+			batch_size=1, 
 			shuffle=False
 		)
 
@@ -1292,7 +1293,8 @@ class FeatExtractorAE(object):
 		if self.use_vae:
 			self.encoded_data, _, _= self.encoder.predict(
 				x=self.test_data_generator,	
-				steps=1,
+				#steps=1,
+				steps=self.nsamples,
     		verbose=2,
     		workers=self.nworkers,
     		use_multiprocessing=self.use_multiprocessing
@@ -1300,7 +1302,8 @@ class FeatExtractorAE(object):
 		else:
 			self.encoded_data= self.encoder.predict(
 				x=self.test_data_generator,	
-				steps=1,
+				#steps=1,
+				steps=self.nsamples,
     		verbose=2,
     		workers=self.nworkers,
     		use_multiprocessing=self.use_multiprocessing
@@ -1416,7 +1419,8 @@ class FeatExtractorAE(object):
 		#===========================
 		predout= self.encoder.predict(
 			x=self.test_data_generator,	
-			steps=1,
+			#steps=1,	
+			steps=self.nsamples,
     	verbose=2,
     	workers=self.nworkers,
     	use_multiprocessing=self.use_multiprocessing
