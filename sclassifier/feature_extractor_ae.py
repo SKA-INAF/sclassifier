@@ -1200,7 +1200,7 @@ class FeatExtractorAE(object):
 		#===========================
 		#==   TRAIN AE
 		#===========================
-		logger.info("Start autoencoder training (dataset_size=%d, batch_size=%d, steps_per_epoch=%d) ..." % (self.nsamples, self.batch_size, steps_per_epoch))
+		logger.info("Start autoencoder training (dataset_size=%d, batch_size=%d, steps_per_epoch=%d, val_steps_per_epoch=%d) ..." % (self.nsamples, self.batch_size, steps_per_epoch, val_steps_per_epoch))
 
 		self.fitout= self.cae.fit(
 			x=self.train_data_generator,
