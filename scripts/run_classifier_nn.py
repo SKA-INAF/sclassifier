@@ -173,6 +173,11 @@ def get_args():
 	
 	parser.add_argument('-save_model_period', '--save_model_period', dest='save_model_period', required=False, type=int, default=100, action='store', help='Save model every given epochs (default=100)')
 
+	parser.add_argument('--balance_classes_in_batch', dest='balance_classes_in_batch', action='store_true',help='Balance classes in batch generation')	
+	parser.set_defaults(balance_classes_in_batch=False)
+	parser.add_argument('--class_probs', dest='class_probs', required=False, type=str, default='', help='Class probs used in batch class resampling. If rand<prob accept generated data.') 
+	
+
 	# - Network architecture options
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
 	parser.set_defaults(predict=False)
@@ -343,6 +348,16 @@ def main():
 	load_cv_data_in_batches= args.load_cv_data_in_batches
 	save_model_period= args.save_model_period
 	multiprocessing= args.multiprocessing
+
+	balance_classes_in_batch= args.balance_classes_in_batch
+	class_probs_dict= {}
+	if args.class_probs!="":
+		class_probs= [float(x.strip()) for x in args.class_probs.split(',')]
+		for i in range(len(class_probs)):
+			class_probs_dict[i]= class_probs[i]
+
+		print("== class_probs ==")
+		print(class_probs_dict)
 
 	#===============================
 	#==  CREATE DATA PRE-PROCESSOR

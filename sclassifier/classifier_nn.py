@@ -267,6 +267,9 @@ class SClassifierNN(object):
 		self.load_cv_data_in_batches= True
 		self.save_model_period= 100
 
+		self.balance_classes= False
+		self.class_probs= {}
+
 		self.__set_target_labels(multiclass)
 
 		# *****************************
@@ -482,7 +485,8 @@ class SClassifierNN(object):
 		self.train_data_generator= self.dg.generate_cnn_data(
 			batch_size=self.batch_size, 
 			shuffle=self.shuffle_train_data,
-			classtarget_map=self.classid_remap, nclasses=self.nclasses
+			classtarget_map=self.classid_remap, nclasses=self.nclasses,
+			balance_classes=self.balance_classes, class_probs=self.class_probs
 		)
 		#self.train_data_generator= self.dl.data_generator(
 		#	batch_size=self.batch_size, 
@@ -507,24 +511,27 @@ class SClassifierNN(object):
 			self.dg_cv.disable_augmentation()
 			self.has_cvdata= False
 			self.nsamples_cv= 0
+			batch_size_cv= 0
+			self.crossval_data_generator= None
+
 		else:
 			self.has_cvdata= True
 			self.nsamples_cv= len(self.dg_cv.labels)
 			logger.info("#nsamples_cv=%d" % (self.nsamples_cv))
 
-		if self.load_cv_data_in_batches:
-			batch_size_cv= self.batch_size
-		else:
-			batch_size_cv= self.nsamples_cv
+			if self.load_cv_data_in_batches:
+				batch_size_cv= self.batch_size
+			else:
+				batch_size_cv= self.nsamples_cv
 
-		logger.info("Loading cv data in batches? %d (batch_size_cv=%d)" % (self.load_cv_data_in_batches, batch_size_cv))
+			logger.info("Loading cv data in batches? %d (batch_size_cv=%d)" % (self.load_cv_data_in_batches, batch_size_cv))
 
-		self.crossval_data_generator= self.dg_cv.generate_cnn_data(
-			batch_size=batch_size_cv, 
-			##shuffle=self.shuffle_train_data,
-			shuffle=False,
-			classtarget_map=self.classid_remap, nclasses=self.nclasses
-		)
+			self.crossval_data_generator= self.dg_cv.generate_cnn_data(
+				batch_size=batch_size_cv, 
+				##shuffle=self.shuffle_train_data,
+				shuffle=False,
+				classtarget_map=self.classid_remap, nclasses=self.nclasses
+			)
 
 		#self.crossval_data_generator= self.dl_cv.data_generator(
 		#	batch_size=self.batch_size, 
@@ -548,7 +555,8 @@ class SClassifierNN(object):
 		self.dg_test.disable_augmentation()
 
 		self.test_data_generator= self.dg_test.generate_cnn_data(
-			batch_size=self.nsamples, 
+			#batch_size=self.nsamples,
+			batch_size=1,
 			shuffle=False,
 			classtarget_map=self.classid_remap, nclasses=self.nclasses
 		)
@@ -653,7 +661,8 @@ class SClassifierNN(object):
 		logger.info("Predicting model output data ...")
 		predout= self.model.predict(
 			x=self.test_data_generator,	
-			steps=1,
+			#steps=1,
+			steps=self.nsamples,
     	verbose=2,
     	workers=self.nworkers,
     	use_multiprocessing=self.use_multiprocessing
@@ -1275,7 +1284,8 @@ class SClassifierNN(object):
 		
 		self.output_data= self.model.predict(
 			x=self.test_data_generator,	
-			steps=1,
+			#steps=1,
+			steps=self.nsamples,
     	verbose=2,
     	workers=self.nworkers,
     	use_multiprocessing=self.use_multiprocessing

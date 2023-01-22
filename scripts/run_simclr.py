@@ -101,6 +101,11 @@ def get_args():
 	parser.set_defaults(reproducible=False)
 	parser.add_argument('-validation_steps', '--validation_steps', dest='validation_steps', required=False, type=int, default=10, action='store',help='Number of validation steps used in each epoch (default=10)')
 
+	parser.add_argument('--balance_classes_in_batch', dest='balance_classes_in_batch', action='store_true',help='Balance classes in batch generation')	
+	parser.set_defaults(balance_classes_in_batch=False)
+	parser.add_argument('--class_probs', dest='class_probs', required=False, type=str, default='', help='Class probs used in batch class resampling. If rand<prob accept generated data.') 
+	
+
 	# - Network architecture options
 	parser.add_argument('-weightfile', '--weightfile', dest='weightfile', required=False, type=str, default="", action='store',help='Weight file (hd5) to be loaded (default=no)')	
 	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=False, type=str, default="", action='store',help='Model architecture file (json) to be loaded (default=no)')
@@ -211,6 +216,16 @@ def main():
 	weight_seed= args.weight_seed
 	reproducible= args.reproducible
 	validation_steps= args.validation_steps
+
+	balance_classes_in_batch= args.balance_classes_in_batch
+	class_probs_dict= {}
+	if args.class_probs!="":
+		class_probs= [float(x.strip()) for x in args.class_probs.split(',')]
+		for i in range(len(class_probs)):
+			class_probs_dict[i]= class_probs[i]
+
+		print("== class_probs ==")
+		print(class_probs_dict)
 
 	# - Run options
 	predict= args.predict

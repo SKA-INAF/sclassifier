@@ -369,7 +369,7 @@ class DataGenerator(object):
 	#####################################
 	##     GENERATE SIMCLR TRAIN DATA
 	#####################################
-	def generate_simclr_data(self, batch_size=32, shuffle=True, read_crop=False, crop_size=32):
+	def generate_simclr_data(self, batch_size=32, shuffle=True, read_crop=False, crop_size=32, balance_classes=False, class_probs={}):
 		""" Generator function for SimCLR task """
 	
 		nb= 0
@@ -403,6 +403,15 @@ class DataGenerator(object):
 
 				data_shape= sdata_1.img_cube.shape
 				inputs_shape= (batch_size,) + data_shape
+
+				# - Apply class rebalancing?
+				class_id= sdata_1.id
+				if balance_classes and class_probs:					
+					prob= class_probs[class_id]
+					r= random.uniform(0, 1)
+					accept= r<prob
+					if not accept:
+						continue
 				
 				# - Initialize return data
 				if nb==0:
@@ -421,10 +430,19 @@ class DataGenerator(object):
 				labels_ab_aa[nb, nb] = 1
 				labels_ba_bb[nb, nb] = 1
 
+				class_ids.append(class_id)
 				nb+= 1
 
 				# - Return data if number of batch is reached and restart the batch
 				if nb>=batch_size:
+					# - Compute class abundances in batch
+					class_counts= np.bincount(class_ids)
+					class_fracts= class_counts/len(class_ids)
+					class_counts_str= ' '.join([str(x) for x in class_counts])
+					class_fracts_str= ' '.join([str(x) for x in class_fracts])
+					logger.debug("Class counts/fract in batch: counts=[%s], fract=[%s]" % (class_counts_str, class_fracts_str))
+
+					# - Return data
 					y= np.concatenate([labels_ab_aa, labels_ba_bb], 1)
 					yield list(inputs_simclr), y # original implementation: returns a list (len=2xbatch_size) of arrays of shape (1, ny, nx, nchan). Each Input layer takes one list entry as input.
 

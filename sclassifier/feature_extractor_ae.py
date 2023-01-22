@@ -1207,7 +1207,7 @@ class FeatExtractorAE(object):
 			epochs=self.nepochs,
 			steps_per_epoch=steps_per_epoch,
 			validation_data=self.crossval_data_generator,
-			validation_steps=self.validation_steps,
+			validation_steps=val_steps_per_epoch,
 			use_multiprocessing=self.use_multiprocessing,
 			workers=self.nworkers,
 			verbose=2
