@@ -452,7 +452,7 @@ class FeatExtractorAE(object):
 		self.augmentation= False	
 		self.validation_steps= 10
 		self.use_multiprocessing= True
-		self.nworkers= 1
+		self.nworkers= 0
 		
 		# *****************************
 		# ** Model
