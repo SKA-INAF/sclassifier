@@ -391,8 +391,8 @@ def main():
 	if args.class_probs!="":
 		try:
 			class_probs_dict= json.loads(args.class_probs)
-		except:
-			logger.error("Failed to convert class prob string to dict!")
+		except Exception as e:
+			logger.error("Failed to convert class prob string to dict (err=%s)!" % (str(e)))
 			return -1	
 
 		print("== class_probs ==")
