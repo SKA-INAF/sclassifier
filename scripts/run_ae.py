@@ -174,8 +174,8 @@ def get_args():
 
 	parser.add_argument('--balance_classes_in_batch', dest='balance_classes_in_batch', action='store_true',help='Balance classes in batch generation')	
 	parser.set_defaults(balance_classes_in_batch=False)
-	parser.add_argument('--class_probs', dest='class_probs', required=False, type=str, default='{3:1,6:1,23:1,24:1,1:1,2:1,6000:1}', help='Class weights used in batch rebalance') 
-	##parser.add_argument('--class_probs', dest='class_probs', required=False, type=str, default='{"PN":1,"HII":1,"PULSAR":1,"YSO":1,"STAR":1,"GALAXY":1,"QSO":1}', help='Class weights used in batch rebalance') 
+	##parser.add_argument('--class_probs', dest='class_probs', required=False, type=str, default='{3:1,6:1,23:1,24:1,1:1,2:1,6000:1}', help='Class weights used in batch rebalance') 
+	parser.add_argument('--class_probs', dest='class_probs', required=False, type=str, default='{"PN":1,"HII":1,"PULSAR":1,"YSO":1,"STAR":1,"GALAXY":1,"QSO":1}', help='Class weights used in batch rebalance') 
 	##parser.add_argument('--class_probs', dest='class_probs', required=False, type=str, default='', help='Class probs used in batch class resampling. If rand<prob accept generated data.') 
 	
 	parser.add_argument('--mse_loss', dest='mse_loss', action='store_true',help='Compute and include MSE reco loss in total loss')

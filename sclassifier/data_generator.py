@@ -309,8 +309,10 @@ class DataGenerator(object):
 				
 				# - Apply class rebalancing?
 				class_id= sdata.id
+				class_name= sdata.label
 				if balance_classes and class_probs:					
-					prob= class_probs[class_id]
+					#prob= class_probs[class_id]
+					prob= class_probs[class_name]
 					r= random.uniform(0, 1)
 					accept= r<prob
 					if not accept:
