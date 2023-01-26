@@ -603,7 +603,7 @@ class Clusterer(object):
 		znames_counter= list(range(1,self.nfeatures+1))
 		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
 
-		head= '{} {} {}'.format("# sname ",znames," id clust_id clust_prob")
+		head= '{} {} {}'.format("# sname",znames,"id clust_id clust_prob")
 		#head= "# sname id clustid clustprob"
 		Utils.write_ascii(clustered_data, self.outfile, head)	
 
@@ -858,7 +858,7 @@ class Clusterer(object):
 		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
 
 		#head= "# sname id label clust_id clust_prob outlier_score"
-		head= '{} {} {}'.format("# sname ",znames," id clust_id clust_prob outlier_score")
+		head= '{} {} {}'.format("# sname",znames,"id clust_id clust_prob outlier_score")
 		Utils.write_ascii(clustered_data, self.outfile, head)	
 
 		#================================
