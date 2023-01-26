@@ -49,6 +49,9 @@ class FeatExtractorUMAP(object):
 	def __init__(self):
 		""" Return a UMAP feature extractor object """
 
+		# *****************************
+		# ** Input data
+		# *****************************
 		# - Input data
 		self.nsamples= 0
 		self.nfeatures= 0
@@ -61,9 +64,19 @@ class FeatExtractorUMAP(object):
 		self.source_names= []
 		self.source_names_preclassified= []
 		
+		# *****************************
+		# ** Pre-processing
+		# *****************************
+		self.normalize= False
+		self.norm_min= 0
+		self.norm_max= 1
+		self.data_scaler= None
+
+		# *****************************
+		# ** UMAP parameters
+		# *****************************
 		# - Reducer & parameters
 		self.dump_model= True
-		self.outfile_model= "umap_model.sav"
 		self.reducer= None
 		self.use_preclassified_data= True
 		self.preclassified_data_minsize= 20
@@ -92,14 +105,21 @@ class FeatExtractorUMAP(object):
 
 		self.classid_label_map= {}
 
-		# - Draw options
+		
+		# *****************************
+		# ** Draw
+		# *****************************
 		self.marker_mapping= {}
 		self.marker_color_mapping= {}
 
-		# - Output data
+		# *****************************
+		# ** Output
+		# *****************************
 		self.outfile_encoded_data_unsupervised= 'encoded_data_unsupervised.dat'
 		self.outfile_encoded_data_supervised= 'encoded_data_supervised.dat'
-		self.outfile_encoded_data_preclassified= 'encoded_data_preclassified.dat'
+		self.outfile_encoded_data_preclassified= 'encoded_data_preclassified.dat'	
+		self.outfile_scaler = 'datascaler.sav'
+		self.outfile_model= "umap_model.sav"
 
 	#####################################
 	##     SETTERS/GETTERS
@@ -179,6 +199,52 @@ class FeatExtractorUMAP(object):
 			4: "EXTENDED-MULTISLAND",
 			5: "DIFFUSE"
 		}
+
+
+	#####################################
+	##     PRE-PROCESSING
+	#####################################
+	def __transform_data(self, x, norm_min=0, norm_max=1):
+		""" Transform input data here or using a loaded scaler """
+
+		# - Print input data min/max
+		x_min= x.min(axis=0)
+		x_max= x.max(axis=0)
+
+		print("== INPUT DATA MIN/MAX ==")
+		print(x_min)
+		print(x_max)
+
+		if self.data_scaler is None:
+			# - Define and run scaler
+			logger.info("Define and running data scaler ...")
+			self.data_scaler= MinMaxScaler(feature_range=(norm_min, norm_max))
+			x_transf= self.data_scaler.fit_transform(x)
+
+			print("== TRANSFORM DATA MIN/MAX ==")
+			print(self.data_scaler.data_min_)
+			print(self.data_scaler.data_max_)
+
+			# - Save scaler to file
+			logger.info("Saving data scaler to file %s ..." % (self.outfile_scaler))
+			pickle.dump(self.data_scaler, open(self.outfile_scaler, 'wb'))
+			
+		else:
+			# - Transform data
+			logger.info("Transforming input data using loaded scaler ...")
+			x_transf = self.data_scaler.transform(x)
+
+		# - Print transformed data min/max
+		print("== TRANSFORMED DATA MIN/MAX ==")
+		x_transf_min= x_transf.min(axis=0)
+		x_transf_max= x_transf.max(axis=0)
+		print(x_transf_min)
+		print(x_transf_max)
+
+		return x_transf
+
+
+
 
 	def __set_preclass_data(self):
 		""" Set pre-classified data """
@@ -262,6 +328,15 @@ class FeatExtractorUMAP(object):
 		self.nfeatures= data_shape[1]
 		logger.info("#nsamples=%d" % (self.nsamples))
 		
+		# - Normalize feature data?
+		if self.normalize:
+			logger.info("Normalizing feature data ...")
+			data_norm= self.__transform_data(self.data, self.norm_min, self.norm_max)
+			if data_norm is None:
+				logger.error("Data transformation failed!")
+				return -1
+			self.data= data_norm
+
 		# - Set pre-classified data
 		logger.info("Setting pre-classified data (if any) ...")
 		self.__set_preclass_data()
@@ -317,6 +392,15 @@ class FeatExtractorUMAP(object):
 		
 		logger.info("#nsamples=%d" % (self.nsamples))
 		
+		# - Normalize feature data?
+		if self.normalize:
+			logger.info("Normalizing feature data ...")
+			data_norm= self.__transform_data(self.data, self.norm_min, self.norm_max)
+			if data_norm is None:
+				logger.error("Data transformation failed!")
+				return -1
+			self.data= data_norm
+
 		# - Set pre-classified data
 		logger.info("Setting pre-classified data (if any) ...")
 		self.__set_preclass_data()
@@ -356,8 +440,20 @@ class FeatExtractorUMAP(object):
 	#####################################
 	##     PREDICT
 	#####################################
-	def run_predict(self, datafile, modelfile):
+	def run_predict(self, datafile, modelfile, scalerfile=''):
 		""" Run predict using input dataset """
+
+		#================================
+		#==   LOAD DATA SCALER
+		#================================
+		# - Load scaler from file?
+		if scalerfile!="":
+			logger.info("Loading data scaler from file %s ..." % (scalerfile))
+			try:
+				self.data_scaler= pickle.load(open(scalerfile, 'rb'))
+			except Exception as e:
+				logger.error("Failed to load data scaler from file %s!" % (scalerfile))
+				return -1
 
 		#================================
 		#==   LOAD DATA
@@ -391,8 +487,20 @@ class FeatExtractorUMAP(object):
 		return 0
 
 
-	def run_predict(self, data, class_ids=[], snames=[], modelfile=''):
+	def run_predict(self, data, class_ids=[], snames=[], modelfile='', scalerfile=''):
 		""" Run predict using input dataset """
+
+		#================================
+		#==   LOAD DATA SCALER
+		#================================
+		# - Load scaler from file?
+		if scalerfile!="":
+			logger.info("Loading data scaler from file %s ..." % (scalerfile))
+			try:
+				self.data_scaler= pickle.load(open(scalerfile, 'rb'))
+			except Exception as e:
+				logger.error("Failed to load data scaler from file %s!" % (scalerfile))
+				return -1
 
 		#================================
 		#==   LOAD DATA
@@ -485,8 +593,20 @@ class FeatExtractorUMAP(object):
 	#####################################
 	##     TRAIN
 	#####################################
-	def run_train(self, datafile, modelfile=''):
+	def run_train(self, datafile, modelfile='', scalerfile=''):
 		""" Run train using input dataset """
+
+		#================================
+		#==   LOAD DATA SCALER
+		#================================
+		# - Load scaler from file?
+		if scalerfile!="":
+			logger.info("Loading data scaler from file %s ..." % (scalerfile))
+			try:
+				self.data_scaler= pickle.load(open(scalerfile, 'rb'))
+			except Exception as e:
+				logger.error("Failed to load data scaler from file %s!" % (scalerfile))
+				return -1
 
 		#================================
 		#==   LOAD DATA
@@ -525,8 +645,20 @@ class FeatExtractorUMAP(object):
 		return 0
 
 
-	def run_train(self, data, class_ids=[], snames=[], modelfile=''):
+	def run_train(self, data, class_ids=[], snames=[], modelfile='', scalerfile=''):
 		""" Run train using input dataset """
+
+		#================================
+		#==   LOAD DATA SCALER
+		#================================
+		# - Load scaler from file?
+		if scalerfile!="":
+			logger.info("Loading data scaler from file %s ..." % (scalerfile))
+			try:
+				self.data_scaler= pickle.load(open(scalerfile, 'rb'))
+			except Exception as e:
+				logger.error("Failed to load data scaler from file %s!" % (scalerfile))
+				return -1
 
 		#================================
 		#==   LOAD DATA

@@ -59,8 +59,9 @@ def get_args():
 	parser.add_argument('-inputfile','--inputfile', dest='inputfile', required=True, type=str, help='Input feature data table filename') 
 	
 	# - Pre-processing options
-	#parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize feature data in range [0,1] before UMAP (default=false)')	
-	#parser.set_defaults(normalize=False)	
+	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize feature data in range [0,1] before applying models (default=false)')	
+	parser.set_defaults(normalize=False)
+	parser.add_argument('-scalerfile', '--scalerfile', dest='scalerfile', required=False, type=str, default='', action='store',help='Load and use data transform stored in this file (.sav)')
 	
 	# - UMAP classifier options
 	parser.add_argument('-latentdim_umap', '--latentdim_umap', dest='latentdim_umap', required=False, type=int, default=2, action='store',help='Encoded data dim in UMAP (default=2)')
@@ -102,8 +103,9 @@ def main():
 	inputfile= args.inputfile
 
 	# - Data pre-processing
-	#normalize= args.normalize
-	
+	normalize= args.normalize
+	scalerfile= args.scalerfile
+
 	# - UMAP options
 	latentdim_umap= args.latentdim_umap
 	mindist_umap= args.mindist_umap
@@ -131,7 +133,7 @@ def main():
 	#==   RUN UMAP
 	#==============================
 	umap_class= FeatExtractorUMAP()
-
+	umap_class.normalize= normalize
 	umap_class.set_encoded_data_unsupervised_outfile(outfile_umap_unsupervised)
 	umap_class.set_encoded_data_supervised_outfile(outfile_umap_supervised)
 	umap_class.set_encoded_data_preclassified_outfile(outfile_umap_preclassified)
@@ -142,12 +144,12 @@ def main():
 	status= 0
 	if predict:
 		logger.info("Running UMAP classifier prediction using modelfile %s on input feature data ..." % (modelfile_umap))
-		if umap_class.run_predict(data, class_ids=classids, snames=snames, modelfile=modelfile_umap)<0:
+		if umap_class.run_predict(data, class_ids=classids, snames=snames, modelfile=modelfile_umap, scalerfile=scalerfile)<0:
 			logger.error("UMAP prediction failed!")
 			return 1
 	else:
 		logger.info("Running UMAP classifier training on input feature data ...")
-		if umap_class.run_train(data, class_ids=classids, snames=snames)<0:
+		if umap_class.run_train(data, class_ids=classids, snames=snames, scalerfile=scalerfile)<0:
 			logger.error("UMAP training failed!")
 			return 1
 
