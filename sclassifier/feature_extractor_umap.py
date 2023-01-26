@@ -21,7 +21,8 @@ import logging
 import pickle
 
 ## ASTRO MODULES
-from astropy.io import ascii 
+from astropy.io import ascii
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 
 ## UMAP MODULES
 import umap
