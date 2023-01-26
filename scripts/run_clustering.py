@@ -61,6 +61,8 @@ def get_args():
 	# - Pre-processing options
 	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize feature data in range [0,1] before clustering (default=false)')	
 	parser.set_defaults(normalize=False)	
+	parser.add_argument('-scalerfile', '--scalerfile', dest='scalerfile', required=False, type=str, default='', action='store',help='Load and use data transform stored in this file (.sav)')
+	
 	parser.add_argument('--reduce_dim', dest='reduce_dim', action='store_true',help='Reduce feature data dimensionality before applying the clustering (default=false)')	
 	parser.set_defaults(reduce_dim=False)
 	parser.add_argument('-reduce_dim_method', '--reduce_dim_method', dest='reduce_dim_method', default='pca', required=False, type=str, action='store',help='Dimensionality reduction method {pca} (default=pca)')
@@ -102,6 +104,7 @@ def main():
 
 	# - Data pre-processing
 	normalize= args.normalize
+	scalerfile= args.scalerfile
 	reduce_dim= args.reduce_dim
 	reduce_dim_method= args.reduce_dim_method
 	pca_ncomps= args.pca_ncomps
@@ -140,11 +143,11 @@ def main():
 
 	status= 0
 	if predict_clust:
-		if clust_class.run_predict(data, class_ids=classids, snames=snames, modelfile=modelfile_clust)<0:
+		if clust_class.run_predict(data, class_ids=classids, snames=snames, modelfile=modelfile_clust, scalerfile=scalerfile)<0:
 			logger.error("Clustering predict failed!")
 			return 1
 	else:
-		if clust_class.run_clustering(data, class_ids=classids, snames=snames, modelfile=modelfile_clust)<0:
+		if clust_class.run_clustering(data, class_ids=classids, snames=snames, modelfile=modelfile_clust, scalerfile=scalerfile)<0:
 			logger.error("Clustering run failed!")
 			return 1
 

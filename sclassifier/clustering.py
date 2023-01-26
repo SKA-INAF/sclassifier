@@ -27,6 +27,7 @@ from astropy.io import ascii
 import hdbscan
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA 
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 
 ## GRAPHICS MODULES
 import seaborn as sns
@@ -80,6 +81,7 @@ class Clusterer(object):
 		# *****************************
 		# ** Pre-processing
 		# *****************************
+		self.data_scaler= None
 		self.normalize= False
 		self.norm_min= 0
 		self.norm_max= 1
@@ -126,7 +128,9 @@ class Clusterer(object):
 		#self.encoded_data_preclassified= None
 		#self.encoded_data_supervised= None
 		
-		
+		# *****************************
+		# ** Draw
+		# *****************************
 		self.classid_label_map= {
 			0: "UNKNOWN",
 			-1: "MIXED_TYPE",
@@ -164,19 +168,22 @@ class Clusterer(object):
 			'PULSAR': 'tab:orange', # pulsar
 		}
 		
-
+		# *****************************
+		# ** Output
+		# *****************************
 		# - Output data
 		self.dump_model= True
 		self.outfile_model= "clustering_model.sav"
 		self.outfile_model_preclass= "clustering_preclass_model.sav"
 		self.outfile= 'clustered_data.dat'
 		self.outfile_plot= 'clusters.png'
+		self.outfile_scaler = 'datascaler.sav'
 		#self.outfile_encoded_data_unsupervised= 'encoded_data_unsupervised.dat'
 		#self.outfile_encoded_data_supervised= 'encoded_data_supervised.dat'
 		#self.outfile_encoded_data_preclassified= 'encoded_data_preclassified.dat'
 
 	#####################################
-	##     SETTERS/GETTERS
+	##     PRE-PROCESSING
 	#####################################
 	def __normalize_data(self, x, norm_min, norm_max):
 		""" Normalize input data to desired range """
@@ -185,6 +192,47 @@ class Clusterer(object):
 		x_max= x.max(axis=0)
 		x_norm = norm_min + (x-x_min)/(x_max-x_min) * (norm_max-norm_min)
 		return x_norm
+
+	
+	def __transform_data(self, x, norm_min=0, norm_max=1):
+		""" Transform input data here or using a loaded scaler """
+
+		# - Print input data min/max
+		x_min= x.min(axis=0)
+		x_max= x.max(axis=0)
+
+		print("== INPUT DATA MIN/MAX ==")
+		print(x_min)
+		print(x_max)
+
+		if self.data_scaler is None:
+			# - Define and run scaler
+			logger.info("Define and running data scaler ...")
+			self.data_scaler= MinMaxScaler(feature_range=(norm_min, norm_max))
+			x_transf= self.data_scaler.fit_transform(x)
+
+			print("== TRANSFORM DATA MIN/MAX ==")
+			print(self.data_scaler.data_min_)
+			print(self.data_scaler.data_max_)
+
+			# - Save scaler to file
+			logger.info("Saving data scaler to file %s ..." % (self.outfile_scaler))
+			pickle.dump(self.data_scaler, open(self.outfile_scaler, 'wb'))
+			
+		else:
+			# - Transform data
+			logger.info("Transforming input data using loaded scaler ...")
+			x_transf = self.data_scaler.transform(x)
+
+		# - Print transformed data min/max
+		print("== TRANSFORMED DATA MIN/MAX ==")
+		x_transf_min= x_transf.min(axis=0)
+		x_transf_max= x_transf.max(axis=0)
+		print(x_transf_min)
+		print(x_transf_max)
+
+		return x_transf
+
 
 	def __reduce_data_dim(self, x, normalize=False):
 		""" Reduce input data dimensionality """
@@ -302,7 +350,11 @@ class Clusterer(object):
 		# - Normalize feature data?
 		if self.normalize:
 			logger.info("Normalizing feature data ...")
-			data_norm= self.__normalize_data(self.data, self.norm_min, self.norm_max)
+			#data_norm= self.__normalize_data(self.data, self.norm_min, self.norm_max)
+			data_norm= self.__transform_data(self.data, self.norm_min, self.norm_max)
+			if data_norm is None:
+				logger.error("Data transformation failed!")
+				return -1
 			self.data= data_norm
 
 		# - Apply dimensionality reduction?
@@ -371,7 +423,11 @@ class Clusterer(object):
 		# - Normalize feature data?
 		if self.normalize:
 			logger.info("Normalizing feature data ...")
-			data_norm= self.__normalize_data(self.data, self.norm_min, self.norm_max)
+			#data_norm= self.__normalize_data(self.data, self.norm_min, self.norm_max)
+			data_norm= self.__transform_data(self.data, self.norm_min, self.norm_max)
+			if data_norm is None:
+				logger.error("Data transformation failed!")
+				return -1
 			self.data= data_norm
 
 		# - Apply dimensionality reduction?
@@ -408,8 +464,20 @@ class Clusterer(object):
 	#####################################
 	##     PREDICT
 	#####################################
-	def run_predict(self, datafile, modelfile):
+	def run_predict(self, datafile, modelfile, scalerfile=''):
 		""" Run precit using input dataset """
+
+		#================================
+		#==   LOAD DATA SCALER
+		#================================
+		# - Load scaler from file?
+		if scalerfile!="":
+			logger.info("Loading data scaler from file %s ..." % (scalerfile))
+			try:
+				self.data_scaler= pickle.load(open(scalerfile, 'rb'))
+			except Exception as e:
+				logger.error("Failed to load data scaler from file %s!" % (scalerfile))
+				return -1
 
 		#================================
 		#==   LOAD DATA
@@ -443,8 +511,20 @@ class Clusterer(object):
 		return 0
 
 
-	def run_predict(self, data, class_ids=[], snames=[], modelfile=''):
+	def run_predict(self, data, class_ids=[], snames=[], modelfile='', scalerfile=''):
 		""" Run precit using input dataset """
+
+		#================================
+		#==   LOAD DATA SCALER
+		#================================
+		# - Load scaler from file?
+		if scalerfile!="":
+			logger.info("Loading data scaler from file %s ..." % (scalerfile))
+			try:
+				self.data_scaler= pickle.load(open(scalerfile, 'rb'))
+			except Exception as e:
+				logger.error("Failed to load data scaler from file %s!" % (scalerfile))
+				return -1
 
 		#================================
 		#==   LOAD DATA
@@ -538,8 +618,20 @@ class Clusterer(object):
 	#####################################
 	##     RUN CLUSTERING
 	#####################################
-	def run_clustering(self, datafile, modelfile=''):
+	def run_clustering(self, datafile, modelfile='', scalerfile=''):
 		""" Run clustering using input dataset """
+
+		#================================
+		#==   LOAD DATA SCALER
+		#================================
+		# - Load scaler from file?
+		if scalerfile!="":
+			logger.info("Loading data scaler from file %s ..." % (scalerfile))
+			try:
+				self.data_scaler= pickle.load(open(scalerfile, 'rb'))
+			except Exception as e:
+				logger.error("Failed to load data scaler from file %s!" % (scalerfile))
+				return -1
 
 		#================================
 		#==   LOAD DATA
@@ -579,8 +671,20 @@ class Clusterer(object):
 		return 0
 
 
-	def run_clustering(self, data, class_ids=[], snames=[], modelfile=''):
+	def run_clustering(self, data, class_ids=[], snames=[], modelfile='', scalerfile=''):
 		""" Run clustering using input dataset """
+
+		#================================
+		#==   LOAD DATA SCALER
+		#================================
+		# - Load scaler from file?
+		if scalerfile!="":
+			logger.info("Loading data scaler from file %s ..." % (scalerfile))
+			try:
+				self.data_scaler= pickle.load(open(scalerfile, 'rb'))
+			except Exception as e:
+				logger.error("Failed to load data scaler from file %s!" % (scalerfile))
+				return -1
 
 		#================================
 		#==   LOAD DATA
