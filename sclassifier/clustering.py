@@ -842,11 +842,16 @@ class Clusterer(object):
 		print(self.outlier_scores.shape)
 
 		clustered_data= np.concatenate(
-			(snames, objids, objlabels, self.labels.reshape(N,1), self.probs.reshape(N,1), self.outlier_scores.reshape(N,1)),
+			#(snames, objids, objlabels, self.labels.reshape(N,1), self.probs.reshape(N,1), self.outlier_scores.reshape(N,1)),
+			(snames, data_all, objids, objlabels, self.labels.reshape(N,1), self.probs.reshape(N,1), self.outlier_scores.reshape(N,1)),
 			axis=1
 		)
 
-		head= "# sname id label clust_id clust_prob outlier_score"
+		znames_counter= list(range(1,self.nfeatures+1))
+		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
+
+		#head= "# sname id label clust_id clust_prob outlier_score"
+		head= '{} {} {}'.format("# sname",znames,"id label clust_id clust_prob outlier_score")
 		Utils.write_ascii(clustered_data, self.outfile, head)	
 
 		#================================
