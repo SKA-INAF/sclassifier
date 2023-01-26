@@ -76,6 +76,9 @@ def get_args():
 	parser.add_argument('--predict_clust', dest='predict_clust', action='store_true',help='Only predict clustering according to current clustering model (default=false)')	
 	parser.set_defaults(predict_clust=False)
 
+	parser.add_argument('--draw', dest='draw', action='store_true',help='Draw plots (default=false)')	
+	parser.set_defaults(draw=False)
+
 	args = parser.parse_args()	
 
 	return args
@@ -116,6 +119,9 @@ def main():
 	modelfile_clust= args.modelfile_clust
 	predict_clust= args.predict_clust
 
+	# - Plot
+	draw= args.draw
+
 	#===========================
 	#==   READ FEATURE DATA
 	#===========================
@@ -140,6 +146,7 @@ def main():
 	clust_class.reduce_dim_method= reduce_dim_method
 	clust_class.pca_ncomps= pca_ncomps
 	clust_class.pca_varthr= pca_varthr
+	clust_class.draw= draw
 
 	status= 0
 	if predict_clust:

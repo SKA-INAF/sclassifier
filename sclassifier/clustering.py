@@ -131,6 +131,7 @@ class Clusterer(object):
 		# *****************************
 		# ** Draw
 		# *****************************
+		self.draw= False
 		self.classid_label_map= {
 			0: "UNKNOWN",
 			-1: "MIXED_TYPE",
@@ -594,23 +595,29 @@ class Clusterer(object):
 		snames= np.array(self.source_names).reshape(N,1)
 		objids= np.array(self.data_classids).reshape(N,1)	
 		clustered_data= np.concatenate(
-			(snames, objids, self.labels, self.probs),
+			(snames, self.data, objids, self.labels, self.probs),
+			#(snames, objids, self.labels, self.probs),
 			axis=1
 		)
 
-		head= "# sname id clustid clustprob"
+		znames_counter= list(range(1,self.nfeatures+1))
+		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
+
+		head= '{} {} {}'.format("# sname ",znames," id clust_id clust_prob")
+		#head= "# sname id clustid clustprob"
 		Utils.write_ascii(clustered_data, self.outfile, head)	
 
 		#================================
 		#==   PLOT
 		#================================
-		logger.info("Plotting results ...")
-		self.__plot_predict(
-			self.clusterer, 
-			self.data, self.labels, self.source_names, self.data_labels, 
-			self.prediction_data, self.prediction_extra_data, 
-			self.outfile_plot
-		)
+		if self.draw:
+			logger.info("Plotting results ...")
+			self.__plot_predict(
+				self.clusterer, 
+				self.data, self.labels, self.source_names, self.data_labels, 
+				self.prediction_data, self.prediction_extra_data, 
+				self.outfile_plot
+			)
 
 		return 0
 
@@ -843,7 +850,7 @@ class Clusterer(object):
 
 		clustered_data= np.concatenate(
 			#(snames, objids, objlabels, self.labels.reshape(N,1), self.probs.reshape(N,1), self.outlier_scores.reshape(N,1)),
-			(snames, data_all, objids, objlabels, self.labels.reshape(N,1), self.probs.reshape(N,1), self.outlier_scores.reshape(N,1)),
+			(snames, data_all, objids, self.labels.reshape(N,1), self.probs.reshape(N,1), self.outlier_scores.reshape(N,1)),
 			axis=1
 		)
 
@@ -851,7 +858,7 @@ class Clusterer(object):
 		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
 
 		#head= "# sname id label clust_id clust_prob outlier_score"
-		head= '{} {} {}'.format("# sname",znames,"id label clust_id clust_prob outlier_score")
+		head= '{} {} {}'.format("# sname ",znames," id clust_id clust_prob outlier_score")
 		Utils.write_ascii(clustered_data, self.outfile, head)	
 
 		#================================
@@ -873,12 +880,13 @@ class Clusterer(object):
 		#================================
 		#==   PLOT
 		#================================
-		logger.info("Plotting results ...")
-		self.__plot(
-			self.clusterer, 
-			data_all, source_names_all, data_labels_all, 
-			self.outfile_plot
-		)
+		if self.draw:
+			logger.info("Plotting results ...")
+			self.__plot(
+				self.clusterer, 
+				data_all, source_names_all, data_labels_all, 
+				self.outfile_plot
+			)
 
 		
 		return 0
