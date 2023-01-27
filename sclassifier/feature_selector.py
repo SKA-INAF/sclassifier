@@ -40,6 +40,11 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.svm import SVC
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
+
+from lightgbm import LGBMClassifier
+from lightgbm import early_stopping, log_evaluation, record_evaluation
+from lightgbm import plot_tree
 
 ## GRAPHICS MODULES
 import matplotlib
@@ -59,7 +64,7 @@ from .data_loader import SourceData
 class FeatSelector(object):
 	""" Feature selector class """
 	
-	def __init__(self):
+	def __init__(self, multiclass=True):
 		""" Return a FeatSelector object """
 
 		# - Input data
@@ -97,6 +102,8 @@ class FeatSelector(object):
 		self.selfeatids= []
 		self.auto_selection= True
 		self.max_depth= None
+		self.min_samples_split= 2
+		self.min_samples_leaf= 1
 		self.n_estimators= 100
 		self.classifier_inventory= {}
 		self.classifier= 'DecisionTreeClassifier'
@@ -107,37 +114,52 @@ class FeatSelector(object):
 		self.pipelines= []
 		self.cv= None
 		
+		# - LGBM custom options
+		self.early_stop_round= 10
+		self.metric_lgbm= 'multi_logloss'
+		self.lgbm_eval_dict= {}
+		self.balance_classes= False	
+		self.learning_rate= 0.1
+		#self.criterion= 'gini'
+		self.num_leaves= 31
+		self.niters= 100
+
+		# - Set target labels
+		#self.classid_remap= {
+		#	0: -1,
+		#	-1: -1,
+		#	1: 4,
+		#	2: 5,
+		#	3: 0,
+		#	6: 1,
+		#	23: 2,
+		#	24: 3,			
+		#	6000: 6,
+		#}
+
+		#self.classid_label_map= {
+		#	0: "UNKNOWN",
+		#	-1: "MIXED_TYPE",
+		#	1: "STAR",
+		#	2: "GALAXY",
+		#	3: "PN",
+		#	6: "HII",
+		#	23: "PULSAR",
+		#	24: "YSO",			
+		#	6000: "QSO",
+		#}
+
+		self.multiclass= multiclass
+		self.__set_target_labels(multiclass)
 
 		# *****************************
 		# ** Pre-processing
 		# *****************************
-		self.normalize= False
+		self.normalize= False	
+		self.data_scaler= None
 		self.norm_min= 0
 		self.norm_max= 1
-
-		self.classid_remap= {
-			0: -1,
-			-1: -1,
-			1: 4,
-			2: 5,
-			3: 0,
-			6: 1,
-			23: 2,
-			24: 3,			
-			6000: 6,
-		}
-
-		self.classid_label_map= {
-			0: "UNKNOWN",
-			-1: "MIXED_TYPE",
-			1: "STAR",
-			2: "GALAXY",
-			3: "PN",
-			6: "HII",
-			23: "PULSAR",
-			24: "YSO",			
-			6000: "QSO",
-		}
+		
 
 		# *****************************
 		# ** Output
@@ -147,20 +169,182 @@ class FeatSelector(object):
 		self.outfile_scorestats= 'featscores.dat'
 		self.outfile_selfeat= 'selfeatids.dat'
 
+
 	#####################################
-	##     BUILD PIPELINE
+	##     CREATE CLASS LABELS
+	#####################################
+	def __set_target_labels(self, multiclass=True):
+		""" Create class labels """
+
+		if multiclass:
+			logger.info("Setting multi class targets ...")
+
+			self.nclasses= 7
+
+			self.classid_remap= {
+				0: -1,
+				1: 4,
+				2: 5,
+				3: 0,
+				6: 1,
+				23: 2,
+				24: 3,			
+				6000: 6,
+			}
+
+			self.target_label_map= {
+				-1: "UNKNOWN",
+				0: "PN",
+				1: "HII",
+				2: "PULSAR",
+				3: "YSO",
+				4: "STAR",
+				5: "GALAXY",
+				6: "QSO",
+			}
+
+			self.classid_label_map= {
+				0: "UNKNOWN",
+				1: "STAR",
+				2: "GALAXY",
+				3: "PN",
+				6: "HII",
+				23: "PULSAR",
+				24: "YSO",			
+				6000: "QSO",
+			}
+
+			self.target_names= ["PN","HII","PULSAR","YSO","STAR","GALAXY","QSO"]
+	
+		else: # binary (GAL vs EGAL)
+
+			self.nclasses= 2
+
+			logger.info("Setting binary class targets ...")
+			self.classid_remap= {
+				0: -1,
+				1: 1,
+				2: 0,
+				3: 1,
+				6: 1,
+				23: 1,
+				24: 1,			
+				6000: 0,
+			}
+
+			self.target_label_map= {
+				-1: "UNKNOWN",
+				0: "EGAL",
+				1: "GAL",
+			}
+
+			self.classid_label_map= {
+				0: "UNKNOWN",
+				1: "GAL",
+				2: "EGAL",
+				3: "GAL",
+				6: "GAL",
+				23: "GAL",
+				24: "GAL",			
+				6000: "EGAL",
+			}
+
+			self.target_names= ["EGAL","GAL"]
+				
+
+		self.classid_remap_inv= {v: k for k, v in self.classid_remap.items()}
+		self.classid_label_map_inv= {v: k for k, v in self.classid_label_map.items()}
+
+		
+
+
+	#####################################
+	##     CREATE CLASSIFIER
 	#####################################
 	def __create_classifier_inventory(self):
 		""" Create classifier inventory """
 
+		# - Set LGBM classifier
+		max_depth_lgbm= self.max_depth
+		if max_depth_lgbm is None:
+			max_depth_lgbm= -1
+
+		if self.multiclass:
+			objective_lgbm= 'multiclass'
+			self.metric_lgbm= 'multi_logloss'
+			
+			class_weight= None
+			if self.balance_classes:
+				class_weight= 'balanced'
+
+			lgbm= LGBMClassifier(
+				#n_estimators=self.n_estimators, 
+				max_depth=max_depth_lgbm, 
+				min_data_in_leaf=self.min_samples_leaf, 
+				num_leaves=self.num_leaves,
+				learning_rate=self.learning_rate,
+				num_iterations=self.niters,
+				objective=objective_lgbm,
+				metric=self.metric_lgbm,
+				is_provide_training_metric=True,
+				boosting_type='gbdt',
+				class_weight=class_weight,
+				verbose=1
+				#num_class=self.nclasses
+			)
+
+		else:
+			objective_lgbm= 'binary'
+			self.metric_lgbm= 'binary_logloss'
+
+			is_unbalance= False
+			if self.balance_classes:
+				is_unbalance= True
+
+			lgbm= LGBMClassifier(
+				#n_estimators=self.n_estimators, 
+				max_depth=max_depth_lgbm, 
+				min_data_in_leaf=self.min_samples_leaf, 
+				num_leaves=self.num_leaves,
+				learning_rate=self.learning_rate,
+				num_iterations=self.niters,
+				objective=objective_lgbm,
+				metric=self.metric_lgbm,
+				is_provide_training_metric=True,
+				boosting_type='gbdt',
+				is_unbalance=is_unbalance,
+				verbose=1
+				#num_class=self.nclasses
+			)
+
+		# - Set DecisionTree classifier
+		dt= DecisionTreeClassifier(
+			max_depth=self.max_depth, 
+			min_samples_split=self.min_samples_split, 
+			min_samples_leaf=self.min_samples_leaf
+		)
+
+		# - Set RandomForest classifier
+		rf= RandomForestClassifier(
+			max_depth=self.max_depth, 
+			min_samples_split=self.min_samples_split, 
+			min_samples_leaf=self.min_samples_leaf, 
+			n_estimators=self.n_estimators, 
+			max_features=1
+		)
+
+
 		self.classifier_inventory= {
-			"DecisionTreeClassifier": DecisionTreeClassifier(max_depth=self.max_depth),
-			"RandomForestClassifier": RandomForestClassifier(max_depth=self.max_depth, n_estimators=self.n_estimators, max_features=1),
+			#"DecisionTreeClassifier": DecisionTreeClassifier(max_depth=self.max_depth),
+			#"RandomForestClassifier": RandomForestClassifier(max_depth=self.max_depth, n_estimators=self.n_estimators, max_features=1),
+			"DecisionTreeClassifier": dt,
+			"RandomForestClassifier": rf,
 			"GradientBoostingClassifier": GradientBoostingClassifier(),
 			"MLPClassifier": MLPClassifier(alpha=1, max_iter=1000),
 			#"SVC": SVC(gamma=2, C=1),
 			"SVC": SVC(),
-			"QuadraticDiscriminantAnalysis": QuadraticDiscriminantAnalysis()
+			"QuadraticDiscriminantAnalysis": QuadraticDiscriminantAnalysis(),
+			"LGBMClassifier": lgbm
     }
 
 
@@ -169,12 +353,16 @@ class FeatSelector(object):
 		
 		# - Check if model type exists in classifier inventory
 		if self.classifier not in self.classifier_inventory:
+			logger.error("Chosen classifier (%s) is not in the inventory, returning None!" % (self.classifier))
 			return None
 
 		# - Return classifier
 		return self.classifier_inventory[self.classifier]
 		
 
+	#####################################
+	##     CREATE PIPELINE
+	#####################################
 	def __create_pipeline(self):
 		""" Build the feature selector pipeline """
 
@@ -356,6 +544,46 @@ class FeatSelector(object):
 		x_norm = norm_min + (x-x_min)/(x_max-x_min) * (norm_max-norm_min)
 		return x_norm
 
+	def __transform_data(self, x, norm_min=0, norm_max=1):
+		""" Transform input data here or using a loaded scaler """
+
+		# - Print input data min/max
+		x_min= x.min(axis=0)
+		x_max= x.max(axis=0)
+
+		print("== INPUT DATA MIN/MAX ==")
+		print(x_min)
+		print(x_max)
+
+		if self.data_scaler is None:
+			# - Define and run scaler
+			logger.info("Define and running data scaler ...")
+			self.data_scaler= MinMaxScaler(feature_range=(norm_min, norm_max))
+			x_transf= self.data_scaler.fit_transform(x)
+
+			print("== TRANSFORM DATA MIN/MAX ==")
+			print(self.data_scaler.data_min_)
+			print(self.data_scaler.data_max_)
+
+			# - Save scaler to file
+			logger.info("Saving data scaler to file %s ..." % (self.outfile_scaler))
+			pickle.dump(self.data_scaler, open(self.outfile_scaler, 'wb'))
+			
+		else:
+			# - Transform data
+			logger.info("Transforming input data using loaded scaler ...")
+			x_transf = self.data_scaler.transform(x)
+
+		# - Print transformed data min/max
+		print("== TRANSFORMED DATA MIN/MAX ==")
+		x_transf_min= x_transf.min(axis=0)
+		x_transf_max= x_transf.max(axis=0)
+		print(x_transf_min)
+		print(x_transf_max)
+
+		
+		return x_transf
+
 
 	def __set_preclass_data(self):
 		""" Set pre-classified data """
@@ -446,10 +674,15 @@ class FeatSelector(object):
 		self.nfeatures= data_shape[1]
 		logger.info("#nsamples=%d, #nfeatures=%d" % (self.nsamples, self.nfeatures))
 		
+		
 		# - Normalize feature data?
 		if self.normalize:
 			logger.info("Normalizing feature data ...")
-			data_norm= self.__normalize_data(self.data, self.norm_min, self.norm_max)
+			#data_norm= self.__normalize_data(self.data, self.norm_min, self.norm_max)
+			data_norm= self.__transform_data(self.data, self.norm_min, self.norm_max)
+			if data_norm is None:
+				logger.error("Data transformation failed!")
+				return -1
 			self.data= data_norm
 
 		# - Set pre-classified data
@@ -518,7 +751,11 @@ class FeatSelector(object):
 		# - Normalize feature data?
 		if self.normalize:
 			logger.info("Normalizing feature data ...")
-			data_norm= self.__normalize_data(self.data, self.norm_min, self.norm_max)
+			#data_norm= self.__normalize_data(self.data, self.norm_min, self.norm_max)
+			data_norm= self.__transform_data(self.data, self.norm_min, self.norm_max)
+			if data_norm is None:
+				logger.error("Data transformation failed!")
+				return -1
 			self.data= data_norm
 
 		# - Set pre-classified data
@@ -572,9 +809,21 @@ class FeatSelector(object):
 	#####################################
 	##     RUN
 	#####################################
-	def run(self, datafile):
+	def run(self, datafile, scalerfile=''):
 		""" Run feature selection """
 		
+		#================================
+		#==   LOAD DATA SCALER
+		#================================
+		# - Load scaler from file?
+		if scalerfile!="":
+			logger.info("Loading data scaler from file %s ..." % (scalerfile))
+			try:
+				self.data_scaler= pickle.load(open(scalerfile, 'rb'))
+			except Exception as e:
+				logger.error("Failed to load data scaler from file %s!" % (scalerfile))
+				return -1
+
 		#================================
 		#==   LOAD DATA
 		#================================
@@ -607,8 +856,20 @@ class FeatSelector(object):
 
 
 
-	def run(self, data, class_ids=[], snames=[]):
+	def run(self, data, class_ids=[], snames=[], scalerfile=''):
 		""" Run feature selection using input dataset """
+
+		#================================
+		#==   LOAD DATA SCALER
+		#================================
+		# - Load scaler from file?
+		if scalerfile!="":
+			logger.info("Loading data scaler from file %s ..." % (scalerfile))
+			try:
+				self.data_scaler= pickle.load(open(scalerfile, 'rb'))
+			except Exception as e:
+				logger.error("Failed to load data scaler from file %s!" % (scalerfile))
+				return -1
 
 		#================================
 		#==   LOAD DATA
@@ -677,9 +938,21 @@ class FeatSelector(object):
 		return 0
 
 
-	def select_from_file(self, datafile, selcols):
+	def select_from_file(self, datafile, selcols, scalerfile=''):
 		""" Select data columns provided in selcols list """
 		
+		#================================
+		#==   LOAD DATA SCALER
+		#================================
+		# - Load scaler from file?
+		if scalerfile!="":
+			logger.info("Loading data scaler from file %s ..." % (scalerfile))
+			try:
+				self.data_scaler= pickle.load(open(scalerfile, 'rb'))
+			except Exception as e:
+				logger.error("Failed to load data scaler from file %s!" % (scalerfile))
+				return -1
+
 		#================================
 		#==   LOAD DATA
 		#================================
@@ -710,8 +983,20 @@ class FeatSelector(object):
 
 		return 0
 
-	def select(self, data, selcols, class_ids=[], snames=[]):
+	def select(self, data, selcols, class_ids=[], snames=[], scalerfile=''):
 		""" Select data columns provided in selcols list """
+
+		#================================
+		#==   LOAD DATA SCALER
+		#================================
+		# - Load scaler from file?
+		if scalerfile!="":
+			logger.info("Loading data scaler from file %s ..." % (scalerfile))
+			try:
+				self.data_scaler= pickle.load(open(scalerfile, 'rb'))
+			except Exception as e:
+				logger.error("Failed to load data scaler from file %s!" % (scalerfile))
+				return -1
 
 		#================================
 		#==   LOAD DATA
