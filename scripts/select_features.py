@@ -117,6 +117,7 @@ def main():
 
 	# - Data pre-processing
 	normalize= args.normalize
+	scalerfile= args.scalerfile
 
 	# - Model options
 	classifier= args.classifier
