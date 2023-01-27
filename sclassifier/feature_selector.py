@@ -168,7 +168,7 @@ class FeatSelector(object):
 		self.outfile_scores= 'featscores.png'
 		self.outfile_scorestats= 'featscores.dat'
 		self.outfile_selfeat= 'selfeatids.dat'
-
+		self.outfile_scaler = 'datascaler.sav'
 
 	#####################################
 	##     CREATE CLASS LABELS
