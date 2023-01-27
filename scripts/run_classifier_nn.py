@@ -175,8 +175,8 @@ def get_args():
 
 	parser.add_argument('--balance_classes_in_batch', dest='balance_classes_in_batch', action='store_true',help='Balance classes in batch generation')	
 	parser.set_defaults(balance_classes_in_batch=False)
-	parser.add_argument('--class_probs', dest='class_probs', required=False, type=str, default='', help='Class probs used in batch class resampling. If rand<prob accept generated data.') 
-	
+	##parser.add_argument('--class_probs', dest='class_probs', required=False, type=str, default='', help='Class probs used in batch class resampling. If rand<prob accept generated data.') 
+	parser.add_argument('--class_probs', dest='class_probs', required=False, type=str, default='{"PN":1,"HII":1,"PULSAR":1,"YSO":1,"STAR":1,"GALAXY":1,"QSO":1}', help='Class weights used in batch rebalance') 
 
 	# - Network architecture options
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
@@ -350,11 +350,20 @@ def main():
 	multiprocessing= args.multiprocessing
 
 	balance_classes_in_batch= args.balance_classes_in_batch
+	
+	#class_probs_dict= {}
+	#if args.class_probs!="":
+	#	class_probs= [float(x.strip()) for x in args.class_probs.split(',')]
+	#	for i in range(len(class_probs)):
+	#		class_probs_dict[i]= class_probs[i]
+
 	class_probs_dict= {}
 	if args.class_probs!="":
-		class_probs= [float(x.strip()) for x in args.class_probs.split(',')]
-		for i in range(len(class_probs)):
-			class_probs_dict[i]= class_probs[i]
+		try:
+			class_probs_dict= json.loads(args.class_probs)
+		except Exception as e:
+			logger.error("Failed to convert class prob string to dict (err=%s)!" % (str(e)))
+			return -1	
 
 		print("== class_probs ==")
 		print(class_probs_dict)

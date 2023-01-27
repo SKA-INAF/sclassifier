@@ -430,6 +430,9 @@ class FeatSelector(object):
 			logger.error("Failed to create pipeline and model!")
 			return -1
 
+		# - Set fit params
+		#fit_params
+
 		# - Evaluate models
 		logger.info("Evaluating models as a function of #features ...")
 		#results, nfeats = list(), list()
