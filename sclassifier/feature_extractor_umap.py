@@ -110,6 +110,7 @@ class FeatExtractorUMAP(object):
 		# *****************************
 		# ** Draw
 		# *****************************
+		self.draw= False
 		self.marker_mapping= {}
 		self.marker_color_mapping= {}
 
@@ -535,8 +536,9 @@ class FeatExtractorUMAP(object):
 		#================================
 		#==   PLOT
 		#================================
-		logger.info("Plotting results ...")
-		self.plot()
+		if self.draw:
+			logger.info("Plotting results ...")
+			self.plot()
 
 		return 0
 
@@ -698,8 +700,9 @@ class FeatExtractorUMAP(object):
 		#================================
 		#==   PLOT
 		#================================
-		logger.info("Plotting results ...")
-		self.plot()
+		if self.draw:
+			logger.info("Plotting results ...")
+			self.plot()
 
 		return 0
 

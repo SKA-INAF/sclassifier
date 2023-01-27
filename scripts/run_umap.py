@@ -76,6 +76,9 @@ def get_args():
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Only predict data according to loaded UMAP model (default=false)')	
 	parser.set_defaults(predict=False)
 
+	parser.add_argument('--draw', dest='draw', action='store_true',help='Draw plots (default=false)')	
+	parser.set_defaults(draw=False)
+
 	args = parser.parse_args()	
 
 	return args
@@ -117,6 +120,9 @@ def main():
 	modelfile_umap= args.modelfile_umap
 	predict= args.predict
 
+	# - Draw options
+	draw= args.draw
+
 	#===========================
 	#==   READ FEATURE DATA
 	#===========================
@@ -140,6 +146,7 @@ def main():
 	umap_class.set_encoded_data_dim(latentdim_umap)
 	umap_class.set_min_dist(mindist_umap)
 	umap_class.set_n_neighbors(nneighbors_umap)
+	umap_class.draw= draw
 
 	status= 0
 	if predict:
