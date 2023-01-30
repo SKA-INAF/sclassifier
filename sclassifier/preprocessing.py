@@ -965,7 +965,6 @@ class ZScaleTransformer(object):
 
 		self.contrasts= contrasts
 		
-
 	def __call__(self, data):
 		""" Apply transformation and return transformed data """
 

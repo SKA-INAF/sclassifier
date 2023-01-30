@@ -434,7 +434,7 @@ def main():
 		preprocess_stages.append(LogStretcher(chid=log_transform_chid, minmaxnorm=log_transform_minmaxnorm, data_norm_min=log_transform_normmin, data_norm_max=log_transform_normmax, clip_neg=log_transform_clipneg))
 
 	if zscale_stretch:
-		preprocess_stages.append(ZScaleTransformer(constrasts=zscale_contrasts))
+		preprocess_stages.append(ZScaleTransformer(contrasts=zscale_contrasts))
 
 	if erode:
 		preprocess_stages.append(MaskShrinker(kernel=erode_kernel))
