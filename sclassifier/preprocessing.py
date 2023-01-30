@@ -977,11 +977,7 @@ class ZScaleTransformer(object):
 
 		# - Check constrast dim vs nchans
 		nchans= data.shape[-1]
-		print("len(self.contrasts)")
-		print(len(self.contrasts))
-		print("nchans")
-		print(nchans)
-
+	
 		if len(self.contrasts)<nchans:
 			logger.error("Invalid constrasts given (constrast list size=%d < nchans=%d)" % (len(self.contrasts), nchans))
 			return None
@@ -1042,20 +1038,10 @@ class ChanResizer(object):
 		
 		expanding= self.nchans>nchans_curr
 
-		print("data_shape")
-		print(data.shape)
-		print("nchans_curr=%d" % (nchans_curr))
-
 		# - Expand array first?
 		#   NB: If 2D first create an extra dimension
 		if ndim_curr==2:
 			data= np.expand_dims(data, axis=data.shape[-1]-1)
-
-		# - Resize data		
-		#data_resized= np.resize(data, (data.shape[0], data.shape[1], self.nchans))
-		
-		#print("data_resized shape")
-		#print(data_resized.shape)
 
 		# - Copy last channel in new ones
 		data_resized= np.zeros((data.shape[0], data.shape[1], self.nchans))
