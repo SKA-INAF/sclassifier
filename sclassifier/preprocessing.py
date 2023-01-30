@@ -24,6 +24,7 @@ import json
 ## ASTROPY MODULES 
 from astropy.io import ascii
 from astropy.stats import sigma_clipped_stats
+from astropy.visualization import ZScaleInterval
 
 ## SKIMAGE
 from skimage.util import img_as_float64
@@ -682,10 +683,10 @@ class BkgSubtractor(object):
 
 
 ##############################
-##   SigmaClipper
+##   SigmaClipShifter
 ##############################
-class SigmaClipper(object):
-	""" Clip all pixels below input sigma """
+class SigmaClipShifter(object):
+	""" Shift all pixels to new zero value equal to mean+(sigma*std) and clip values below this zero """
 
 	def __init__(self, sigma=1.0, chid=-1, **kwparams):
 		""" Create a data pre-processor object """
@@ -700,12 +701,17 @@ class SigmaClipper(object):
 		cond= np.logical_and(data!=0, np.isfinite(data))
 		data_1d= data[cond]
 
-		# - Clip all pixels that are below sigma clip
-		logger.debug("Clipping all pixels below %f sigma ..." % (self.sigma))
-		clipmean, _, _ = sigma_clipped_stats(data_1d, sigma=self.sigma)
+		# - Clip all pixels that are below sigma clip (considered noise)
+		#   NB: Following Galvin et al, PASA 131, 1 (2019)
+		logger.debug("Clipping all pixels below (mean + %f x stddev) ..." % (self.sigma))
+		clipmean, median, stddev = sigma_clipped_stats(data_1d, sigma=self.sigma)
+
+		newzero= clipmean + self.sigma*stddev
 
 		data_clipped= np.copy(data)
-		data_clipped[data_clipped<clipmean]= clipmean
+		#data_clipped[data_clipped<clipmean]= clipmean #### CHECK!!! PROBABLY WRONG!!!
+		data_clipped-= newzero
+		data_clipped[data_clipped<0]= 0
 		data_clipped[~cond]= 0
 		cond_clipped= np.logical_and(data_clipped!=0, np.isfinite(data_clipped))
 		data_clipped_1d= data_clipped[cond_clipped]
@@ -735,6 +741,58 @@ class SigmaClipper(object):
 		return data_clipped
 
 
+##############################
+##   SigmaClipper
+##############################
+class SigmaClipper(object):
+	""" Clip all pixels below zlow=mean-(sigma_low*std) and above zhigh=mean + (sigma_up*std) """
+
+	def __init__(self, sigma_low=10.0, sigma_up=10.0, chid=-1, **kwparams):
+		""" Create a data pre-processor object """
+
+		# - Set parameters
+		self.sigma_low= sigma_low
+		self.sigma_up= sigma_up
+		self.chid= chid # -1=do for all channels, otherwise clip only selected channel
+
+	def __clip(self, data):
+		""" Clip channel input """
+
+		cond= np.logical_and(data!=0, np.isfinite(data))
+		data_1d= data[cond]
+
+		# - Clip all pixels that are below sigma clip
+		logger.debug("Clipping all pixel values <(mean - %f x stddev) and >(mean + %f x stddev) ..." % (self.sigma_low, self.sigma_up))
+		res= sigma_clip(data_1d, sigma_lower=self.sigma_low, sigma_upper=self.sigma_up, masked=True, return_bounds=True)
+		thr_low= res[1]
+		thr_up= res[2]
+
+		data_clipped= np.copy(data)
+		data_clipped[data_clipped<thr_low]= thr_low
+		data_clipped[data_clipped>thr_up]= thr_up
+		data_clipped[~cond]= 0
+		
+		return data_clipped 
+		
+
+	def __call__(self, data):
+		""" Apply transformation and return transformed data """
+			
+		# - Check data
+		if data is None:
+			logger.error("Input data is None!")
+			return None
+
+		# - Loop over channels and get bgsub data
+		data_clipped= np.copy(data)
+
+		for i in range(data.shape[-1]):
+			if self.chid!=-1 and i!=self.chid:
+				continue	
+			data_ch_clipped= self.__clip(data[:,:,i])
+			data_clipped[:,:,i]= data_ch_clipped
+
+		return data_clipped
 
 ##############################
 ##   Resizer
@@ -895,6 +953,97 @@ class ChanDivider(object):
 			
 		return data_norm
 
+
+##############################
+##   ZScaleTransformer
+##############################
+class ZScaleTransformer(object):
+	""" Apply zscale transformation to each channel """
+
+	def __init__(self, constrasts=[0.25,0.25,0.25], **kwparams):
+		""" Create a data pre-processor object """
+
+		self.constrasts= constrasts
+		
+
+	def __call__(self, data):
+		""" Apply transformation and return transformed data """
+
+		# - Check data
+		if data is None:
+			logger.error("Input data is None!")
+			return None
+
+		cond= np.logical_and(data!=0, np.isfinite(data))
+
+		# - Check constrast dim vs nchans
+		nchans= data.shape[-1]
+		if len(self.contrasts)<nchans:
+			logger.error("Invalid constrasts given (constrast list size=%d < nchans=%d)" % (len(self.contrasts), nchans))
+			return None
+		
+		# - Transform each channel
+		data_stretched= np.copy(data)
+
+		for i in range(data.shape[-1]):
+			data_ch= data_stretched[:,:,i]
+			transform= ZScaleInterval(contrast=contrasts[i]) # able to handle NANs
+    	data_transf= transform(data_ch)
+			data_stretched[:,:,i]= data_transf
+
+		# - Scale data
+		data_stretched[~cond]= 0 # Restore 0 and nans set in original data
+
+		return data_scaled
+
+
+##############################
+##   ChanResizer
+##############################
+class ChanResizer(object):
+	""" ChanResizer modifies the number of channels until reaching desidered value. Replicate last channel when expanding. """
+
+	def __init__(self, nchans, **kwparams):
+		""" Create a data pre-processor object """
+
+		self.nchans= nchans
+		self.nchans_max= 1000
+		
+
+	def __call__(self, data):
+		""" Apply transformation and return transformed data """
+
+		# - Check data
+		if data is None:
+			logger.error("Input data is None!")
+			return None
+
+		cond= np.logical_and(data!=0, np.isfinite(data))
+
+		# - Check nchans given
+		nchans_curr= data.shape[-1]
+		if self.nchans>self.nchans_max or self.nchans<=0:
+			logger.error("Invalid channel specified or too many channels desired (%d) (hint: the maximum is %d)!" % (self.nchans, self.nchans_max))
+			return None
+
+		if self.nchans==nchans_curr:
+			logger.debug("Desired number of channels equal to current, nothing to be done...")
+			return data
+		
+		expanding= self.nchans>nchans_curr
+
+		# - Resize data
+		data_resized= np.resize(data, (data.shape[0], data.shape[1], self.nchans))
+		
+		# - Copy last channel in new ones
+		if expanding:
+			for i in range(self.nchans):
+				if i<nchans_curr:
+					continue
+				data_resized[:,:,i]= data_resized[:,:,nchans_curr-1]	
+				
+
+		return data_resized
 
 
 ##############################

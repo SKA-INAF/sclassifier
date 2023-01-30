@@ -42,10 +42,10 @@ from sclassifier.feature_extractor_umap import FeatExtractorUMAP
 from sclassifier.clustering import Clusterer
 from sclassifier.data_generator import DataGenerator
 from sclassifier.preprocessing import DataPreprocessor
-from sclassifier.preprocessing import BkgSubtractor, SigmaClipper, Scaler, LogStretcher, Augmenter
+from sclassifier.preprocessing import BkgSubtractor, SigmaClipper, SigmaClipShifter, Scaler, LogStretcher, Augmenter
 from sclassifier.preprocessing import Resizer, MinMaxNormalizer, AbsMinMaxNormalizer, MaxScaler, AbsMaxScaler, ChanMaxScaler
 from sclassifier.preprocessing import Shifter, Standardizer, ChanDivider, MaskShrinker, BorderMasker
-
+from sclassifier.preprocessing import ChanResizer, ZScaleTransformer
 
 #### GET SCRIPT ARGS ####
 def str2bool(v):
@@ -139,14 +139,27 @@ def get_args():
 	parser.add_argument('-bkg_box_mask_fract', '--bkg_box_mask_fract', dest='bkg_box_mask_fract', required=False, type=float, default=0.7, action='store',help='Size of mask box dimensions with respect to image size used in bkg calculation (default=0.7)')
 	parser.add_argument('-bkg_chid', '--bkg_chid', dest='bkg_chid', required=False, type=int, default=-1, action='store',help='Channel to subtract background (-1=all) (default=-1)')
 
+	parser.add_argument('--clip_shift_data', dest='clip_shift_data', action='store_true',help='Do sigma clipp shifting')	
+	parser.set_defaults(clip_shift_data=False)
+	parser.add_argument('-sigma_clip', '--sigma_clip', dest='sigma_clip', required=False, type=float, default=1, action='store',help='Sigma threshold to be used for clip & shifting pixels (default=1)')
 	parser.add_argument('--clip_data', dest='clip_data', action='store_true',help='Do sigma clipping')	
 	parser.set_defaults(clip_data=False)
-	parser.add_argument('-sigma_clip', '--sigma_clip', dest='sigma_clip', required=False, type=float, default=1, action='store',help='Sigma threshold to be used for clipping pixels (default=1)')
+	parser.add_argument('-sigma_clip_low', '--sigma_clip_low', dest='sigma_clip_low', required=False, type=float, default=10, action='store',help='Lower sigma threshold to be used for clipping pixels below (mean-sigma_low*stddev) (default=10)')
+	parser.add_argument('-sigma_clip_up', '--sigma_clip_up', dest='sigma_clip_up', required=False, type=float, default=10, action='store',help='Upper sigma threshold to be used for clipping pixels above (mean+sigma_up*stddev) (default=10)')	
 	parser.add_argument('-clip_chid', '--clip_chid', dest='clip_chid', required=False, type=int, default=-1, action='store',help='Channel to clip data (-1=all) (default=-1)')
 
 	parser.add_argument('--mask_borders', dest='mask_borders', action='store_true',help='Mask image borders by desired width/height fraction')
 	parser.set_defaults(mask_borders=False)
 	parser.add_argument('-mask_border_fract', '--mask_border_fract', dest='mask_border_fract', required=False, type=float, default=0.7, action='store',help='Size of non-masked box dimensions with respect to image size (default=0.7)')
+
+	parser.add_argument('--resize_chans', dest='resize_chans', action='store_true',help='Resize channels to desired number specified in nchan_resize')	
+	parser.set_defaults(resize_chans=False)
+	parser.add_argument('-nchan_resize', '--nchan_resize', dest='nchan_resize', required=False, type=int, default=3, action='store',help='Desired number of channels for resizing (default=3)')
+
+	parser.add_argument('--zscale_stretch', dest='zscale_stretch', action='store_true',help='Do zscale transform')	
+	parser.set_defaults(zscale_stretch=False)
+	parser.add_argument('--zscale_contrasts', dest='zscale_contrasts', required=False, type=str, default='0.25,0.25,0.25',help='zscale contrasts applied to all channels') 
+	
 
 	# - Network training options
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
@@ -329,11 +342,21 @@ def main():
 	use_box_mask_in_bkg= args.use_box_mask_in_bkg
 	bkg_box_mask_fract= args.bkg_box_mask_fract
 	bkg_chid= args.bkg_chid
+	clip_shift_data= args.clip_shift_data
 	clip_data= args.clip_data
 	sigma_clip= args.sigma_clip
+	sigma_clip_low= args.sigma_clip_low
+	sigma_clip_up= args.sigma_clip_up
 	clip_chid= args.clip_chid
 	mask_borders= args.mask_borders
 	mask_border_fract= args.mask_border_fract
+
+	resize_chans= args.resize_chans
+	nchan_resize= args.nchan_resize
+
+	zscale_stretch= args.zscale_stretch
+	zscale_contrasts= [float(x) for x in args.zscale_contrasts.split(',')]
+
 
 	# - NN architecture
 	use_vae= args.use_vae
@@ -425,22 +448,30 @@ def main():
 	#==  CREATE DATA PRE-PROCESSOR
 	#===============================
 	# - Pre-process stage order
-	#   1) Bkg sub
-	#   2) Sigma clip
-	#   3) Scale
-	#   4) Stretch (e.g. log transform)
-	#   5) Mask ops (shrinker, border masking)
-	#   6) Augmentation
-	#   7) Resize
-	#   8) min/max (abs) norm, standardize, mean shift
+	#   1) Channel resizer 
+	#   2) Bkg sub
+	#   3) Sigma clip/shift
+	#   4) Scale
+	#   5) Stretch (e.g. log transform, zscale)
+	#   6) Mask ops (shrinker, border masking)
+	#   7) Augmentation
+	#   8) Resize
+	#   9) min/max (abs) norm, standardize, mean shift
 	logger.info("Create train data pre-processor ...")
 	preprocess_stages= []
+
+	if resize_chans:
+		preprocess_stages.append(ChanResizer(nchans=nchan_resize))
 
 	if subtract_bkg:
 		preprocess_stages.append(BkgSubtractor(sigma=sigma_bkg, use_mask_box=use_box_mask_in_bkg, mask_fract=bkg_box_mask_fract, chid=bkg_chid))
 
+	if clip_shift_data:
+		preprocess_stages.append(SigmaClipShifter(sigma=sigma_clip, chid=clip_chid))
+
 	if clip_data:
-		preprocess_stages.append(SigmaClipper(sigma=sigma_clip, chid=clip_chid))
+		preprocess_stages.append(SigmaClipper(sigma_low=sigma_clip_low, sigma_up=sigma_clip_up, chid=clip_chid))
+
 
 	if scale_to_abs_max:
 		preprocess_stages.append(AbsMaxScaler(use_mask_box=use_box_mask_in_chan_max_scaler, mask_fract=chan_max_scaler_box_mask_fract))
@@ -453,6 +484,9 @@ def main():
 
 	if log_transform:
 		preprocess_stages.append(LogStretcher(chid=log_transform_chid, minmaxnorm=log_transform_minmaxnorm, data_norm_min=log_transform_normmin, data_norm_max=log_transform_normmax, clip_neg=log_transform_clipneg))
+
+	if zscale_stretch:
+		preprocess_stages.append(ZScaleTransformer(constrasts=zscale_contrasts))
 
 	if erode:
 		preprocess_stages.append(MaskShrinker(kernel=erode_kernel))
