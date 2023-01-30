@@ -988,7 +988,7 @@ class ZScaleTransformer(object):
 		for i in range(data.shape[-1]):
 			data_ch= data_stretched[:,:,i]
 			transform= ZScaleInterval(contrast=contrasts[i]) # able to handle NANs
-    	data_transf= transform(data_ch)
+			data_transf= transform(data_ch)
 			data_stretched[:,:,i]= data_transf
 
 		# - Scale data
