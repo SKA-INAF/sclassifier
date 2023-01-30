@@ -272,10 +272,10 @@ class Clusterer(object):
 			x_transf= self.pca.transform(x)
 
 		logger.info("=> PCA variance ratio")
-		print(pca.explained_variance_ratio_)
+		print(self.pca.explained_variance_ratio_)
 
 		#logger.info("=> PCA singular values")
-		#print(pca.singular_values_)
+		#print(self.pca.singular_values_)
 
 		return x_transf
 
