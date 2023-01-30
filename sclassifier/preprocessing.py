@@ -994,7 +994,7 @@ class ZScaleTransformer(object):
 		# - Scale data
 		data_stretched[~cond]= 0 # Restore 0 and nans set in original data
 
-		return data_scaled
+		return data_stretched
 
 
 ##############################
