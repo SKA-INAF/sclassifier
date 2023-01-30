@@ -196,7 +196,7 @@ class Clusterer(object):
 		if self.norm_transf=="minmax":
 			self.data_scaler= MinMaxScaler(feature_range=(self.norm_min, self.norm_max))
 		elif self.norm_transf=="robust":
-			self.data_scaler= Robust()
+			self.data_scaler= RobustScaler()
 		else:
 			logger.error("Undefined/unsupported norm transf model %s!" % (self.norm_transf))	
 			return -1
