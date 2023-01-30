@@ -960,10 +960,10 @@ class ChanDivider(object):
 class ZScaleTransformer(object):
 	""" Apply zscale transformation to each channel """
 
-	def __init__(self, constrasts=[0.25,0.25,0.25], **kwparams):
+	def __init__(self, contrasts=[0.25,0.25,0.25], **kwparams):
 		""" Create a data pre-processor object """
 
-		self.constrasts= constrasts
+		self.contrasts= contrasts
 		
 
 	def __call__(self, data):
