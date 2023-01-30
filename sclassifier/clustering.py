@@ -87,6 +87,7 @@ class Clusterer(object):
 		self.norm_max= 1
 		self.reduce_dim= False
 		self.reduce_dim_method= 'pca'
+		self.pca= None
 		self.pca_ncomps= -1
 		self.pca_varthr= 0.9
 		
@@ -179,6 +180,8 @@ class Clusterer(object):
 		self.outfile= 'clustered_data.dat'
 		self.outfile_plot= 'clusters.png'
 		self.outfile_scaler = 'datascaler.sav'
+		self.outfile_pca= 'pca_data.dat'
+		self.outfile_model_pca= "pca_model.sav"
 		#self.outfile_encoded_data_unsupervised= 'encoded_data_unsupervised.dat'
 		#self.outfile_encoded_data_supervised= 'encoded_data_supervised.dat'
 		#self.outfile_encoded_data_preclassified= 'encoded_data_preclassified.dat'
@@ -239,7 +242,7 @@ class Clusterer(object):
 		""" Reduce input data dimensionality """
 
 		if self.reduce_dim_method=="pca":
-			x_transf= self.__pca_transform(x, self.pca_ncomps, self.pca_varthr)
+			x_transf= self.__pca_transform(x)
 		else:
 			logger.error("Unknown/unsupported dimensionality reduction method (%s) given!" % (self.reduce_dim_method))
 			return None
@@ -252,21 +255,43 @@ class Clusterer(object):
 		return x_transf
 		
 
-	def __pca_transform(self, x, ncomps=-1, var_ratio_thr=0.9):
-		""" Normalize input data to desired range """
+	def __pca_transform(self, x, fit=True):
+		""" Apply PCA to input data """
 	
-		# - Define PCA and set desired number of components		
+		# - Check if PCA model was built
+		if self.pca is None:
+			logger.info("PCA model was not created, creating it now ...")
+			self.__build_pca_model()
+
+		# - Run PCA		
 		nfeat= x.shape[1]
-		if ncomps==-1:
-			logger.info("Applying PCA and selecting components with total variance ratio >= than %f ..." % (var_ratio_thr))
-			pca= PCA(n_components=var_ratio_thr, svd_solver='full')
+		logger.info("Running PCA on #%d dim data ..." % (nfeat))
+		if fit:
+			x_transf= self.pca.fit_transform(x)
 		else:
-			logger.info("Applying PCA and selecting %d components ..." % (ncomps))
-			pca= PCA(n_components=ncomps, svd_solver='full')
-			
-		x_transf= pca.fit_transform(x)
+			x_transf= self.pca.transform(x)
+
+		logger.info("=> PCA variance ratio")
+		print(pca.explained_variance_ratio_)
+
+		#logger.info("=> PCA singular values")
+		#print(pca.singular_values_)
 
 		return x_transf
+
+
+	def __build_pca_model(self):
+		""" Build PCA model """
+
+		if self.pca_ncomps==-1:
+			logger.info("Creating PCA and selecting components with total variance ratio >= than %f ..." % (self.pca_varthr))
+			self.pca= PCA(n_components=self.pca_varthr, svd_solver='full')
+		else:
+			logger.info("Applying PCA and selecting %d components ..." % (self.pca_ncomps))
+			self.pca= PCA(n_components=self.pca_ncomps, svd_solver='full')
+			
+		return 0
+
 
 	def __set_preclass_data(self):
 		""" Set pre-classified data """
@@ -890,7 +915,174 @@ class Clusterer(object):
 
 		
 		return 0
+
+
+
+
+
+
+
+	#####################################
+	##     RUN PCA
+	#####################################
+	def run_pca(self, datafile, modelfile='', scalerfile=''):
+		""" Run PCA using input dataset """
+
+		#================================
+		#==   LOAD DATA SCALER
+		#================================
+		# - Load scaler from file?
+		if scalerfile!="":
+			logger.info("Loading data scaler from file %s ..." % (scalerfile))
+			try:
+				self.data_scaler= pickle.load(open(scalerfile, 'rb'))
+			except Exception as e:
+				logger.error("Failed to load data scaler from file %s!" % (scalerfile))
+				return -1
+
+		#================================
+		#==   LOAD DATA
+		#================================
+		# - Check inputs
+		if datafile=="":
+			logger.error("Empty data file specified!")
+			return -1
+
+		if self.set_data_from_file(datafile)<0:
+			logger.error("Failed to read datafile %s!" % datafile)
+			return -1
+
+		#================================
+		#==   LOAD MODEL
+		#================================
+		if modelfile and modelfile is not None:
+			logger.info("Loading the PCA model from file %s ..." % (modelfile))
+			fit_pca= False
+			try:
+				self.pca = pickle.load((open(modelfile, 'rb')))
+			except Exception as e:
+				logger.error("Failed to load PCA model from file %s!" % (modelfile))
+				return -1
+
+		else:
+			logger.info("Creating the PCA model ...")
+			fit_pca= True
+			self.__build_pca_model()
+
+		#================================
+		#==   APPLY PCA TO DATA
+		#================================
+		if self.__run_pca(fit_pca)<0:
+			logger.error("Failed to run PCA on input data!")
+			return -1
+
+		return 0
 	
+	def run_pca(self, data, class_ids=[], snames=[], modelfile='', scalerfile=''):
+		""" Run clustering using input dataset """
+
+		#================================
+		#==   LOAD DATA SCALER
+		#================================
+		# - Load scaler from file?
+		if scalerfile!="":
+			logger.info("Loading data scaler from file %s ..." % (scalerfile))
+			try:
+				self.data_scaler= pickle.load(open(scalerfile, 'rb'))
+			except Exception as e:
+				logger.error("Failed to load data scaler from file %s!" % (scalerfile))
+				return -1
+
+		#================================
+		#==   LOAD DATA
+		#================================
+		# - Check inputs
+		if data is None:
+			logger.error("None input data specified!")
+			return -1
+
+		if self.set_data(data, class_ids, snames)<0:
+			logger.error("Failed to read datafile %s!" % datafile)
+			return -1
+
+		#================================
+		#==   LOAD MODEL
+		#================================
+		if modelfile and modelfile is not None:
+			logger.info("Loading the PCA model from file %s ..." % (modelfile))
+			fit_pca= False
+			try:
+				self.pca = pickle.load((open(modelfile, 'rb')))
+			except Exception as e:
+				logger.error("Failed to load PCA model from file %s!" % (modelfile))
+				return -1
+
+		else:
+			logger.info("Creating the PCA model ...")
+			fit_pca= True
+			self.__build_pca_model()
+
+		#================================
+		#==   APPLY PCA TO DATA
+		#================================
+		if self.__run_pca(fit_pca)<0:
+			logger.error("Failed to apply PCA to data!")
+			return -1
+
+		return 0
+
+	def __run_pca(self, fit=True):
+		""" Interna method to run PCA """
+
+		# - Check if data are set
+		if self.data is None:
+			logger.error("Input data array is None!")
+			return -1
+
+		#================================
+		#==   APPLY PCA
+		#================================
+		# - Set data 
+		data_all= self.data
+		data_ids_all= self.data_classids	
+		data_labels_all= self.data_labels
+		source_names_all= self.source_names
+		
+		# - PCA
+		logger.info("Apply PCA to input data  ...")
+		data_transf= self.__pca_transform(data_all, fit)
+
+		#================================
+		#==   SAVE PCA DATA
+		#================================
+		logger.info("Saving PCA data to file ...")
+		N= data_all.shape[0]
+		snames= np.array(source_names_all).reshape(N,1)
+		objids= np.array(data_ids_all).reshape(N,1)
+		
+		pca_data= np.concatenate(
+			(snames, data_transf, objids),
+			axis=1
+		)
+
+		Nfeat_pca= data_transf.shape[1]
+		znames_counter= list(range(1,Nfeat_pca+1))
+		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
+
+		head= '{} {} {}'.format("# sname",znames,"id")
+		Utils.write_ascii(pca_data, self.outfile_pca, head)	
+		
+		#================================
+		#==   SAVE PCA MODEL
+		#================================
+		# - Save model to file
+		if self.dump_model:
+			logger.info("Dumping PCA to file %s ..." % self.outfile_model_pca)
+			pickle.dump(self.pca, open(self.outfile_model_pca, 'wb'))
+			
+
+		return 0
+
 	#####################################
 	##     PLOTTING
 	#####################################
