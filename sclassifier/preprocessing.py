@@ -978,6 +978,11 @@ class ZScaleTransformer(object):
 
 		# - Check constrast dim vs nchans
 		nchans= data.shape[-1]
+		print("len(self.contrasts)")
+		print(len(self.contrasts))
+		print("nchans")
+		print(nchans)
+
 		if len(self.contrasts)<nchans:
 			logger.error("Invalid constrasts given (constrast list size=%d < nchans=%d)" % (len(self.contrasts), nchans))
 			return None
