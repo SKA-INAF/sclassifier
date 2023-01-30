@@ -1018,23 +1018,41 @@ class ChanResizer(object):
 			logger.error("Input data is None!")
 			return None
 
-		cond= np.logical_and(data!=0, np.isfinite(data))
-
-		# - Check nchans given
-		nchans_curr= data.shape[-1]
+		# - Check number of given chans		
 		if self.nchans>self.nchans_max or self.nchans<=0:
 			logger.error("Invalid channel specified or too many channels desired (%d) (hint: the maximum is %d)!" % (self.nchans, self.nchans_max))
 			return None
 
+		cond= np.logical_and(data!=0, np.isfinite(data))
+
+		# - Set nchan curr 
+		ndim_curr= data.ndim
+		if ndim_curr==2:
+			nchans_curr= 1
+		else:
+			nchans_curr= data.shape[-1]
+		
 		if self.nchans==nchans_curr:
 			logger.debug("Desired number of channels equal to current, nothing to be done...")
 			return data
 		
 		expanding= self.nchans>nchans_curr
 
-		# - Resize data
+		print("data_shape")
+		print(data.shape)
+		print("nchans_curr=%d" % (nchans_curr))
+
+		# - Expand array first?
+		#   NB: If 2D first create an extra dimension
+		if ndim_curr==2:
+			data= np.expand_dims(data, axis=data.shape[-1]-1)
+
+		# - Resize data		
 		data_resized= np.resize(data, (data.shape[0], data.shape[1], self.nchans))
 		
+		print("data_resized shape")
+		print(data_resized.shape)
+
 		# - Copy last channel in new ones
 		if expanding:
 			for i in range(self.nchans):
