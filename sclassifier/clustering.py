@@ -83,6 +83,7 @@ class Clusterer(object):
 		# *****************************
 		self.data_scaler= None
 		self.normalize= False
+		self.norm_transf= "minmax" # "robust"
 		self.norm_min= 0
 		self.norm_max= 1
 		self.reduce_dim= False
@@ -189,16 +190,21 @@ class Clusterer(object):
 	#####################################
 	##     PRE-PROCESSING
 	#####################################
-	def __normalize_data(self, x, norm_min, norm_max):
-		""" Normalize input data to desired range """
-		
-		x_min= x.min(axis=0)
-		x_max= x.max(axis=0)
-		x_norm = norm_min + (x-x_min)/(x_max-x_min) * (norm_max-norm_min)
-		return x_norm
+	def __create_scaler(self):
+		""" Create scaler model for normalization """
 
-	
-	def __transform_data(self, x, norm_min=0, norm_max=1):
+		if self.norm_transf=="minmax":
+			self.data_scaler= MinMaxScaler(feature_range=(self.norm_min, self.norm_max))
+		elif self.norm_transf=="robust":
+			self.data_scaler= Robust()
+		else:
+			logger.error("Undefined/unsupported norm transf model %s!" % (self.norm_transf))	
+			return -1
+
+		return 0
+
+
+	def __transform_data(self, x):
 		""" Transform input data here or using a loaded scaler """
 
 		# - Print input data min/max
@@ -210,9 +216,13 @@ class Clusterer(object):
 		print(x_max)
 
 		if self.data_scaler is None:
-			# - Define and run scaler
+			# - Define scaler
 			logger.info("Define and running data scaler ...")
-			self.data_scaler= MinMaxScaler(feature_range=(norm_min, norm_max))
+			if self.__create_scaler()<0:
+				logger.error("Failed to create norm scaler model!")
+				return None
+
+			# - Run scaler
 			x_transf= self.data_scaler.fit_transform(x)
 
 			print("== TRANSFORM DATA MIN/MAX ==")
@@ -249,7 +259,7 @@ class Clusterer(object):
 
 		if normalize:
 			logger.info("Normalizing dim reducted data ...")
-			x_norm= self.__normalize_data(x_transf, self.norm_min, self.norm_max)
+			x_norm= self.__transform_data(x_transf)
 			x_transf= x_norm
 
 		return x_transf
@@ -376,8 +386,7 @@ class Clusterer(object):
 		# - Normalize feature data?
 		if self.normalize:
 			logger.info("Normalizing feature data ...")
-			#data_norm= self.__normalize_data(self.data, self.norm_min, self.norm_max)
-			data_norm= self.__transform_data(self.data, self.norm_min, self.norm_max)
+			data_norm= self.__transform_data(self.data)
 			if data_norm is None:
 				logger.error("Data transformation failed!")
 				return -1
@@ -449,8 +458,7 @@ class Clusterer(object):
 		# - Normalize feature data?
 		if self.normalize:
 			logger.info("Normalizing feature data ...")
-			#data_norm= self.__normalize_data(self.data, self.norm_min, self.norm_max)
-			data_norm= self.__transform_data(self.data, self.norm_min, self.norm_max)
+			data_norm= self.__transform_data(self.data)
 			if data_norm is None:
 				logger.error("Data transformation failed!")
 				return -1

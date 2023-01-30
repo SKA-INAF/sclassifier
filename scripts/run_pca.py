@@ -52,8 +52,10 @@ def get_args():
 	parser.add_argument('-inputfile','--inputfile', dest='inputfile', required=True, type=str, help='Input feature data table filename') 
 	
 	# - Pre-processing options
-	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize feature data in range [0,1] before clustering (default=false)')	
-	parser.set_defaults(normalize=False)	
+	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize feature data before PCA (default=false)')	
+	parser.set_defaults(normalize=False)
+	parser.add_argument('-norm_transf', '--norm_transf', dest='norm_transf', required=False, type=str, default='minmax', action='store',help='Normalization transf to be applied: {"minmax","robust"} (default=minmax)')
+	
 	parser.add_argument('-scalerfile', '--scalerfile', dest='scalerfile', required=False, type=str, default='', action='store',help='Load and use data transform stored in this file (.sav)')
 	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=False, type=str, default='', action='store',help='PCA model filename (.h5)')
 	
@@ -90,6 +92,7 @@ def main():
 	# - Data pre-processing 
 	normalize= args.normalize
 	scalerfile= args.scalerfile
+	norm_transf= args.norm_transf
 
 	# - PCA model options
 	modelfile= args.modelfile
@@ -114,6 +117,7 @@ def main():
 	logger.info("Running HDBSCAN classifier prediction on input feature data ...")
 	clust= Clusterer()
 	clust.normalize= normalize
+	clust.norm_transf= norm_transf
 	clust.pca_ncomps= pca_ncomps
 	clust.pca_varthr= pca_varthr
 	
