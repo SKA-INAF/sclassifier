@@ -225,9 +225,10 @@ class Clusterer(object):
 			# - Run scaler
 			x_transf= self.data_scaler.fit_transform(x)
 
-			print("== TRANSFORM DATA MIN/MAX ==")
-			print(self.data_scaler.data_min_)
-			print(self.data_scaler.data_max_)
+			if self.norm_transf=="minmax":
+				print("== TRANSFORM DATA MIN/MAX ==")
+				print(self.data_scaler.data_min_)
+				print(self.data_scaler.data_max_)
 
 			# - Save scaler to file
 			logger.info("Saving data scaler to file %s ..." % (self.outfile_scaler))
