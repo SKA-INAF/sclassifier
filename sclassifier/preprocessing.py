@@ -1048,18 +1048,23 @@ class ChanResizer(object):
 			data= np.expand_dims(data, axis=data.shape[-1]-1)
 
 		# - Resize data		
-		data_resized= np.resize(data, (data.shape[0], data.shape[1], self.nchans))
+		#data_resized= np.resize(data, (data.shape[0], data.shape[1], self.nchans))
 		
-		print("data_resized shape")
-		print(data_resized.shape)
+		#print("data_resized shape")
+		#print(data_resized.shape)
 
 		# - Copy last channel in new ones
+		data_resized= np.zeros((data.shape[0], data.shape[1], self.nchans))
+
 		if expanding:
 			for i in range(self.nchans):
 				if i<nchans_curr:
-					continue
-				data_resized[:,:,i]= data_resized[:,:,nchans_curr-1]	
-				
+					data_resized[:,:,i]= data[:,:,i]
+				else:
+					data_resized[:,:,i]= data[:,:,nchans_curr-1]	
+		else:
+			for i in range(self.nchans):
+				data_resized[:,:,i]= data[:,:,i]
 
 		return data_resized
 
