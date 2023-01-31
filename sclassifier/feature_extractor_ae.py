@@ -1241,10 +1241,14 @@ class FeatExtractorAE(object):
 			f.write(self.decoder.to_json())
 		
 		#- Save the model
-		#logger.info("Saving full NN model ...")
-		#self.cae.save('model.h5')
-		#self.encoder.save('encoder.h5')
-		#self.decoder.save('decoder.h5')
+		logger.info("Saving full NN model ...")
+		self.cae.save('model.h5')
+
+		logger.info("Saving encoder model ...")
+		self.encoder.save('encoder.h5')
+	
+		logger.info("Saving decoder model ...")
+		self.decoder.save('decoder.h5')
 
 		# - Save the network architecture diagram
 		logger.info("Saving network model architecture to file ...")
