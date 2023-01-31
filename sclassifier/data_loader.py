@@ -158,7 +158,7 @@ class SourceData(object):
 		return 0
 	
 
-	def read_img_crops(self, ixmin, ixmax, iymin, iymax):
+	def read_img_crops(self, ixmin, ixmax, iymin, iymax, badpix_fract_thr=0.3):
 		""" Read cropped image data from paths """
 
 		# - Check data filelists
@@ -189,10 +189,14 @@ class SourceData(object):
 			data_mask= np.logical_and(data!=0,np.isfinite(data)).astype(np.uint8)
 				
 			# - Check image integrity
-			has_bad_pixs= self.__has_bad_pixel(data, check_fract=False, thr=0)
+			#has_bad_pixs= self.__has_bad_pixel(data, check_fract=False, thr=0)
+			has_bad_pixs= self.__has_bad_pixel(data, check_fract=True, thr=badpix_fract_thr)
 			if has_bad_pixs:
 				logger.warn("Image %s has too many bad pixels!" % (filename))
 				return -1
+
+			# - Set NANs to 0
+			data[~np.isfinite(data)]= 0
 
 			# - Append image channel data to list
 			self.img_data.append(data)
@@ -214,7 +218,7 @@ class SourceData(object):
 
 		return 0
 
-	def read_imgs(self):
+	def read_imgs(self, badpix_fract_thr=0.3):
 		""" Read image data from paths """
 
 		# - Check data filelists
@@ -243,10 +247,14 @@ class SourceData(object):
 			data_mask= np.logical_and(data!=0,np.isfinite(data)).astype(np.uint8)
 		
 			# - Check image integrity
-			has_bad_pixs= self.__has_bad_pixel(data, check_fract=False, thr=0)
+			#has_bad_pixs= self.__has_bad_pixel(data, check_fract=False, thr=0)
+			has_bad_pixs= self.__has_bad_pixel(data, check_fract=True, thr=badpix_fract_thr)
 			if has_bad_pixs:
 				logger.warn("Image %s has too many bad pixels!" % (filename))
 				return -1
+
+			# - Set NANs to 0
+			data[~np.isfinite(data)]= 0
 
 			# - Append image channel data to list
 			self.img_data.append(data)
