@@ -1277,7 +1277,7 @@ class SClassifier(object):
 			logger.error("Failed to predict model on data (err=%s)!" % (str(e)))
 			return -1
 
-		if multiclass:
+		if self.multiclass:
 			# - Convert targets to obj ids
 			logger.info("Converting predicted targets to class ids ...")
 			self.classids_pred= [self.classid_remap_inv[item] for item in self.targets_pred]
@@ -1542,7 +1542,7 @@ class SClassifier(object):
 			return -1
 
 		
-		if multiclass:
+		if self.multiclass:
 			# - Convert targets to obj ids
 			logger.info("Converting predicted targets to class ids ...")
 			self.classids_pred= [self.classid_remap_inv[item] for item in self.targets_pred]
