@@ -1221,28 +1221,28 @@ class FeatExtractorAE(object):
 		#logger.info("Saving NN weights ...")
 		#self.cae.save_weights('model_weights.h5')
 
-		logger.info("Saving encoder weights ...")
-		self.encoder.save_weights('encoder_weights.h5')
+		#logger.info("Saving encoder weights ...")
+		#self.encoder.save_weights('encoder_weights.h5')
 
-		logger.info("Saving decoder weights ...")
-		self.decoder.save_weights('decoder_weights.h5')
+		#logger.info("Saving decoder weights ...")
+		#self.decoder.save_weights('decoder_weights.h5')
 
 		# -Save the model architecture in json format
-		logger.info("Saving NN architecture in json format ...")
-		with open('model_architecture.json', 'w') as f:
-			f.write(self.cae.to_json())
+		#logger.info("Saving NN architecture in json format ...")
+		#with open('model_architecture.json', 'w') as f:
+		#	f.write(self.cae.to_json())
 
-		with open('encoder_architecture.json', 'w') as f:
-			f.write(self.encoder.to_json())
+		#with open('encoder_architecture.json', 'w') as f:
+		#	f.write(self.encoder.to_json())
 
-		with open('decoder_architecture.json', 'w') as f:
-			f.write(self.decoder.to_json())
+		#with open('decoder_architecture.json', 'w') as f:
+		#	f.write(self.decoder.to_json())
 		
 		#- Save the model
-		logger.info("Saving full NN model ...")
-		self.cae.save('model.h5')
-		self.encoder.save('encoder.h5')
-		self.decoder.save('decoder.h5')
+		#logger.info("Saving full NN model ...")
+		#self.cae.save('model.h5')
+		#self.encoder.save('encoder.h5')
+		#self.decoder.save('decoder.h5')
 
 		# - Save the network architecture diagram
 		logger.info("Saving network model architecture to file ...")
