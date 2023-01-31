@@ -146,42 +146,6 @@ class SClassifier(object):
 		self.lgbm_eval_dict= {}
 
 		# - Set class label names
-		#self.classid_remap= {
-		#	0: -1,
-		#	1: 4,
-		#	2: 5,
-		#	3: 0,
-		#	6: 1,
-		#	23: 2,
-		#	24: 3,			
-		#	6000: 6,
-		#}
-
-		#self.target_label_map= {
-		#	-1: "UNKNOWN",
-		#	0: "PN",
-		#	1: "HII",
-		#	2: "PULSAR",
-		#	3: "YSO",
-		#	4: "STAR",
-		#	5: "GALAXY",
-		#	6: "QSO",
-		#}
-
-		#self.classid_label_map= {
-		#	0: "UNKNOWN",
-		#	1: "STAR",
-		#	2: "GALAXY",
-		#	3: "PN",
-		#	6: "HII",
-		#	23: "PULSAR",
-		#	24: "YSO",			
-		#	6000: "QSO",
-		#}
-		
-		#self.classid_remap_inv= {v: k for k, v in self.classid_remap.items()}
-		#self.classid_label_map_inv= {v: k for k, v in self.classid_label_map.items()}
-
 		self.__set_target_labels(multiclass)
 
 		# *****************************
@@ -301,10 +265,20 @@ class SClassifier(object):
 			self.target_names= ["EGAL","GAL"]
 				
 
+		
 		self.classid_remap_inv= {v: k for k, v in self.classid_remap.items()}
 		self.classid_label_map_inv= {v: k for k, v in self.classid_label_map.items()}
 
-		
+		print("classid_remap")
+		print(self.classid_remap)
+		print("target_label_map")
+		print(self.target_label_map)
+		print("classid_label_map")
+		print(self.classid_label_map)
+		print("classid_remap_inv")
+		print(self.classid_remap_inv)
+		print("classid_label_map_inv")
+		print(self.classid_label_map_inv)
 
 
 	#####################################
@@ -319,6 +293,7 @@ class SClassifier(object):
 			max_depth_lgbm= -1
 
 		if self.multiclass:
+			logger.info("Setting LGBM classifier for multiclass classification ...")
 			objective_lgbm= 'multiclass'
 			self.metric_lgbm= 'multi_logloss'
 			
@@ -343,6 +318,7 @@ class SClassifier(object):
 			)
 
 		else:
+			logger.info("Setting LGBM classifier for binary classification ...")
 			objective_lgbm= 'binary'
 			self.metric_lgbm= 'binary_logloss'
 
@@ -1301,13 +1277,22 @@ class SClassifier(object):
 			logger.error("Failed to predict model on data (err=%s)!" % (str(e)))
 			return -1
 
-		# - Convert targets to obj ids
-		logger.info("Converting predicted targets to class ids ...")
-		self.classids_pred= [self.classid_remap_inv[item] for item in self.targets_pred]
+		if multiclass:
+			# - Convert targets to obj ids
+			logger.info("Converting predicted targets to class ids ...")
+			self.classids_pred= [self.classid_remap_inv[item] for item in self.targets_pred]
 
-		# - Convert obj ids to labels
-		self.labels_pred= [self.classid_label_map[item] for item in self.classids_pred]
-		
+			# - Convert obj ids to labels
+			self.labels_pred= [self.classid_label_map[item] for item in self.classids_pred]
+		else:
+			# - Set class ids to targets for binary class
+			logger.info("Setting predicted class ids to target ids for binary class ...")
+			self.classids_pred=	self.targets_pred	
+
+			# - Convert obj ids to labels
+			self.labels_pred= [self.target_label_map[item] for item in self.classids_pred]
+
+
 		nclasses= len(self.target_names)
 		labels= list(range(0,nclasses))
 		print("target_names")
@@ -1556,12 +1541,23 @@ class SClassifier(object):
 			logger.error("Failed to predict model on data (err=%s)!" % (str(e)))
 			return -1
 
-		# - Convert targets to obj ids
-		logger.info("Converting predicted targets to class ids ...")
-		self.classids_pred= [self.classid_remap_inv[item] for item in self.targets_pred]
+		
+		if multiclass:
+			# - Convert targets to obj ids
+			logger.info("Converting predicted targets to class ids ...")
+			self.classids_pred= [self.classid_remap_inv[item] for item in self.targets_pred]
 
-		# - Compute pred labels
-		self.labels_pred= [self.classid_label_map[item] for item in self.classids_pred]
+			# - Compute pred labels
+			self.labels_pred= [self.classid_label_map[item] for item in self.classids_pred]
+
+		else:
+			# - Set class ids to targets for binary class
+			logger.info("Setting predicted class ids to target ids for binary class ...")
+			self.classids_pred=	self.targets_pred	
+
+			# - Convert obj ids to labels
+			self.labels_pred= [self.target_label_map[item] for item in self.classids_pred]
+
 
 		# - Predict model on pre-classified data (if any)
 		if self.data_preclassified is not None:
@@ -1920,9 +1916,9 @@ class SClassifier(object):
 		
 		np.savetxt(self.outfile_cm_norm, self.cm_norm, delimiter=',')
 
-		#================================
+		#===================================
 		#==   SAVE TRAIN PREDICTION DATA
-		#================================
+		#===================================
 		logger.info("Saving train prediction data to file %s ..." % (self.outfile))
 		N= self.data_preclassified.shape[0]
 		snames= np.array(self.source_names_preclassified).reshape(N,1)
