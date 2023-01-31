@@ -1228,15 +1228,17 @@ class FeatExtractorAE(object):
 		#self.decoder.save_weights('decoder_weights.h5')
 
 		# -Save the model architecture in json format
-		#logger.info("Saving NN architecture in json format ...")
-		#with open('model_architecture.json', 'w') as f:
-		#	f.write(self.cae.to_json())
+		logger.info("Saving NN architecture in json format ...")
+		with open('model_architecture.json', 'w') as f:
+			f.write(self.cae.to_json())
 
-		#with open('encoder_architecture.json', 'w') as f:
-		#	f.write(self.encoder.to_json())
+		logger.info("Saving encoder architecture in json format ...")
+		with open('encoder_architecture.json', 'w') as f:
+			f.write(self.encoder.to_json())
 
-		#with open('decoder_architecture.json', 'w') as f:
-		#	f.write(self.decoder.to_json())
+		logger.info("Saving decoder architecture in json format ...")
+		with open('decoder_architecture.json', 'w') as f:
+			f.write(self.decoder.to_json())
 		
 		#- Save the model
 		#logger.info("Saving full NN model ...")
