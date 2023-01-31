@@ -1218,14 +1218,14 @@ class FeatExtractorAE(object):
 		#==   SAVE NN
 		#===========================
 		#- Save the model weights
-		#logger.info("Saving NN weights ...")
-		#self.cae.save_weights('model_weights.h5')
+		logger.info("Saving NN weights ...")
+		self.cae.save_weights('model_weights.h5')
 
-		#logger.info("Saving encoder weights ...")
-		#self.encoder.save_weights('encoder_weights.h5')
+		logger.info("Saving encoder weights ...")
+		self.encoder.save_weights('encoder_weights.h5')
 
-		#logger.info("Saving decoder weights ...")
-		#self.decoder.save_weights('decoder_weights.h5')
+		logger.info("Saving decoder weights ...")
+		self.decoder.save_weights('decoder_weights.h5')
 
 		# -Save the model architecture in json format
 		logger.info("Saving NN architecture in json format ...")
