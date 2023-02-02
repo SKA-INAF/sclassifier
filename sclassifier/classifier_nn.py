@@ -49,8 +49,6 @@ from sklearn.tree import export_text
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 from sklearn.metrics import recall_score, precision_score, f1_score
 
-from lightgbm import LGBMClassifier
-
 ## TENSORFLOW & KERAS MODULES
 import tensorflow as tf
 from tensorflow import keras 
