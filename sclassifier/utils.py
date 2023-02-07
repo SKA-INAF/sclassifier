@@ -387,50 +387,62 @@ class Utils(object):
 		""" Remove references to 3rd & 4th axis from FITS header """
 	
 		# - Remove 3rd axis
-		if 'NAXIS3' in header and header['NAXIS3']==1:
+		#if 'NAXIS3' in header and header['NAXIS3']==1:
+		if 'NAXIS3' in header:
 			del header['NAXIS3']
+		if 'CTYPE3' in header:
 			del header['CTYPE3']
+		if 'CRVAL3' in header:
 			del header['CRVAL3']
+		if 'CDELT3' in header:
 			del header['CDELT3']
+		if 'CRPIX3' in header:
 			del header['CRPIX3']
+		if 'CUNIT3' in header:
 			del header['CUNIT3']
-			if 'CROTA3' in header:
-				del header['CROTA3']
-			if 'PC1_3' in header:
-				del header['PC1_3']
-			if 'PC2_3' in header:
-				del header['PC2_3']
-			if 'PC3_1' in header:
-				del header['PC3_1']
-			if 'PC3_2' in header:
-				del header['PC3_2']
-			if 'PC3_3' in header:
-				del header['PC3_3']
+		if 'CROTA3' in header:
+			del header['CROTA3']
+		if 'PC1_3' in header:
+			del header['PC1_3']
+		if 'PC2_3' in header:
+			del header['PC2_3']
+		if 'PC3_1' in header:
+			del header['PC3_1']
+		if 'PC3_2' in header:
+			del header['PC3_2']
+		if 'PC3_3' in header:
+			del header['PC3_3']
 
 		# - Remove 4th axis
-		if 'NAXIS4' in header and header['NAXIS4']==1:
+		#if 'NAXIS4' in header and header['NAXIS4']==1:
+		if 'NAXIS4' in header:
 			del header['NAXIS4']
+		if 'CTYPE4' in header:
 			del header['CTYPE4']
+		if 'CRVAL4' in header:
 			del header['CRVAL4']
+		if 'CDELT4' in header:
 			del header['CDELT4']
+		if 'CRPIX4' in header:
 			del header['CRPIX4']
+		if 'CUNIT4' in header:
 			del header['CUNIT4']
-			if 'CROTA4' in header:
-				del header['CROTA4']
-			if 'PC1_4' in header:
-				del header['PC1_4']
-			if 'PC2_4' in header:
-				del header['PC2_4']
-			if 'PC3_4' in header:
-				del header['PC3_4']
-			if 'PC4_1' in header:
-				del header['PC4_1']
-			if 'PC4_2' in header:
-				del header['PC4_2']
-			if 'PC4_3' in header:
-				del header['PC4_3']
-			if 'PC4_4' in header:
-				del header['PC4_4']
+		if 'CROTA4' in header:
+			del header['CROTA4']
+		if 'PC1_4' in header:
+			del header['PC1_4']
+		if 'PC2_4' in header:
+			del header['PC2_4']
+		if 'PC3_4' in header:
+			del header['PC3_4']
+		if 'PC4_1' in header:
+			del header['PC4_1']
+		if 'PC4_2' in header:
+			del header['PC4_2']
+		if 'PC4_3' in header:
+			del header['PC4_3']
+		if 'PC4_4' in header:
+			del header['PC4_4']
 
 		# - Set naxis to 2
 		header['NAXIS']= 2
