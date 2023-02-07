@@ -38,6 +38,7 @@ warnings.filterwarnings('ignore', category=UserWarning, append=True)
 from astropy.wcs import WCS
 from astropy.io import ascii
 from astropy.table import Column
+from astropy.nddata.utils import Cutout2D
 import regions
 
 import fitsio
@@ -336,7 +337,7 @@ class Utils(object):
 	#==   READ FITS FILE
 	#===========================
 	@classmethod
-	def read_fits(cls, filename):
+	def read_fits(cls, filename, strip_deg_axis=False):
 		""" Read FITS image and return data """
 
 		# - Open file
@@ -366,6 +367,10 @@ class Utils(object):
 		# - Read metadata
 		header= hdu[0].header
 
+		# - Strip degenerate axis
+		if strip_deg_axis:
+			header= Utils.strip_deg_axis_from_header(header)
+
 		# - Get WCS
 		wcs = WCS(header)
 		if wcs is None:
@@ -375,6 +380,64 @@ class Utils(object):
 		hdu.close()
 
 		return output_data, header, wcs
+
+
+	@classmethod
+	def strip_deg_axis_from_header(cls, header):
+		""" Remove references to 3rd & 4th axis from FITS header """
+	
+		# - Remove 3rd axis
+		if 'NAXIS3' in header and header['NAXIS3']==1:
+			del header['NAXIS3']
+			del header['CTYPE3']
+			del header['CRVAL3']
+			del header['CDELT3']
+			del header['CRPIX3']
+			del header['CUNIT3']
+			if 'CROTA3' in header:
+				del header['CROTA3']
+			if 'PC1_3' in header:
+				del header['PC1_3']
+			if 'PC2_3' in header:
+				del header['PC2_3']
+			if 'PC3_1' in header:
+				del header['PC3_1']
+			if 'PC3_2' in header:
+				del header['PC3_2']
+			if 'PC3_3' in header:
+				del header['PC3_3']
+
+		# - Remove 4th axis
+		if 'NAXIS4' in header and header['NAXIS4']==1:
+			del header['NAXIS4']
+			del header['CTYPE4']
+			del header['CRVAL4']
+			del header['CDELT4']
+			del header['CRPIX4']
+			del header['CUNIT4']
+			if 'CROTA4' in header:
+				del header['CROTA4']
+			if 'PC1_4' in header:
+				del header['PC1_4']
+			if 'PC2_4' in header:
+				del header['PC2_4']
+			if 'PC3_4' in header:
+				del header['PC3_4']
+			if 'PC4_1' in header:
+				del header['PC4_1']
+			if 'PC4_2' in header:
+				del header['PC4_2']
+			if 'PC4_3' in header:
+				del header['PC4_3']
+			if 'PC4_4' in header:
+				del header['PC4_4']
+
+		# - Set naxis to 2
+		header['NAXIS']= 2
+	
+		return header
+
+
 
 	@classmethod
 	def read_fits_crop(cls, filename, ixmin, ixmax, iymin, iymax):
@@ -467,6 +530,38 @@ class Utils(object):
 		f.close()
 
 		return data, (ixmin, ixmax, iymin, iymax)
+
+
+	@classmethod
+	def extract_fits_cutout(cls, data, x, y, cutout_size, wcs=None, mode='partial'):
+		""" Extract cutout around given position with specified size. Based on astropy Cutout2D to preserve wcs info. """
+
+		try:
+			cutout= Cutout2D(data, position=(x, y), size=cutout_size, mode=mode, wcs=wcs, copy=True, fill_value=np.nan)
+		except Exception as e:
+			logger.error("Failed to generate cutout (err=%s)!" % (str(e)))
+			return None
+
+		return cutout
+
+	@classmethod
+	def extract_2d_grid(cls, nx, ny, cutout_size, grid_step):
+		""" Extract 2d coord grids """
+
+		start_x= cutout_size/2
+		start_y= cutout_size/2
+		end_x= ny - 1 + grid_step
+		end_y= nx - 1 + grid_step
+		#end_x= ny - 1 
+		#end_y= nx - 1 
+		x= np.arange(start_x, end_x, grid_step)
+		y= np.arange(start_y, end_y, grid_step)
+
+		yy, xx= np.meshgrid(x, y, indexing="ij")
+		##yy, xx= np.meshgrid(x, y)
+		coords= np.array((xx.ravel(), yy.ravel())).T
+
+		return coords
 
 	#===========================
 	#==   MAKE IMG METADATA
