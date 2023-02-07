@@ -138,9 +138,9 @@ def write_fits_cutout(cutout, counter, prefix):
 	
 	# - Save cutout
 	logger.info("[PROC %d] Saving cutout to file %s ..." % (procId, outfile_cutout))
-	#hdu= fits.PrimaryHDU(cutout.data, header=cutout.wcs.to_header())
-	#hdul = fits.HDUList([hdu])
-	#hdul.writeto(outfile_cutout, overwrite=True)
+	hdu= fits.PrimaryHDU(cutout.data, header=cutout.wcs.to_header())
+	hdul = fits.HDUList([hdu])
+	hdul.writeto(outfile_cutout, overwrite=True)
 
 
 ##############
