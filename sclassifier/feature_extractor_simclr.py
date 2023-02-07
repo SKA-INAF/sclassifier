@@ -86,8 +86,8 @@ matplotlib.use('Agg')
 
 ## PACKAGE MODULES
 from .utils import Utils
-from .data_loader import DataLoader
-from .data_loader import SourceData
+#from .data_loader import DataLoader
+#from .data_loader import SourceData
 from .tf_utils import SoftmaxCosineSim
 
 ################################
@@ -97,14 +97,14 @@ class FeatExtractorSimCLR(object):
 	""" Class to create and train a feature extractor based on SimCLR contrastive learning framework
 
 			Arguments:
-				- DataLoader class
+				- DataGenerator class
 	"""
 	
-	def __init__(self, data_loader):
+	def __init__(self, data_generator):
 		""" Return a feature extractor SimCLR object """
 
-		self.dl= data_loader
-		self.dl_cv= None
+		self.dg= data_generator
+		self.dg_cv= None
 		self.has_cvdata= False
 
 		# *****************************
@@ -127,7 +127,7 @@ class FeatExtractorSimCLR(object):
 		self.augmentation= False	
 		self.validation_steps= 10
 		self.use_multiprocessing= True
-		self.nworkers= 1
+		self.nworkers= 0
 
 		# *****************************
 		# ** Model
@@ -155,6 +155,8 @@ class FeatExtractorSimCLR(object):
 		self.activation_fcn_cnn= "relu"
 		self.add_dense= False
 		self.add_dropout_layer= False
+		self.add_conv_dropout_layer= False
+		self.conv_dropout_rate= 0.2
 		self.dense_layer_sizes= [16] 
 		self.dense_layer_activation= 'relu'
 		self.latent_dim= 2
@@ -171,23 +173,27 @@ class FeatExtractorSimCLR(object):
 		self.shuffle_train_data= True
 		self.augment_scale_factor= 1
 
+		self.load_cv_data_in_batches= True
+		self.balance_classes= False
+		self.class_probs= {}
+
 		# *****************************
 		# ** Pre-processing
 		# *****************************
-		self.normalize= False
-		self.scale_to_abs_max= False
-		self.scale_to_max= False
-		self.resize= True
-		self.log_transform_img= False
-		self.scale_img= False
-		self.scale_img_factors= []
-		self.standardize_img= False		
-		self.img_means= []
-		self.img_sigmas= []	
-		self.chan_divide= False
-		self.chan_mins= []
-		self.erode= False
-		self.erode_kernel= 5
+		#self.normalize= False
+		#self.scale_to_abs_max= False
+		#self.scale_to_max= False
+		#self.resize= True
+		#self.log_transform_img= False
+		#self.scale_img= False
+		#self.scale_img_factors= []
+		#self.standardize_img= False		
+		#self.img_means= []
+		#self.img_sigmas= []	
+		#self.chan_divide= False
+		#self.chan_mins= []
+		#self.erode= False
+		#self.erode_kernel= 5
 		
 		# *****************************
 		# ** Output
@@ -209,15 +215,19 @@ class FeatExtractorSimCLR(object):
 		""" Set optimizer """
 
 		if learning_rate is None or learning_rate<=0:
+			logger.info("Setting %s optimizer (no lr given) ..." % (opt))
 			self.optimizer= opt
 		else:
 			if opt=="rmsprop":
-				self.optimizer= tf.keras.optimizers.RMSprop(learning_rate=self.learning_rate)
-			elif opt=="adam":	
-				self.optimizer= tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
+				logger.info("Setting rmsprop optimizer with lr=%f ..." % (learning_rate))
+				self.optimizer= tf.keras.optimizers.RMSprop(learning_rate=learning_rate)
+			elif opt=="adam":
+				logger.info("Setting adam optimizer with lr=%f ..." % (learning_rate))
+				self.optimizer= tf.keras.optimizers.Adam(learning_rate=learning_rate)
 			else:
 				logger.warn("Unknown optimizer selected (%s), setting to the default (%s) ..." % (opt, self.optimizer_default))
 				self.optimizer= self.optimizer_default
+
 		
 	def set_reproducible_model(self):
 		""" Set model in reproducible mode """
@@ -243,57 +253,59 @@ class FeatExtractorSimCLR(object):
 		""" Set train data & generator from loader """
 
 		# - Retrieve info from data loader
-		self.nchannels= self.dl.nchannels
-		if self.chan_divide:
-			self.nchannels-= 1
-		self.source_labels= self.dl.labels
-		self.source_ids= self.dl.classids
-		self.source_names= self.dl.snames
+		self.nchannels= self.dg.nchannels
+		self.source_labels= self.dg.labels
+		self.source_ids= self.dg.classids
+		self.source_names= self.dg.snames
 		self.nsamples= len(self.source_labels)
 
 		# - Create train data generator
-		self.train_data_generator= self.dl.data_generator(
+		self.train_data_generator= self.dg.generate_simclr_data(
 			batch_size=self.batch_size, 
 			shuffle=self.shuffle_train_data,
-			resize=self.resize, nx=self.nx, ny=self.ny, 
-			normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
-			augment=self.augmentation,
-			log_transform=self.log_transform_img,
-			scale=self.scale_img, scale_factors=self.scale_img_factors,
-			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
-			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
-			erode=self.erode, erode_kernel=self.erode_kernel,
-			outdata_choice='simclr'
+			balance_classes=self.balance_classes, class_probs=self.class_probs
 		)
 
+
 		# - Create cross validation data generator
-		self.crossval_data_generator= self.dl.data_generator(
-			batch_size=self.batch_size, 
-			shuffle=self.shuffle_train_data,
-			resize=self.resize, nx=self.nx, ny=self.ny, 
-			normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
-			augment=self.augmentation,
-			log_transform=self.log_transform_img,
-			scale=self.scale_img, scale_factors=self.scale_img_factors,
-			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
-			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
-			erode=self.erode, erode_kernel=self.erode_kernel,
-			outdata_choice='simclr'	
-		)	
+		if self.dg_cv is None:
+			logger.info("Creating validation data generator (deep-copying train data generator) ...")
+			self.dg_cv= deepcopy(self.dg)
+			logger.info("Disabling data augmentation in validation data generator ...")
+			self.dg_cv.disable_augmentation()
+			self.has_cvdata= False
+			self.nsamples_cv= 0
+			batch_size_cv= 0
+			self.crossval_data_generator= None
+
+		else:
+			self.has_cvdata= True
+			self.nsamples_cv= len(self.dg_cv.labels)
+			logger.info("#nsamples_cv=%d" % (self.nsamples_cv))
+
+			if self.load_cv_data_in_batches:
+				batch_size_cv= self.batch_size
+			else:
+				batch_size_cv= self.nsamples_cv
+
+			logger.info("Loading cv data in batches? %d (batch_size_cv=%d)" % (self.load_cv_data_in_batches, batch_size_cv))
+
+			self.crossval_data_generator= self.dg_cv.generate_simclr_data(
+				batch_size=batch_size_cv, 
+				shuffle=False
+			)
+
 
 		# - Create test data generator
-		self.test_data_generator= self.dl.data_generator(
-			batch_size=self.nsamples, 
-			shuffle=False,
-			resize=self.resize, nx=self.nx, ny=self.ny, 
-			normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
-			augment=False,
-			log_transform=self.log_transform_img,
-			scale=self.scale_img, scale_factors=self.scale_img_factors,
-			standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
-			chan_divide=self.chan_divide, chan_mins=self.chan_mins,
-			erode=self.erode, erode_kernel=self.erode_kernel,
-			outdata_choice='inputs'
+		logger.info("Creating test data generator (deep-copying train data generator) ...")
+		self.dg_test= deepcopy(self.dg)
+		logger.info("Disabling data augmentation in test data generator ...")
+		self.dg_test.disable_augmentation()
+
+		self.test_data_generator= self.dg_test.generate_simclr_data(
+			#batch_size=self.nsamples,
+			batch_size=1, 
+			shuffle=False
 		)
 		
 		return 0
@@ -352,6 +364,10 @@ class FeatExtractorSimCLR(object):
 			if self.add_max_pooling:
 				padding= "valid"
 				x = layers.MaxPooling2D(pool_size=(self.pool_size,self.pool_size), strides=None, padding=padding)(x)
+
+			# - Add dropout?
+			if self.add_conv_dropout_layer:
+				x= layers.Dropout(self.conv_dropout_rate)(x)
 			
 		#===========================
 		#==  FLATTEN LAYER
@@ -647,7 +663,10 @@ class FeatExtractorSimCLR(object):
 		# - Set validation steps
 		val_steps_per_epoch= self.validation_steps
 		if self.has_cvdata:
-			val_steps_per_epoch= self.nsamples_cv // self.batch_size
+			if self.load_cv_data_in_batches:
+				val_steps_per_epoch= self.nsamples_cv // self.batch_size
+			else:
+				val_steps_per_epoch= 1
 
 		#===========================
 		#==   TRAIN NETWORK
@@ -656,7 +675,7 @@ class FeatExtractorSimCLR(object):
 		checkpoint, earlyStopping, reduce_lr = self.get_callbacks()
 
 		# - Train model
-		logger.info("Start SimCLR training (dataset_size=%d, batch_size=%d, steps_per_epoch=%d) ..." % (self.nsamples, self.batch_size, steps_per_epoch))
+		logger.info("Start SimCLR training (dataset_size=%d, batch_size=%d, steps_per_epoch=%d, val_steps_per_epoch=%d) ..." % (self.nsamples, self.batch_size, steps_per_epoch, val_steps_per_epoch))
 
 		self.fitout= self.model.fit(
 			x=self.train_data_generator,
