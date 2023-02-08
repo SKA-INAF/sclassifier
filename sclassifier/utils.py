@@ -404,8 +404,8 @@ class Utils(object):
 			del header['CROTA3']
 		if 'PC1_3' in header:
 			del header['PC1_3']
-		if 'PC03_01' in header:
-			del header['PC03_01']
+		if 'PC01_03' in header:
+			del header['PC01_03']
 		if 'PC2_3' in header:
 			del header['PC2_3']
 		if 'PC02_03' in header:
