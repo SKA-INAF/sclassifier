@@ -404,14 +404,24 @@ class Utils(object):
 			del header['CROTA3']
 		if 'PC1_3' in header:
 			del header['PC1_3']
+		if 'PC03_01' in header:
+			del header['PC03_01']
 		if 'PC2_3' in header:
 			del header['PC2_3']
+		if 'PC02_03' in header:
+			del header['PC02_03']
 		if 'PC3_1' in header:
 			del header['PC3_1']
+		if 'PC03_01' in header:
+			del header['PC03_01']
 		if 'PC3_2' in header:
 			del header['PC3_2']
+		if 'PC03_02' in header:
+			del header['PC03_02']
 		if 'PC3_3' in header:
 			del header['PC3_3']
+		if 'PC03_03' in header:
+			del header['PC03_03']
 
 		# - Remove 4th axis
 		#if 'NAXIS4' in header and header['NAXIS4']==1:
@@ -431,18 +441,32 @@ class Utils(object):
 			del header['CROTA4']
 		if 'PC1_4' in header:
 			del header['PC1_4']
+		if 'PC01_04' in header:
+			del header['PC01_04']
 		if 'PC2_4' in header:
 			del header['PC2_4']
+		if 'PC02_04' in header:
+			del header['PC02_04']
 		if 'PC3_4' in header:
 			del header['PC3_4']
+		if 'PC03_04' in header:
+			del header['PC03_04']
 		if 'PC4_1' in header:
 			del header['PC4_1']
+		if 'PC04_01' in header:
+			del header['PC04_01']
 		if 'PC4_2' in header:
 			del header['PC4_2']
+		if 'PC04_02' in header:
+			del header['PC04_02']
 		if 'PC4_3' in header:
 			del header['PC4_3']
+		if 'PC04_03' in header:
+			del header['PC04_03']
 		if 'PC4_4' in header:
 			del header['PC4_4']
+		if 'PC04_04' in header:
+			del header['PC04_04']
 
 		# - Set naxis to 2
 		header['NAXIS']= 2
