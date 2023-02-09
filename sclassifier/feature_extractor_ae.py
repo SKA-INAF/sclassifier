@@ -539,7 +539,8 @@ class FeatExtractorAE(object):
 		# *****************************
 		# ** Draw
 		# *****************************
-		# - Draw options
+		self.draw= False
+
 		self.marker_mapping= {
 			'UNKNOWN': 'o', # unknown
 			'MIXED_TYPE': 'X', # mixed type
@@ -1390,8 +1391,9 @@ class FeatExtractorAE(object):
 		#===========================
 		#==   PLOT RESULTS
 		#===========================
-		logger.info("Plotting results ...")
-		self.__plot_results()
+		if self.draw:
+			logger.info("Plotting results ...")
+			self.__plot_results()
 
 		return 0
 
