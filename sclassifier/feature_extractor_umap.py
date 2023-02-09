@@ -723,10 +723,11 @@ class FeatExtractorUMAP(object):
 		#==========================================================
 		#==   FIT PRE-CLASSIFIED DATA (IF AVAILABLE) SUPERVISED
 		#==========================================================
-		if self.use_preclassified_data and len(self.data_preclassified)>=self.preclassified_data_minsize:
-			logger.info("Fitting input pre-classified data in a supervised way ...")
-			self.learned_transf= self.reducer.fit(self.data_preclassified,self.data_preclassified_classids)
-			self.encoded_data_preclassified= self.learned_transf.transform(self.data_preclassified)
+		if self.use_preclassified_data:
+			if self.data_preclassified is not None and len(self.data_preclassified)>=self.preclassified_data_minsize:
+				logger.info("Fitting input pre-classified data in a supervised way ...")
+				self.learned_transf= self.reducer.fit(self.data_preclassified,self.data_preclassified_classids)
+				self.encoded_data_preclassified= self.learned_transf.transform(self.data_preclassified)
 
 		#================================
 		#==   FIT DATA UNSUPERVISED
