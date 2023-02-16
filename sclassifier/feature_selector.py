@@ -169,6 +169,7 @@ class FeatSelector(object):
 		self.outfile_scores= 'featscores.png'
 		self.outfile_scorestats= 'featscores.dat'
 		self.outfile_featranks= 'featranks.dat'
+		self.outfile_featimportance= 'feat_importance.dat'
 		self.outfile_selfeat= 'selfeatids.dat'
 		self.outfile_scaler = 'datascaler.sav'
 
@@ -536,8 +537,24 @@ class FeatSelector(object):
 		logger.info("Fitting RFECV model on dataset ...")
 		self.rfe.fit(self.data_preclassified, self.data_preclassified_targets)
 
+		feat_importances= self.rfe.estimator_.feature_importances_
+		max_importance= np.max(feat_importances)
+		feat_scaled_importances= feat_importances/feat_importances
+		
 		for i in range(self.data_preclassified.shape[1]):
-			logger.info('Feature %d: selected? %d (rank=%.3f, importance=%.3f)' % (i, self.rfe.support_[i], self.rfe.ranking_[i], self.rfe.estimator_.feature_importances_[i]))
+			logger.info('Feature %d: selected? %d (rank=%.3f, importance=%.3f)' % (i, self.rfe.support_[i], self.rfe.ranking_[i], feat_scaled_importances[i]))
+
+		# - Save feature importance
+		logger.info("Saving feature importance ...")
+		N= self.data_preclassified.shape[1]
+		outdata_featimportance= np.concatenate(
+			(np.arange(0,N).reshape(N,1), np.array(feat_scaled_importances).reshape(N,1)),
+			axis=1
+		)
+
+		featimportance_head= "# featid importance"
+		Utils.write_ascii(outdata_featimportance, self.outfile_featimportance, featimportance_head)			
+
 
 		# - Extract selected data columns
 		logger.info("Extracting selected data columns (N=%d) from original data ..." % (nfeat_sel))
