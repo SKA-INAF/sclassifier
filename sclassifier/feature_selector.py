@@ -539,7 +539,7 @@ class FeatSelector(object):
 
 		feat_importances= self.rfe.estimator_.feature_importances_
 		max_importance= np.max(feat_importances)
-		feat_scaled_importances= feat_importances/feat_importances
+		feat_scaled_importances= feat_importances/max_importance
 		
 		for i in range(self.data_preclassified.shape[1]):
 			logger.info('Feature %d: selected? %d (rank=%.3f, importance=%.3f)' % (i, self.rfe.support_[i], self.rfe.ranking_[i], feat_scaled_importances[i]))
