@@ -168,6 +168,7 @@ class FeatSelector(object):
 		self.outfile= 'featdata_sel.dat'
 		self.outfile_scores= 'featscores.png'
 		self.outfile_scorestats= 'featscores.dat'
+		self.outfile_featranks= 'featranks.dat'
 		self.outfile_selfeat= 'selfeatids.dat'
 		self.outfile_scaler = 'datascaler.sav'
 
@@ -522,6 +523,17 @@ class FeatSelector(object):
 				self.selfeatids.append(i)
 
 		self.selfeatids.sort()
+
+		# - Save feature ranks
+		logger.info("Saving feature ranks ...")
+		outdata_featranks= np.concatenate(
+			(np.arange(0,len(self.nfeats)), selfeats, featranks),
+			axis=1
+		)
+
+		featrank_head= "# featid selected rank"
+		Utils.write_ascii(outdata_featranks, self.outfile_featranks, featrank_head)			
+
 
 		# - Extract selected data columns
 		logger.info("Extracting selected data columns (N=%d) from original data ..." % (nfeat_sel))
