@@ -537,7 +537,7 @@ class FeatSelector(object):
 		self.rfe.fit(self.data_preclassified, self.data_preclassified_targets)
 
 		for i in range(self.data_preclassified.shape[1]):
-			logger.info('Feature %d: selected? %d (rank=%.3f)' % (i, self.rfe.support_[i], self.rfe.ranking_[i]))
+			logger.info('Feature %d: selected? %d (rank=%.3f, importance=%.3f)' % (i, self.rfe.support_[i], self.rfe.ranking_[i], self.rfe.estimator_.feature_importances_[i]))
 
 		# - Extract selected data columns
 		logger.info("Extracting selected data columns (N=%d) from original data ..." % (nfeat_sel))
