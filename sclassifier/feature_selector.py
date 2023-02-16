@@ -324,7 +324,8 @@ class FeatSelector(object):
 		dt= DecisionTreeClassifier(
 			max_depth=self.max_depth, 
 			min_samples_split=self.min_samples_split, 
-			min_samples_leaf=self.min_samples_leaf
+			min_samples_leaf=self.min_samples_leaf,
+			class_weight=class_weight
 		)
 
 		# - Set RandomForest classifier
@@ -332,7 +333,8 @@ class FeatSelector(object):
 			max_depth=self.max_depth, 
 			min_samples_split=self.min_samples_split, 
 			min_samples_leaf=self.min_samples_leaf, 
-			n_estimators=self.n_estimators, 
+			n_estimators=self.n_estimators,
+			class_weight=class_weight,
 			max_features=1
 		)
 
