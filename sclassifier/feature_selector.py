@@ -526,8 +526,9 @@ class FeatSelector(object):
 
 		# - Save feature ranks
 		logger.info("Saving feature ranks ...")
+		N= self.data_preclassified.shape[1]
 		outdata_featranks= np.concatenate(
-			(np.arange(0,len(self.nfeats)), selfeats, featranks),
+			(np.arange(0,N), np.array(selfeats).reshape(N,1), np.array(featranks).reshape(N,1)),
 			axis=1
 		)
 
