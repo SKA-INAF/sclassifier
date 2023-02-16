@@ -431,9 +431,6 @@ class FeatSelector(object):
 			logger.error("Failed to create pipeline and model!")
 			return -1
 
-		# - Set fit params
-		#fit_params
-
 		# - Evaluate models
 		logger.info("Evaluating models as a function of #features ...")
 		#results, nfeats = list(), list()
@@ -535,6 +532,12 @@ class FeatSelector(object):
 		featrank_head= "# featid selected rank"
 		Utils.write_ascii(outdata_featranks, self.outfile_featranks, featrank_head)			
 
+		# - Compute feature ranks with RFECV
+		logger.info("Fitting RFECV model on dataset ...")
+		self.rfe.fit(self.data_preclassified, self.data_preclassified_targets)
+
+		for i in range(self.data_preclassified.shape[1]):
+			logger.info('Feature %d: selected? %d (rank=%.3f)' % (i, self.rfe.support_[i], self.rfe.ranking_[i]))
 
 		# - Extract selected data columns
 		logger.info("Extracting selected data columns (N=%d) from original data ..." % (nfeat_sel))
