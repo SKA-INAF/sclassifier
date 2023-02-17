@@ -409,8 +409,8 @@ def main():
 	if standardize:
 		preprocess_stages.append(Standardizer(means=img_means, sigmas=img_sigmas))
 	
-	if chan_divide:
-		preprocess_stages.append(ChanDivider(chref=chref))
+	#if chan_divide:
+	#	preprocess_stages.append(ChanDivider(chref=chref))
 
 	print("== PRE-PROCESSING STAGES (TRAIN) ==")
 	print(preprocess_stages)
