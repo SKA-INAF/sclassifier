@@ -36,10 +36,13 @@ import collections
 ## MODULES
 from sclassifier import __version__, __date__
 from sclassifier import logger
-from sclassifier.data_loader import DataLoader
 from sclassifier.feature_extractor_simclr import FeatExtractorSimCLR
-from sclassifier.feature_extractor_umap import FeatExtractorUMAP
-from sclassifier.clustering import Clusterer
+from sclassifier.data_generator import DataGenerator
+from sclassifier.preprocessing import DataPreprocessor
+from sclassifier.preprocessing import BkgSubtractor, SigmaClipper, SigmaClipShifter, Scaler, LogStretcher, Augmenter
+from sclassifier.preprocessing import Resizer, MinMaxNormalizer, AbsMinMaxNormalizer, MaxScaler, AbsMaxScaler, ChanMaxScaler
+from sclassifier.preprocessing import Shifter, Standardizer, ChanDivider, MaskShrinker, BorderMasker
+from sclassifier.preprocessing import ChanResizer, ZScaleTransformer
 
 #### GET SCRIPT ARGS ####
 def str2bool(v):
