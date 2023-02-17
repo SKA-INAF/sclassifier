@@ -26,6 +26,7 @@ import numpy as np
 import random
 import math
 import logging
+import json
 
 ## COMMAND-LINE ARG MODULES
 import getopt
