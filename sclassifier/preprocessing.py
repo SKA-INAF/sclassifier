@@ -46,6 +46,7 @@ from .utils import Utils
 ##############################
 from sclassifier import logger
 
+
 ##############################
 ##     PREPROCESSOR CLASS
 ##############################
@@ -92,6 +93,118 @@ class DataPreprocessor(object):
 			self.fcns= fcns_new
 			self.pipeline= Utils.compose_fcns(*self.fcns)
 		
+
+#######################################
+##     Custom Augmenters for imgaug
+#######################################
+class ZScaleAugmenter(iaa.meta.Augmenter):
+	""" Apply ZScale transform to image as augmentation step """
+	
+	def __init__(self, 
+		contrast=0.25, 
+		random_contrast=False, 
+		random_contrast_per_ch=False, contrast_min=0.1, contrast_max=0.7, 
+		seed=None, name=None, random_state="deprecated", deterministic="deprecated"
+	):
+		""" Build class """
+
+		# - Set parent class parameters
+		super(ZScaleAugmenter, self).__init__(
+			seed=seed, name=name,
+			random_state=random_state, deterministic=deterministic
+		)
+
+		# - Set class parameters 
+		if contrast<=0 or contrast>1:
+			raise Exception("Expected contrast to be [0,1], got %f!" % (contrast))
+
+		self.contrast= contrast
+		self.random_contrast= random_contrast
+		self.random_contrast_per_ch= random_contrast_per_ch
+		self.contrast_min= contrast_min
+		self.contrast_max= contrast_max
+		self.seed= seed
+
+	def get_parameters(self):
+		""" Get class parameters """
+		return [self.contrast, self.random_contrast, self.random_contrast_per_ch, self.contrast_min, self.contrast_max]
+
+	def _augment_batch_(self, batch, random_state, parents, hooks):
+		""" Augment batch of images """
+	
+		# - Check input batch
+		if batch.images is None:
+			return batch
+
+		images = batch.images
+		nb_images = len(images)
+		contrasts= []
+
+		# - Set random seed if given
+		if self.seed is not None:
+			np.random.seed(self.seed)
+
+		# - Loop over image batch
+		for i in range(nb_images):
+			image= images[i]
+			nb_channels = image.shape[2]
+
+			# - Set zscale contrasts (fixed or random)
+			if not contrasts:
+				if self.random_contrast:
+					if self.random_contrast_per_ch:
+						for k in range(nb_channels):
+							contrast_rand= np.random.uniform(low=self.contrast_min, high=self.contrast_max)
+							contrasts.append(contrast_rand)
+					else:
+						contrast_rand= np.random.uniform(low=self.contrast_min, high=self.contrast_max)
+						contrasts= [contrast_rand]*nb_channels
+				else:
+					contrasts= [self.contrast]*nb_channels
+
+			# - Apply zscale stretch
+			logger.debug("Applying zscale transform to batch %d with contrasts %s " % (i+1, str(contrasts)))
+
+			batch.images[i] = self.__get_zscale_image(image, contrasts)
+			if batch.images[i] is None:
+				raise Exception("ZScale augmented image at batch %d is None!" % (i+1))
+
+		return batch
+	
+	
+	def __get_zscale_image(self, data, contrasts=[]):
+		""" Apply z-scale transform to single image (W,H,Nch) """
+
+		# - Check data
+		if data is None:
+			logger.error("Input data is None!")
+			return None
+
+		cond= np.logical_and(data!=0, np.isfinite(data))
+
+		# - Check contrast dim vs nchans
+		nchans= data.shape[-1]
+	
+		if len(contrasts)<nchans:
+			logger.error("Invalid contrasts given (contrast list size=%d < nchans=%d)" % (len(self.contrasts), nchans))
+			return None
+		
+		# - Transform each channel
+		data_stretched= np.copy(data)
+
+		for i in range(data.shape[-1]):
+			data_ch= data_stretched[:,:,i]
+			transform= ZScaleInterval(contrast=contrasts[i]) # able to handle NANs
+			data_transf= transform(data_ch)
+			data_stretched[:,:,i]= data_transf
+
+		# - Scale data
+		data_stretched[~cond]= 0 # Restore 0 and nans set in original data
+
+		return data_stretched
+		
+
+	
 
 ##############################
 ##     MinMaxNormalizer
