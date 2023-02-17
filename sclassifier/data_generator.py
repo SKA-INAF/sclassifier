@@ -426,6 +426,7 @@ class DataGenerator(object):
 					inputs_simclr= np.empty(inputs_simclr_shape, dtype=np.float32)
 					labels_ab_aa = np.zeros((batch_size, 2 * batch_size))
 					labels_ba_bb = np.zeros((batch_size, 2 * batch_size))
+					class_ids= []
 
 				# - Update inputs
 				# - The ref implementation (https://github.com/mwdhont/SimCLRv1-keras-tensorflow/blob/master/DataGeneratorSimCLR.py)
