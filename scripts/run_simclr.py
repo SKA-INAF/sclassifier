@@ -383,8 +383,7 @@ def main():
 	if erode:
 		preprocess_stages.append(MaskShrinker(kernel=erode_kernel))
 	
-	if augment:
-		preprocess_stages.append(Augmenter(augmenter_choice=augmenter))
+	preprocess_stages.append(Augmenter(augmenter_choice=augmenter))
 
 	if mask_borders:
 		preprocess_stages.append(BorderMasker(mask_border_fract))
