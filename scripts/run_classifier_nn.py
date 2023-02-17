@@ -590,6 +590,9 @@ def main():
 	sclass.load_cv_data_in_batches= load_cv_data_in_batches
 	sclass.save_model_period= save_model_period
 
+	sclass.balance_classes= balance_classes_in_batch
+	sclass.class_probs= class_probs_dict
+
 	if predict:
 		status= sclass.run_predict(modelfile, weightfile)
 	else:
