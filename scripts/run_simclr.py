@@ -494,7 +494,7 @@ def main():
 
 	# - Run train/predict
 	if predict:
-		status= simclr.run_predict(modelfile, weightfile)
+		status= simclr.run_predict(modelfile_encoder, weightfile_encoder)
 	else:
 		status= simclr.run_train(modelfile, weightfile, modelfile_encoder, weightfile_encoder)
 	
