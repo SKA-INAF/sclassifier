@@ -770,7 +770,8 @@ class FeatExtractorSimCLR(object):
 		logger.info("Running SimCLR prediction on input data ...")
 		self.encoded_data= self.encoder.predict(
 			x=self.test_data_generator,	
-			steps=1,
+			#steps=1,
+			steps=self.nsamples,
     	verbose=2,
     	workers=self.nworkers,
     	use_multiprocessing=self.use_multiprocessing
