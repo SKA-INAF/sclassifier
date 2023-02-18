@@ -933,8 +933,8 @@ class FeatExtractorSimCLR(object):
 			logger.warn("Failed to load encoder model from file %s (err=%s)!" % (modelfile, str(e)))
 			return -1
 
-		if not self.model or self.model is None:
-			logger.error("Model object is None, loading failed!")
+		if not self.encoder or self.encoder is None:
+			logger.error("Encoder model object is None, loading failed!")
 			return -1
 
 		#==============================
