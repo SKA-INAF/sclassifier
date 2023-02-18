@@ -306,7 +306,8 @@ class FeatExtractorSimCLR(object):
 		logger.info("Disabling data augmentation in test data generator ...")
 		self.dg_test.disable_augmentation()
 
-		self.test_data_generator= self.dg_test.generate_simclr_data(
+		#self.test_data_generator= self.dg_test.generate_simclr_data(
+		self.test_data_generator= self.dg_test.generate_cae_data(
 			#batch_size=self.nsamples,
 			batch_size=1, 
 			shuffle=False
