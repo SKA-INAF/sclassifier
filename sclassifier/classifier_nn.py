@@ -235,7 +235,7 @@ class SClassifierNN(object):
 		self.add_max_pooling= False
 		self.pool_size= 2
 		self.add_leakyrelu= False
-		self.leakyrelu_alpha= 0.2
+		self.leakyrelu_alpha= 0.3
 		self.add_batchnorm= True
 		self.activation_fcn_cnn= "relu"
 		self.add_dense= False
