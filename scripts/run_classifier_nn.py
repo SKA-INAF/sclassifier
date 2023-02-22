@@ -203,6 +203,9 @@ def get_args():
 	parser.add_argument('--classid_label_map', dest='classid_label_map', required=False, type=str, default='', help='Class ID label dictionary')
 	#parser.add_argument('--classid_label_map', dest='classid_label_map', required=False, type=str, default='0:"UNKNOWN",1:"STAR",2:"GALAXY",3:"PN",6:"HII",23:"PULSAR",24:"YSO",6000:"QSO"', help='Class ID label dictionary')	
 
+	parser.add_argument('--target_names', dest='target_names', required=False, type=str, default='', help='Target names')
+	#	parser.add_argument('--target_names', dest='target_names', required=False, type=str, default='PN,HII,PULSAR,YSO,STAR,GALAXY,QSO', help='Target names')
+
 	parser.add_argument('-nclasses', '--nclasses', dest='nclasses', required=False, type=int, default=0, action='store', help='Number of classes (default=-1)')
 
 
@@ -440,6 +443,10 @@ def main():
 		print("== classid_label_map ==")
 		print(classid_label_map)
 
+
+	if args.target_names:
+		target_names= [str(x) for x in args.target_names.split(',')]
+
 	nclasses= args.nclasses
 
 	
@@ -656,6 +663,9 @@ def main():
 
 	if nclasses>0:
 		sclass.nclasses= nclasses
+
+	if target_names:
+		sclass.target_names= target_names
 
 
 	# - Run train/prediction
