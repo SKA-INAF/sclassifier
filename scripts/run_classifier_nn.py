@@ -27,6 +27,7 @@ import random
 import math
 import logging
 import json
+import ast
 
 ## OPENCV
 import cv2
@@ -413,7 +414,7 @@ def main():
 	classid_remap= {}
 	if args.classid_remap!="":
 		try:
-			classid_remap= json.loads(args.classid_remap)
+			classid_remap= ast.literal_eval(args.classid_remap)
 		except Exception as e:
 			logger.error("Failed to convert class id remap string to dict (err=%s)!" % (str(e)))
 			return -1	
@@ -424,7 +425,7 @@ def main():
 	target_label_map= {}
 	if args.target_label_map!="":
 		try:
-			target_label_map= json.loads(args.target_label_map)
+			target_label_map= ast.literal_eval(args.target_label_map)
 		except Exception as e:
 			logger.error("Failed to convert target label map string to dict (err=%s)!" % (str(e)))
 			return -1	
@@ -435,7 +436,7 @@ def main():
 	classid_label_map= {}
 	if args.classid_label_map!="":
 		try:
-			classid_label_map= json.loads(args.classid_label_map)
+			classid_label_map= ast.literal_eval(args.classid_label_map)
 		except Exception as e:
 			logger.error("Failed to convert classid label map string to dict (err=%s)!" % (str(e)))
 			return -1	
