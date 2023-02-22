@@ -31,6 +31,8 @@ import functools
 import warnings
 from astropy.io import fits
 warnings.filterwarnings('ignore', category=UserWarning, append=True)
+warnings.simplefilter('ignore', category=VerifyWarning)
+
 # Suppress `Invalid 'BLANK' keyword in header.` warnings
 #from astropy.io.fits.verify import VerifyWarning
 #warnings.simplefilter('ignore', category=VerifyWarning)
