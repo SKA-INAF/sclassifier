@@ -193,6 +193,19 @@ def get_args():
 	##parser.add_argument('--class_probs', dest='class_probs', required=False, type=str, default='', help='Class probs used in batch class resampling. If rand<prob accept generated data.') 
 	parser.add_argument('--class_probs', dest='class_probs', required=False, type=str, default='{"PN":1,"HII":1,"PULSAR":1,"YSO":1,"STAR":1,"GALAXY":1,"QSO":1}', help='Class weights used in batch rebalance') 
 
+	# - Override class target configuration
+	parser.add_argument('--classid_remap', dest='classid_remap', required=False, type=str, default='', help='Class ID remap dictionary')
+	##parser.add_argument('--classid_remap', dest='classid_remap', required=False, type=str, default='{0:-1,1:4,2:5,3:0,6:1,23:2,24:3,6000:6}', help='Class ID remap dictionary')
+	
+	parser.add_argument('--target_label_map', dest='target_label_map', required=False, type=str, default='', help='Target label dictionary')
+	#parser.add_argument('--target_label_map', dest='target_label_map', required=False, type=str, default='{-1:"UNKNOWN",0:"PN",1:"HII",2:"PULSAR",3:"YSO",4:"STAR",5:"GALAXY",6:"QSO"}', help='Target label dictionary')
+	
+	parser.add_argument('--classid_label_map', dest='classid_label_map', required=False, type=str, default='', help='Class ID label dictionary')
+	#parser.add_argument('--classid_label_map', dest='classid_label_map', required=False, type=str, default='0:"UNKNOWN",1:"STAR",2:"GALAXY",3:"PN",6:"HII",23:"PULSAR",24:"YSO",6000:"QSO"', help='Class ID label dictionary')	
+
+	parser.add_argument('-nclasses', '--nclasses', dest='nclasses', required=False, type=int, default=0, action='store', help='Number of classes (default=-1)')
+
+
 	# - Network architecture options
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
 	parser.set_defaults(predict=False)
@@ -392,6 +405,44 @@ def main():
 
 		print("== class_probs ==")
 		print(class_probs_dict)
+
+	# - Override target/class id configuration
+	classid_remap= {}
+	if args.classid_remap!="":
+		try:
+			classid_remap= json.loads(args.classid_remap)
+		except Exception as e:
+			logger.error("Failed to convert class id remap string to dict (err=%s)!" % (str(e)))
+			return -1	
+		
+		print("== classid_remap ==")
+		print(classid_remap)
+
+	target_label_map= {}
+	if args.target_label_map!="":
+		try:
+			target_label_map= json.loads(args.target_label_map)
+		except Exception as e:
+			logger.error("Failed to convert target label map string to dict (err=%s)!" % (str(e)))
+			return -1	
+		
+		print("== target_label_map ==")
+		print(target_label_map)
+
+	classid_label_map= {}
+	if args.classid_label_map!="":
+		try:
+			classid_label_map= json.loads(args.classid_label_map)
+		except Exception as e:
+			logger.error("Failed to convert classid label map string to dict (err=%s)!" % (str(e)))
+			return -1	
+		
+		print("== classid_label_map ==")
+		print(classid_label_map)
+
+	nclasses= args.nclasses
+
+	
 
 	#===============================
 	#==  CREATE DATA PRE-PROCESSOR
@@ -593,6 +644,21 @@ def main():
 	sclass.balance_classes= balance_classes_in_batch
 	sclass.class_probs= class_probs_dict
 
+	# - Override class target configuration?
+	if classid_remap:
+		sclass.classid_remap= classid_remap
+
+	if target_label_map:
+		sclass.target_label_map= target_label_map
+
+	if classid_label_map:
+		sclass.classid_label_map= classid_label_map
+
+	if nclasses>0:
+		sclass.nclasses= nclasses
+
+
+	# - Run train/prediction
 	if predict:
 		status= sclass.run_predict(modelfile, weightfile)
 	else:
