@@ -201,7 +201,7 @@ def get_args():
 	#parser.add_argument('--target_label_map', dest='target_label_map', required=False, type=str, default='{-1:"UNKNOWN",0:"PN",1:"HII",2:"PULSAR",3:"YSO",4:"STAR",5:"GALAXY",6:"QSO"}', help='Target label dictionary')
 	
 	parser.add_argument('--classid_label_map', dest='classid_label_map', required=False, type=str, default='', help='Class ID label dictionary')
-	#parser.add_argument('--classid_label_map', dest='classid_label_map', required=False, type=str, default='0:"UNKNOWN",1:"STAR",2:"GALAXY",3:"PN",6:"HII",23:"PULSAR",24:"YSO",6000:"QSO"', help='Class ID label dictionary')	
+	#parser.add_argument('--classid_label_map', dest='classid_label_map', required=False, type=str, default='{0:"UNKNOWN",1:"STAR",2:"GALAXY",3:"PN",6:"HII",23:"PULSAR",24:"YSO",6000:"QSO"}', help='Class ID label dictionary')	
 
 	parser.add_argument('--target_names', dest='target_names', required=False, type=str, default='', help='Target names')
 	#	parser.add_argument('--target_names', dest='target_names', required=False, type=str, default='PN,HII,PULSAR,YSO,STAR,GALAXY,QSO', help='Target names')
