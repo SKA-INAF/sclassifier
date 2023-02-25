@@ -445,6 +445,7 @@ def main():
 		print(classid_label_map)
 
 
+	target_names= []
 	if args.target_names:
 		target_names= [str(x) for x in args.target_names.split(',')]
 
