@@ -41,7 +41,7 @@ import collections
 ## MODULES
 from sclassifier import __version__, __date__
 from sclassifier import logger
-from sclassifier.data_loader import DataLoader
+##from sclassifier.data_loader import DataLoader
 from sclassifier.classifier_nn import SClassifierNN
 from sclassifier.data_generator import DataGenerator
 from sclassifier.preprocessing import DataPreprocessor
