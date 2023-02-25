@@ -484,3 +484,16 @@ class SoftmaxCosineSim(layers.Layer):
 
 		return output
 
+
+###############################################
+##     BYOL LOSS DEFINITION
+###############################################
+# - Taken from https://github.com/garder14/byol-tensorflow2/blob/main/losses.py
+def byol_loss(p, z):
+	""" BYOL loss definition """
+	p = tf.math.l2_normalize(p, axis=1)  # (2*bs, 128)
+	z = tf.math.l2_normalize(z, axis=1)  # (2*bs, 128)
+
+	similarities = tf.reduce_sum(tf.multiply(p, z), axis=1)
+	return 2 - 2 * tf.reduce_mean(similarities)
+
