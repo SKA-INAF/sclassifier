@@ -209,6 +209,7 @@ def get_args():
 
 	parser.add_argument('-nclasses', '--nclasses', dest='nclasses', required=False, type=int, default=0, action='store', help='Number of classes (default=-1)')
 
+	parser.add_argument('--objids_excluded_in_train', dest='objids_excluded_in_train', required=False, type=str, default='-1,0', help='Source ids not included for training as considered unknown classes')
 
 	# - Network architecture options
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
@@ -451,6 +452,7 @@ def main():
 
 	nclasses= args.nclasses
 
+	objids_excluded_in_train= [str(x) for x in args.objids_excluded_in_train.split(',')]
 	
 
 	#===============================
@@ -669,6 +671,7 @@ def main():
 	if target_names:
 		sclass.target_names= target_names
 
+	sclass.excluded_objids_train = objids_excluded_in_train
 
 	# - Run train/prediction
 	if predict:

@@ -179,6 +179,8 @@ class SClassifierNN(object):
 		self.has_cvdata= False
 		self.multiclass= multiclass
 
+		self.excluded_objids_train= [-1,0] # Sources with these ids are considered not labelled and therefore excluded from training or metric calculation
+
 		# *****************************
 		# ** Input data
 		# *****************************
@@ -445,15 +447,28 @@ class SClassifierNN(object):
 
 		# - Set model targets
 		self.target_ids= []
+		self.target_ids_all= []
 
 		for i in range(self.nsamples):
 			source_name= self.source_names[i]
 			obj_id= self.source_ids[i]
 			label= self.source_labels[i]
 			target_id= self.classid_remap[obj_id] # remap obj id to target class ids
-				
-			if obj_id!=0 and obj_id!=-1:
+			
+			add_to_train_list= True
+			for obj_id_excl in self.excluded_objids_train:
+				if obj_id==obj_id_excl:
+					add_to_train_list=False
+					break
+
+			if add_to_train_list:
 				self.target_ids.append(target_id)
+				self.target_ids_all.append(target_id)
+			else:
+				self.target_ids_all.append(-1)
+
+			#if obj_id!=0 and obj_id!=-1:
+			#	self.target_ids.append(target_id)
 
 		#self.class_names= list(set(self.source_labels))
 		self.target_names= []
@@ -727,9 +742,21 @@ class SClassifierNN(object):
 	def __compute_metrics(self):
 		""" Compute and save metrics """
 
+		# - Compute target/pred vectors (must have a class label set)
+		y_true= []
+		y_pred= []
+		for i in range(len(self.target_ids_all)):
+			target_id= self.target_ids_all[i]
+			pred_id= self.targets_pred[i]
+			if target_id<0:
+				continue
+			y_true.append(target_id)
+			y_pred.append(pred_id)
+
 		# - Compute classification metrics
 		logger.info("Computing classification metrics on predicted data ...")
-		report= classification_report(self.target_ids, self.targets_pred, target_names=self.target_names, output_dict=True)
+		##report= classification_report(self.target_ids, self.targets_pred, target_names=self.target_names, output_dict=True)
+		report= classification_report(y_true, y_pred, target_names=self.target_names, output_dict=True)
 		self.accuracy= report['accuracy']
 		self.precision= report['weighted avg']['precision']
 		self.recall= report['weighted avg']['recall']    
@@ -762,8 +789,10 @@ class SClassifierNN(object):
 
 		# - Retrieving confusion matrix
 		logger.info("Retrieving confusion matrix ...")
-		cm= confusion_matrix(self.target_ids, self.targets_pred)
-		cm_norm= confusion_matrix(self.target_ids, self.targets_pred, normalize="true")
+		#cm= confusion_matrix(self.target_ids, self.targets_pred)
+		#cm_norm= confusion_matrix(self.target_ids, self.targets_pred, normalize="true")
+		cm= confusion_matrix(y_true, y_pred)
+		cm_norm= confusion_matrix(y_true, y_pred, normalize="true")
 
 		print("confusion matrix")
 		print(cm)
