@@ -1201,6 +1201,11 @@ class FeatExtractorAE(object):
 		#===========================
 		#==   TRAIN AE
 		#===========================
+		# - Define tensorboard callback
+		log_dir = "logs/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+		tensorboard_cb = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+
+		# - Start training
 		logger.info("Start autoencoder training (dataset_size=%d, batch_size=%d, steps_per_epoch=%d, val_steps_per_epoch=%d) ..." % (self.nsamples, self.batch_size, steps_per_epoch, val_steps_per_epoch))
 
 		self.fitout= self.cae.fit(
@@ -1211,7 +1216,8 @@ class FeatExtractorAE(object):
 			validation_steps=val_steps_per_epoch,
 			use_multiprocessing=self.use_multiprocessing,
 			workers=self.nworkers,
-			verbose=2
+			verbose=2,
+			callbacks=[tensorboard_cb]
 		)
 
 		
