@@ -30,6 +30,7 @@ import functools
 ## ASTRO MODULES
 import warnings
 from astropy.io import fits
+from astropy.io.fits.verify import VerifyWarning
 warnings.filterwarnings('ignore', category=UserWarning, append=True)
 warnings.simplefilter('ignore', category=VerifyWarning)
 
