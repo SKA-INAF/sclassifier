@@ -453,11 +453,11 @@ class FeatExtractorSimCLR(object):
 
 		elif self.predefined_arch=="resnet18":
 			logger.info("Using resnet18 as base encoder ...")
-			x= resnet18(x)
+			x= resnet18(x, include_top=False)
 
 		elif self.predefined_arch=="resnet34":
 			logger.info("Using resnet34 as base encoder ...")
-			x= resnet34(x)			
+			x= resnet34(x, include_top=False)			
 		else:
 			logger.error("Unknown/unsupported predefined backbone architecture given (%s)!" % (self.predefined_arch))
 			return None
@@ -465,7 +465,7 @@ class FeatExtractorSimCLR(object):
 		#===========================
 		#==  FLATTEN LAYER
 		#===========================
-		x = layers.Flatten()(x)
+		###x = layers.Flatten()(x) # done already inside resnet block
 		###x= layers.GlobalAveragePooling2D()(x) # done already inside pooling
 
 		#===========================

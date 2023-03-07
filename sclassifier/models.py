@@ -185,6 +185,7 @@ def basic_block(x, planes, stride=1, downsample=None, name=None):
 	return out
 
 def make_layer(x, planes, blocks, stride=1, name=None):
+	""" Create conv layer block """
 	downsample = None
 	inplanes = x.shape[3]
 	if stride != 1 or inplanes != planes:
@@ -199,7 +200,8 @@ def make_layer(x, planes, blocks, stride=1, name=None):
 
 	return x
 
-def resnet(x, blocks_per_layer, num_classes=1000):
+def resnet(x, blocks_per_layer, include_top=True, num_classes=1000):
+	""" Define resnet network """
 	x = layers.ZeroPadding2D(padding=3, name='conv1_pad')(x)
 	x = layers.Conv2D(filters=64, kernel_size=7, strides=2, use_bias=False, kernel_initializer=kaiming_normal, name='conv1')(x)
 	x = layers.BatchNormalization(momentum=0.9, epsilon=1e-5, name='bn1')(x)
@@ -213,14 +215,18 @@ def resnet(x, blocks_per_layer, num_classes=1000):
 	x = make_layer(x, 512, blocks_per_layer[3], stride=2, name='layer4')
 
 	x = layers.GlobalAveragePooling2D(name='avgpool')(x)
-	initializer = keras.initializers.RandomUniform(-1.0 / math.sqrt(512), 1.0 / math.sqrt(512))
-	x = layers.Dense(units=num_classes, kernel_initializer=initializer, bias_initializer=initializer, name='fc')(x)
+
+	if include_top:
+		initializer = keras.initializers.RandomUniform(-1.0 / math.sqrt(512), 1.0 / math.sqrt(512))
+		x = layers.Dense(units=num_classes, kernel_initializer=initializer, bias_initializer=initializer, name='fc')(x)
 
 	return x
 
 def resnet18(x, **kwargs):
+	""" Define resnet18 """
 	return resnet(x, [2, 2, 2, 2], **kwargs)
 
 def resnet34(x, **kwargs):
+	""" Define resnet34 """
 	return resnet(x, [3, 4, 6, 3], **kwargs)
 
