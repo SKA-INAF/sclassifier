@@ -1277,7 +1277,7 @@ class Augmenter(object):
 		augmenter_simclr_test= iaa.Sequential(
 			[
 				#iaa.Affine(scale=(0.5, 1.0), mode='constant', cval=0.0)
-				iaa.GaussianBlur(sigma=(0.09, 0.1))
+				iaa.GaussianBlur(sigma=(0.9, 1))
 			]
 		)
 
