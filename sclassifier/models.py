@@ -143,7 +143,7 @@ class ClassificationHead(tf.keras.Model):
 
 	def __init__(self):
 		super(ClassificationHead, self).__init__()
-    self.fc = tf.keras.layers.Dense(units=10)
+		self.fc = tf.keras.layers.Dense(units=10)
 
 	def call(self, inp):
 		x = self.fc(inp)
