@@ -1255,11 +1255,12 @@ class Augmenter(object):
 			]
 		)
 
-		# - Apply flip (66%) + rotate (always) + scale/blur/noise (50%)
+		# - Apply flip (66%) + rotate (always) + random_zscale(always) + scale/blur/noise (50%)
 		augmenter_simclr4= iaa.Sequential(
 			[
 				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
   			iaa.Affine(rotate=(-90, 90), mode='constant', cval=0.0),
+				ZScaleAugmenter(contrast=0.25, random_contrast=True, random_contrast_per_ch=False, contrast_min=0.1, contrast_max=0.5),
 				iaa.Sometimes(0.5, 
 					iaa.OneOf(
 						[
