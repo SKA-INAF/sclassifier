@@ -435,7 +435,7 @@ class FeatExtractorSimCLR(object):
 				weights=None,  # random initialization
 				input_tensor=inputs,
 				input_shape=inputShape,
-				pooling=None
+				pooling="avg" #global average pooling will be applied to the output of the last convolutional block
 			)
 			x= resnet50(x)
 
@@ -445,7 +445,7 @@ class FeatExtractorSimCLR(object):
 				weights=None,  # random initialization
 				input_tensor=inputs,
 				input_shape=inputShape,
-				pooling=None
+				pooling="avg" #global average pooling will be applied to the output of the last convolutional block
 			)
 			x= resnet101(x)
 
@@ -461,8 +461,8 @@ class FeatExtractorSimCLR(object):
 		#===========================
 		#==  FLATTEN LAYER
 		#===========================
-		#x = layers.Flatten()(x)
-		x= layers.GlobalAveragePooling2D()(x)
+		x = layers.Flatten()(x)
+		###x= layers.GlobalAveragePooling2D()(x) # done already inside pooling
 
 		#===========================
 		#==  DENSE LAYER
