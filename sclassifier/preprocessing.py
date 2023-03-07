@@ -1273,14 +1273,21 @@ class Augmenter(object):
 				)
 			]
 		)
-	
+
+		augmenter_simclr_test= iaa.Sequential(
+			[
+				iaa.Affine(scale=(0.5, 1.0), mode='constant', cval=0.0)
+			]
+		)
+
 		# - Set augmenter chosen
 		if choice=='cae':
 			self.augmenter= augmenter_cae
 		elif choice=='cnn':
 			self.augmenter= augmenter_cnn
 		elif choice=='simclr':
-			self.augmenter= augmenter_simclr4
+			#self.augmenter= augmenter_simclr4
+			self.augmenter= augmenter_simclr_test
 		else:
 			logger.warn("Unknown choice (%s), setting CAE augmenter..." % (choice))
 			self.augmenter= augmenter_cae
