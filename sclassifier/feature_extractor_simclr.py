@@ -430,6 +430,7 @@ class FeatExtractorSimCLR(object):
 		#==  RES NET 
 		#===========================
 		if self.predefined_arch=="resnet50":
+			logger.info("Using resnet50 as base encoder ...")
 			resnet50= tf.keras.applications.resnet50.ResNet50(
 				include_top=False, # disgard the fully-connected layer as we are training from scratch
 				weights=None,  # random initialization
@@ -440,6 +441,7 @@ class FeatExtractorSimCLR(object):
 			x= resnet50(x)
 
 		elif self.predefined_arch=="resnet101":
+			logger.info("Using resnet101 as base encoder ...")
 			resnet101= tf.keras.applications.resnet50.ResNet50(
 				include_top=False, # disgard the fully-connected layer as we are training from scratch
 				weights=None,  # random initialization
@@ -450,9 +452,11 @@ class FeatExtractorSimCLR(object):
 			x= resnet101(x)
 
 		elif self.predefined_arch=="resnet18":
+			logger.info("Using resnet18 as base encoder ...")
 			x= resnet18(x)
 
 		elif self.predefined_arch=="resnet34":
+			logger.info("Using resnet34 as base encoder ...")
 			x= resnet34(x)			
 		else:
 			logger.error("Unknown/unsupported predefined backbone architecture given (%s)!" % (self.predefined_arch))
