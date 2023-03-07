@@ -198,7 +198,10 @@ def get_args():
 	parser.add_argument('-dense_layer_sizes', '--dense_layer_sizes', dest='dense_layer_sizes', required=False, type=str, default='16', action='store',help='Dense layer sizes used (default=16)')
 	parser.add_argument('-dense_layer_activation', '--dense_layer_activation', dest='dense_layer_activation', required=False, type=str, default='relu', action='store',help='Dense layer activation used {relu,softmax} (default=relu)')
 
-	
+	parser.add_argument('--use_predefined_arch', dest='use_predefined_arch', action='store_true',help='Use pre-defined conv architecture and not a custom ones (default=false)')	
+	parser.set_defaults(use_predefined_arch=False)
+	parser.add_argument('-predefined_arch', '--predefined_arch', dest='predefined_arch', required=False, type=str, default='resnet50', action='store',help='Predefined architecture to be used {resnet50, resnet101}')
+
 	# - Run options
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
 	parser.set_defaults(predict=False)
@@ -307,7 +310,9 @@ def main():
 	add_conv_dropout_layer= args.add_conv_dropout_layer
 	conv_dropout_rate= args.conv_dropout_rate
 	
-	
+	use_predefined_arch= args.use_predefined_arch
+	predefined_arch= args.predefined_arch
+
 	# - Train options
 	optimizer= args.optimizer
 	learning_rate= args.learning_rate
@@ -490,7 +495,8 @@ def main():
 
 	simclr.balance_classes= balance_classes_in_batch
 	simclr.class_probs= class_probs_dict
-
+	simclr.use_predefined_arch= use_predefined_arch
+	simclr.predefined_arch= predefined_arch
 
 	# - Run train/predict
 	if predict:
