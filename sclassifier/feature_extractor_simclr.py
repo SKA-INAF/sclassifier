@@ -93,6 +93,7 @@ from .utils import Utils
 #from .data_loader import DataLoader
 #from .data_loader import SourceData
 from .tf_utils import SoftmaxCosineSim
+from .models import resnet18, resnet34
 
 ################################
 ##   FeatExtractorSimCLR CLASS
@@ -161,9 +162,12 @@ class FeatExtractorSimCLR(object):
 		self.add_dropout_layer= False
 		self.add_conv_dropout_layer= False
 		self.conv_dropout_rate= 0.2
-		self.dense_layer_sizes= [16] 
+		self.dense_layer_sizes= [256,128] 
 		self.dense_layer_activation= 'relu'
 		self.latent_dim= 2
+
+		self.use_predefined_arch= False
+		self.predefined_arch= "resnet50"
 
 		# - Training options
 		self.nepochs= 10
@@ -317,10 +321,10 @@ class FeatExtractorSimCLR(object):
 
 
 	#####################################
-	##     CREATE BASE MODEL
+	##     CREATE BASE MODEL (CUSTOM)
 	#####################################
-	def __create_base_model(self, inputShape):
-		""" Create the encoder base model """
+	def __create_custom_base_model(self, inputShape):
+		""" Create the encoder base model using a custom parametrized CNN """
 
 		#===========================
 		#==  INIT WEIGHTS
@@ -397,6 +401,100 @@ class FeatExtractorSimCLR(object):
 
 		return x
 
+	########################################
+	##     CREATE BASE MODEL (PREDEFINED)
+	########################################
+	def __create_predefined_model(self, inputShape):
+		""" Create the encoder base model """
+
+		#===========================
+		#==  INIT WEIGHTS
+		#===========================
+		logger.info("Initializing weights ...")
+		try:
+			weight_initializer = tf.keras.initializers.HeUniform(seed=self.weight_init_seed)
+		except:
+			logger.info("Failed to find tf.keras.initializers.HeUniform, trying with tf.keras.initializers.he_uniform ...")
+			weight_initializer= tf.keras.initializers.he_uniform(seed=self.weight_init_seed) 
+
+		#===========================
+		#==  INPUT LAYER
+		#===========================
+		#x= inputs
+		inputs= Input(shape=inputShape)
+		input_data_dim= K.int_shape(inputs)
+		x= inputs
+		print("Base model input data dim=", input_data_dim)
+		
+		#===========================
+		#==  RES NET 
+		#===========================
+		if self.predefined_arch=="resnet50":
+			resnet50= tf.keras.applications.resnet50.ResNet50(
+				include_top=False, # disgard the fully-connected layer as we are training from scratch
+				weights=None,  # random initialization
+				input_tensor=inputs,
+				input_shape=inputShape,
+				pooling=None
+			)
+			x= resnet50(x)
+
+		elif self.predefined_arch=="resnet101":
+			resnet101= tf.keras.applications.resnet50.ResNet50(
+				include_top=False, # disgard the fully-connected layer as we are training from scratch
+				weights=None,  # random initialization
+				input_tensor=inputs,
+				input_shape=inputShape,
+				pooling=None
+			)
+			x= resnet101(x)
+
+		elif self.predefined_arch=="resnet18":
+			x= resnet18(x)
+
+		elif self.predefined_arch=="resnet34":
+			x= resnet34(x)			
+		else:
+			logger.error("Unknown/unsupported predefined backbone architecture given (%s)!" % (self.predefined_arch))
+			return None
+
+		#===========================
+		#==  FLATTEN LAYER
+		#===========================
+		#x = layers.Flatten()(x)
+		x= layers.GlobalAveragePooling2D()(x)
+
+		#===========================
+		#==  DENSE LAYER
+		#===========================
+		# - Needed only to reduce a bit resnet output (2048)
+		if self.add_dense:
+			x = layers.Dense(self.latent_dim, activation=self.dense_layer_activation)(x)
+
+		#===========================
+		#==  BUILD MODEL
+		#===========================
+		logger.info("Printing base model ...")
+		self.encoder = Model(inputs, x, name='base_model')
+		
+		# - Print and plot model
+		logger.info("Printing base model architecture ...")
+		self.encoder.summary()
+
+		return x
+
+	#####################################
+	##     CREATE BASE MODEL
+	#####################################
+	def __create_base_model(self, inputShape):
+		""" Create the encoder base model """
+
+		if self.use_predefined_arch:
+			return self.__create_custom_model(inputShape)
+		else:
+			return self.__create_predefined_model(inputShape)	
+
+
 	#####################################
 	##     CREATE PROJECTION HEAD MODEL
 	#####################################
@@ -414,19 +512,34 @@ class FeatExtractorSimCLR(object):
 		#===========================
 		#==  DENSE LAYER
 		#===========================
+		# - Original implementation seems to have 2 layers, e.g. 256-128
 		num_layers_ph= len(self.dense_layer_sizes)
 
 		for j in range(num_layers_ph):
 			layer_size= self.dense_layer_sizes[j]
 
 			if j < num_layers_ph - 1:
-				x = layers.Dense(layer_size, activation=self.dense_layer_activation, kernel_regularizer=l1(self.ph_regul))(x)
-				if self.add_dropout_layer:
-					x= layers.Dropout(self.dropout_rate)(x)
-			else:
-				x = layers.Dense(layer_size, name='projhead_output')(x)
-		
+				# - Add linear dense layer
+				x = layers.Dense(layer_size)(x)
+				###x = layers.Dense(layer_size, activation=self.dense_layer_activation, kernel_regularizer=l1(self.ph_regul))(x) # probably wrong, activation function is linear in original work?
+				###if self.add_dropout_layer:
+				###	x= layers.Dropout(self.dropout_rate)(x)
 
+				# - Add batch normalization?
+				if self.add_batchnorm:
+					x = BatchNormalization()(x)
+
+				# - Add activation (RELU to make non-linear)	
+				if self.add_leakyrelu:
+					x = layers.LeakyReLU(alpha=self.leakyrelu_alpha)(x)
+				else:
+					x = layers.ReLU()(x)
+
+			else:
+				# - Add final linear dense layer
+				x = layers.Dense(layer_size, name='projhead_output')(x)
+
+    
 		#===========================
 		#==  BUILD MODEL
 		#===========================
@@ -438,28 +551,6 @@ class FeatExtractorSimCLR(object):
 		self.projhead.summary()			
 		
 		return x
-
-
-	#####################################
-	##     CREATE PROJECTION HEAD
-	#####################################
-	#def __create_projhead_layers(self):
-	#	""" Create the projection head layers """
-	#
-	#	# - Init layers
-	#	self.ph_l = []
-	#	num_layers_ph= len(self.dense_layer_sizes)
-	#
-	#	if self.add_dense:
-	#		for j in range(num_layers_ph):	
-	#			layer_size= self.dense_layer_sizes[j]
-	#			self.ph_l.append(
-	#				layers.Dense(layer_size, activation=self.dense_layer_activation, kernel_regularizer=l1(self.ph_regul))
-	#			)
-	#
-	#	self.ph_l.append(
-	#		layers.Dense(self.latent_dim, kernel_regularizer=l1(self.ph_regul), name='projhead_output')
-	#	)
 
 
 	#####################################
