@@ -404,7 +404,7 @@ class FeatExtractorSimCLR(object):
 	########################################
 	##     CREATE BASE MODEL (PREDEFINED)
 	########################################
-	def __create_predefined_model(self, inputShape):
+	def __create_predefined_base_model(self, inputShape):
 		""" Create the encoder base model """
 
 		#===========================
@@ -490,9 +490,9 @@ class FeatExtractorSimCLR(object):
 		""" Create the encoder base model """
 
 		if self.use_predefined_arch:
-			return self.__create_custom_model(inputShape)
+			return self.__create_custom_base_model(inputShape)
 		else:
-			return self.__create_predefined_model(inputShape)	
+			return self.__create_predefined_base_model(inputShape)	
 
 
 	#####################################
