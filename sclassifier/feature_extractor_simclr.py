@@ -494,9 +494,9 @@ class FeatExtractorSimCLR(object):
 		""" Create the encoder base model """
 
 		if self.use_predefined_arch:
-			return self.__create_custom_base_model(inputShape)
-		else:
 			return self.__create_predefined_base_model(inputShape)	
+		else:
+			return self.__create_custom_base_model(inputShape)
 
 
 	#####################################
