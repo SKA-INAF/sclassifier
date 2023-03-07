@@ -1265,7 +1265,7 @@ class Augmenter(object):
 					iaa.OneOf(
 						[
 							iaa.Affine(scale=(0.5, 1.0), mode='constant', cval=0.0),
-							iaa.GaussianBlur(sigma=(1.0, 4.0)),
+							iaa.GaussianBlur(sigma=(1.0, 3.0)),
 							#iaa.AdditiveGaussianNoise(scale=(0, 0.1)),
 						]
 					),
