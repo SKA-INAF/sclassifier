@@ -210,33 +210,33 @@ class ZScaleAugmenter(iaa.meta.Augmenter):
 
 
 
-class SigmaThrAugmenter(iaa.meta.Augmenter):
+class PercentileThrAugmenter(iaa.meta.Augmenter):
 	""" Sigma threshold as augmentation step """
 	
 	def __init__(self, 
-		sigma=0, 
-		random_sigma=False, 
-		random_sigma_per_ch=False, sigma_min=0, sigma_max=1, 
+		percentile=50, 
+		random_percentile=False, 
+		random_percentile_per_ch=False, percentile_min=50, percentile_max=60, 
 		seed=None, name=None, random_state="deprecated", deterministic="deprecated"
 	):
 		""" Build class """
 
 		# - Set parent class parameters
-		super(SigmaThrAugmenter, self).__init__(
+		super(PercentileThrAugmenter, self).__init__(
 			seed=seed, name=name,
 			random_state=random_state, deterministic=deterministic
 		)
 
-		self.sigma= sigma
-		self.random_sigma= random_sigma
-		self.random_sigma_per_ch= random_sigma_per_ch
-		self.sigma_min= sigma_min
-		self.sigma_max= sigma_max
+		self.percentile= percentile
+		self.random_percentile= random_percentile
+		self.random_percentile_per_ch= random_percentile_per_ch
+		self.percentile_min= percentile_min
+		self.percentile_max= percentile_max
 		self.seed= seed
 
 	def get_parameters(self):
 		""" Get class parameters """
-		return [self.sigma, self.random_sigma, self.random_sigma_per_ch, self.sigma_min, self.sigma_max]
+		return [self.percentile, self.random_percentile, self.random_percentile_per_ch, self.percentile_min, self.percentile_max]
 
 	def _augment_batch_(self, batch, random_state, parents, hooks):
 		""" Augment batch of images """
@@ -247,7 +247,7 @@ class SigmaThrAugmenter(iaa.meta.Augmenter):
 
 		images = batch.images
 		nb_images = len(images)
-		sigmas= []
+		percentiles= []
 
 		# - Set random seed if given
 		if self.seed is not None:
@@ -258,31 +258,31 @@ class SigmaThrAugmenter(iaa.meta.Augmenter):
 			image= images[i]
 			nb_channels = image.shape[2]
 
-			# - Set sigmas (fixed or random)
-			if not sigmas:
-				if self.random_sigma:
-					if self.random_sigma_per_ch:
+			# - Set percentiles (fixed or random)
+			if not percentiles:
+				if self.random_percentile:
+					if self.random_percentile_per_ch:
 						for k in range(nb_channels):
-							sigma_rand= np.random.uniform(low=self.sigma_min, high=self.sigma_max)
-							sigmas.append(sigma_rand)
+							percentile_rand= np.random.uniform(low=self.percentile_min, high=self.percentile_max)
+							percentiles.append(percentile_rand)
 					else:
-						sigma_rand= np.random.uniform(low=self.sigma_min, high=self.sigma_max)
-						sigmas= [sigma_rand]*nb_channels
+						percentile_rand= np.random.uniform(low=self.percentile_min, high=self.percentile_max)
+						percentiles= [percentile_rand]*nb_channels
 				else:
-					sigmas= [self.sigma]*nb_channels
+					percentiles= [self.percentile]*nb_channels
 
-			# - Apply sigma filtering
-			logger.debug("Applying sigma thresholding to batch %d with contrasts %s " % (i+1, str(sigmas)))
+			# - Apply percentile filtering
+			logger.debug("Applying percentile thresholding to batch %d with contrasts %s " % (i+1, str(percentiles)))
 
-			batch.images[i] = self.__get_sigma_thresholded_image(image, sigmas)
+			batch.images[i] = self.__get_percentile_thresholded_image(image, percentiles)
 			if batch.images[i] is None:
-				raise Exception("Sigma-thresholded augmented image at batch %d is None!" % (i+1))
+				raise Exception("Percentile-thresholded augmented image at batch %d is None!" % (i+1))
 
 		return batch
 	
 	
-	def __get_sigma_thresholded_image(self, data, sigmas=[]):
-		""" Apply sigma thresholding to single image (W,H,Nch) """
+	def __get_percentile_thresholded_image(self, data, percentiles=[]):
+		""" Apply percentile thresholding to single image (W,H,Nch) """
 
 		# - Check data
 		if data is None:
@@ -291,33 +291,33 @@ class SigmaThrAugmenter(iaa.meta.Augmenter):
 
 		cond= np.logical_and(data!=0, np.isfinite(data))
 
-		# - Check sigmas dim vs nchans
+		# - Check percentiles dim vs nchans
 		nchans= data.shape[-1]
 	
-		if len(sigmas)<nchans:
-			logger.error("Invalid sigmas given (sigma list size=%d < nchans=%d)" % (len(self.sigmas), nchans))
+		if len(percentiles)<nchans:
+			logger.error("Invalid percentiles given (percentile list size=%d < nchans=%d)" % (len(self.percentiles), nchans))
 			return None
 		
 		# - Threshold each channel
-		data_clipped= np.copy(data)
+		data_thresholded= np.copy(data)
 
 		for i in range(data.shape[-1]):
-			data_ch= data_clipped[:,:,i]
+			percentile= percentiles[i]
+			data_ch= data_thresholded[:,:,i]
 			cond_ch= np.logical_and(data_ch!=0, np.isfinite(data_ch))
 			data_ch_1d= data_ch[cond_ch]
-			clipmean, median, stddev = sigma_clipped_stats(data_ch_1d, sigma=sigmas[i])
+			
+			p= np.percentile(data, percentile)
 
-			sigma_thr= clipmean + sigma*stddev
-
-			data_ch[data_ch<sigma_thr]= 0
+			data_ch[data_ch<p]= 0
 			data_ch[~cond_ch]= 0
 	
-			data_clipped[:,:,i]= data_ch
+			data_thresholded[:,:,i]= data_ch
 
 		# - Scale data
-		data_clipped[~cond]= 0 # Restore 0 and nans set in original data
+		data_thresholded[~cond]= 0 # Restore 0 and nans set in original data
 
-		return data_clipped
+		return data_thresholded
 
 ##############################
 ##     MinMaxNormalizer
@@ -1391,7 +1391,7 @@ class Augmenter(object):
 				#iaa.Affine(scale=(0.5, 1.0), mode='constant', cval=0.0)
 				#iaa.GaussianBlur(sigma=(3.9, 4))
 				#iaa.AdditiveGaussianNoise(scale=(0, 0.1))
-				SigmaThrAugmenter(sigma=0, random_sigma=True, random_sigma_per_ch=False, sigma_min=0.0, sigma_max=1.0)
+				PercentileThrAugmenter(percentile=50, random_percentile=True, random_percentile_per_ch=False, percentile_min=40, percentile_max=60)
 			]
 		)
 
