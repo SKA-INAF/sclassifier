@@ -205,7 +205,119 @@ class ZScaleAugmenter(iaa.meta.Augmenter):
 		return data_stretched
 		
 
+
+
+
+
+
+class SigmaThrAugmenter(iaa.meta.Augmenter):
+	""" Sigma threshold as augmentation step """
 	
+	def __init__(self, 
+		sigma=0, 
+		random_sigma=False, 
+		random_sigma_per_ch=False, sigma_min=0, sigma_max=1, 
+		seed=None, name=None, random_state="deprecated", deterministic="deprecated"
+	):
+		""" Build class """
+
+		# - Set parent class parameters
+		super(SigmaThrAugmenter, self).__init__(
+			seed=seed, name=name,
+			random_state=random_state, deterministic=deterministic
+		)
+
+		self.sigma= sigma
+		self.random_sigma= random_sigma
+		self.random_sigma_per_ch= random_sigma_per_ch
+		self.sigma_min= sigma_min
+		self.sigma_max= sigma_max
+		self.seed= seed
+
+	def get_parameters(self):
+		""" Get class parameters """
+		return [self.sigma, self.random_sigma, self.random_sigma_per_ch, self.sigma_min, self.sigma_max]
+
+	def _augment_batch_(self, batch, random_state, parents, hooks):
+		""" Augment batch of images """
+	
+		# - Check input batch
+		if batch.images is None:
+			return batch
+
+		images = batch.images
+		nb_images = len(images)
+		sigmas= []
+
+		# - Set random seed if given
+		if self.seed is not None:
+			np.random.seed(self.seed)
+
+		# - Loop over image batch
+		for i in range(nb_images):
+			image= images[i]
+			nb_channels = image.shape[2]
+
+			# - Set sigmas (fixed or random)
+			if not sigmas:
+				if self.random_sigmas:
+					if self.random_sigmas_per_ch:
+						for k in range(nb_channels):
+							sigma_rand= np.random.uniform(low=self.sigma_min, high=self.sigma_max)
+							sigmas.append(sigma_rand)
+					else:
+						sigma_rand= np.random.uniform(low=self.sigma_min, high=self.sigma_max)
+						sigmas= [sigma_rand]*nb_channels
+				else:
+					sigmas= [self.sigma]*nb_channels
+
+			# - Apply sigma filtering
+			logger.debug("Applying sigma thresholding to batch %d with contrasts %s " % (i+1, str(sigmas)))
+
+			batch.images[i] = self.__get_sigma_thresholded_image(image, sigmas)
+			if batch.images[i] is None:
+				raise Exception("Sigma-thresholded augmented image at batch %d is None!" % (i+1))
+
+		return batch
+	
+	
+	def __get_sigma_thresholded_image(self, data, sigmas=[]):
+		""" Apply sigma thresholding to single image (W,H,Nch) """
+
+		# - Check data
+		if data is None:
+			logger.error("Input data is None!")
+			return None
+
+		cond= np.logical_and(data!=0, np.isfinite(data))
+
+		# - Check sigmas dim vs nchans
+		nchans= data.shape[-1]
+	
+		if len(sigmas)<nchans:
+			logger.error("Invalid sigmas given (sigma list size=%d < nchans=%d)" % (len(self.sigmas), nchans))
+			return None
+		
+		# - Threshold each channel
+		data_clipped= np.copy(data)
+
+		for i in range(data.shape[-1]):
+			data_ch= data_clipped[:,:,i]
+			cond_ch= np.logical_and(data_ch!=0, np.isfinite(data_ch))
+			data_ch_1d= data_ch[cond_ch]
+			clipmean, median, stddev = sigma_clipped_stats(data_ch_1d, sigma=sigmas[i])
+
+			sigma_thr= clipmean + sigma*stddev
+
+			data_ch[data_ch<sigma_thr]= 0
+			data_ch[~cond_ch]= 0
+	
+			data_clipped[:,:,i]= data_ch
+
+		# - Scale data
+		data_clipped[~cond]= 0 # Restore 0 and nans set in original data
+
+		return data_clipped
 
 ##############################
 ##     MinMaxNormalizer
@@ -1274,13 +1386,14 @@ class Augmenter(object):
 			]
 		)
 
-		#augmenter_simclr_test= iaa.Sequential(
-		#	[
-		#		iaa.Affine(scale=(0.5, 1.0), mode='constant', cval=0.0)
-		#		#iaa.GaussianBlur(sigma=(3.9, 4))
-		#		#iaa.AdditiveGaussianNoise(scale=(0, 0.1))
-		#	]
-		#)
+		augmenter_simclr_test= iaa.Sequential(
+			[
+				#iaa.Affine(scale=(0.5, 1.0), mode='constant', cval=0.0)
+				#iaa.GaussianBlur(sigma=(3.9, 4))
+				#iaa.AdditiveGaussianNoise(scale=(0, 0.1))
+				SigmaThrAugmenter(sigma=0, random_sigma=True, random_sigma_per_ch=False, sigma_min=0.0, sigma_max=1.0)
+			]
+		)
 
 		# - Set augmenter chosen
 		if choice=='cae':
