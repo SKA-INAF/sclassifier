@@ -29,6 +29,7 @@ from astropy.visualization import ZScaleInterval
 
 ## SKIMAGE
 from skimage.util import img_as_float64
+from skimage.exposure import adjust_sigmoid, rescale_intensity
 
 ## IMG AUG
 import imgaug
@@ -207,9 +208,6 @@ class ZScaleAugmenter(iaa.meta.Augmenter):
 
 
 
-
-
-
 class PercentileThrAugmenter(iaa.meta.Augmenter):
 	""" Sigma threshold as augmentation step """
 	
@@ -318,6 +316,113 @@ class PercentileThrAugmenter(iaa.meta.Augmenter):
 		data_thresholded[~cond]= 0 # Restore 0 and nans set in original data
 
 		return data_thresholded
+
+
+
+class SigmoidStretchAugmenter(iaa.meta.Augmenter):
+	""" Apply sigmoid contrast adjustment as augmentation step """
+	
+	def __init__(self, 
+		cutoff=0.5, 
+		gain=10,
+		random_gain=False, 
+		random_gain_per_ch=False, gain_min=10, gain_max=20, 
+		seed=None, name=None, random_state="deprecated", deterministic="deprecated"
+	):
+		""" Build class """
+
+		# - Set parent class parameters
+		super(SigmoidStretchAugmenter, self).__init__(
+			seed=seed, name=name,
+			random_state=random_state, deterministic=deterministic
+		)
+
+		self.cutoff= cutoff
+		self.gain= gain
+		self.random_gain= random_gain
+		self.random_gain_per_ch= random_gain_per_ch
+		self.gain_min= gain_min
+		self.gain_max= gain_max
+		self.seed= seed
+
+	def get_parameters(self):
+		""" Get class parameters """
+		return [self.cutoff, self.gain, self.random_gain, self.random_gain_per_ch, self.gain_min, self.gain_max]
+
+	def _augment_batch_(self, batch, random_state, parents, hooks):
+		""" Augment batch of images """
+	
+		# - Check input batch
+		if batch.images is None:
+			return batch
+
+		images = batch.images
+		nb_images = len(images)
+		gains= []
+
+		# - Set random seed if given
+		if self.seed is not None:
+			np.random.seed(self.seed)
+
+		# - Loop over image batch
+		for i in range(nb_images):
+			image= images[i]
+			nb_channels = image.shape[2]
+
+			# - Set gains (fixed or random)
+			if not gains:
+				if self.random_gain:
+					if self.random_gain_per_ch:
+						for k in range(nb_channels):
+							gain_rand= np.random.uniform(low=self.gain_min, high=self.gain_max)
+							gains.append(gain_rand)
+					else:
+						gain_rand= np.random.uniform(low=self.gain_min, high=self.gain_max)
+						gains= [gain_rand]*nb_channels
+				else:
+					gains= [self.gain]*nb_channels
+
+			# - Apply sigmoid contrast transform
+			logger.debug("Applying sigmoid stretch to batch %d with gain %s " % (i+1, str(gains)))
+
+			batch.images[i] = self.__get_transformed_image(image, gains)
+			if batch.images[i] is None:
+				raise Exception("Sigmoid stretch augmented image at batch %d is None!" % (i+1))
+
+		return batch
+	
+	
+	def __get_transformed_image(self, data, gains=[]):
+		""" Apply sigmoid contrast stretch to single image (W,H,Nch) """
+
+		# - Check data
+		if data is None:
+			logger.error("Input data is None!")
+			return None
+
+		cond= np.logical_and(data!=0, np.isfinite(data))
+
+		# - Check gains dim vs nchans
+		nchans= data.shape[-1]
+	
+		if len(gains)<nchans:
+			logger.error("Invalid gains given (gain list size=%d < nchans=%d)" % (len(self.gains), nchans))
+			return None
+		
+		# - Threshold each channel
+		data_transformed= np.copy(data)
+
+		for i in range(data.shape[-1]):
+			data_ch= data[:,:,i]
+			if data_ch.min()<0:
+				data_norm= rescale_intensity(data_ch, out_range=(0.,1.))
+				data_ch= data_norm
+			data_transformed[:,:,i]= adjust_sigmoid(data_ch, cutoff=self.cutoff, gain=gains[i], inv=False)
+	
+		# - Scale data
+		data_transformed[~cond]= 0 # Restore 0 and nans set in original data
+
+		return data_transformed
 
 ##############################
 ##     MinMaxNormalizer
@@ -1367,12 +1472,18 @@ class Augmenter(object):
 			]
 		)
 
-		# - Apply flip (66%) + rotate (always) + random_zscale(always) + scale/blur/noise (50%)
+		# - Apply flip (66%) + rotate (always) + zscale/sigmoid/threshold(always) + scale/blur/noise (50%)
 		augmenter_simclr4= iaa.Sequential(
 			[
 				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
   			iaa.Affine(rotate=(-90, 90), mode='constant', cval=0.0),
-				ZScaleAugmenter(contrast=0.25, random_contrast=True, random_contrast_per_ch=False, contrast_min=0.1, contrast_max=0.5),
+				iaa.OneOf(
+						[
+							ZScaleAugmenter(contrast=0.25, random_contrast=True, random_contrast_per_ch=False, contrast_min=0.1, contrast_max=0.5),
+							SigmoidStretchAugmenter(cutoff=0.5, gain=10, random_gain=True, random_gain_per_ch=False, gain_min=10, gain_max=30),
+							PercentileThrAugmenter(percentile=50, random_percentile=True, random_percentile_per_ch=False, percentile_min=40, percentile_max=60),
+						]
+				),
 				iaa.Sometimes(0.5, 
 					iaa.OneOf(
 						[
@@ -1391,7 +1502,8 @@ class Augmenter(object):
 				#iaa.Affine(scale=(0.5, 1.0), mode='constant', cval=0.0)
 				#iaa.GaussianBlur(sigma=(3.9, 4))
 				#iaa.AdditiveGaussianNoise(scale=(0, 0.1))
-				PercentileThrAugmenter(percentile=50, random_percentile=True, random_percentile_per_ch=False, percentile_min=40, percentile_max=60)
+				#PercentileThrAugmenter(percentile=50, random_percentile=True, random_percentile_per_ch=False, percentile_min=40, percentile_max=60)
+				SigmoidStretchAugmenter(cutoff=0.5, gain=10, random_gain=True, random_gain_per_ch=False, gain_min=10, gain_max=30) 
 			]
 		)
 
