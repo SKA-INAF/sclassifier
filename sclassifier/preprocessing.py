@@ -260,8 +260,8 @@ class SigmaThrAugmenter(iaa.meta.Augmenter):
 
 			# - Set sigmas (fixed or random)
 			if not sigmas:
-				if self.random_sigmas:
-					if self.random_sigmas_per_ch:
+				if self.random_sigma:
+					if self.random_sigma_per_ch:
 						for k in range(nb_channels):
 							sigma_rand= np.random.uniform(low=self.sigma_min, high=self.sigma_max)
 							sigmas.append(sigma_rand)
