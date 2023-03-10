@@ -88,6 +88,7 @@ class OutlierFinder(object):
 		# ** Output data
 		# *****************************
 		self.save_to_file= True
+		self.save_features= False
 		self.outfile= "outlier_data.dat"
 		self.outfile_model= "outlier_model.sav"
 		self.outfile_scaler = 'datascaler.sav'
@@ -470,14 +471,22 @@ class OutlierFinder(object):
 		outlier_scores_df= np.array(self.anomaly_scores_df).reshape(N,1)
 		outlier_score_orig= np.array(self.anomaly_scores_orig).reshape(N,1)
 
-		outdata= np.concatenate(
-			(snames, self.data, objids, outlier_outputs, outlier_score_orig),
-			axis=1
-		)
+		if self.save_features:
+			outdata= np.concatenate(
+				(snames, self.data, objids, outlier_outputs, outlier_score_orig),
+				axis=1
+			)
+			znames_counter= list(range(1,Nfeat+1))
+			znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
+			head= '{} {} {}'.format("# sname",znames," id is_outlier outlier_score")
 
-		znames_counter= list(range(1,Nfeat+1))
-		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
-		head= '{} {} {}'.format("# sname",znames," id is_outlier outlier_score")
+		else:
+			outdata= np.concatenate(
+				(snames, objids, outlier_outputs, outlier_score_orig),
+				axis=1
+			)
+			head= "# sname id is_outlier outlier_score"
+		
 
 		# - Save outlier data 
 		logger.info("Saving outlier output data to file %s ..." % (self.outfile))
