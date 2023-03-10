@@ -29,6 +29,7 @@ from sclassifier import logger
 
 ## SCI MODULES
 from sklearn.ensemble import IsolationForest
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 
 ## GRAPHICS MODULES
 import matplotlib
@@ -63,6 +64,7 @@ class OutlierFinder(object):
 		self.normalize= False
 		self.norm_min= 0
 		self.norm_max= 1
+		self.data_scaler= None
 
 		# *****************************
 		# ** Isolation Forest pars
