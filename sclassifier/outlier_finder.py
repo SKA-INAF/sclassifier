@@ -90,6 +90,7 @@ class OutlierFinder(object):
 		self.save_to_file= True
 		self.outfile= "outlier_data.dat"
 		self.outfile_model= "outlier_model.sav"
+		self.outfile_scaler = 'datascaler.sav'
 
 	#####################################
 	##     PRE-PROCESSING
