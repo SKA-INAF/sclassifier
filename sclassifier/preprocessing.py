@@ -424,6 +424,78 @@ class SigmoidStretchAugmenter(iaa.meta.Augmenter):
 
 		return data_transformed
 
+
+
+class RandomCropResizeAugmenter(iaa.meta.Augmenter):
+	""" Apply random crop and resize to image as augmentation step """
+	
+	def __init__(self, 
+		crop_fract_min=0.7, crop_fract_max=1.0, 
+		seed=None, name=None, random_state="deprecated", deterministic="deprecated"
+	):
+		""" Build class """
+
+		# - Set parent class parameters
+		super(RandomCropResizeAugmenter, self).__init__(
+			seed=seed, name=name,
+			random_state=random_state, deterministic=deterministic
+		)
+
+		# - Set class parameters 
+		if crop_fract_min<=0 or crop_fract_min>=crop_fract_max:
+			raise Exception("Expected crop_fract_min to be >0 and <crop_frac_max, got %f!" % (crop_fract_min))
+		if crop_fract_max>1 or crop_fract_max<=crop_fract_min:
+			raise Exception("Expected crop_fract_max to be <=1 and >crop_frac_min, got %f!" % (crop_fract_max))
+
+		self.crop_fract_min= crop_fract_min
+		self.crop_fract_max= crop_fract_max
+		self.seed= seed
+
+	def get_parameters(self):
+		""" Get class parameters """
+		return [self.crop_fract_min, self.crop_fract_max]
+
+	def _augment_batch_(self, batch, random_state, parents, hooks):
+		""" Augment batch of images """
+	
+		# - Check input batch
+		if batch.images is None:
+			return batch
+
+		images = batch.images
+		nb_images = len(images)
+		contrasts= []
+
+		# - Set random seed if given
+		if self.seed is not None:
+			np.random.seed(self.seed)
+
+		# - Loop over image batch
+		for i in range(nb_images):
+			image= images[i]
+			nb_channels = image.shape[2]
+			ny= image.shape[0]
+			nx= image.shape[1]
+
+			# - Set crop size
+			crop_fract_rand= np.random.uniform(low=self.crop_fract_min, high=self.crop_fract_max)
+			crop_x= math.ceil(crop_fract_rand*nx)
+			crop_y= math.ceil(crop_fract_rand*ny)
+			
+			# - Define augmentation
+			crop_aug= iaa.KeepSizeByResize(
+				iaa.CropToFixedSize(crop_y, crop_x, position='uniform')
+			)
+
+			# - Crop & resize
+			logger.debug("Applying crop to batch %d with crop_fract %s " % (i+1, str(crop_fract_rand)))
+
+			batch.images[i] = crop_aug.augment_image(image)
+			if batch.images[i] is None:
+				raise Exception("Crop augmented image at batch %d is None!" % (i+1))
+
+		return batch
+	
 ##############################
 ##     MinMaxNormalizer
 ##############################
@@ -1479,6 +1551,7 @@ class Augmenter(object):
 		scale_aug= iaa.Affine(scale=(0.5, 1.0), mode='constant', cval=0.0)
 		blur_aug= iaa.GaussianBlur(sigma=(1.0, 3.0))
 		noise_aug= iaa.AdditiveGaussianNoise(scale=(0, 0.1))
+		crop_aug= RandomCropResizeAugmenter(crop_fract_min=0.7, crop_fract_max=1.0)
 
 		augmenter_simclr4= iaa.Sequential(
 			[
@@ -1508,13 +1581,24 @@ class Augmenter(object):
 			]
 		)
 
+		augmenter_simclr6= iaa.Sequential(
+			[
+				iaa.Sometimes(0.1, blur_aug),
+				crop_aug,
+				zscaleStretch_aug,	
+				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
+  			iaa.Affine(rotate=(-90, 90), mode='constant', cval=0.0)
+			]
+		)
+
+	
 		# - Set augmenter chosen
 		if choice=='cae':
 			self.augmenter= augmenter_cae
 		elif choice=='cnn':
 			self.augmenter= augmenter_cnn
 		elif choice=='simclr':
-			self.augmenter= augmenter_simclr5
+			self.augmenter= augmenter_simclr6
 		else:
 			logger.warn("Unknown choice (%s), setting CAE augmenter..." % (choice))
 			self.augmenter= augmenter_cae
