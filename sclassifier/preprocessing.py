@@ -1496,13 +1496,15 @@ class Augmenter(object):
 			]
 		)
 
-		augmenter_simclr_test= iaa.Sequential(
+		augmenter_simclr5= iaa.Sequential(
 			[
-				#iaa.Affine(scale=(0.5, 1.0), mode='constant', cval=0.0)
-				#iaa.GaussianBlur(sigma=(3.9, 4))
-				#iaa.AdditiveGaussianNoise(scale=(0, 0.1))
-				#PercentileThrAugmenter(percentile=50, random_percentile=True, random_percentile_per_ch=False, percentile_min=40, percentile_max=60)
-				SigmoidStretchAugmenter(cutoff=0.5, gain=10, random_gain=True, random_gain_per_ch=False, gain_min=10, gain_max=30) 
+				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
+  			iaa.Affine(rotate=(-90, 90), mode='constant', cval=0.0),
+				zscaleStretch_aug,
+				iaa.Sometimes(0.5, 
+					iaa.OneOf([scale_aug, blur_aug]),
+					iaa.Noop()
+				)
 			]
 		)
 
@@ -1512,8 +1514,7 @@ class Augmenter(object):
 		elif choice=='cnn':
 			self.augmenter= augmenter_cnn
 		elif choice=='simclr':
-			self.augmenter= augmenter_simclr4
-			#self.augmenter= augmenter_simclr_test
+			self.augmenter= augmenter_simclr5
 		else:
 			logger.warn("Unknown choice (%s), setting CAE augmenter..." % (choice))
 			self.augmenter= augmenter_cae
