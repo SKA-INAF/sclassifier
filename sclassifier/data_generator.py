@@ -466,6 +466,89 @@ class DataGenerator(object):
 				logger.warn("Exception catched while generating data (err=%s) ..." % str(e))
 				raise
 			
+	#####################################
+	##     GENERATE BYOL TRAIN DATA
+	#####################################
+	def generate_byol_data(self, batch_size=32, shuffle=True, read_crop=False, crop_size=32, balance_classes=False, class_probs={}):
+		""" Generator function for BYOL task """
+	
+		nb= 0
+		data_index= -1
+		data_indexes= np.arange(0,self.datasize)
+
+		logger.info("Starting data generator ...")
+
+		while True:
+			try:
+
+				if nb==0:
+					logger.debug("Starting new batch ...")
+
+				# - Generate random data index and pairs of augmented data
+				data_index = (data_index + 1) % self.datasize
+				if shuffle:
+					data_index= np.random.choice(data_indexes)
+
+				if read_crop:# NB: must read the same crop range for the data pair
+					sdata_1= self.read_data(data_index, read_crop=True, crop_size=crop_size, crop_range=None)
+					crop_range= (sdata_1.ixmin, sdata_1.ixmax, sdata_1.iymin, sdata_1.iymax)
+					sdata_2= self.read_data(data_index, read_crop=True, crop_size=crop_size, crop_range=crop_range)
+				else:
+					sdata_1= self.read_data(data_index)
+					sdata_2= self.read_data(data_index)
+				
+				if sdata_1 is None or sdata_2 is None:
+					logger.warn("Failed to read source data pair at index %d!" % (data_index))
+					return None
+
+				data_shape= sdata_1.img_cube.shape
+				inputs_shape= (batch_size,) + data_shape
+
+				# - Apply class rebalancing?
+				class_id= sdata_1.id
+				class_name= sdata_1.label
+
+				if balance_classes and class_probs:
+					prob= class_probs[class_name]
+					r= random.uniform(0, 1)
+					accept= r<prob
+					if not accept:
+						continue
+				
+				# - Initialize return data
+				if nb==0:
+					inputs_1= np.zeros(inputs_shape, dtype=np.float32)
+					inputs_2= np.zeros(inputs_shape, dtype=np.float32)
+					class_ids= []
+
+				# - Update inputs
+				inputs_1[nb]= sdata_1.img_cube
+				inputs_2[nb]= sdata_2.img_cube
+				class_ids.append(class_id)
+				nb+= 1
+
+				# - Return data if number of batch is reached and restart the batch
+				if nb>=batch_size:
+					# - Compute class abundances in batch
+					class_counts= np.bincount(class_ids)
+					class_fracts= class_counts/len(class_ids)
+					class_counts_str= ' '.join([str(x) for x in class_counts])
+					class_fracts_str= ' '.join([str(x) for x in class_fracts])
+					logger.debug("Class counts/fract in batch: counts=[%s], fract=[%s]" % (class_counts_str, class_fracts_str))
+
+					# - Return data
+					yield inputs_1, inputs_2
+					nb= 0
+
+			except (GeneratorExit):
+				logger.info("Data generator complete execution ...")
+				raise
+			except (KeyboardInterrupt):
+				logger.warn("Keyboard exception catched while generating data...")
+				raise
+			except Exception as e:
+				logger.warn("Exception catched while generating data (err=%s) ..." % str(e))
+				raise
 
 	#####################################
 	##     GENERATE TRAIN DATA
