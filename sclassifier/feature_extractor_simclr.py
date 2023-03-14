@@ -165,7 +165,7 @@ class FeatExtractorSimCLR(object):
 		self.dense_layer_sizes= [256,128] 
 		self.dense_layer_activation= 'relu'
 		self.latent_dim= 2
-
+		self.use_global_avg_pooling= False
 		self.use_predefined_arch= False
 		self.predefined_arch= "resnet50"
 
@@ -381,7 +381,10 @@ class FeatExtractorSimCLR(object):
 		#===========================
 		#==  FLATTEN LAYER
 		#===========================
-		x = layers.Flatten()(x)
+		if self.use_global_avg_pooling:
+			x= layers.GlobalAveragePooling2D()(x)
+		else:
+			x = layers.Flatten()(x)
 
 		#===========================
 		#==  DENSE LAYER
