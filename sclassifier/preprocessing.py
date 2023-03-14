@@ -1591,6 +1591,17 @@ class Augmenter(object):
 			]
 		)
 
+		# - Define augmenter for BYOL
+		augmenter_byol= iaa.Sequential(
+			[
+				iaa.Sometimes(0.1, blur_aug),
+				crop_aug,
+				zscaleStretch_aug,	
+				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
+  			iaa.Affine(rotate=(-90, 90), mode='constant', cval=0.0)
+			]
+		)
+
 	
 		# - Set augmenter chosen
 		if choice=='cae':
@@ -1599,6 +1610,8 @@ class Augmenter(object):
 			self.augmenter= augmenter_cnn
 		elif choice=='simclr':
 			self.augmenter= augmenter_simclr6
+		elif choice=='byol':
+			self.augmenter= augmenter_byol
 		else:
 			logger.warn("Unknown choice (%s), setting CAE augmenter..." % (choice))
 			self.augmenter= augmenter_cae
