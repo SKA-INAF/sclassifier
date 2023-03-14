@@ -82,11 +82,11 @@ setup(
 	version=get_version(),
 	author="Simone Riggi",
 	author_email="simone.riggi@gmail.com",
-	description="Unsupervised source classification using variational autoencoders (VAE)",
+	description="Source classification using supervised and self-supervised learning",
 	license = "GPL3",
 	url="https://github.com/SKA-INAF/sclassifier",
 	long_description=read('README.md'),
 	packages=['sclassifier'],
 	install_requires=reqs,
-	scripts=['scripts/check_data.py','scripts/run_ae.py','scripts/run_predict.py','scripts/run_clustering.py','scripts/reconstruct_data.py','scripts/extract_features.py','scripts/select_features.py','scripts/run_classifier.py','scripts/merge_features.py','scripts/run_classifier_nn.py','scripts/classify_source.py','scripts/find_outliers.py','scripts/run_pipeline.py','scripts/run_umap.py','scripts/run_simclr.py','scripts/run_pca.py','scripts/run_imgclassifier.py'],
+	scripts=['scripts/check_data.py','scripts/run_ae.py','scripts/run_predict.py','scripts/run_clustering.py','scripts/reconstruct_data.py','scripts/extract_features.py','scripts/select_features.py','scripts/run_classifier.py','scripts/merge_features.py','scripts/run_classifier_nn.py','scripts/classify_source.py','scripts/find_outliers.py','scripts/run_pipeline.py','scripts/run_umap.py','scripts/run_simclr.py','scripts/run_byol.py','scripts/run_pca.py','scripts/run_imgclassifier.py'],
 )
