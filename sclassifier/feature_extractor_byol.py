@@ -779,7 +779,7 @@ class FeatExtractorByol(object):
 			losses_val_batch= []
 			if self.has_cvdata:
 				for batch_id in range(val_steps_per_epoch):
-					x1, x2= next(self.val_data_generator)
+					x1, x2= next(self.crossval_data_generator)
 					loss = self.__val_step_pretraining(x1, x2)
 				
 					if (batch_id + 1) % log_every == 0:
