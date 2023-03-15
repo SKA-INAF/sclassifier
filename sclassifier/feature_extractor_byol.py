@@ -973,16 +973,26 @@ class FeatExtractorByol(object):
 		#==============================
 		#==   LOAD MODEL ARCHITECTURE
 		#==============================
+		# - Load online encoder
+		logger.info("Loading online encoder from file %s ..." % (modelfile))
 		try:
 			self.f_online= load_model(modelfile)
-			self.f_target= load_model(modelfile)
 			
 		except Exception as e:
-			logger.warn("Failed to load encoder model from file %s (err=%s)!" % (modelfile, str(e)))
+			logger.warn("Failed to load online encoder model from file %s (err=%s)!" % (modelfile, str(e)))
 			return -1
 
 		if not self.f_online or self.f_online is None:
 			logger.error("Encoder online model object is None, loading failed!")
+			return -1
+
+		# - Load target encoder
+		logger.info("Loading target encoder from file %s ..." % (modelfile))
+		try:
+			self.f_target= load_model(modelfile)
+			
+		except Exception as e:
+			logger.warn("Failed to load target encoder model from file %s (err=%s)!" % (modelfile, str(e)))
 			return -1
 
 		if not self.f_target or self.f_target is None:
@@ -993,12 +1003,22 @@ class FeatExtractorByol(object):
 		#==   LOAD MODEL WEIGHTS
 		#==============================
 		if weightfile:
+			# - Load online encoder weights
+			logger.info("Loading online encoder weights from file %s ..." % (weightfile))
 			try:
 				self.f_online.load_weights(weightfile)
+				
+			except Exception as e:
+				logger.warn("Failed to load online encoder model weights from file %s (err=%s)!" % (weightfile, str(e)))
+				return -1
+
+			# - Load target encoder weights
+			logger.info("Loading target encoder weights from file %s ..." % (weightfile))
+			try:
 				self.f_target.load_weights(weightfile)
 
 			except Exception as e:
-				logger.warn("Failed to load encoder model weights from file %s (err=%s)!" % (weightfile, str(e)))
+				logger.warn("Failed to load target encoder model weights from file %s (err=%s)!" % (weightfile, str(e)))
 				return -1
 
 		return 0
