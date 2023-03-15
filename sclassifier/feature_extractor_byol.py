@@ -743,7 +743,7 @@ class FeatExtractorByol(object):
 
 		losses_train = []
 		losses_val = []
-		log_every= 10
+		log_every= 1
 
 		for epoch_id in range(self.nepochs):
 			  
@@ -781,6 +781,7 @@ class FeatExtractorByol(object):
 				for batch_id in range(val_steps_per_epoch):
 					x1, x2= next(self.crossval_data_generator)
 					loss = self.__val_step_pretraining(x1, x2)
+					losses_val_batch.append(float(loss))
 				
 					if (batch_id + 1) % log_every == 0:
 						logger.info("Epoch %d/%d [Batch %d/%d]: val_loss=%f" % (epoch_id+1, self.nepochs, batch_id+1, val_steps_per_epoch, loss))
@@ -791,9 +792,9 @@ class FeatExtractorByol(object):
 			if losses_val_batch:
 				loss_val= np.nanmean(losses_val_batch)
 				losses_val.append(loss_val)
-				logger.info("Epoch %d/%d: train_loss=%f, val_loss=%f " % (epoch_id+1, self.nepochs, batch_id+1, steps_per_epoch, loss_train, loss_val))
+				logger.info("Epoch %d/%d: train_loss=%f, val_loss=%f " % (epoch_id+1, self.nepochs, loss_train, loss_val))
 			else:
-				logger.info("Epoch %d/%d: train_loss=%f" % (epoch_id+1, self.nepochs, batch_id+1, steps_per_epoch, loss_train))
+				logger.info("Epoch %d/%d: train_loss=%f" % (epoch_id+1, self.nepochs, loss_train))
 		
 		
 		#===========================
