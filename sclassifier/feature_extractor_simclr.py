@@ -1016,8 +1016,8 @@ class FeatExtractorSimCLR(object):
 			nimgs= data.shape[0]
 			nchannels= data.shape[3]
 
-			print("== data shape ==")
-			print(data.shape)
+			#print("== data shape ==")
+			#print(data.shape)
 
 			# - Get latent data for this output
 			predout= self.encoder.predict(
@@ -1028,8 +1028,8 @@ class FeatExtractorSimCLR(object):
     		use_multiprocessing=self.use_multiprocessing
 			)
 
-			print("== predout shape ==")
-			print(predout.shape)
+			#print("== predout shape ==")
+			#print(predout.shape)
 
 			# - Save embeddings & labels	
 			for j in range(nimgs):

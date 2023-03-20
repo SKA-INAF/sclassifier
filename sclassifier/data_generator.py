@@ -613,7 +613,6 @@ class DataGenerator(object):
 					logger.debug("Class counts/fract in batch: counts=[%s], fract=[%s]" % (class_counts_str, class_fracts_str))
 
 					# - Return data
-					logger.info("Returning generator data ...")
 					yield inputs, sdata
 					
 					nb= 0
