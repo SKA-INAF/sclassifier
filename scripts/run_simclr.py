@@ -213,8 +213,10 @@ def get_args():
 	parser.add_argument('--save_tb_embeddings', dest='save_tb_embeddings', action='store_true',help='Save embeddings & images in Tensorboard format (default=false)')	
 	parser.set_defaults(save_tb_embeddings=False)
 
-	parser.add_argument('-nembeddings_save', '--nembeddings_save', dest='nembeddings_save', required=False, type=int, default=1000, action='store', help='Number of images/embeddings to be saved (default=1000)')	
+	parser.add_argument('-nembeddings_save', '--nembeddings_save', dest='nembeddings_save', required=False, type=int, default=1000, action='store', help='Number of images/embeddings to be saved (default=1000)')
 
+	parser.add_argument('-img_embedding_scale', '--img_embedding_scale', dest='img_embedding_scale', required=False, type=float, default=1.0, action='store', help='If <1 rescale input image before creating preview sprite (default=1.0)')
+	
 	parser.add_argument('--shuffle_embeddings', dest='shuffle_embeddings', action='store_true',help='Shuffle embeddings to be saved (default=false)')	
 	parser.set_defaults(shuffle_embeddings=False)
 
@@ -357,6 +359,7 @@ def main():
 	# - Save options
 	save_tb_embeddings= args.save_tb_embeddings
 	nembeddings_save= args.nembeddings_save
+	img_embedding_scale= args.img_embedding_scale
 	shuffle_embeddings= args.shuffle_embeddings
 	no_save_embeddings= args.no_save_embeddings
 
@@ -519,11 +522,12 @@ def main():
 
 	simclr.save_tb_embeddings= save_tb_embeddings
 	simclr.nembeddings_save= nembeddings_save
+	simclr.img_embedding_scale= img_embedding_scale
 	simclr.shuffle_embeddings= shuffle_embeddings
 	simclr.save_embeddings= True
 	if no_save_embeddings:
 		simclr.save_embeddings= False
-
+	
 
 	# - Run train/predict
 	if predict:

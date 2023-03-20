@@ -84,6 +84,7 @@ from tensorboard.plugins import projector
 ## SCIKIT MODULES
 from skimage.metrics import mean_squared_error
 from skimage.metrics import structural_similarity
+from skimage.util import img_as_float64
 from PIL import Image
 
 ## GRAPHICS MODULES
@@ -200,6 +201,7 @@ class FeatExtractorSimCLR(object):
 		self.save_embeddings= True
 		self.save_tb_embeddings= False
 		self.nembeddings_save= 1000
+		self.img_embedding_scale= 1.0 
 		self.shuffle_embeddings= False
 		self.outfile_tb_embeddings= 'feature_vecs.tsv'
 
@@ -1040,11 +1042,22 @@ class FeatExtractorSimCLR(object):
 			# - Save images (if nchan=1 or nchan=3)
 			if nchannels==1 or nchannels==3:
 				for j in range(nimgs):
-					# - Convert data to [0,255] range and create PIL image (convert to RGB)
 					data_arr= data[j]
 					if nchannels==1:
 						data_arr= data_arr[:,:,0]
 
+					img_h= data_arr.shape[0]
+					img_w= data_arr.shape[1]
+
+					# - Downscale image previews
+					if self.img_embedding_scale>0 and self.img_embedding_scale<1 and self.img_embedding_scale!=1:
+						try:
+							data_resized= Utils.resize_img(img_as_float64(data_arr), (round(img_h * scale), round(img_w * scale)), preserve_range=True, order=1, anti_aliasing=True)
+							data_arr= data_resized
+						except Exception as e:
+							logger.error("Failed to resize image with scale=%f!" % (self.img_embedding_scale))
+
+					# - Convert data to [0,255] range and create PIL image (convert to RGB)
 					data_norm= (data_arr-np.min(data_arr))/(np.max(data_arr)-np.min(data_arr))
 					data_norm= data_norm*255
 					img= Image.fromarray(data_norm.astype('uint8')).convert('RGB')
@@ -1094,8 +1107,8 @@ class FeatExtractorSimCLR(object):
 		nimgs= len(imgs)
 		if nimgs>0:
 			# - Set the width and height of a single thumbnail	
-			ny= imgs[0].width
-			nx= imgs[0].height
+			nx= imgs[0].width
+			ny= imgs[0].height
 			embedding.sprite.image_path = 'sprite.jpg' # Specify the width and height of a single thumbnail. 
 			embedding.sprite.single_image_dim.extend([ny, nx])
 			
