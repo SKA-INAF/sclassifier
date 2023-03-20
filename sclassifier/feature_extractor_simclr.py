@@ -764,6 +764,9 @@ class FeatExtractorSimCLR(object):
 				Transfers adapted weights to base_model
 		"""
 
+		#===========================
+		#==   INIT
+		#===========================
 		# - Initialize train/test loss vs epoch
 		self.train_loss_vs_epoch= np.zeros((1,self.nepochs))	
 		steps_per_epoch= self.nsamples // self.batch_size
@@ -866,41 +869,12 @@ class FeatExtractorSimCLR(object):
 		head= '# epoch loss loss_val'
 		Utils.write_ascii(metrics_data,self.outfile_nnout_metrics,head)	
 
-
 		#================================
-		#==   SAVE ENCODED DATA
+		#==   PREDICT & SAVE EMBEDDINGS
 		#================================
-		logger.info("Running SimCLR prediction on input data ...")
-		self.encoded_data= self.encoder.predict(
-			x=self.test_data_generator,	
-			#steps=1,
-			steps=self.nsamples,
-    	verbose=2,
-    	workers=self.nworkers,
-    	use_multiprocessing=self.use_multiprocessing
-		)#.flatten()
-
-		print("encoded_data shape")
-		print(self.encoded_data.shape)	
-		print(self.encoded_data)
-		N= self.encoded_data.shape[0]
-		Nvar= self.encoded_data.shape[1]
-		
-		# - Merge encoded data
-		logger.info("Adding source info data to encoded data ...")
-		obj_names= np.array(self.source_names).reshape(N,1)
-		obj_ids= np.array(self.source_ids).reshape(N,1)
-		enc_data= np.concatenate(
-			(obj_names, self.encoded_data, obj_ids),
-			axis=1
-		)
-
-		# - Save to file
-		logger.info("Saving encoded data to file %s ..." % (self.outfile_encoded_data))
-		znames_counter= list(range(1,Nvar+1))
-		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
-		head= '{} {} {}'.format("# sname",znames,"id")
-		Utils.write_ascii(enc_data, self.outfile_encoded_data, head)	
+		if self.save_embeddings and self.__save_embeddings()<0:
+			logger.warn("Failed to save latent space embeddings to file ...")
+			return -1
 
 		return 0
 
@@ -936,7 +910,7 @@ class FeatExtractorSimCLR(object):
 		#==   PREDICT & SAVE EMBEDDINGS
 		#================================
 		if self.save_embeddings and self.__save_embeddings()<0:
-			logger.warn("Failed to save embeddings in tensorboard format ...")
+			logger.warn("Failed to save latent space embeddings to file ...")
 			return -1
 
 		#================================
