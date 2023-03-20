@@ -1080,10 +1080,9 @@ class FeatExtractorSimCLR(object):
 		# - Save image sprite (if imgs available)
 		nimgs= len(imgs)
 		if nimgs>0:
-			ny= imgs[0].shape[1]
-			nx= imgs[0].shape[2]
-			nchans= imgs[0].shape[3]
-
+			ny= imgs[0].width
+			nx= imgs[0].height
+			
 			one_square_size = int(np.ceil(np.sqrt(nimgs)))
 			master_width = ny * one_square_size
 			master_height = nx * one_square_size
