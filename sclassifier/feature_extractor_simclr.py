@@ -1050,12 +1050,13 @@ class FeatExtractorSimCLR(object):
 					img_w= data_arr.shape[1]
 
 					# - Downscale image previews
-					if self.img_embedding_scale>0 and self.img_embedding_scale<1 and self.img_embedding_scale!=1:
+					scale= self.img_embedding_scale
+					if scale>0 and scale<1 and scale!=1:
 						try:
 							data_resized= Utils.resize_img(img_as_float64(data_arr), (round(img_h * scale), round(img_w * scale)), preserve_range=True, order=1, anti_aliasing=True)
 							data_arr= data_resized
 						except Exception as e:
-							logger.error("Failed to resize image with scale=%f!" % (self.img_embedding_scale))
+							logger.error("Failed to resize image with scale=%f (err=%s)!" % (self.img_embedding_scale, str(e)))
 
 					# - Convert data to [0,255] range and create PIL image (convert to RGB)
 					data_norm= (data_arr-np.min(data_arr))/(np.max(data_arr)-np.min(data_arr))
