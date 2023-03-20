@@ -1039,7 +1039,11 @@ class FeatExtractorSimCLR(object):
 			if nchannels==1 or nchannels==3:
 				for j in range(nimgs):
 					# - Convert data to [0,255] range and create PIL image (convert to RGB)
-					data_norm= (data[j]-np.min(data[j]))/(np.max(data[j])-np.min(data[j]))
+					data_arr= data[j]
+					if nchannels==1:
+						data_arr= data_arr[:,:,0]
+
+					data_norm= (data_arr-np.min(data_arr))/(np.max(data_arr)-np.min(data_arr))
 					data_norm= data_norm*255
 					img= Image.fromarray(data_norm.astype('uint8')).convert('RGB')
 					imgs.append(img)
