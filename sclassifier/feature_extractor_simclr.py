@@ -22,6 +22,7 @@ import collections
 import csv
 import pickle
 from copy import deepcopy
+from pathlib import Path
 
 ##############################
 ##     GLOBAL VARS
@@ -1053,17 +1054,23 @@ class FeatExtractorSimCLR(object):
 			logger.warn("No embeddings retrieved from generator, nothing to be saved ...")
 			return -1
 
+		# - Create output log directory
+		currdir= os.getcwd()
+		savedir= os.path.join(currdir, 'logs', 'embeddings')
+		logger.info("Creating embedding save dir %s ..." % (savedir))
+		p= Path(savedir)
+		p.mkdir(parents=True, exist_ok= True)
+
 		# - Save embeddings to file
 		logger.info("Save embeddings to file %s ..." % (self.outfile_tb_embeddings))
-		currdir= os.getcwd()
-		outfile_fullpath= os.path.join(currdir, 'embeddings', self.outfile_tb_embeddings)
+		outfile_fullpath= os.path.join(savedir, self.outfile_tb_embeddings)
 
 		with open(outfile_fullpath, 'w') as fw:
 			csv_writer = csv.writer(fw, delimiter='\t')
 			csv_writer.writerows(img_embeddings)
 
 		# - Save labels
-		outfile_labels_fullpath= os.path.join(currdir, 'embeddings', 'metadata.tsv')
+		outfile_labels_fullpath= os.path.join(savedir, 'metadata.tsv')
 		logger.info("Saving label metadata to file %s ..." % (outfile_labels_fullpath))
 		
 		with open(outfile_labels_fullpath, 'w') as fp: 
@@ -1092,7 +1099,7 @@ class FeatExtractorSimCLR(object):
 				w_loc = ny * mod
 				spriteimage.paste(image, (w_loc, h_loc))
 
-			outfile_sprite_fullpath= os.path.join(currdir, 'embeddings', 'sprite.jpg')
+			outfile_sprite_fullpath= os.path.join(savedir, 'sprite.jpg')
 			logger.info("Saving sprite image to file %s ..." % (outfile_sprite_fullpath))
 			spriteimage.convert("RGB").save(outfile_sprite_fullpath, transparency=0)
 
