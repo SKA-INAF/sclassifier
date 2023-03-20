@@ -207,6 +207,9 @@ def get_args():
 	parser.set_defaults(predict=False)
 
 	# - Save options
+	parser.add_argument('--no_save_embeddings', dest='no_save_embeddings', action='store_true',help='Do not save embeddings (default=true)')	
+	parser.set_defaults(no_save_embeddings=False)
+
 	parser.add_argument('--save_tb_embeddings', dest='save_tb_embeddings', action='store_true',help='Save embeddings & images in Tensorboard format (default=false)')	
 	parser.set_defaults(save_tb_embeddings=False)
 
@@ -355,6 +358,7 @@ def main():
 	save_tb_embeddings= args.save_tb_embeddings
 	nembeddings_save= args.nembeddings_save
 	shuffle_embeddings= args.shuffle_embeddings
+	no_save_embeddings= args.no_save_embeddings
 
 	#===============================
 	#==  CREATE DATA PRE-PROCESSOR
@@ -516,6 +520,9 @@ def main():
 	simclr.save_tb_embeddings= save_tb_embeddings
 	simclr.nembeddings_save= nembeddings_save
 	simclr.shuffle_embeddings= shuffle_embeddings
+	simclr.save_embeddings= True
+	if no_save_embeddings:
+		simclr.save_embeddings= False
 
 
 	# - Run train/predict

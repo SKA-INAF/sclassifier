@@ -195,6 +195,7 @@ class FeatExtractorSimCLR(object):
 		self.outfile_nnout_metrics= 'losses.dat'
 		self.outfile_encoded_data= 'latent_data.dat'
 
+		self.save_embeddings= True
 		self.save_tb_embeddings= False
 		self.nembeddings_save= 1000
 		self.shuffle_embeddings= False
@@ -927,27 +928,45 @@ class FeatExtractorSimCLR(object):
 		self.modelfile_encoder= modelfile_encoder
 		self.weightfile_encoder= weightfile_encoder			
 
-		#===========================
-		#==   PREDICT
-		#===========================
+		#================================
+		#==   PREDICT & SAVE EMBEDDINGS
+		#================================
+		if self.save_embeddings and self.__save_embeddings()<0:
+			logger.warn("Failed to save embeddings in tensorboard format ...")
+			return -1
+
+		############################
+		##  SAVE EMBEDDINGS TO TB
+		############################
+		if self.save_tb_embeddings and self.__save_tb_embeddings()<0:
+			logger.warn("Failed to save embeddings in tensorboard format ...")
+
+		logger.info("End predict run")
+
+		return 0
+
+	
+	########################################
+	##     SAVE EMBEDDINGS
+	########################################
+	def __save_embeddings(self):
+		""" Save embeddings """
+
+		# - Apply model to input
 		logger.info("Running SimCLR prediction on input data ...")
 		predout= self.encoder.predict(
-			x=self.test_data_generator,	
-			#steps=1,
+			x=self.test_data_generator,
 			steps=self.nsamples,
     	verbose=2,
     	workers=self.nworkers,
     	use_multiprocessing=self.use_multiprocessing
-		)#.flatten()
+		)
 
 		if type(predout)==tuple and len(predout)>0:
 			self.encoded_data= predout[0]
 		else:
 			self.encoded_data= predout
 
-		print("encoded_data shape")
-		print(self.encoded_data.shape)	
-		print(self.encoded_data)
 		N= self.encoded_data.shape[0]
 		Nvar= self.encoded_data.shape[1]
 		
@@ -967,21 +986,13 @@ class FeatExtractorSimCLR(object):
 		head= '{} {} {}'.format("# sname", znames, "id")
 		Utils.write_ascii(enc_data, self.outfile_encoded_data, head)
 
-
-		############################
-		##  SAVE EMBEDDINGS TO TB
-		############################
-		if self.save_tb_embeddings and self.__save_embeddings()<0:
-			logger.warn("Failed to save embeddings in tensorboard format ...")
-
-		logger.info("End predict run")
-
 		return 0
+
 
 	########################################
 	##     SAVE EMBEDDINGS TENSORBOARD
 	########################################
-	def __save_embeddings(self):
+	def __save_tb_embeddings(self):
 		""" Save embeddings for tensorboard visualization """
 		
 		# - Set nembeddings to be saved: -1=ALL
