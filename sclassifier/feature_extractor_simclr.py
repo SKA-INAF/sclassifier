@@ -79,6 +79,7 @@ from tensorflow.keras.callbacks import (
 from tensorflow.python.framework.ops import disable_eager_execution, enable_eager_execution 
 #disable_eager_execution()
 #enable_eager_execution()
+from tensorboard.plugins import projector
 
 ## SCIKIT MODULES
 from skimage.metrics import mean_squared_error
@@ -1061,13 +1062,17 @@ class FeatExtractorSimCLR(object):
 		p= Path(savedir)
 		p.mkdir(parents=True, exist_ok= True)
 
-		# - Save embeddings to file
+		# - Save embeddings
 		logger.info("Save embeddings to file %s ..." % (self.outfile_tb_embeddings))
 		outfile_fullpath= os.path.join(savedir, self.outfile_tb_embeddings)
 
-		with open(outfile_fullpath, 'w') as fw:
-			csv_writer = csv.writer(fw, delimiter='\t')
-			csv_writer.writerows(img_embeddings)
+		#with open(outfile_fullpath, 'w') as fw:
+		#	csv_writer = csv.writer(fw, delimiter='\t')
+		#	csv_writer.writerows(img_embeddings)
+
+		embeddings_variable = tf.Variable(img_embeddings) # Create a checkpoint from embedding, the filename and key are the # name of the tensor. 
+		checkpoint = tf.train.Checkpoint(embedding=embeddings_variable) 
+		checkpoint.save(os.path.join(savedir, "embedding.ckpt"))
 
 		# - Save labels
 		outfile_labels_fullpath= os.path.join(savedir, 'metadata.tsv')
@@ -1075,13 +1080,24 @@ class FeatExtractorSimCLR(object):
 		
 		with open(outfile_labels_fullpath, 'w') as fp: 
 			for label in labels:
-				fp.write(f"{label}\n")
+				#fp.write(f"{label}\n")
+				fp.write("{}\n".format(label))
 
+		# - Create config projector
+		#   The name of the tensor will be suffixed by `/.ATTRIBUTES/VARIABLE_VALUE`.
+		config = projector.ProjectorConfig()
+		embedding = config.embeddings.add()
+		embedding.tensor_name = "embedding/.ATTRIBUTES/VARIABLE_VALUE"
+		embedding.metadata_path = 'metadata.tsv'
+		
 		# - Save image sprite (if imgs available)
 		nimgs= len(imgs)
 		if nimgs>0:
+			# - Set the width and height of a single thumbnail	
 			ny= imgs[0].width
 			nx= imgs[0].height
+			embedding.sprite.image_path = 'sprite.jpg' # Specify the width and height of a single thumbnail. 
+			embedding.sprite.single_image_dim.extend([ny, nx])
 			
 			one_square_size = int(np.ceil(np.sqrt(nimgs)))
 			master_width = ny * one_square_size
@@ -1102,7 +1118,11 @@ class FeatExtractorSimCLR(object):
 			logger.info("Saving sprite image to file %s ..." % (outfile_sprite_fullpath))
 			spriteimage.convert("RGB").save(outfile_sprite_fullpath, transparency=0)
 
-		
+
+		# - Visualize embeddings
+		logger.info("Visualize embeddings ...")
+		projector.visualize_embeddings(savedir, config)
+	
 		return 0
 
 	#####################################
