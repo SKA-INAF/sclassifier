@@ -207,6 +207,20 @@ def get_args():
 	# - Run options
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
 	parser.set_defaults(predict=False)
+
+	# - Save options
+	parser.add_argument('--no_save_embeddings', dest='no_save_embeddings', action='store_true',help='Do not save embeddings (default=true)')	
+	parser.set_defaults(no_save_embeddings=False)
+
+	parser.add_argument('--save_tb_embeddings', dest='save_tb_embeddings', action='store_true',help='Save embeddings & images in Tensorboard format (default=false)')	
+	parser.set_defaults(save_tb_embeddings=False)
+
+	parser.add_argument('-nembeddings_save', '--nembeddings_save', dest='nembeddings_save', required=False, type=int, default=1000, action='store', help='Number of images/embeddings to be saved (default=1000)')
+
+	parser.add_argument('-img_embedding_scale', '--img_embedding_scale', dest='img_embedding_scale', required=False, type=float, default=1.0, action='store', help='If <1 rescale input image before creating preview sprite (default=1.0)')
+	
+	parser.add_argument('--shuffle_embeddings', dest='shuffle_embeddings', action='store_true',help='Shuffle embeddings to be saved (default=false)')	
+	parser.set_defaults(shuffle_embeddings=False)
 	
 	args = parser.parse_args()	
 
@@ -344,6 +358,13 @@ def main():
 
 	# - Run options
 	predict= args.predict
+
+	# - Save options
+	save_tb_embeddings= args.save_tb_embeddings
+	nembeddings_save= args.nembeddings_save
+	img_embedding_scale= args.img_embedding_scale
+	shuffle_embeddings= args.shuffle_embeddings
+	no_save_embeddings= args.no_save_embeddings
 
 	#===============================
 	#==  CREATE DATA PRE-PROCESSOR
@@ -502,6 +523,14 @@ def main():
 	byol.class_probs= class_probs_dict
 	byol.use_predefined_arch= use_predefined_arch
 	byol.predefined_arch= predefined_arch
+
+	byol.save_tb_embeddings= save_tb_embeddings
+	byol.nembeddings_save= nembeddings_save
+	byol.img_embedding_scale= img_embedding_scale
+	byol.shuffle_embeddings= shuffle_embeddings
+	byol.save_embeddings= True
+	if no_save_embeddings:
+		byol.save_embeddings= False
 
 	# - Run train/predict
 	if predict:

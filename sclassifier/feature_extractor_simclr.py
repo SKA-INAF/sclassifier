@@ -939,9 +939,9 @@ class FeatExtractorSimCLR(object):
 			logger.warn("Failed to save embeddings in tensorboard format ...")
 			return -1
 
-		############################
-		##  SAVE EMBEDDINGS TO TB
-		############################
+		#================================
+		#==  SAVE EMBEDDINGS TO TB
+		#================================
 		if self.save_tb_embeddings and self.__save_tb_embeddings()<0:
 			logger.warn("Failed to save embeddings in tensorboard format ...")
 

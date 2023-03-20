@@ -22,6 +22,7 @@ import collections
 import csv
 import pickle
 from copy import deepcopy
+from pathlib import Path
 
 ##############################
 ##     GLOBAL VARS
@@ -82,6 +83,8 @@ from tensorflow.python.framework.ops import disable_eager_execution, enable_eage
 ## SCIKIT MODULES
 from skimage.metrics import mean_squared_error
 from skimage.metrics import structural_similarity
+from skimage.util import img_as_float64
+from PIL import Image
 
 ## GRAPHICS MODULES
 import matplotlib
@@ -133,6 +136,7 @@ class FeatExtractorByol(object):
 		self.train_data_generator= None
 		self.crossval_data_generator= None
 		self.test_data_generator= None
+		self.test_data_generator_embeddings= None
 		self.augmentation= False	
 		self.validation_steps= 10
 		self.use_multiprocessing= True
@@ -200,9 +204,15 @@ class FeatExtractorByol(object):
 		# ** Output
 		# *****************************
 		self.outfile_loss= 'losses.png'
-		#self.outfile_model= 'model.png'
 		self.outfile_nnout_metrics= 'losses.dat'
 		self.outfile_encoded_data= 'latent_data.dat'
+
+		self.save_embeddings= True
+		self.save_tb_embeddings= False
+		self.nembeddings_save= 1000
+		self.img_embedding_scale= 1.0 
+		self.shuffle_embeddings= False
+		self.outfile_tb_embeddings= 'feature_vecs.tsv'
 
 	#####################################
 	##     SETTERS/GETTERS
@@ -304,6 +314,17 @@ class FeatExtractorByol(object):
 			#batch_size=self.nsamples,
 			batch_size=1, 
 			shuffle=False
+		)
+
+		# - Create embeddings data generator
+		logger.info("Creating test data generator for embeddings (deep-copying train data generator) ...")
+		self.dg_test_embeddings= deepcopy(self.dg)
+		logger.info("Disabling data augmentation in test data generator for embeddings ...")
+		self.dg_test_embeddings.disable_augmentation()
+
+		self.test_data_generator_embeddings= self.dg_test_embeddings.generate_data(
+			batch_size=1, 
+			shuffle=self.shuffle_embeddings
 		)
 		
 		return 0
@@ -918,9 +939,30 @@ class FeatExtractorByol(object):
 		self.modelfile_encoder= modelfile_encoder
 		self.weightfile_encoder= weightfile_encoder
 
-		#===========================
-		#==   PREDICT
-		#===========================
+		#================================
+		#==   PREDICT & SAVE EMBEDDINGS
+		#================================
+		if self.save_embeddings and self.__save_embeddings()<0:
+			logger.warn("Failed to save embeddings in tensorboard format ...")
+			return -1
+
+		#================================
+		#==  SAVE EMBEDDINGS TO TB
+		#================================
+		if self.save_tb_embeddings and self.__save_tb_embeddings()<0:
+			logger.warn("Failed to save embeddings in tensorboard format ...")
+
+		logger.info("End predict run")
+
+		return 0
+
+	########################################
+	##     SAVE EMBEDDINGS
+	########################################
+	def __save_embeddings(self):
+		""" Save embeddings """
+
+		# - Apply model to input
 		logger.info("Running BYOL prediction on input data ...")
 		predout= self.f_online.predict(
 			x=self.test_data_generator,	
@@ -958,11 +1000,146 @@ class FeatExtractorByol(object):
 		head= '{} {} {}'.format("# sname", znames, "id")
 		Utils.write_ascii(enc_data, self.outfile_encoded_data, head)	
 
-		logger.info("End predict run")
 
+	########################################
+	##     SAVE EMBEDDINGS TENSORBOARD
+	########################################
+	def __save_tb_embeddings(self):
+		""" Save embeddings for tensorboard visualization """
+		
+		# - Set nembeddings to be saved: -1=ALL
+		if self.nembeddings_save==-1 or self.nembeddings_save>self.nsamples:
+			n_embeddings= self.nsamples
+		else:
+			n_embeddings= self.nembeddings_save
+
+		# - Loop and save
+		imgs= []
+		img_embeddings= []
+		labels= []
+
+		for i in range(n_embeddings):
+
+			# - Get data from generator
+			data, sdata= next(self.test_data_generator_embeddings)
+			class_id= sdata.id
+			class_name= sdata.label
+			nimgs= data.shape[0]
+			nchannels= data.shape[3]
+
+			# - Get latent data for this output
+			predout= self.f_online.predict(
+				x= data,	
+				batch_size=1,
+    		verbose=2,
+    		workers=self.nworkers,
+    		use_multiprocessing=self.use_multiprocessing
+			)
+
+			# - Save embeddings & labels	
+			for j in range(nimgs):
+				img_embeddings.append(predout[j])
+				labels.append(class_id)
+
+			# - Save images (if nchan=1 or nchan=3)
+			if nchannels==1 or nchannels==3:
+				for j in range(nimgs):
+					data_arr= data[j]
+					if nchannels==1:
+						data_arr= data_arr[:,:,0]
+
+					img_h= data_arr.shape[0]
+					img_w= data_arr.shape[1]
+
+					# - Downscale image previews
+					scale= self.img_embedding_scale
+					if scale>0 and scale<1 and scale!=1:
+						try:
+							data_resized= Utils.resize_img(img_as_float64(data_arr), (round(img_h * scale), round(img_w * scale)), preserve_range=True, order=1, anti_aliasing=True)
+							data_arr= data_resized
+						except Exception as e:
+							logger.error("Failed to resize image with scale=%f (err=%s)!" % (self.img_embedding_scale, str(e)))
+
+					# - Convert data to [0,255] range and create PIL image (convert to RGB)
+					data_norm= (data_arr-np.min(data_arr))/(np.max(data_arr)-np.min(data_arr))
+					data_norm= data_norm*255
+					img= Image.fromarray(data_norm.astype('uint8')).convert('RGB')
+					imgs.append(img)
+				
+		# - Check there are embedding data
+		if not img_embeddings:
+			logger.warn("No embeddings retrieved from generator, nothing to be saved ...")
+			return -1
+
+		# - Create output log directory
+		currdir= os.getcwd()
+		savedir= os.path.join(currdir, 'logs', 'embeddings')
+		logger.info("Creating embedding save dir %s ..." % (savedir))
+		p= Path(savedir)
+		p.mkdir(parents=True, exist_ok= True)
+
+		# - Save embeddings
+		logger.info("Save embeddings to file %s ..." % (self.outfile_tb_embeddings))
+		outfile_fullpath= os.path.join(savedir, self.outfile_tb_embeddings)
+
+		#with open(outfile_fullpath, 'w') as fw:
+		#	csv_writer = csv.writer(fw, delimiter='\t')
+		#	csv_writer.writerows(img_embeddings)
+
+		embeddings_variable = tf.Variable(img_embeddings) # Create a checkpoint from embedding, the filename and key are the # name of the tensor. 
+		checkpoint = tf.train.Checkpoint(embedding=embeddings_variable) 
+		checkpoint.save(os.path.join(savedir, "embedding.ckpt"))
+
+		# - Save labels
+		outfile_labels_fullpath= os.path.join(savedir, 'metadata.tsv')
+		logger.info("Saving label metadata to file %s ..." % (outfile_labels_fullpath))
+		
+		with open(outfile_labels_fullpath, 'w') as fp: 
+			for label in labels:
+				#fp.write(f"{label}\n")
+				fp.write("{}\n".format(label))
+
+		# - Create config projector
+		#   The name of the tensor will be suffixed by `/.ATTRIBUTES/VARIABLE_VALUE`.
+		config = projector.ProjectorConfig()
+		embedding = config.embeddings.add()
+		embedding.tensor_name = "embedding/.ATTRIBUTES/VARIABLE_VALUE"
+		embedding.metadata_path = 'metadata.tsv'
+		
+		# - Save image sprite (if imgs available)
+		nimgs= len(imgs)
+		if nimgs>0:
+			# - Set the width and height of a single thumbnail	
+			nx= imgs[0].width
+			ny= imgs[0].height
+			embedding.sprite.image_path = 'sprite.jpg' # Specify the width and height of a single thumbnail. 
+			embedding.sprite.single_image_dim.extend([ny, nx])
+			
+			one_square_size = int(np.ceil(np.sqrt(nimgs)))
+			master_width = ny * one_square_size
+			master_height = nx * one_square_size
+			spriteimage = Image.new(
+				mode='RGBA',
+				size=(master_width, master_height),
+				color=(0,0,0,0) # fully transparent
+			)
+
+			for count, image in enumerate(imgs):
+				div, mod = divmod(count, one_square_size)
+				h_loc = nx * div
+				w_loc = ny * mod
+				spriteimage.paste(image, (w_loc, h_loc))
+
+			outfile_sprite_fullpath= os.path.join(savedir, 'sprite.jpg')
+			logger.info("Saving sprite image to file %s ..." % (outfile_sprite_fullpath))
+			spriteimage.convert("RGB").save(outfile_sprite_fullpath, transparency=0)
+
+
+		# - Visualize embeddings
+		logger.info("Visualize embeddings ...")
+		projector.visualize_embeddings(savedir, config)
+	
 		return 0
-
-
 	
 	#####################################
 	##     LOAD ENCODER MODEL
