@@ -553,7 +553,7 @@ class DataGenerator(object):
 	#####################################
 	##     GENERATE TRAIN DATA
 	#####################################
-	def generate_data(self, batch_size=32, shuffle=True, read_crop=False, crop_size=32):
+	def generate_data(self, batch_size=32, shuffle=True, read_crop=False, crop_size=32, balance_classes=False, class_probs={}):
 		""" Generator function reading nsamples images from disk and returning to caller """
 	
 		nb= 0
@@ -583,16 +583,36 @@ class DataGenerator(object):
 				data_shape= sdata.img_cube.shape
 				inputs_shape= (batch_size,) + data_shape
 
+				# - Apply class rebalancing?
+				class_id= sdata.id
+				class_name= sdata.label
+				if balance_classes and class_probs:					
+					prob= class_probs[class_name]
+					r= random.uniform(0, 1)
+					accept= r<prob
+					if not accept:
+						continue
+
 				# - Initialize return data
 				if nb==0:
 					inputs= np.zeros(inputs_shape, dtype=np.float32)
+					class_ids= []
 					
 				# - Update inputs
 				inputs[nb]= sdata.img_cube
+				class_ids.append(class_id)
 				nb+= 1
 
 				# - Return data if number of batch is reached and restart the batch
 				if nb>=batch_size:
+					# - Compute class abundances in batch
+					class_counts= np.bincount(class_ids)
+					class_fracts= class_counts/len(class_ids)
+					class_counts_str= ' '.join([str(x) for x in class_counts])
+					class_fracts_str= ' '.join([str(x) for x in class_fracts])
+					logger.debug("Class counts/fract in batch: counts=[%s], fract=[%s]" % (class_counts_str, class_fracts_str))
+
+					# - Return data
 					logger.info("Returning generator data ...")
 					yield inputs, sdata
 					

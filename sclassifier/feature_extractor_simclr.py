@@ -82,6 +82,7 @@ from tensorflow.python.framework.ops import disable_eager_execution, enable_eage
 ## SCIKIT MODULES
 from skimage.metrics import mean_squared_error
 from skimage.metrics import structural_similarity
+from PIL import Image
 
 ## GRAPHICS MODULES
 import matplotlib
@@ -129,6 +130,7 @@ class FeatExtractorSimCLR(object):
 		self.train_data_generator= None
 		self.crossval_data_generator= None
 		self.test_data_generator= None
+		self.test_data_generator_embeddings= None
 		self.augmentation= False	
 		self.validation_steps= 10
 		self.use_multiprocessing= True
@@ -186,30 +188,17 @@ class FeatExtractorSimCLR(object):
 		self.class_probs= {}
 
 		# *****************************
-		# ** Pre-processing
-		# *****************************
-		#self.normalize= False
-		#self.scale_to_abs_max= False
-		#self.scale_to_max= False
-		#self.resize= True
-		#self.log_transform_img= False
-		#self.scale_img= False
-		#self.scale_img_factors= []
-		#self.standardize_img= False		
-		#self.img_means= []
-		#self.img_sigmas= []	
-		#self.chan_divide= False
-		#self.chan_mins= []
-		#self.erode= False
-		#self.erode_kernel= 5
-		
-		# *****************************
 		# ** Output
 		# *****************************
 		self.outfile_loss= 'losses.png'
 		self.outfile_model= 'model.png'
 		self.outfile_nnout_metrics= 'losses.dat'
 		self.outfile_encoded_data= 'latent_data.dat'
+
+		self.save_tb_embeddings= False
+		self.nembeddings_save= 1000
+		self.shuffle_embeddings= False
+		self.outfile_tb_embeddings= 'feature_vecs.tsv'
 
 	#####################################
 	##     SETTERS/GETTERS
@@ -315,6 +304,17 @@ class FeatExtractorSimCLR(object):
 			#batch_size=self.nsamples,
 			batch_size=1, 
 			shuffle=False
+		)
+
+		# - Create embeddings data generator
+		logger.info("Creating test data generator for embeddings (deep-copying train data generator) ...")
+		self.dg_test_embeddings= deepcopy(self.dg)
+		logger.info("Disabling data augmentation in test data generator for embeddings ...")
+		self.dg_test_embeddings.disable_augmentation()
+
+		self.test_data_generator_embeddings= self.dg_test_embeddings.generate_data(
+			batch_size=1, 
+			shuffle=self.shuffle_embeddings
 		)
 		
 		return 0
@@ -965,12 +965,124 @@ class FeatExtractorSimCLR(object):
 		znames_counter= list(range(1, Nvar+1))
 		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
 		head= '{} {} {}'.format("# sname", znames, "id")
-		Utils.write_ascii(enc_data, self.outfile_encoded_data, head)	
+		Utils.write_ascii(enc_data, self.outfile_encoded_data, head)
+
+
+		############################
+		##  SAVE EMBEDDINGS TO TB
+		############################
+		if self.save_tb_embeddings and self.__save_embeddings()<0:
+			logger.warn("Failed to save embeddings in tensorboard format ...")
 
 		logger.info("End predict run")
 
 		return 0
 
+	########################################
+	##     SAVE EMBEDDINGS TENSORBOARD
+	########################################
+	def __save_embeddings(self):
+		""" Save embeddings for tensorboard visualization """
+		
+		# - Set nembeddings to be saved: -1=ALL
+		if self.nembeddings_save==-1 or self.nembeddings_save>self.nsamples:
+			n_embeddings= self.nsamples
+		else:
+			n_embeddings= self.nembeddings_save
+
+		# - Loop and save
+		imgs= []
+		img_embeddings= []
+		labels= []
+
+		for i in range(n_embeddings):
+
+			# - Get data from generator
+			data, sdata= next(self.test_data_generator_embeddings)
+			class_id= sdata.id
+			class_name= sdata.label
+			nimgs= data.shape[0]
+			nchannels= data.shape[3]
+
+			print("== data shape ==")
+			print(data.shape)
+
+			# - Get latent data for this output
+			predout= self.encoder.predict(
+				x= data,	
+				batch_size=1,
+    		verbose=2,
+    		workers=self.nworkers,
+    		use_multiprocessing=self.use_multiprocessing
+			)
+
+			print("== predout shape ==")
+			print(predout.shape)
+
+			# - Save embeddings & labels	
+			for j in range(nimgs):
+				img_embeddings.append(predout[j])
+				labels.append(class_id)
+
+			# - Save images (if nchan=1 or nchan=3)
+			if nchannels==1 or nchannels==3:
+				for j in range(nimgs):
+					# - Convert data to [0,255] range and create PIL image (convert to RGB)
+					data_norm= (data[j]-np.min(data[j]))/(np.max(data[j])-np.min(data[j]))
+					data_norm= data_norm*255
+					img= Image.fromarray(data_norm.astype('uint8')).convert('RGB')
+					imgs.append(img)
+				
+		# - Check there are embedding data
+		if not img_embeddings:
+			logger.warn("No embeddings retrieved from generator, nothing to be saved ...")
+			return -1
+
+		# - Save embeddings to file
+		logger.info("Save embeddings to file %s ..." % (self.outfile_tb_embeddings))
+		currdir= os.getcwd()
+		outfile_fullpath= os.path.join(currdir, 'embeddings', self.outfile_tb_embeddings)
+
+		with open(outfile_fullpath, 'w') as fw:
+			csv_writer = csv.writer(fw, delimiter='\t')
+			csv_writer.writerows(img_embeddings)
+
+		# - Save labels
+		outfile_labels_fullpath= os.path.join(currdir, 'embeddings', 'metadata.tsv')
+		logger.info("Saving label metadata to file %s ..." % (outfile_labels_fullpath))
+		
+		with open(outfile_labels_fullpath, 'w') as fp: 
+			for label in labels:
+				fp.write(f"{label}\n")
+
+		# - Save image sprite (if imgs available)
+		nimgs= len(imgs)
+		if nimgs>0:
+			ny= imgs[0].shape[1]
+			nx= imgs[0].shape[2]
+			nchans= imgs[0].shape[3]
+
+			one_square_size = int(np.ceil(np.sqrt(nimgs)))
+			master_width = ny * one_square_size
+			master_height = nx * one_square_size
+			spriteimage = Image.new(
+				mode='RGBA',
+				size=(master_width, master_height),
+				color=(0,0,0,0) # fully transparent
+			)
+
+			for count, image in enumerate(imgs):
+				div, mod = divmod(count, one_square_size)
+				h_loc = nx * div
+				w_loc = ny * mod
+				spriteimage.paste(image, (w_loc, h_loc))
+
+			outfile_sprite_fullpath= os.path.join(currdir, 'embeddings', 'sprite.jpg')
+			logger.info("Saving sprite image to file %s ..." % (outfile_sprite_fullpath))
+			spriteimage.convert("RGB").save(outfile_sprite_fullpath, transparency=0)
+
+		
+		return 0
 
 	#####################################
 	##     LOAD MODEL

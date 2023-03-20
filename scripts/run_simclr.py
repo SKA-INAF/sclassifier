@@ -205,6 +205,16 @@ def get_args():
 	# - Run options
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
 	parser.set_defaults(predict=False)
+
+	# - Save options
+	parser.add_argument('--save_tb_embeddings', dest='save_tb_embeddings', action='store_true',help='Save embeddings & images in Tensorboard format (default=false)')	
+	parser.set_defaults(save_tb_embeddings=False)
+
+	parser.add_argument('-nembeddings_save', '--nembeddings_save', dest='nembeddings_save', required=False, type=int, default=1000, action='store', help='Number of images/embeddings to be saved (default=1000)')	
+
+	parser.add_argument('--shuffle_embeddings', dest='shuffle_embeddings', action='store_true',help='Shuffle embeddings to be saved (default=false)')	
+	parser.set_defaults(shuffle_embeddings=False)
+
 	
 	args = parser.parse_args()	
 
@@ -340,6 +350,11 @@ def main():
 
 	# - Run options
 	predict= args.predict
+
+	# - Save options
+	save_tb_embeddings= args.save_tb_embeddings
+	nembeddings_save= args.nembeddings_save
+	shuffle_embeddings= args.shuffle_embeddings
 
 	#===============================
 	#==  CREATE DATA PRE-PROCESSOR
@@ -497,6 +512,11 @@ def main():
 	simclr.class_probs= class_probs_dict
 	simclr.use_predefined_arch= use_predefined_arch
 	simclr.predefined_arch= predefined_arch
+
+	simclr.save_tb_embeddings= save_tb_embeddings
+	simclr.nembeddings_save= nembeddings_save
+	simclr.shuffle_embeddings= shuffle_embeddings
+
 
 	# - Run train/predict
 	if predict:
