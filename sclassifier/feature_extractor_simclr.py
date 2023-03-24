@@ -479,7 +479,7 @@ class FeatExtractorSimCLR(object):
 		#===========================
 		#==  DENSE LAYER
 		#===========================
-		# - Needed only to reduce a bit resnet output (2048)
+		# - Needed only to reduce a bit resnet output (resnet50=2048, resnet18=512)
 		if self.add_dense:
 			x = layers.Dense(self.latent_dim, activation=self.dense_layer_activation)(x)
 
@@ -594,8 +594,6 @@ class FeatExtractorSimCLR(object):
 		print(projhead_input_data_dim)
 		projhead_outputs= self.__create_projhead_model(projhead_input_data_dim)
 
-		# - Create softmax cosine similarity layer
-		soft_cos_sim= SoftmaxCosineSim(batch_size=self.batch_size, feat_dim=self.latent_dim) # NB: Dn't understand why in original code feat_dim is equal to encoder output shape
 		
 		# - Create model
 		#   Inputs: list of 2xbatch_size inputs
@@ -609,6 +607,11 @@ class FeatExtractorSimCLR(object):
 		print(type(projhead_outputs))
 		print(len(projhead_outputs))
 		print(K.int_shape(projhead_outputs[0]))
+		
+		# - Create softmax cosine similarity layer
+		feat_dim= K.int_shape(projhead_outputs[0])[1]
+		##soft_cos_sim= SoftmaxCosineSim(batch_size=self.batch_size, feat_dim=self.latent_dim) # NB: Dn't understand why in original code feat_dim is equal to encoder output shape
+		soft_cos_sim= SoftmaxCosineSim(batch_size=self.batch_size, feat_dim=feat_dim)
 
 		model_outputs= soft_cos_sim(projhead_outputs)
 
