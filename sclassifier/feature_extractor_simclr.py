@@ -864,12 +864,12 @@ class FeatExtractorSimCLR(object):
 	##     TRAIN NN
 	#####################################
 	@tf.function
-	def __train_step_pretraining(self, x):  # (2*bs, 32, 32, 3)
+	def __train_step_pretraining(self, x):  # (2*bs, ny, nx, 3)
 		""" Train step pretraining """
         
 		# Forward pass
 		with tf.GradientTape(persistent=True) as tape:
-			h = self.encoder(x, training=True)  # (2*bs, 512)
+			h = self.encoder(x, training=True)  # (2*bs, 256)
 			z = self.projhead(h, training=True)  # (2*bs, 128)
 			loss = nt_xent_loss(z, temperature=tf.constant(self.temperature))
         
