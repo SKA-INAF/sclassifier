@@ -167,12 +167,15 @@ def get_args():
 	parser.set_defaults(balance_classes_in_batch=False)
 	parser.add_argument('--class_probs', dest='class_probs', required=False, type=str, default='{"PN":1,"HII":1,"PULSAR":1,"YSO":1,"STAR":1,"GALAXY":1,"QSO":1}', help='Class weights used in batch rebalance') 
 	
+	parser.add_argument('-loss_temperature', '--loss_temperature', dest='loss_temperature', required=False, type=float, default=0.1, action='store',help='Loss temperature parameter (default=0.1)')
 
 	# - Network architecture options
 	parser.add_argument('-weightfile', '--weightfile', dest='weightfile', required=False, type=str, default="", action='store',help='Weight file (hd5) to be loaded (default=no)')	
 	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=False, type=str, default="", action='store',help='Model architecture file (json) to be loaded (default=no)')
 	parser.add_argument('-weightfile_encoder', '--weightfile_encoder', dest='weightfile_encoder', required=False, type=str, default="", action='store',help='Encoder weight file (hd5) to be loaded (default=no)')	
 	parser.add_argument('-modelfile_encoder', '--modelfile_encoder', dest='modelfile_encoder', required=False, type=str, default="", action='store',help='Encoder model architecture file (json) to be loaded (default=no)')
+	parser.add_argument('-weightfile_projhead', '--weightfile_projhead', dest='weightfile_projhead', required=False, type=str, default="", action='store',help='Projection head weight file (hd5) to be loaded (default=no)')	
+	parser.add_argument('-modelfile_projhead', '--modelfile_projhead', dest='modelfile_projhead', required=False, type=str, default="", action='store',help='Projection head model architecture file (json) to be loaded (default=no)')
 	parser.add_argument('-latentdim', '--latentdim', dest='latentdim', required=False, type=int, default=2, action='store',help='Dimension of latent vector (default=2)')	
 	parser.add_argument('--add_maxpooling_layer', dest='add_maxpooling_layer', action='store_true',help='Add max pooling layer after conv layers ')	
 	parser.set_defaults(add_maxpooling_layer=False)	
@@ -310,6 +313,8 @@ def main():
 	weightfile= args.weightfile
 	modelfile_encoder= args.modelfile_encoder
 	weightfile_encoder= args.weightfile_encoder
+	modelfile_projhead= args.modelfile_projhead
+	weightfile_projhead= args.weightfile_projhead
 	latentdim= args.latentdim
 	add_maxpooling_layer= args.add_maxpooling_layer
 	add_batchnorm_layer= args.add_batchnorm_layer
@@ -352,6 +357,8 @@ def main():
 
 		print("== class_probs ==")
 		print(class_probs_dict)
+
+	loss_temperature= args.loss_temperature
 
 	# - Run options
 	predict= args.predict
@@ -487,6 +494,8 @@ def main():
 	simclr.weightfile= weightfile
 	simclr.modelfile_encoder= modelfile_encoder
 	simclr.weightfile_encoder= weightfile_encoder
+	simclr.modelfile_projhead= modelfile_projhead
+	simclr.weightfile_projhead= weightfile_projhead
 	simclr.set_image_size(resize_size, resize_size)
 	simclr.latent_dim= latentdim
 
@@ -527,13 +536,15 @@ def main():
 	simclr.save_embeddings= True
 	if no_save_embeddings:
 		simclr.save_embeddings= False
-	
+
+	simclr.temperature= loss_temperature
 
 	# - Run train/predict
 	if predict:
 		status= simclr.run_predict(modelfile_encoder, weightfile_encoder)
 	else:
-		status= simclr.run_train(modelfile, weightfile, modelfile_encoder, weightfile_encoder)
+		#status= simclr.run_train(modelfile, weightfile, modelfile_encoder, weightfile_encoder)
+		status= simclr.run_train_v2(modelfile_encoder, weightfile_encoder, modelfile_projhead, weightfile_projhead)
 	
 	if status<0:
 		logger.error("SimCLR run failed!")
