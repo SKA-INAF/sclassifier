@@ -309,9 +309,7 @@ class FeatExtractorByol(object):
 		logger.info("Disabling data augmentation in test data generator ...")
 		self.dg_test.disable_augmentation()
 
-		#self.test_data_generator= self.dg_test.generate_simclr_data(
 		self.test_data_generator= self.dg_test.generate_cae_data(
-			#batch_size=self.nsamples,
 			batch_size=1, 
 			shuffle=False
 		)
@@ -601,7 +599,7 @@ class FeatExtractorByol(object):
 
 		h = self.f_target(self.inputs)
 
-		# - Create online projector model
+		# - Create target projector model
 		logger.info("Creating target projector model ...")
 		self.g_target= self.__create_proj_model(h.shape[-1], 'g_target')
 		self.g_target.summary()
