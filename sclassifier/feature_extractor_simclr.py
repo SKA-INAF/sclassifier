@@ -96,7 +96,7 @@ matplotlib.use('Agg')
 from .utils import Utils
 #from .data_loader import DataLoader
 #from .data_loader import SourceData
-from .tf_utils import SoftmaxCosineSim
+from .tf_utils import SoftmaxCosineSim, nt_xent_loss
 from .models import resnet18, resnet34
 
 ################################
@@ -146,8 +146,10 @@ class FeatExtractorSimCLR(object):
 		self.model= None
 		self.modelfile= ""
 		self.modelfile_encoder= ""
+		self.modelfile_projhead= ""
 		self.weightfile= ""
-		self.weightfile_encoder= ""
+		self.weightfile_encoder= ""	
+		self.weightfile_projhead= ""
 		self.fitout= None		
 		self.encoder= None
 		self.projhead= None
@@ -178,8 +180,8 @@ class FeatExtractorSimCLR(object):
 		self.nepochs= 10
 		self.batch_size= 32
 		self.learning_rate= 1.e-4
-		self.optimizer_default= 'adam'
-		self.optimizer= 'adam' # 'rmsprop'
+		self.optimizer= tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
+		self.temperature = 0.1 # 0.5
 		self.ph_regul= 0.005
 		self.loss_type= "categorical_crossentropy"
 		self.weight_init_seed= None
@@ -189,6 +191,8 @@ class FeatExtractorSimCLR(object):
 		self.load_cv_data_in_batches= True
 		self.balance_classes= False
 		self.class_probs= {}
+
+		self.use_simclr_impl_v2= True
 
 		# *****************************
 		# ** Output
@@ -213,22 +217,17 @@ class FeatExtractorSimCLR(object):
 		self.nx= nx
 		self.ny= ny
 
-	def set_optimizer(self, opt, learning_rate=None):
+	def set_optimizer(self, opt, learning_rate=1.e-4):
 		""" Set optimizer """
 
-		if learning_rate is None or learning_rate<=0:
-			logger.info("Setting %s optimizer (no lr given) ..." % (opt))
-			self.optimizer= opt
+		if opt=="rmsprop":
+			logger.info("Setting rmsprop optimizer with lr=%f ..." % (learning_rate))
+			self.optimizer= tf.keras.optimizers.RMSprop(learning_rate=learning_rate)
+		elif opt=="adam":
+			logger.info("Setting adam optimizer with lr=%f ..." % (learning_rate))
+			self.optimizer= tf.keras.optimizers.Adam(learning_rate=learning_rate)
 		else:
-			if opt=="rmsprop":
-				logger.info("Setting rmsprop optimizer with lr=%f ..." % (learning_rate))
-				self.optimizer= tf.keras.optimizers.RMSprop(learning_rate=learning_rate)
-			elif opt=="adam":
-				logger.info("Setting adam optimizer with lr=%f ..." % (learning_rate))
-				self.optimizer= tf.keras.optimizers.Adam(learning_rate=learning_rate)
-			else:
-				logger.warn("Unknown optimizer selected (%s), setting to the default (%s) ..." % (opt, self.optimizer_default))
-				self.optimizer= self.optimizer_default
+			logger.warn("Unknown optimizer selected (%s), won't change the default ..." % (opt))
 
 		
 	def set_reproducible_model(self):
@@ -262,12 +261,18 @@ class FeatExtractorSimCLR(object):
 		self.nsamples= len(self.source_labels)
 
 		# - Create train data generator
-		self.train_data_generator= self.dg.generate_simclr_data(
-			batch_size=self.batch_size, 
-			shuffle=self.shuffle_train_data,
-			balance_classes=self.balance_classes, class_probs=self.class_probs
-		)
-
+		if self.use_simclr_impl_v2:
+			self.train_data_generator= self.dg.generate_simclr_data_v2(
+				batch_size=self.batch_size, 
+				shuffle=self.shuffle_train_data,
+				balance_classes=self.balance_classes, class_probs=self.class_probs
+			)
+		else:
+			self.train_data_generator= self.dg.generate_simclr_data(
+				batch_size=self.batch_size, 
+				shuffle=self.shuffle_train_data,
+				balance_classes=self.balance_classes, class_probs=self.class_probs
+			)
 
 		# - Create cross validation data generator
 		if self.dg_cv is None:
@@ -292,10 +297,16 @@ class FeatExtractorSimCLR(object):
 
 			logger.info("Loading cv data in batches? %d (batch_size_cv=%d)" % (self.load_cv_data_in_batches, batch_size_cv))
 
-			self.crossval_data_generator= self.dg_cv.generate_simclr_data(
-				batch_size=batch_size_cv, 
-				shuffle=False
-			)
+			if self.use_simclr_impl_v2:
+				self.crossval_data_generator= self.dg_cv.generate_simclr_data_v2(
+					batch_size=batch_size_cv, 
+					shuffle=False
+				)
+			else:
+				self.crossval_data_generator= self.dg_cv.generate_simclr_data(
+					batch_size=batch_size_cv, 
+					shuffle=False
+				)
 
 
 		# - Create test data generator
@@ -304,9 +315,7 @@ class FeatExtractorSimCLR(object):
 		logger.info("Disabling data augmentation in test data generator ...")
 		self.dg_test.disable_augmentation()
 
-		#self.test_data_generator= self.dg_test.generate_simclr_data(
 		self.test_data_generator= self.dg_test.generate_cae_data(
-			#batch_size=self.nsamples,
 			batch_size=1, 
 			shuffle=False
 		)
@@ -669,6 +678,39 @@ class FeatExtractorSimCLR(object):
 
 
 	#####################################
+	##     CREATE MODEL v2
+	##      (https://github.com/garder14/simclr-tensorflow2)   
+	#####################################
+	def __create_model_v2(self):
+		""" Create the model (version 2) """
+
+		#===========================
+		#==  BUILD MODEL
+		#===========================
+		# - Create inputs
+		inputShape = (self.ny, self.nx, self.nchannels)
+		self.inputs= Input(shape=inputShape, dtype='float', name='inputs')
+		self.input_data_dim= K.int_shape(self.inputs)
+		
+		print("Input data dim=", self.input_data_dim)
+		print("inputs shape")
+		print(K.int_shape(self.inputs))
+
+		# - Create encoder base model
+		logger.info("Creating encoder model ...")
+		encoder_outputs= self.__create_base_model(inputShape)
+
+		# - Create projection head model
+		logger.info("Creating projection head model ...")
+		projhead_input_data_dim= K.int_shape(encoder_outputs)[1]
+		print("== projhead_input_data_dim ==")
+		print(projhead_input_data_dim)
+		projhead_outputs= self.__create_projhead_model(projhead_input_data_dim)
+
+		return 0
+
+
+	#####################################
 	##     CREATE CALLBACKS
 	#####################################
 	def get_callbacks(self):
@@ -759,9 +801,88 @@ class FeatExtractorSimCLR(object):
 
 		return 0
 
+
+	#####################################
+	##     RUN TRAIN (v2)
+	#####################################
+	def run_train_v2(self, modelfile_encoder="", weightfile_encoder="", modelfile_projhead="", weightfile_projhead="", ):
+		""" Run network training """
+
+		#===========================
+		#==   SET TRAINING DATA
+		#===========================	
+		logger.info("Setting training data from data loader ...")
+		status= self.__set_data()
+		if status<0:
+			logger.error("Train data set failed!")
+			return -1
+
+		#===========================
+		#==   BUILD MODEL
+		#===========================
+		#- Create the network or load it from file?
+		if modelfile_encoder!="":
+			# - Load encoder?
+			logger.info("Loading encoder model architecture from file: %s, %s ..." % (modelfile_encoder, weightfile_encoder))
+			if self.__load_encoder(modelfile_encoder, weightfile_encoder)<0:
+				logger.error("Encoder model loading failed!")
+				return -1
+
+			self.modelfile_encoder= modelfile_encoder
+			self.weightfile_encoder= weightfile_encoder
+
+			# - Load proj head?
+			if modelfile_projhead!="":
+				logger.info("Loading projhead model architecture from file: %s, %s ..." % (modelfile_projhead, weightfile_projhead))
+				if self.__load_projhead(modelfile_projhead, weightfile_projhead)<0:
+					logger.error("Encoder model loading failed!")
+					return -1
+
+				self.modelfile_projhead= modelfile_projhead
+				self.weightfile_projhead= weightfile_projhead
+
+		else:
+			logger.info("Building network architecture ...")
+			if self.__create_model_v2()<0:
+				logger.error("Model build failed!")
+				return -1
+
+		#===========================
+		#==   TRAIN MODEL
+		#===========================
+		logger.info("Training SimCLR model ...")
+		status= self.__train_network_v2()
+		if status<0:
+			logger.error("Model training failed!")
+			return -1
+
+		logger.info("End training run")
+
+		return 0
+
 	#####################################
 	##     TRAIN NN
 	#####################################
+	@tf.function
+	def train_step_pretraining(x):  # (2*bs, 32, 32, 3)
+		""" Train step pretraining """
+        
+		# Forward pass
+		with tf.GradientTape(persistent=True) as tape:
+			h = self.encoder(x, training=True)  # (2*bs, 512)
+			z = self.projhead(h, training=True)  # (2*bs, 128)
+			loss = nt_xent_loss(z, temperature=tf.constant(self.temperature))
+        
+		# Backward pass
+		grads = tape.gradient(loss, self.encoder.trainable_variables)
+		self.optimizer.apply_gradients(zip(grads, self.encoder.trainable_variables))
+		grads = tape.gradient(loss, self.projhead.trainable_variables)
+		self.optimizer.apply_gradients(zip(grads, self.projhead.trainable_variables))
+		del tape
+
+		return loss
+
+
 	def __train_network(self):
 		""" Training the SimCLR model and saving best model with time stamp
 				Transfers adapted weights to base_model
@@ -881,6 +1002,131 @@ class FeatExtractorSimCLR(object):
 
 		return 0
 
+
+	def __train_network_v2(self):
+		""" Training the SimCLR model and saving best model with time stamp
+				Transfers adapted weights to base_model
+		"""
+
+		#===========================
+		#==   INIT
+		#===========================
+		# - Initialize train/test loss vs epoch
+		self.train_loss_vs_epoch= np.zeros((1,self.nepochs))	
+		steps_per_epoch= self.nsamples // self.batch_size
+
+		# - Set validation steps
+		val_steps_per_epoch= self.validation_steps
+		if self.has_cvdata:
+			if self.load_cv_data_in_batches:
+				val_steps_per_epoch= self.nsamples_cv // self.batch_size
+			else:
+				val_steps_per_epoch= 1
+
+		#===========================
+		#==   TRAIN NETWORK
+		#===========================
+		# - Train model
+		logger.info("Start SimCLR training (dataset_size=%d, batch_size=%d, steps_per_epoch=%d, val_steps_per_epoch=%d) ..." % (self.nsamples, self.batch_size, steps_per_epoch, val_steps_per_epoch))
+
+		losses_train = []
+		losses_val = []
+		log_every= 1
+
+		for epoch_id in range(self.nepochs):
+			  
+			# - Run train
+			losses_train_batch= []
+
+			for batch_id in range(steps_per_epoch):
+				# - Fetch train data from generator
+				x= next(self.train_data_generator)
+				loss = self.__train_step_pretraining(x)
+				losses_train_batch.append(float(loss))
+
+				# - Print train losses in batch				
+				if (batch_id + 1) % log_every == 0:
+					logger.info("Epoch %d/%d [Batch %d/%d]: train_loss=%f" % (epoch_id+1, self.nepochs, batch_id+1, steps_per_epoch, loss))
+
+			# - Run validation?
+			losses_val_batch= []
+			if self.has_cvdata:
+				for batch_id in range(val_steps_per_epoch):
+					x= next(self.crossval_data_generator)
+					loss = self.__val_step_pretraining(x)
+					losses_val_batch.append(float(loss))
+				
+					if (batch_id + 1) % log_every == 0:
+						logger.info("Epoch %d/%d [Batch %d/%d]: val_loss=%f" % (epoch_id+1, self.nepochs, batch_id+1, val_steps_per_epoch, loss))
+
+			# - Compute average train & validation loss
+			loss_train= np.nanmean(losses_train_batch)
+			losses_train.append(loss_train)
+			if losses_val_batch:
+				loss_val= np.nanmean(losses_val_batch)
+				losses_val.append(loss_val)
+				logger.info("Epoch %d/%d: train_loss=%f, val_loss=%f " % (epoch_id+1, self.nepochs, loss_train, loss_val))
+			else:
+				logger.info("Epoch %d/%d: train_loss=%f" % (epoch_id+1, self.nepochs, loss_train))
+		
+		#===========================
+		#==   SAVE NN
+		#===========================
+		# - Save encoder
+		if self.encoder:
+			self.encoder.save_weights('encoder_weights.h5')
+
+			with open('encoder_architecture.json', 'w') as f:
+				f.write(self.encoder.to_json())
+
+			self.encoder.save('encoder.h5')
+
+		#================================
+		#==   SAVE TRAIN METRICS
+		#================================
+		# - Get losses and plot
+		logger.info("Retrieving losses and plot ...")
+		loss_train= self.fitout.history['loss']
+		N= len(loss_train)
+				
+		loss_val= [0]*N
+		if 'val_loss' in self.fitout.history:
+			loss_val= self.fitout.history['val_loss']
+		epoch_ids= np.array(range(N))
+		epoch_ids+= 1
+		epoch_ids= epoch_ids.reshape(N,1)
+
+		print(loss_train)
+		
+		plt.plot(loss_train, color='b')
+		plt.plot(loss_val, color='r')		
+		plt.title('NN loss')
+		plt.ylabel('loss')
+		plt.xlabel('epochs')
+		plt.xlim(left=0)
+		plt.ylim(bottom=0)
+		plt.legend(['train loss', 'val loss'], loc='upper right')
+		plt.savefig('losses.png')				
+
+		# - Saving losses to file
+		logger.info("Saving train metrics (loss, ...) to file ...")
+		
+		metrics_data= np.concatenate(
+			(epoch_ids,np.array(loss_train).reshape(N,1), np.array(loss_val).reshape(N,1)),
+			axis=1
+		)
+		
+		head= '# epoch loss loss_val'
+		Utils.write_ascii(metrics_data,self.outfile_nnout_metrics,head)	
+
+		#================================
+		#==   PREDICT & SAVE EMBEDDINGS
+		#================================
+		if self.save_embeddings and self.__save_embeddings()<0:
+			logger.warn("Failed to save latent space embeddings to file ...")
+			return -1
+
+		return 0
 
 	#####################################
 	##     RUN PREDICT
@@ -1189,6 +1435,38 @@ class FeatExtractorSimCLR(object):
 				self.encoder.load_weights(weightfile)
 			except Exception as e:
 				logger.warn("Failed to load encoder model weights from file %s (err=%s)!" % (weightfile, str(e)))
+				return -1
+
+		return 0
+
+	#####################################
+	##     LOAD PROJHEAD MODEL
+	#####################################
+	def __load_projhead(self, modelfile, weightfile=""):
+		""" Load proj head model and weights from input h5 file """
+
+		#==============================
+		#==   LOAD MODEL ARCHITECTURE
+		#==============================
+		try:
+			self.projhead= load_model(modelfile)
+			
+		except Exception as e:
+			logger.warn("Failed to load projhead model from file %s (err=%s)!" % (modelfile, str(e)))
+			return -1
+
+		if not self.projhead or self.projhead is None:
+			logger.error("Projector head model object is None, loading failed!")
+			return -1
+
+		#==============================
+		#==   LOAD MODEL WEIGHTS
+		#==============================
+		if weightfile:
+			try:
+				self.projhead.load_weights(weightfile)
+			except Exception as e:
+				logger.warn("Failed to load projhead model weights from file %s (err=%s)!" % (weightfile, str(e)))
 				return -1
 
 		return 0
