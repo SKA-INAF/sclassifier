@@ -864,7 +864,7 @@ class FeatExtractorSimCLR(object):
 	##     TRAIN NN
 	#####################################
 	@tf.function
-	def train_step_pretraining(x):  # (2*bs, 32, 32, 3)
+	def __train_step_pretraining(self, x):  # (2*bs, 32, 32, 3)
 		""" Train step pretraining """
         
 		# Forward pass
