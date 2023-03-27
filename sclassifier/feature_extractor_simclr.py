@@ -1172,7 +1172,6 @@ class FeatExtractorSimCLR(object):
 
 		return 0
 
-	
 	########################################
 	##     SAVE EMBEDDINGS
 	########################################
