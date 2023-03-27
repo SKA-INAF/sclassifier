@@ -1,4 +1,3 @@
-numpy>=1.18
 astropy>=2.0
 fitsio
 scipy
@@ -6,7 +5,7 @@ scikit-learn
 pyparsing<=2.4.7
 matplotlib
 six==1.15.0
-numpy==1.19.5
+numpy==1.22.4
 tensorflow>=2.6.1
 imgaug>=0.4.0
 umap-learn
