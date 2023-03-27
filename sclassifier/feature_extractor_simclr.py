@@ -882,6 +882,16 @@ class FeatExtractorSimCLR(object):
 
 		return loss
 
+	@tf.function
+	def __val_step_pretraining(self, x):  # (2*bs, ny, nx, 3)
+		""" Validation step pretraining """
+
+		h = self.encoder(x, training=False)
+		z = self.projhead(h, training=False)
+		loss = nt_xent_loss(z, temperature=tf.constant(self.temperature))
+
+		return loss
+
 
 	def __train_network(self):
 		""" Training the SimCLR model and saving best model with time stamp
