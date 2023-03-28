@@ -211,6 +211,9 @@ def get_args():
 
 	parser.add_argument('--objids_excluded_in_train', dest='objids_excluded_in_train', required=False, type=str, default='-1,0', help='Source ids not included for training as considered unknown classes')
 
+	parser.add_argument('--multilabel', dest='multilabel', action='store_true',help='Do multilabel classification (default=false)')	
+	parser.set_defaults(multilabel=False)
+
 	# - Network architecture options
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
 	parser.set_defaults(predict=False)
@@ -379,6 +382,8 @@ def main():
 	multiclass= True
 	if args.binary_class:
 		multiclass= False
+
+	multilabel= args.multilabel
 
 	weightfile= args.weightfile
 	optimizer= args.optimizer
@@ -595,7 +600,7 @@ def main():
 	#==   TRAIN CNN
 	#===========================
 	logger.info("Running CNN image classifier training ...")
-	sclass= SClassifierNN(dg, multiclass=multiclass)
+	sclass= SClassifierNN(dg, multiclass=multiclass, multilabel=multilabel)
 	sclass.modelfile= modelfile
 	sclass.weightfile= weightfile
 	#sclass.set_image_size(nx, ny)
