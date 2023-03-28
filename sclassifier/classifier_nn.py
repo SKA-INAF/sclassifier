@@ -414,7 +414,7 @@ class SClassifierNN(object):
 		
 	def __multilabel_loss(self, y_true, y_pred):
 		""" Loss function used for multilabel classification """
-    return tf.nn.sigmoid_cross_entropy_with_logits(labels=y_true, logits=y_pred)
+		return tf.nn.sigmoid_cross_entropy_with_logits(labels=y_true, logits=y_pred)
 
 	#####################################
 	##     SET TRAIN DATA
