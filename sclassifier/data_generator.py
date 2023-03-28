@@ -19,6 +19,7 @@ import random
 import math
 import logging
 from collections import Counter
+from itertools import chain
 import json
 
 ## KERAS MODULES
@@ -111,7 +112,11 @@ class DataGenerator(object):
 		self.labels= [item["label"] for item in self.datalist["data"]]
 		self.snames= [item["sname"] for item in self.datalist["data"]]
 		self.classids= 	[item["id"] for item in self.datalist["data"]]
-		self.classfract_map= dict(Counter(self.classids).items())
+
+		if isinstance(self.classids, list): # multilabel (classids is a 2D list, flatten it)
+			self.classfract_map= dict(Counter( list(chain.from_iterable(self.classids)) ).items())
+		else:
+			self.classfract_map= dict(Counter(self.classids).items())
 
 		logger.info("#%d objects in dataset" % self.datasize)
 
