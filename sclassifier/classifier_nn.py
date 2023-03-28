@@ -824,9 +824,9 @@ class SClassifierNN(object):
 			dd= {
 				"sname": self.source_names[i],
 				"id": self.source_ids[i],
-				"label": labels,
+				"label": labels[i],
 				"id_pred": self.classids_pred[i],
-				"label_pred": labels_pred,
+				"label_pred": labels_pred[i],
 				"prob": self.probs_pred[i]
 			}
 			ddlist.append(dd)
@@ -1532,7 +1532,7 @@ class SClassifierNN(object):
 			dd= {
 				"sname": self.source_names[i],
 				"id": self.source_ids[i],
-				"probs": self.output_data[i]
+				"probs": self.output_data[i].tolist()
 			}
 			dd_list.append(dd)
 
