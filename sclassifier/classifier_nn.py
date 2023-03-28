@@ -818,7 +818,7 @@ class SClassifierNN(object):
 		
 		# - Save predicted data to file
 		logger.info("Saving prediction data to file %s ..." % (self.outfile))
-		outdata= []
+		ddlist= []
 		N= predout.shape[0]
 		for i in range(N):
 			dd= {
@@ -829,7 +829,9 @@ class SClassifierNN(object):
 				"label_pred": labels_pred,
 				"prob": self.probs_pred[i]
 			}
-			outdata.append(dd)
+			ddlist.append(dd)
+
+		outdata= {"data": ddlist}
 
 		with open(self.outfile, "w") as fp:
 			json.dump(outdata, fp)
@@ -1524,7 +1526,7 @@ class SClassifierNN(object):
 
 		# - Save predicted data to file
 		logger.info("Saving prediction data to file %s ..." % (self.outfile))
-		out_data= []
+		dd_list= []
 		
 		for i in range(N):
 			dd= {
@@ -1532,7 +1534,9 @@ class SClassifierNN(object):
 				"id": self.source_ids[i],
 				"probs": self.output_data[i]
 			}
-			out_data.append(dd)
+			dd_list.append(dd)
+
+		out_data= {"data": dd_list}
 
 		with open(self.outfile, "w") as fp:
 			json.dump(out_data, fp)
