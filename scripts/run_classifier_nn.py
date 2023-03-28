@@ -457,7 +457,7 @@ def main():
 
 	nclasses= args.nclasses
 
-	objids_excluded_in_train= [str(x) for x in args.objids_excluded_in_train.split(',')]
+	objids_excluded_in_train= [int(x) for x in args.objids_excluded_in_train.split(',')]
 	
 
 	#===============================
