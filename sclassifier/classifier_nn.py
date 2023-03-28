@@ -454,6 +454,7 @@ class SClassifierNN(object):
 		# - Set target names
 		self.target_names= []
 		if self.target_ids:
+			logger.info("#%d labelled sources found in dataset ..." % (len(self.target_ids)))
 			self.target_names= [self.target_label_map[item] for item in set(sorted(self.target_ids))]
 		else:
 			logger.info("No known class found in dataset (not a problem if predicting) ...")
@@ -506,7 +507,7 @@ class SClassifierNN(object):
 					if obj_id==obj_id_excl:
 						add_to_train_list=False
 
-			print("target_id_list=%s, add_to_train_list=%d, self.excluded_objids_train=%s" % (str(target_id_list), add_to_train_list, str(self.excluded_objids_train)))
+			##print("target_id_list=%s, add_to_train_list=%d, excluded_objids_train=%s" % (str(target_id_list), add_to_train_list, str(self.excluded_objids_train)))
 			
 			if add_to_train_list:
 				self.target_ids.append(target_id_list)
@@ -522,6 +523,7 @@ class SClassifierNN(object):
 		# - Set target names
 		self.target_names= []
 		if self.target_ids:
+			logger.info("#%d labelled sources found in dataset ..." % (len(self.target_ids)))
 			self.target_names= [self.target_label_map[item] for item in set(sorted(list(chain.from_iterable(self.target_ids))))] # chain.from_iterable flattens 2D list to 1D
 		else:
 			logger.info("No known class found in dataset (not a problem if predicting) ...")
