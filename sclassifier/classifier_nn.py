@@ -817,7 +817,7 @@ class SClassifierNN(object):
 		N= predout.shape[0]
 		for i in range(N):
 			dd= {
-				"sname": snames[i],
+				"sname": self.source_names[i],
 				"id": self.source_ids[i],
 				"label": labels,
 				"id_pred": self.classids_pred[i],
@@ -1415,7 +1415,6 @@ class SClassifierNN(object):
 		logger.info("Saving network model architecture to file ...")
 		plot_model(self.model, to_file=self.outfile_model, show_shapes=True)
 		
-
 		#================================
 		#==   SAVE TRAIN METRICS
 		#================================
@@ -1518,10 +1517,20 @@ class SClassifierNN(object):
 		N= self.output_data.shape[0]
 		Nvar= self.output_data.shape[1]
 
-		logger.warn("Save model output data for multilabel classificatio still to be implemented ...")
+		# - Save predicted data to file
+		logger.info("Saving prediction data to file %s ..." % (self.outfile))
+		out_data= []
+		
+		for i in range(N):
+			dd= {
+				"sname": self.source_names[i],
+				"id": self.source_ids[i],
+				"probs": self.output_data[i]
+			}
+			out_data.append(dd)
 
-		# ...
-		# ...
+		with open(self.outfile, "w") as fp:
+			json.dump(out_data, fp)
 
 		return 0
 	
