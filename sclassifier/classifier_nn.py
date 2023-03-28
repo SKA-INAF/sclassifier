@@ -22,6 +22,7 @@ import collections
 import csv
 import pickle
 from copy import deepcopy
+from itertools import chain
 
 ##############################
 ##     GLOBAL VARS
@@ -167,17 +168,14 @@ def f1score_metric(y_true, y_pred):
 class SClassifierNN(object):
 	""" Source classifier class """
 	
-	#def __init__(self, data_loader, multiclass=True):
-	def __init__(self, data_generator, multiclass=True):
+	def __init__(self, data_generator, multiclass=True, multilabel=False):
 		""" Return a SClassifierNN object """
 
-
-		#self.dl= data_loader
-		#self.dl_cv= None
 		self.dg= data_generator
 		self.dg_cv= None
 		self.has_cvdata= False
 		self.multiclass= multiclass
+		self.multilabel= multilabel
 
 		self.excluded_objids_train= [-1,0] # Sources with these ids are considered not labelled and therefore excluded from training or metric calculation
 
@@ -263,7 +261,7 @@ class SClassifierNN(object):
 		self.weight_init_seed= None
 		self.shuffle_train_data= True
 		self.augment_scale_factor= 1
-		self.loss_type= "categorical_crossentropy"
+		self.loss_type= "categorical_crossentropy" # Loss are: binary_crossentropy (binary classification), categorical_crossentropy (multiclass classification), tf.nn.sigmoid_cross_entropy_with_logits (multilabel classification)
 		self.load_cv_data_in_batches= True
 		self.save_model_period= 100
 
@@ -272,24 +270,7 @@ class SClassifierNN(object):
 
 		self.__set_target_labels(multiclass)
 
-		# *****************************
-		# ** Pre-processing
-		# *****************************
-		#self.normalize= False
-		#self.scale_to_abs_max= False
-		#self.scale_to_max= False
-		#self.resize= True
-		#self.log_transform_img= False
-		#self.scale_img= False
-		#self.scale_img_factors= []
-		#self.standardize_img= False		
-		#self.img_means= []
-		#self.img_sigmas= []	
-		#self.chan_divide= False
-		#self.chan_mins= []
-		#self.erode= False
-		#self.erode_kernel= 5
-
+		self.sigmoid_thr= 0.5 # used in multilabel
 
 		# *****************************
 		# ** Output
@@ -350,6 +331,7 @@ class SClassifierNN(object):
 		""" Create class labels """
 
 		if multiclass:
+			
 			logger.info("Setting multi class targets ...")
 
 			self.nclasses= 7
@@ -388,7 +370,7 @@ class SClassifierNN(object):
 			}
 
 			self.target_names= ["PN","HII","PULSAR","YSO","STAR","GALAXY","QSO"]
-			self.loss_type= "categorical_crossentropy"
+			self.loss_type= "categorical_crossentropy"				
 	
 		else: # binary (GAL vs EGAL)
 
@@ -430,6 +412,10 @@ class SClassifierNN(object):
 		self.classid_label_map_inv= {v: k for k, v in self.classid_label_map.items()}
 
 		
+	def __multilabel_loss(self, y_true, y_pred):
+		""" Loss function used for multilabel classification """
+    return tf.nn.sigmoid_cross_entropy_with_logits(labels=y_true, logits=y_pred)
+
 	#####################################
 	##     SET TRAIN DATA
 	#####################################
@@ -438,8 +424,6 @@ class SClassifierNN(object):
 
 		# - Retrieve info from data loader
 		self.nchannels= self.dg.nchannels
-		#if self.chan_divide:
-		#	self.nchannels-= 1
 		self.source_labels= self.dg.labels
 		self.source_ids= self.dg.classids
 		self.source_names= self.dg.snames
@@ -467,33 +451,94 @@ class SClassifierNN(object):
 			else:
 				self.target_ids_all.append(-1)
 
-			#if obj_id!=0 and obj_id!=-1:
-			#	self.target_ids.append(target_id)
-
-		#self.class_names= list(set(self.source_labels))
+		# - Set target names
 		self.target_names= []
-		#self.nclasses_targets= 0
-		#self.output_targets= None
 		if self.target_ids:
 			self.target_names= [self.target_label_map[item] for item in set(sorted(self.target_ids))]
-			#self.nclasses_targets= len(self.target_names)
-			####self.output_targets= to_categorical(np.array(self.target_ids), num_classes=self.nclasses_targets)
-			#self.output_targets= to_categorical(np.array(self.target_ids), num_classes=self.nclasses)
 		else:
 			logger.info("No known class found in dataset (not a problem if predicting) ...")
 
-		#print("== CLASS NAMES ==")
-		#print(self.class_names)
-	
 		print("== TARGET NAMES ==")
-		#print(self.nclasses_targets)		
 		print(self.target_names)
 		
-		#print("== OUTPUT TARGETS ==")
-		#print(self.output_targets)
-		#print(self.output_targets.shape)
-		
+		# - Create data generators
+		logger.info("Creating data generators ...")
+		self.__set_data_generators()
+
+		return 0
 	
+	#####################################
+	##     SET DATA (MULTILABEL)
+	#####################################
+	def __set_data_multilabel(self):
+		""" Create dataset for multi-label classification """
+
+		# - Retrieve info from data loader
+		self.nchannels= self.dg.nchannels
+		self.source_labels= self.dg.labels  # this should be a 2D list
+		self.source_ids= self.dg.classids   # this should be a 2D list
+		self.source_names= self.dg.snames
+		self.nsamples= len(self.source_labels)
+	
+		# - Set model targets
+		self.target_ids= []
+		self.target_ids_all= []
+
+		for i in range(self.nsamples):
+			source_name= self.source_names[i]
+			obj_ids= self.source_ids[i]
+			labels= self.source_labels[i]
+
+			# - Check if input data has single or multi-labels
+			has_multilabels= isinstance(obj_ids, list) and isinstance(labels, list)
+			if not has_multilabels:
+				logger.warn("Class id/label for input data no. %d (name=%s) are not lists (as required for multilabel classification), skip it ..." % (i+1, source_name))
+				continue
+
+			# - Set target ids
+			target_id_list= []
+			add_to_train_list= True
+
+			for obj_id in obj_ids:
+				target_id_list.append(self.classid_remap[obj_id]) # remap obj id to target class ids)
+
+				for obj_id_excl in self.excluded_objids_train:
+					if obj_id==obj_id_excl:
+						add_to_train_list=False
+			
+			if add_to_train_list:
+				self.target_ids.append(target_id_list)
+				self.target_ids_all.append(target_id_list)
+			else:
+				self.target_ids_all.append([-1])		
+
+		# - Check there are data left
+		if not self.target_ids_all:
+			logger.error("No data left (check given labels)!")
+			return -1
+
+		# - Set target names
+		self.target_names= []
+		if self.target_ids:
+			self.target_names= [self.target_label_map[item] for item in set(sorted(list(chain.from_iterable(self.target_ids))))] # chain.from_iterable flattens 2D list to 1D
+		else:
+			logger.info("No known class found in dataset (not a problem if predicting) ...")
+
+		print("== TARGET NAMES ==")
+		print(self.target_names)
+
+		# - Create data generators
+		logger.info("Creating data generators ...")
+		self.__set_data_generators()
+		
+		return 0
+
+	#####################################
+	##     SET DATA GENERATOR
+	#####################################
+	def __set_data_generators(self):
+		""" Create data generators """
+
 		# - Create train data generator
 		self.train_data_generator= self.dg.generate_cnn_data(
 			batch_size=self.batch_size, 
@@ -501,21 +546,7 @@ class SClassifierNN(object):
 			classtarget_map=self.classid_remap, nclasses=self.nclasses,
 			balance_classes=self.balance_classes, class_probs=self.class_probs
 		)
-		#self.train_data_generator= self.dl.data_generator(
-		#	batch_size=self.batch_size, 
-		#	shuffle=self.shuffle_train_data,
-		#	resize=self.resize, nx=self.nx, ny=self.ny, 
-		#	normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
-		#	augment=self.augmentation,
-		#	log_transform=self.log_transform_img,
-		#	scale=self.scale_img, scale_factors=self.scale_img_factors,
-		#	standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
-		#	chan_divide=self.chan_divide, chan_mins=self.chan_mins,
-		#	erode=self.erode, erode_kernel=self.erode_kernel,
-		#	outdata_choice='cnn',
-		#	classtarget_map=self.classid_remap, nclasses=self.nclasses
-		#)
-
+		
 		# - Create cross validation data generator
 		if self.dg_cv is None:
 			logger.info("Creating validation data generator (deep-copying train data generator) ...")
@@ -541,26 +572,11 @@ class SClassifierNN(object):
 
 			self.crossval_data_generator= self.dg_cv.generate_cnn_data(
 				batch_size=batch_size_cv, 
-				##shuffle=self.shuffle_train_data,
 				shuffle=False,
 				classtarget_map=self.classid_remap, nclasses=self.nclasses
 			)
 
-		#self.crossval_data_generator= self.dl_cv.data_generator(
-		#	batch_size=self.batch_size, 
-		#	shuffle=self.shuffle_train_data,
-		#	resize=self.resize, nx=self.nx, ny=self.ny, 
-		#	normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
-		#	augment=self.augmentation,
-		#	log_transform=self.log_transform_img,
-		#	scale=self.scale_img, scale_factors=self.scale_img_factors,
-		#	standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
-		#	chan_divide=self.chan_divide, chan_mins=self.chan_mins,
-		#	erode=self.erode, erode_kernel=self.erode_kernel,
-		#	outdata_choice='cnn',
-		#	classtarget_map=self.classid_remap, nclasses=self.nclasses	
-		#)	
-
+		
 		# - Create test data generator
 		logger.info("Creating test data generator (deep-copying train data generator) ...")
 		self.dg_test= deepcopy(self.dg)
@@ -574,23 +590,6 @@ class SClassifierNN(object):
 			classtarget_map=self.classid_remap, nclasses=self.nclasses
 		)
 
-		#self.test_data_generator= self.dl.data_generator(
-		#	batch_size=self.nsamples, 
-		#	shuffle=False,
-		#	resize=self.resize, nx=self.nx, ny=self.ny, 
-		#	normalize=self.normalize, scale_to_abs_max=self.scale_to_abs_max, scale_to_max=self.scale_to_max,
-		#	augment=False,
-		#	log_transform=self.log_transform_img,
-		#	scale=self.scale_img, scale_factors=self.scale_img_factors,
-		#	standardize=self.standardize_img, means=self.img_means, sigmas=self.img_sigmas,
-		#	chan_divide=self.chan_divide, chan_mins=self.chan_mins,
-		#	erode=self.erode, erode_kernel=self.erode_kernel,
-		#	outdata_choice='cnn', 
-		#	classtarget_map=self.classid_remap, nclasses=self.nclasses
-		#)
-
-		return 0
-	
 
 	#####################################
 	##     RUN TRAIN
@@ -602,7 +601,10 @@ class SClassifierNN(object):
 		#==   SET TRAINING DATA
 		#===========================	
 		logger.info("Setting training data from data loader ...")
-		status= self.__set_data()
+		if self.multilabel:
+			status= self.__set_data_multilabel()
+		else:
+			status= self.__set_data()
 		if status<0:
 			logger.error("Train data set failed!")
 			return -1
@@ -649,7 +651,11 @@ class SClassifierNN(object):
 		#==   SET DATA
 		#===========================	
 		logger.info("Setting input data from data loader ...")
-		status= self.__set_data()
+		if self.multilabel:
+			status= self.__set_data_multilabel()
+		else:
+			status= self.__set_data()
+
 		if status<0:
 			logger.error("Input data set failed!")
 			return -1
@@ -673,8 +679,7 @@ class SClassifierNN(object):
 		# - Get predicted output data
 		logger.info("Predicting model output data ...")
 		predout= self.model.predict(
-			x=self.test_data_generator,	
-			#steps=1,
+			x=self.test_data_generator,
 			steps=self.nsamples,
     	verbose=2,
     	workers=self.nworkers,
@@ -685,8 +690,37 @@ class SClassifierNN(object):
 		print(type(predout))
 		print(predout.shape)
 
+		# - Save prediction data to file
+		logger.info("Saving predicted data to file ...")
+		if self.multilabel:
+			self.__save_predicted_data_multilabel(predout)
+		else:
+			self.__save_predicted_data(predout)
+
+		#================================
+		#==   COMPUTE AND SAVE METRICS
+		#================================
+		# - Performed only for data with a class label set (not for unknown sources)
+		if self.target_ids:
+			logger.info("Compute and save metrics ...")
+			if self.multilabel:
+				logger.warn("Compute and save metrics still to be implemented for multilabel classification ...")
+				# ...
+				# ...
+			else:
+				self.__compute_metrics()
+			
+		return 0
+
+	
+	#####################################
+	##     SAVE PREDICTED DATA
+	#####################################
+	def __save_predicted_data(self, predout):
+		""" Save prediction data """
+
 		# - Convert one-hot encoding to target ids
-		logger.info("Retrieving target ids from predicted output ...")
+		logger.info("Retrieving target ids from predicted output ...")	
 		self.targets_pred= np.argmax(predout, axis=1)
 
 		print("targets_pred")
@@ -725,16 +759,79 @@ class SClassifierNN(object):
 
 		head= "# sname id id_pred prob"
 		Utils.write_ascii(outdata, self.outfile, head)
-
-		#================================
-		#==   COMPUTE AND SAVE METRICS
-		#================================
-		# - Performed only for data with a class label set (not for unknown sources)
-		if self.target_ids:
-			self.__compute_metrics()
-
-			
+		
 		return 0
+
+	##########################################
+	##     SAVE PREDICTED DATA (MULTILABEL)
+	##########################################
+	def __save_predicted_data_multilabel(self, predout):
+		""" Save prediction data for multilabel classification """
+
+		# - Convert one-hot encoding to target ids (2D list)
+		logger.info("Retrieving target ids from predicted output ...")
+		self.targets_pred= [list(np.flatnonzero(row > self.sigmoid_thr)) for row in predout]
+		#self.targets_pred= np.where(predout>self.sigmoid_thr, 1, 0)
+
+		# - Check if some source was not classified (e.g. all probs are below threshold)
+		#   In this case the list will be empty, replace it with a [-1]
+		for i in range(len(self.targets_pred)):
+			if not self.targets_pred[i]:
+				self.targets_pred[i]= [-1]
+
+		print("targets_pred")
+		print(self.targets_pred)
+		print(type(self.targets_pred))
+
+		# - Get predicted output class id (2D list)
+		logger.info("Computing predicted class ids from targets ...")
+		self.classids_pred= [[self.classid_remap_inv[target_id] for target_id in item] for item in self.targets_pred]
+		
+		print("classids_pred")
+		print(self.classids_pred)
+		print(type(self.classids_pred))
+		
+		# - Get predicted output class prob (2D list)
+		logger.info("Predicting output classid ...")
+		self.probs_pred= [list(row[row>self.sigmoid_thr]) for row in predout]
+		
+		# - Check if some source was not classified (e.g. all probs are below threshold)
+		#   In this case the list will be empty, replace it with a [-1]
+		for i in range(len(self.probs_pred)):
+			if not self.probs_pred[i]:
+				self.probs_pred[i]= [-1]
+
+		print("probs_pred")
+		print(self.probs_pred)
+		print(type(self.probs_pred))
+
+		# - Get original labels from target ids
+		labels= [[self.target_label_map[target_id] for target_id in item] for item in self.target_ids_all]
+
+		# - Get predicted labels from predicted target ids
+		labels_pred= [[self.target_label_map[target_id] for target_id in item] for item in self.targets_pred]
+		
+		# - Save predicted data to file
+		logger.info("Saving prediction data to file %s ..." % (self.outfile))
+		outdata= []
+		N= predout.shape[0]
+		for i in range(N):
+			dd= {
+				"sname": snames[i],
+				"id": self.source_ids[i],
+				"label": labels,
+				"id_pred": self.classids_pred[i],
+				"label_pred": labels_pred,
+				"prob": self.probs_pred[i]
+			}
+			outdata.append(dd)
+
+		with open(self.outfile, "w") as fp:
+			json.dump(outdata, fp)
+		
+		
+		return 0
+
 
 	#####################################
 	##     COMPUTE AND SAVE METRICS
@@ -919,7 +1016,12 @@ class SClassifierNN(object):
 					self.model.add(x)
 			
 		# - Output layer
-		self.outputs = layers.Dense(self.nclasses, name='outputs', activation='softmax')
+		#   NB: see https://glassboxmedicine.com/2019/05/26/classification-sigmoid-vs-softmax/
+		if self.multilabel:
+			self.outputs = layers.Dense(self.nclasses, name='outputs', activation='sigmoid') 
+		else:
+			self.outputs = layers.Dense(self.nclasses, name='outputs', activation='softmax') 
+
 		self.model.add(self.outputs)
 		
 		#print("outputs shape")
@@ -929,7 +1031,21 @@ class SClassifierNN(object):
 		#==   BUILD MODEL
 		#===========================
 		# - Define and compile model
-		self.model.compile(optimizer=self.optimizer, loss=self.loss_type, metrics=['accuracy', f1score_metric, precision_metric, recall_metric], run_eagerly=True)
+		if self.multilabel:
+			self.model.compile(
+				optimizer=self.optimizer, 
+				loss=self.__multilabel_loss, 
+				#metrics=['accuracy', f1score_metric, precision_metric, recall_metric], 
+				run_eagerly=True
+			)
+		
+		else:
+			self.model.compile(
+				optimizer=self.optimizer, 
+				loss=self.loss_type, 
+				metrics=['accuracy', f1score_metric, precision_metric, recall_metric], 
+				run_eagerly=True
+		)
 		
 		# - Print model summary
 		self.model.summary()
@@ -1055,9 +1171,14 @@ class SClassifierNN(object):
 					self.model.add(x)
 			
 		# - Output layer
-		self.outputs = layers.Dense(self.nclasses, name='outputs', activation='softmax')
+		if self.multilabel:
+			self.outputs = layers.Dense(self.nclasses, name='outputs', activation='sigmoid')
+		else:
+			self.outputs = layers.Dense(self.nclasses, name='outputs', activation='softmax')
+		
 		self.model.add(self.outputs)
 		
+
 		#print("outputs shape")
 		#print(K.int_shape(self.outputs))
 		
@@ -1065,7 +1186,20 @@ class SClassifierNN(object):
 		#==   BUILD MODEL
 		#===========================
 		# - Define and compile model
-		self.model.compile(optimizer=self.optimizer, loss=self.loss_type, metrics=['accuracy', f1score_metric, precision_metric, recall_metric], run_eagerly=True)
+		if self.multilabel:
+			self.model.compile(
+				optimizer=self.optimizer, 
+				loss=self.__multilabel_loss,
+				#metrics=['accuracy', f1score_metric, precision_metric, recall_metric], 
+				run_eagerly=True
+			)
+		else:
+			self.model.compile(
+				optimizer=self.optimizer, 
+				loss=self.loss_type, 
+				metrics=['accuracy', f1score_metric, precision_metric, recall_metric], 
+				run_eagerly=True
+			)
 		
 		# - Print model summary
 		self.model.summary()
@@ -1183,7 +1317,10 @@ class SClassifierNN(object):
 					x= layers.Dropout(self.dropout_rate)(x)
 			
 		# - Output layer
-		self.outputs = layers.Dense(self.nclasses, name='outputs', activation='softmax')(x)
+		if self.multilabel:
+			self.outputs = layers.Dense(self.nclasses, name='outputs', activation='sigmoid')(x)
+		else:
+			self.outputs = layers.Dense(self.nclasses, name='outputs', activation='softmax')(x)
 		
 		#print("outputs shape")
 		#print(K.int_shape(self.outputs))
@@ -1193,7 +1330,21 @@ class SClassifierNN(object):
 		#===========================
 		# - Define and compile model
 		self.model = Model(inputs=self.inputs, outputs=self.outputs, name='classifier')
-		self.model.compile(optimizer=self.optimizer, loss=self.loss_type, metrics=['accuracy', f1score_metric, precision_metric, recall_metric], run_eagerly=True)
+
+		if self.multilabel:
+			self.model.compile(
+				optimizer=self.optimizer, 
+				loss=self.__multilabel_loss,
+				#metrics=['accuracy', f1score_metric, precision_metric, recall_metric], 
+				run_eagerly=True
+			)
+		else:
+			self.model.compile(
+				optimizer=self.optimizer, 
+				loss=self.loss_type, 
+				metrics=['accuracy', f1score_metric, precision_metric, recall_metric], 
+				run_eagerly=True
+			)
 		
 		# - Print model summary
 		self.model.summary()
@@ -1308,10 +1459,20 @@ class SClassifierNN(object):
 		#==   SAVE OUTPUT DATA
 		#================================
 		logger.info("Saving output data to file ...")
+		if self.multilabel:
+			self.__save_model_output_data_multilabel()
+		else:
+			self.__save_model_output_data()
 		
+		return 0
+
+
+
+	def __save_model_output_data(self):
+		""" Save model output data to file """
+	
 		self.output_data= self.model.predict(
 			x=self.test_data_generator,	
-			#steps=1,
 			steps=self.nsamples,
     	verbose=2,
     	workers=self.nworkers,
@@ -1320,7 +1481,7 @@ class SClassifierNN(object):
 
 		print("output_data shape")
 		print(self.output_data.shape)	
-		print(self.output_data)
+		#print(self.output_data)
 		N= self.output_data.shape[0]
 		Nvar= self.output_data.shape[1]
 		
@@ -1338,11 +1499,31 @@ class SClassifierNN(object):
 		head= '{} {} {}'.format("# sname",znames,"id")
 		Utils.write_ascii(out_data, self.outfile, head)	
 
+	
+
+	def __save_model_output_data_multilabel(self):
+		""" Save model output data to file """
+
+		self.output_data= self.model.predict(
+			x=self.test_data_generator,	
+			steps=self.nsamples,
+    	verbose=2,
+    	workers=self.nworkers,
+    	use_multiprocessing=self.use_multiprocessing
+		)
+
+		print("output_data shape")
+		print(self.output_data.shape)	
+		#print(self.output_data)
+		N= self.output_data.shape[0]
+		Nvar= self.output_data.shape[1]
+
+		logger.warn("Save model output data for multilabel classificatio still to be implemented ...")
+
+		# ...
+		# ...
 
 		return 0
-
-
-	
 	
 	#####################################
 	##     LOAD MODEL
@@ -1382,8 +1563,21 @@ class SClassifierNN(object):
 		
 		#===========================
 		#==   SET LOSS & METRICS
-		#===========================	
-		self.model.compile(optimizer=self.optimizer, loss=self.loss_type, metrics=['accuracy', f1score_metric, precision_metric, recall_metric], run_eagerly=True)
+		#===========================
+		if self.multilabel:
+			self.model.compile(
+				optimizer=self.optimizer, 
+				loss=self.__multilabel_loss,
+				#metrics=['accuracy', f1score_metric, precision_metric, recall_metric], 
+				run_eagerly=True
+			)
+		else:
+			self.model.compile(
+				optimizer=self.optimizer, 
+				loss=self.loss_type, 
+				metrics=['accuracy', f1score_metric, precision_metric, recall_metric], 
+				run_eagerly=True
+			)
 		
 		# - Print and draw model
 		self.model.summary()
@@ -1431,8 +1625,21 @@ class SClassifierNN(object):
 
 		#===========================
 		#==   SET LOSS & METRICS
-		#===========================	
-		self.model.compile(optimizer=self.optimizer, loss=self.loss_type, metrics=['accuracy', f1score_metric, precision_metric, recall_metric], run_eagerly=True)
+		#===========================
+		if self.multilabel:
+			self.model.compile(
+				optimizer=self.optimizer, 
+				loss=self.__multilabel_loss,
+				#metrics=['accuracy', f1score_metric, precision_metric, recall_metric], 
+				run_eagerly=True
+			)
+		else:
+			self.model.compile(
+				optimizer=self.optimizer, 
+				loss=self.loss_type, 
+				metrics=['accuracy', f1score_metric, precision_metric, recall_metric], 
+				run_eagerly=True
+			)
 		
 		return 0
 
