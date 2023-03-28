@@ -1093,12 +1093,12 @@ class FeatExtractorSimCLR(object):
 
 		# - Save proj head
 		if self.projhead:
-			self.encoder.save_weights('projhead_weights.h5')
+			self.projhead.save_weights('projhead_weights.h5')
 
 			with open('projhead_architecture.json', 'w') as f:
 				f.write(self.projhead.to_json())
 
-			self.encoder.save('projhead.h5')
+			self.projhead.save('projhead.h5')
 
 		#================================
 		#==   SAVE TRAIN METRICS
