@@ -619,7 +619,7 @@ class FeatExtractorSimCLR(object):
 		
 		# - Create softmax cosine similarity layer
 		feat_dim= K.int_shape(projhead_outputs[0])[1]
-		##soft_cos_sim= SoftmaxCosineSim(batch_size=self.batch_size, feat_dim=self.latent_dim) # NB: Dn't understand why in original code feat_dim is equal to encoder output shape
+		##soft_cos_sim= SoftmaxCosineSim(batch_size=self.batch_size, feat_dim=self.latent_dim) # NB: Don't understand why in original code feat_dim is equal to encoder output shape
 		soft_cos_sim= SoftmaxCosineSim(batch_size=self.batch_size, feat_dim=feat_dim)
 
 		model_outputs= soft_cos_sim(projhead_outputs)
@@ -628,43 +628,11 @@ class FeatExtractorSimCLR(object):
 		print(type(model_outputs))
 		print(K.int_shape(model_outputs))
 
-		# - Create projection head layers
-		#self.__create_projhead_layers()
-
-		# - Create softmax cosine similarity layer
-		#soft_cos_sim = SoftmaxCosineSim(batch_size=self.batch_size, feat_dim=self.latent_dim)
-		
-		# - Create model
-		#num_layers_ph= len(self.ph_l)
-		#i = []  # Inputs (# = 2 x batch_size)
-		#f_x = []  # Output base_model
-		###h = []  # Flattened feature representation
-		#g = []  # Projection head
-		#for j in range(num_layers_ph):
-		#	g.append([])
-
-		#for index in range(2 * self.batch_size):
-		#	i.append(Input(shape=inputShape, dtype='float'))
-		#	f_x.append(self.encoder(i[index]))
-		#	###h.append(layers.Flatten()(f_x[index]))
-		#	for j in range(num_layers_ph):
-		#		if j == 0:
-		#			###g[j].append(self.ph_l[j](h[index]))
-		#			g[j].append(self.ph_l[j](f_x[index]))
-		#		else:
-		#			g[j].append(self.ph_l[j](g[j - 1][index]))
-
-		#o = soft_cos_sim(g[-1])  # Output = Last layer of projection head
-
-		#logger.info("isinstance(i, list)? %d" % (isinstance(i, list)))
-		#logger.info("isinstance(o, list)? %d" % (isinstance(o, list)))
-     
 		#===========================
 		#==   COMPILE MODEL
 		#===========================
 		# - Define and compile model
 		logger.info("Creating SimCLR model ...")
-		#self.model= Model(inputs=i, outputs=o, name='SimCLR')
 		self.model= Model(inputs=model_inputs, outputs=model_outputs, name='SimCLR')
 
 		logger.info("Compiling SimCLR model ...")

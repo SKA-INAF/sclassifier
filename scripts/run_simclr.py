@@ -209,6 +209,9 @@ def get_args():
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
 	parser.set_defaults(predict=False)
 
+	parser.add_argument('--use_v2_impl', dest='use_v2_impl', action='store_true',help='Use alternative implementation (not based on tf fit method) (default=false)')	
+	parser.set_defaults(use_v2_impl=False)
+
 	# - Save options
 	parser.add_argument('--no_save_embeddings', dest='no_save_embeddings', action='store_true',help='Do not save embeddings (default=true)')	
 	parser.set_defaults(no_save_embeddings=False)
@@ -362,6 +365,7 @@ def main():
 
 	# - Run options
 	predict= args.predict
+	use_v2_impl= args.use_v2_impl
 
 	# - Save options
 	save_tb_embeddings= args.save_tb_embeddings
@@ -538,14 +542,17 @@ def main():
 		simclr.save_embeddings= False
 
 	simclr.temperature= loss_temperature
+	simclr.use_simclr_impl_v2= use_v2_impl
 
 	# - Run train/predict
 	if predict:
 		status= simclr.run_predict(modelfile_encoder, weightfile_encoder)
 	else:
-		#status= simclr.run_train(modelfile, weightfile, modelfile_encoder, weightfile_encoder)
-		status= simclr.run_train_v2(modelfile_encoder, weightfile_encoder, modelfile_projhead, weightfile_projhead)
-	
+		if use_v2_impl:
+			status= simclr.run_train_v2(modelfile_encoder, weightfile_encoder, modelfile_projhead, weightfile_projhead)
+		else:
+			status= simclr.run_train(modelfile, weightfile, modelfile_encoder, weightfile_encoder)
+		
 	if status<0:
 		logger.error("SimCLR run failed!")
 		return 1
