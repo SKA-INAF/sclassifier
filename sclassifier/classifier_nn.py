@@ -506,7 +506,7 @@ class SClassifierNN(object):
 					if obj_id==obj_id_excl:
 						add_to_train_list=False
 
-			print("target_id_list=%s, add_to_train_list=%d" % (str(target_id_list), add_to_train_list))
+			print("target_id_list=%s, add_to_train_list=%d, self.excluded_objids_train=%s" % (str(target_id_list), add_to_train_list, str(self.excluded_objids_train)))
 			
 			if add_to_train_list:
 				self.target_ids.append(target_id_list)
