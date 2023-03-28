@@ -23,6 +23,7 @@ import csv
 import pickle
 from copy import deepcopy
 from itertools import chain
+import json
 
 ##############################
 ##     GLOBAL VARS
