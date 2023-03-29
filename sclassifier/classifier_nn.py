@@ -1565,13 +1565,13 @@ class SClassifierNN(object):
 			custom_objects['ChanPosDef']= ChanPosDef
 
 		if self.multilabel:
-			custom_objects['__multilabel_loss']= self.__multilabel_loss
+			custom_objects['loss']= self.__multilabel_loss
 
 		print("== custom_objects ==")
 		print(custom_objects)
 
 		try:
-			self.model= load_model(modelfile, custom_objects=custom_objects)
+			self.model= load_model(modelfile, custom_objects=custom_objects, compile=False)
 			
 		except Exception as e:
 			logger.warn("Failed to load model from file %s (err=%s)!" % (modelfile, str(e)))
@@ -1636,7 +1636,7 @@ class SClassifierNN(object):
 		try:
 			####self.model = model_from_json(open(modelfile_json).read())
 			#self.model = load_model(modelfile, custom_objects={'recall_metric': recall_metric, 'precision_metric': precision_metric, 'f1score_metric': f1score_metric})
-			self.model = load_model(modelfile, custom_objects=custom_objects)
+			self.model = load_model(modelfile, custom_objects=custom_objects, compile=False)
 			self.model.load_weights(weightfile)
 
 		except Exception as e:
