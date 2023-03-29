@@ -1129,16 +1129,26 @@ class SClassifierNN(object):
 				weights=None,  # random initialization
 				input_tensor=self.inputs,
 				input_shape=inputShape,
-				pooling=None
+				#pooling=None
+				pooling="avg" #global average pooling will be applied to the output of the last convolutional block
 			)
 		elif self.predefined_arch=="resnet101":
-			backbone= tf.keras.applications.resnet50.ResNet50(
+			backbone= tf.keras.applications.resnet.ResNet101(
 				include_top=False, # disgard the fully-connected layer as we are training from scratch
 				weights=None,  # random initialization
 				input_tensor=self.inputs,
 				input_shape=inputShape,
-				pooling=None
+				#pooling=None
+				pooling="avg" #global average pooling will be applied to the output of the last convolutional block
 			)
+		elif self.predefined_arch=="resnet18":
+			logger.info("Using resnet18 as base encoder ...")
+			backbone= resnet18(self.inputs, include_top=False)
+
+		elif self.predefined_arch=="resnet34":
+			logger.info("Using resnet34 as base encoder ...")
+			backbone= resnet34(self.inputs, include_top=False)		
+
 		else:
 			logger.error("Unknown/unsupported predefined backbone architecture given (%s)!" % (self.predefined_arch))
 			return -1
@@ -1146,11 +1156,12 @@ class SClassifierNN(object):
 		self.model.add(backbone)
 
 		# - Add flatten layer or global average pooling?
-		if self.use_global_avg_pooling:
-			x= layers.GlobalAveragePooling2D()
-		else:
-			x = layers.Flatten()
-		self.model.add(x)
+		#   NB: Commented as done already inside resnet block
+		#if self.use_global_avg_pooling:
+		#	x= layers.GlobalAveragePooling2D()
+		#else:
+		#	x = layers.Flatten()
+		#self.model.add(x)
 
 		#===========================
 		#==  MODEL OUTPUT LAYERS

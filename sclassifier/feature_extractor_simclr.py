@@ -459,7 +459,7 @@ class FeatExtractorSimCLR(object):
 
 		elif self.predefined_arch=="resnet101":
 			logger.info("Using resnet101 as base encoder ...")
-			resnet101= tf.keras.applications.resnet50.ResNet50(
+			resnet101= tf.keras.applications.resnet.ResNet101(
 				include_top=False, # disgard the fully-connected layer as we are training from scratch
 				weights=None,  # random initialization
 				input_tensor=inputs,
