@@ -792,7 +792,7 @@ class SClassifierNN(object):
 		#   In this case the list will be empty, replace it with a [-1]
 		for i in range(len(self.targets_pred)):
 			if not self.targets_pred[i]:
-				self.targets_pred[i]= [-1]
+				self.targets_pred[i]= [int(-1)]
 
 		print("targets_pred")
 		print(self.targets_pred)
@@ -969,6 +969,10 @@ class SClassifierNN(object):
 
 		#logger.warn("Compute and save metrics still to be implemented for multilabel classification ...")
 		
+		# - Compute predicted output, e.g. [0,1,0,0,1,0]
+		mlb = MultiLabelBinarizer(classes=np.arange(0,self.nclasses))
+						output_targets= mlb.fit_transform(target_ids)
+
 		#y_pred= np.where(predout>self.sigmoid_thr, 1, 0)
 
 		return 0
