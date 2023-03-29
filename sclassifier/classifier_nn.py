@@ -1096,7 +1096,7 @@ class SClassifierNN(object):
 			np.savetxt(f_norm, cm_norm, delimiter=',')
 			if i!=len(cms_nonorm)-1:
 				f.write("\n")
-				f_nonorm.write("\n")
+				f_norm.write("\n")
 			
 		return 0
 
