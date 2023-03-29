@@ -1175,6 +1175,7 @@ class SClassifierNN(object):
 		#===========================
 		# - Add dense layer?
 		if self.add_dense:
+			logger.info("Adding #%d dense layers ..." % (len(self.dense_layer_sizes)))
 			for layer_size in self.dense_layer_sizes:
 				##x = layers.Dense(layer_size, activation=self.dense_layer_activation)
 				##self.model.add(x)
