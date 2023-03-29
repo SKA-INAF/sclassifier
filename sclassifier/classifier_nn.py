@@ -786,7 +786,7 @@ class SClassifierNN(object):
 
 		# - Convert one-hot encoding to target ids (2D list)
 		logger.info("Retrieving target ids from predicted output ...")
-		self.targets_pred= [list(np.flatnonzero(row > self.sigmoid_thr)) for row in predout]
+		self.targets_pred= [list( np.flatnonzero(row > self.sigmoid_thr).astype('int') ) for row in predout]
 		#self.targets_pred= np.where(predout>self.sigmoid_thr, 1, 0)
 
 		# - Check if some source was not classified (e.g. all probs are below threshold)
