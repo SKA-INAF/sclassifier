@@ -108,6 +108,7 @@ from .data_loader import DataLoader
 from .data_loader import SourceData
 from .data_generator import DataGenerator
 from .tf_utils import ChanMinMaxNorm, ChanMaxScale, ChanMeanRatio, ChanMaxRatio, ChanPosDef
+from .models import resnet18, resnet34
 
 ##################################
 ##     METRICS CLASS
