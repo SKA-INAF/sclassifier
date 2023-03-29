@@ -1565,7 +1565,7 @@ class SClassifierNN(object):
 			custom_objects['ChanPosDef']= ChanPosDef
 
 		if self.multilabel:
-			custom_objects['loss']= self.__multilabel_loss
+			custom_objects['__multilabel_loss']= self.__multilabel_loss
 
 		print("== custom_objects ==")
 		print(custom_objects)
