@@ -50,6 +50,7 @@ from sklearn.tree import export_text
 
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 from sklearn.metrics import recall_score, precision_score, f1_score
+from sklearn.preprocessing import MultiLabelBinarizer
 
 ## TENSORFLOW & KERAS MODULES
 import tensorflow as tf
@@ -967,13 +968,26 @@ class SClassifierNN(object):
 	def __compute_metrics_multilabel(self):
 		""" Compute metrics for multilabel classification """
 
-		#logger.warn("Compute and save metrics still to be implemented for multilabel classification ...")
-		
-		# - Compute predicted output, e.g. [0,1,0,0,1,0]
-		mlb = MultiLabelBinarizer(classes=np.arange(0,self.nclasses))
-						output_targets= mlb.fit_transform(target_ids)
+		# - Compute target/pred vectors (must have a class label set)
+		target_ids_true= []
+		target_ids_pred= []
+		for i in range(len(self.target_ids_all)):
+			target_id= self.target_ids_all[i]
+			pred_id= self.targets_pred[i]
+			if target_id<0:
+				continue
+			target_ids_true.append(target_id)
+			target_ids_pred.append(pred_id)
 
+		# - Convert target vector in hot encoding format (needed for metrics), e.g. [0,1,0,0,1,0]
+		mlb = MultiLabelBinarizer(classes=np.arange(0,self.nclasses))
+		y_true= mlb.fit_transform(target_ids_true)
+		y_pred= mlb.fit_transform(target_ids_pred)
 		#y_pred= np.where(predout>self.sigmoid_thr, 1, 0)
+
+		# ...
+		# ...
+
 
 		return 0
 
