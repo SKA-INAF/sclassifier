@@ -412,6 +412,19 @@ class SClassifierNN(object):
 		self.classid_remap_inv= {v: k for k, v in self.classid_remap.items()}
 		self.classid_label_map_inv= {v: k for k, v in self.classid_label_map.items()}
 
+	def set_classid_remap(self, cid_remap):
+		""" Set class id remap and update inverted map """
+	
+		self.classid_remap= cid_remap
+		self.classid_remap_inv= {v: k for k, v in self.classid_remap.items()}
+		
+	def set_classid_label_map(self, cid_label_map):
+		""" Set class id label map and update inverted map """
+	
+		self.classid_label_map= cid_label_map
+		self.classid_label_map_inv= {v: k for k, v in self.classid_label_map.items()}
+		
+
 		
 	def __multilabel_loss(self, y_true, y_pred):
 		""" Loss function used for multilabel classification """
@@ -709,9 +722,7 @@ class SClassifierNN(object):
 		if self.target_ids:
 			logger.info("Compute and save metrics ...")
 			if self.multilabel:
-				logger.warn("Compute and save metrics still to be implemented for multilabel classification ...")
-				# ...
-				# ...
+				self.__compute_metrics_multilabel()
 			else:
 				self.__compute_metrics()
 			
@@ -821,24 +832,13 @@ class SClassifierNN(object):
 		ddlist= []
 		N= predout.shape[0]
 		for i in range(N):
-			#print("sname=%s" % (self.source_names[i]))
-			#print("type(id)")
-			#print(type(self.source_ids[i]))
-			#print("type(label)")
-			#print(type(labels[i]))
-			#print("type(id_pred)")
-			#print(type(self.classids_pred[i]))
-			#print("type(label_pred)")
-			#print(type(labels_pred[i]))
-			#print("type(prob)")
-			#print(type(self.probs_pred[i]))
-			#print(type(self.probs_pred[i][0]))
-
 			dd= {
 				"sname": self.source_names[i],
 				"id": self.source_ids[i],
+				"target_id": self.target_ids_all[i],
 				"label": labels[i],
 				"id_pred": self.classids_pred[i],
+				"target_id_pred": self.targets_pred[i],
 				"label_pred": labels_pred[i],
 				"prob": self.probs_pred[i]
 			}
@@ -952,6 +952,16 @@ class SClassifierNN(object):
 		np.savetxt(self.outfile_cm, cm, delimiter=',')
 		np.savetxt(self.outfile_cm_norm, cm_norm, delimiter=',')
 
+
+		return 0
+
+
+	def __compute_metrics_multilabel(self):
+		""" Compute metrics for multilabel classification """
+
+		logger.warn("Compute and save metrics still to be implemented for multilabel classification ...")
+		# ...
+		# ...
 
 		return 0
 
