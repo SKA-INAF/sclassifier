@@ -972,22 +972,53 @@ class SClassifierNN(object):
 		target_ids_true= []
 		target_ids_pred= []
 		for i in range(len(self.target_ids_all)):
-			target_id= self.target_ids_all[i]
-			pred_id= self.targets_pred[i]
-			if target_id<0:
+			target_ids= self.target_ids_all[i]
+			pred_ids= self.targets_pred[i]
+			if len(target_ids)==1 and target_ids[0]<0:
 				continue
-			target_ids_true.append(target_id)
-			target_ids_pred.append(pred_id)
+			target_ids_true.append(target_ids)
+			target_ids_pred.append(pred_ids)
 
 		# - Convert target vector in hot encoding format (needed for metrics), e.g. [0,1,0,0,1,0]
 		mlb = MultiLabelBinarizer(classes=np.arange(0,self.nclasses))
 		y_true= mlb.fit_transform(target_ids_true)
 		y_pred= mlb.fit_transform(target_ids_pred)
-		#y_pred= np.where(predout>self.sigmoid_thr, 1, 0)
+		
+		# - Compute classification metrics
+		logger.info("Computing classification metrics on predicted data ...")
+		report= classification_report(y_true, y_pred, target_names=self.target_names, output_dict=True)
+		self.accuracy= report['accuracy']
+		self.precision= report['weighted avg']['precision']
+		self.recall= report['weighted avg']['recall']    
+		self.f1score= report['weighted avg']['f1-score']
 
-		# ...
-		# ...
+		print("report")
+		print(report)
 
+		self.class_precisions= []
+		self.class_recalls= []  
+		self.class_f1scores= []
+		for class_name in self.target_names:
+			class_precision= report[class_name]['precision']
+			class_recall= report[class_name]['recall']    
+			class_f1score= report[class_name]['f1-score']
+			self.class_precisions.append(class_precision)
+			self.class_recalls.append(class_recall)
+			self.class_f1scores.append(class_f1score)
+			
+		logger.info("accuracy=%f" % (self.accuracy))
+		logger.info("precision=%f" % (self.precision))
+		logger.info("recall=%f" % (self.recall))
+		logger.info("f1score=%f" % (self.f1score))
+		logger.info("--> Metrics per class")
+		print("classnames")
+		print(self.target_names)
+		print("precisions")
+		print(self.class_precisions)
+		print("recall")
+		print(self.class_recalls)
+		print("f1score")
+		print(self.class_f1scores)
 
 		return 0
 
