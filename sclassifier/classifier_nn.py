@@ -832,6 +832,7 @@ class SClassifierNN(object):
 			print(type(labels_pred[i]))
 			print("type(prob)")
 			print(type(self.probs_pred[i]))
+			print(type(self.probs_pred[i][0]))
 
 			dd= {
 				"sname": self.source_names[i],
@@ -839,7 +840,7 @@ class SClassifierNN(object):
 				"label": labels[i],
 				"id_pred": self.classids_pred[i],
 				"label_pred": labels_pred[i],
-				"prob": self.probs_pred[i]
+				#"prob": self.probs_pred[i]
 			}
 			ddlist.append(dd)
 
