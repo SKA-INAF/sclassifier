@@ -1108,13 +1108,14 @@ class SClassifierNN(object):
 		#==  INIT MODEL
 		#===========================
 		# - Init model
-		self.model = models.Sequential()
+		##self.model = models.Sequential()
 
 		# - Input layer	
 		inputShape = (self.ny, self.nx, self.nchannels)
 		self.inputs= Input(shape=inputShape, dtype='float', name='inputs')
 		self.input_data_dim= K.int_shape(self.inputs)
-		self.model.add(self.inputs)
+		#self.model.add(self.inputs)
+		x= self.inputs
 
 		print("Input data dim=", self.input_data_dim)
 		print("inputs shape")
@@ -1125,7 +1126,8 @@ class SClassifierNN(object):
 		#===========================
 		# - Add backbone net
 		if self.predefined_arch=="resnet50":
-			backbone= tf.keras.applications.resnet50.ResNet50(
+			logger.info("Using resnet50 as base encoder ...")
+			resnet50= tf.keras.applications.resnet50.ResNet50(
 				include_top=False, # disgard the fully-connected layer as we are training from scratch
 				weights=None,  # random initialization
 				input_tensor=self.inputs,
@@ -1133,8 +1135,11 @@ class SClassifierNN(object):
 				#pooling=None
 				pooling="avg" #global average pooling will be applied to the output of the last convolutional block
 			)
+			x= resnet50(x)
+			
 		elif self.predefined_arch=="resnet101":
-			backbone= tf.keras.applications.resnet.ResNet101(
+			logger.info("Using resnet101 as base encoder ...")
+			resnet101= tf.keras.applications.resnet.ResNet101(
 				include_top=False, # disgard the fully-connected layer as we are training from scratch
 				weights=None,  # random initialization
 				input_tensor=self.inputs,
@@ -1144,17 +1149,19 @@ class SClassifierNN(object):
 			)
 		elif self.predefined_arch=="resnet18":
 			logger.info("Using resnet18 as base encoder ...")
-			backbone= resnet18(self.inputs, include_top=False)
+			x= resnet18(self.inputs, include_top=False)
 
 		elif self.predefined_arch=="resnet34":
 			logger.info("Using resnet34 as base encoder ...")
-			backbone= resnet34(self.inputs, include_top=False)		
+			x= resnet34(self.inputs, include_top=False)		
 
 		else:
 			logger.error("Unknown/unsupported predefined backbone architecture given (%s)!" % (self.predefined_arch))
 			return -1
 	
-		self.model.add(backbone)
+		
+		##self.model.add(backbone)
+		
 
 		# - Add flatten layer or global average pooling?
 		#   NB: Commented as done already inside resnet block
@@ -1170,21 +1177,25 @@ class SClassifierNN(object):
 		# - Add dense layer?
 		if self.add_dense:
 			for layer_size in self.dense_layer_sizes:
-				x = layers.Dense(layer_size, activation=self.dense_layer_activation)
-				self.model.add(x)
+				##x = layers.Dense(layer_size, activation=self.dense_layer_activation)
+				##self.model.add(x)
+				x = layers.Dense(layer_size, activation=self.dense_layer_activation)(x)
 
 				if self.add_dropout_layer:
-					x= layers.Dropout(self.dropout_rate)
-					self.model.add(x)
+					##x= layers.Dropout(self.dropout_rate)
+					##self.model.add(x)
+					x= layers.Dropout(self.dropout_rate)(x)
 			
 		# - Output layer
 		#   NB: see https://glassboxmedicine.com/2019/05/26/classification-sigmoid-vs-softmax/
 		if self.multilabel:
-			self.outputs = layers.Dense(self.nclasses, name='outputs', activation='sigmoid') 
+			##self.outputs = layers.Dense(self.nclasses, name='outputs', activation='sigmoid')
+			self.outputs = layers.Dense(self.nclasses, name='outputs', activation='sigmoid')(x)
 		else:
-			self.outputs = layers.Dense(self.nclasses, name='outputs', activation='softmax') 
+			##self.outputs = layers.Dense(self.nclasses, name='outputs', activation='softmax')
+			self.outputs = layers.Dense(self.nclasses, name='outputs', activation='softmax')(x)
 
-		self.model.add(self.outputs)
+		#self.model.add(self.outputs)
 		
 		#print("outputs shape")
 		#print(K.int_shape(self.outputs))
@@ -1192,7 +1203,10 @@ class SClassifierNN(object):
 		#===========================
 		#==   BUILD MODEL
 		#===========================
-		# - Define and compile model
+		# - Create model
+		self.model= Model(self.inputs, self.outputs)
+
+		# - Compile model
 		if self.multilabel:
 			self.model.compile(
 				optimizer=self.optimizer, 
