@@ -801,10 +801,10 @@ class SClassifierNN(object):
 		self.probs_pred= [list(row[row>self.sigmoid_thr]) for row in predout]
 		
 		# - Check if some source was not classified (e.g. all probs are below threshold)
-		#   In this case the list will be empty, replace it with a [-1]
+		#   In this case the list will be empty, replace it with a [0.]
 		for i in range(len(self.probs_pred)):
 			if not self.probs_pred[i]:
-				self.probs_pred[i]= [-1]
+				self.probs_pred[i]= [0.]
 
 		print("probs_pred")
 		print(self.probs_pred)
@@ -821,6 +821,18 @@ class SClassifierNN(object):
 		ddlist= []
 		N= predout.shape[0]
 		for i in range(N):
+			print("sname=%s" % (self.source_names[i]))
+			print("type(id)")
+			print(type(self.source_ids[i]))
+			print("type(label)")
+			print(type(labels[i]))
+			print("type(id_pred)")
+			print(type(self.classids_pred[i]))
+			print("type(label_pred)")
+			print(type(labels_pred[i]))
+			print("type(prob)")
+			print(type(self.probs_pred[i]))
+
 			dd= {
 				"sname": self.source_names[i],
 				"id": self.source_ids[i],
