@@ -662,13 +662,13 @@ def main():
 
 	# - Override class target configuration?
 	if classid_remap:
-		sclass.classid_remap= classid_remap
+		sclass.set_classid_remap(classid_remap)
 
 	if target_label_map:
 		sclass.target_label_map= target_label_map
 
 	if classid_label_map:
-		sclass.classid_label_map= classid_label_map
+		sclass.set_classid_label_map(classid_label_map)
 
 	if nclasses>0:
 		sclass.nclasses= nclasses
