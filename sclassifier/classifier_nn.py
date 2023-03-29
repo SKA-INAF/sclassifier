@@ -1046,9 +1046,7 @@ class SClassifierNN(object):
 		for cm in cms:
 			M= np.matrix(cm)
 			row_sum= M.sum(axis=1)
-			M_norm= M
-			if row_sum>0:
-				M_norm= M/row_sum 
+			M_norm= np.where(row_sum<=0, M, M/row_sum)
 			cms_nonorm.append(cm)
 			cms_norm.append(np.array(M_norm))
 		
