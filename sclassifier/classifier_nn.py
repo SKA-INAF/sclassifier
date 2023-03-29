@@ -844,10 +844,10 @@ class SClassifierNN(object):
 			dd= {
 				"sname": self.source_names[i],
 				"id": self.source_ids[i],
-				"target_id": self.target_ids_all[i],
+				"target_id": [int(item) for item in self.target_ids_all[i]],
 				"label": labels[i],
 				"id_pred": self.classids_pred[i],
-				"target_id_pred": self.targets_pred[i],
+				"target_id_pred": [int(item) for item in self.targets_pred[i]],
 				"label_pred": labels_pred[i],
 				"prob": self.probs_pred[i]
 			}
