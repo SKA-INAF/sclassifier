@@ -1080,23 +1080,17 @@ class SClassifierNN(object):
 		
 		Utils.write_ascii(metric_data, self.outfile_metrics, head)
 
-		# Save matrix list (which format??)
+		# - Save matrix list 
+		#   NB: appending each class matrix in same file)
 		logger.info("Saving confusion matrix to file %s ..." % (self.outfile_cm))
-		for i in range(len(cms_nonorm)):
-			cm= cms_nonorm[i]
-			cm_norm= cms_norm[i]
-			if i==0:
-				f= open(self.outfile_cm, "w")
-				f_norm= open(self.outfile_cm_norm, "w")	
-			else: # append to file
-				f= open(self.outfile_cm, "a")
-				f_norm= open(self.outfile_cm_norm, "a")
-						
-			np.savetxt(f, cm, delimiter=',')
-			np.savetxt(f_norm, cm_norm, delimiter=',')
-			if i!=len(cms_nonorm)-1:
-				f.write("\n")
-				f_norm.write("\n")
+		with open(self.outfile_cm, 'w') as f:
+			for cm in cms_nonorm:
+				np.savetxt(f, cm, delimiter=',')
+			
+		logger.info("Saving norm confusion matrix to file %s ..." % (self.outfile_cm_norm))
+		with open(self.outfile_cm_norm, 'w') as f:
+			for cm in cms_norm:
+				np.savetxt(f, cm, delimiter=',')
 			
 		return 0
 
