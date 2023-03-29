@@ -45,6 +45,7 @@ from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn import metrics
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix, multilabel_confusion_matrix
+from sklearn.metrics import accuracy_score, hamming_loss
 from sklearn import tree
 from sklearn.tree import export_text
 
@@ -162,7 +163,10 @@ def f1score_metric(y_true, y_pred):
 
 	return f1score
 
-
+# - See https://stackoverflow.com/questions/32239577/getting-the-accuracy-for-multi-label-prediction-in-scikit-learn
+def hamming_score(y_true, y_pred):
+	""" Compute the hamming score """   
+	return ( (y_true & y_pred).sum(axis=1) / (y_true | y_pred).sum(axis=1) ).mean()
 
 ##################################
 ##     SClassifierNN CLASS
@@ -993,7 +997,10 @@ class SClassifierNN(object):
 		print("report")
 		print(report)
 
-		self.accuracy= report['accuracy']
+		#self.accuracy= report['accuracy'] # this fails as accuracy is not present in report, using sklearn.metrics.accuracy_score
+		self.accuracy= accuracy_score(y_true, y_pred, normalize=True) # NB: This computes subset accuracy (the set of labels predicted for a sample must exactly match the corresponding set of labels in y_true)
+		h_loss= hamming_loss(y_true, y_pred)
+		h_score= hamming_score(y_true, y_pred)
 		self.precision= report['weighted avg']['precision']
 		self.recall= report['weighted avg']['recall']    
 		self.f1score= report['weighted avg']['f1-score']
@@ -1010,6 +1017,8 @@ class SClassifierNN(object):
 			self.class_f1scores.append(class_f1score)
 			
 		logger.info("accuracy=%f" % (self.accuracy))
+		logger.info("hamming_score=%f" % (h_score))	
+		logger.info("hamming_loss=%f" % (h_loss))
 		logger.info("precision=%f" % (self.precision))
 		logger.info("recall=%f" % (self.recall))
 		logger.info("f1score=%f" % (self.f1score))
@@ -1023,6 +1032,74 @@ class SClassifierNN(object):
 		print("f1score")
 		print(self.class_f1scores)
 
+		# - Retrieving confusion matrix
+		logger.info("Retrieving confusion matrix ...")
+		cms= multilabel_confusion_matrix(y_true, y_pred)
+
+		print("confusion matrix")
+		print(cms)
+
+		# - Normalize confusion matrix by row sum
+		logger.info("Normalize confusion matrix ...")
+		cms_nonorm= []
+		cms_norm= []
+		for cm in cms:
+			M= np.matrix(cm)
+			row_sum= M.sum(axis=1)
+			M_norm= M
+			if row_sum>0:
+				M_norm= M/row_sum 
+			cms_nonorm.append(cm)
+			cms_norm.append(np.array(M_norm))
+		
+		# - Saving metrics to file
+		logger.info("Saving metrics to file %s ..." % (self.outfile_metrics))
+		metrics= [self.accuracy, h_score, h_loss, self.precision, self.recall, self.f1score]
+		metric_names= ["accuracy","hscore","hloss","precision","recall","f1score"]
+		
+		for i in range(len(self.target_names)):
+			classname= self.target_names[i]
+			precision= self.class_precisions[i]
+			recall= self.class_recalls[i]
+			f1score= self.class_f1scores[i]
+			metrics.append(precision)
+			metrics.append(recall)
+			metrics.append(f1score)
+			metric_names.append("precision_" + classname)
+			metric_names.append("recall_" + classname)
+			metric_names.append("f1score_" + classname)
+			
+		Nmetrics= len(metrics)
+		metric_data= np.array(metrics).reshape(1,Nmetrics)
+
+		metric_names_str= ' '.join(str(item) for item in metric_names)
+		head= '{} {}'.format("# ",metric_names_str)
+
+		print("metric_data")
+		print(metrics)
+		print(len(metrics))
+		print(metric_data.shape)
+		
+		Utils.write_ascii(metric_data, self.outfile_metrics, head)
+
+		# Save matrix list (which format??)
+		logger.info("Saving confusion matrix to file %s ..." % (self.outfile_cm))
+		for i in range(len(cms_nonorm)):
+			cm= cms_nonorm[i]
+			cm_norm= cms_norm[i]
+			if i==0:
+				f= open(self.outfile_cm, "w")
+				f_norm= open(self.outfile_cm_norm, "w")	
+			else: # append to file
+				f= open(self.outfile_cm, "a")
+				f_norm= open(self.outfile_cm_norm, "a")
+						
+			np.savetxt(f, cm, delimiter=',')
+			np.savetxt(f_norm, cm_norm, delimiter=',')
+			if i!=len(cms_nonorm)-1:
+				f.write("\n")
+				f_nonorm.write("\n")
+			
 		return 0
 
 
