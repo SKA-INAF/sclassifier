@@ -44,7 +44,7 @@ from sklearn.svm import SVC
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn import metrics
 from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, multilabel_confusion_matrix
 from sklearn import tree
 from sklearn.tree import export_text
 
@@ -536,10 +536,13 @@ class SClassifierNN(object):
 			return -1
 
 		# - Set target names
-		self.target_names= []
+		#   NB: If we set target_names dynamically (e.g. according to classes present in the present dataset) we got an error in classification report (ValueError: Number of classes, 14, does not match size of target_names, 12. Try specifying the labels parameter) 
+		#self.target_names= []
 		if self.target_ids:
 			logger.info("#%d labelled sources found in dataset ..." % (len(self.target_ids)))
-			self.target_names= [self.target_label_map[item] for item in set(sorted(list(chain.from_iterable(self.target_ids))))] # chain.from_iterable flattens 2D list to 1D
+			if not self.target_names:
+				logger.info("Target names not set, computing it from input data ...")
+				self.target_names= [self.target_label_map[item] for item in set(sorted(list(chain.from_iterable(self.target_ids))))] # chain.from_iterable flattens 2D list to 1D
 		else:
 			logger.info("No known class found in dataset (not a problem if predicting) ...")
 
@@ -837,9 +840,9 @@ class SClassifierNN(object):
 			#print(type(self.target_ids_all[i]))
 			#print(type(self.target_ids_all[i][0]))
 
-			print("type(target_id_pred)")
-			print(type(self.targets_pred[i]))
-			print(type(self.targets_pred[i][0]))
+			#print("type(target_id_pred)")
+			#print(type(self.targets_pred[i]))
+			#print(type(self.targets_pred[i][0]))
 
 			dd= {
 				"sname": self.source_names[i],
