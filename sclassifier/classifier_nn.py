@@ -833,9 +833,9 @@ class SClassifierNN(object):
 		N= predout.shape[0]
 		for i in range(N):
 
-			print("type(target_id)")
-			print(type(self.target_ids_all[i]))
-			print(type(self.target_ids_all[i][0]))
+			#print("type(target_id)")
+			#print(type(self.target_ids_all[i]))
+			#print(type(self.target_ids_all[i][0]))
 
 			print("type(target_id_pred)")
 			print(type(self.targets_pred[i]))
