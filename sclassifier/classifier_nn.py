@@ -1162,7 +1162,6 @@ class SClassifierNN(object):
 		
 		##self.model.add(backbone)
 		
-
 		# - Add flatten layer or global average pooling?
 		#   NB: Commented as done already inside resnet block
 		#if self.use_global_avg_pooling:
