@@ -803,7 +803,7 @@ class SClassifierNN(object):
 				self.targets_pred[i]= [-1]
 
 		print("targets_pred")
-		print(self.targets_pred)
+		#print(self.targets_pred)
 		print(type(self.targets_pred))
 
 		# - Get predicted output class id (2D list)
@@ -811,7 +811,7 @@ class SClassifierNN(object):
 		self.classids_pred= [[self.classid_remap_inv[target_id] for target_id in item] for item in self.targets_pred]
 		
 		print("classids_pred")
-		print(self.classids_pred)
+		#print(self.classids_pred)
 		print(type(self.classids_pred))
 		
 		# - Get predicted output class prob (2D list)
@@ -825,7 +825,7 @@ class SClassifierNN(object):
 				self.probs_pred[i]= [0.]
 
 		print("probs_pred")
-		print(self.probs_pred)
+		#print(self.probs_pred)
 		print(type(self.probs_pred))
 
 		# - Get original labels from target ids
@@ -839,15 +839,6 @@ class SClassifierNN(object):
 		ddlist= []
 		N= predout.shape[0]
 		for i in range(N):
-
-			#print("type(target_id)")
-			#print(type(self.target_ids_all[i]))
-			#print(type(self.target_ids_all[i][0]))
-
-			#print("type(target_id_pred)")
-			#print(type(self.targets_pred[i]))
-			#print(type(self.targets_pred[i][0]))
-
 			dd= {
 				"sname": self.source_names[i],
 				"id": self.source_ids[i],
