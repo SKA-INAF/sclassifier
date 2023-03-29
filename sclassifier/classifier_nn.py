@@ -787,7 +787,6 @@ class SClassifierNN(object):
 		# - Convert one-hot encoding to target ids (2D list)
 		logger.info("Retrieving target ids from predicted output ...")
 		self.targets_pred= [list( np.flatnonzero(row > self.sigmoid_thr).astype('int') ) for row in predout]
-		#self.targets_pred= np.where(predout>self.sigmoid_thr, 1, 0)
 
 		# - Check if some source was not classified (e.g. all probs are below threshold)
 		#   In this case the list will be empty, replace it with a [-1]
@@ -832,6 +831,15 @@ class SClassifierNN(object):
 		ddlist= []
 		N= predout.shape[0]
 		for i in range(N):
+
+			print("type(target_id)")
+			print(type(self.target_ids_all[i]))
+			print(type(self.target_ids_all[i][0]))
+
+			print("type(target_id_pred)")
+			print(type(self.targets_pred[i]))
+			print(type(self.targets_pred[i][0]))
+
 			dd= {
 				"sname": self.source_names[i],
 				"id": self.source_ids[i],
@@ -959,9 +967,9 @@ class SClassifierNN(object):
 	def __compute_metrics_multilabel(self):
 		""" Compute metrics for multilabel classification """
 
-		logger.warn("Compute and save metrics still to be implemented for multilabel classification ...")
-		# ...
-		# ...
+		#logger.warn("Compute and save metrics still to be implemented for multilabel classification ...")
+		
+		#y_pred= np.where(predout>self.sigmoid_thr, 1, 0)
 
 		return 0
 
