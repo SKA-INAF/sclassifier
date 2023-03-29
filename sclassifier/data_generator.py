@@ -113,7 +113,11 @@ class DataGenerator(object):
 		self.snames= [item["sname"] for item in self.datalist["data"]]
 		self.classids= 	[item["id"] for item in self.datalist["data"]]
 
-		if isinstance(self.classids, list): # multilabel (classids is a 2D list, flatten it)
+		if not self.classids:
+			logger.error("Read classids is empty, check input data!")
+			return -1
+
+		if isinstance(self.classids[0], list): # multilabel (classids is a 2D list, flatten it)
 			self.classfract_map= dict(Counter( list(chain.from_iterable(self.classids)) ).items())
 		else:
 			self.classfract_map= dict(Counter(self.classids).items())
