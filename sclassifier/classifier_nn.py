@@ -990,13 +990,13 @@ class SClassifierNN(object):
 		# - Compute classification metrics
 		logger.info("Computing classification metrics on predicted data ...")
 		report= classification_report(y_true, y_pred, target_names=self.target_names, output_dict=True)
+		print("report")
+		print(report)
+
 		self.accuracy= report['accuracy']
 		self.precision= report['weighted avg']['precision']
 		self.recall= report['weighted avg']['recall']    
 		self.f1score= report['weighted avg']['f1-score']
-
-		print("report")
-		print(report)
 
 		self.class_precisions= []
 		self.class_recalls= []  
