@@ -97,6 +97,8 @@ from tensorflow.python.framework.ops import disable_eager_execution, enable_eage
 
 from tensorflow.keras.utils import to_categorical
 
+import tensorflow_addons as tfa
+
 ## GRAPHICS MODULES
 import matplotlib
 import matplotlib.pyplot as plt
@@ -278,6 +280,8 @@ class SClassifierNN(object):
 		self.__set_target_labels(multiclass)
 
 		self.sigmoid_thr= 0.5 # used in multilabel
+		self.focal_loss_alpha= 0.25 # tfa defaults
+		self.focal_loss_gamma= 2.0  # tfa default
 
 		# *****************************
 		# ** Output
@@ -430,11 +434,20 @@ class SClassifierNN(object):
 		self.classid_label_map= cid_label_map
 		self.classid_label_map_inv= {v: k for k, v in self.classid_label_map.items()}
 		
-
 		
 	def __multilabel_loss(self, y_true, y_pred):
 		""" Loss function used for multilabel classification """
-		return tf.nn.sigmoid_cross_entropy_with_logits(labels=y_true, logits=y_pred)
+		
+		## NB: This is wrong because y_pred are probabilities (output of sigmoid layers) while this function expects logits (inverse of sigmoid)
+		##     Guess the correct way was directly using keras binary_crossentropy with argument from_logits=False (this is the default)
+		#return tf.nn.sigmoid_cross_entropy_with_logits(labels=y_true, logits=y_pred)
+
+		return tfa.losses.sigmoid_focal_crossentropy(
+			y_true, y_pred, 
+			alpha=self.focal_loss_alpha, 
+			gamma=self.focal_loss_gamma,
+			from_logits=False # false because y_pred are already probabilities as coming from sigmoid layer output
+		)
 
 	#####################################
 	##     SET TRAIN DATA
@@ -637,7 +650,7 @@ class SClassifierNN(object):
 			return -1
 
 		#===========================
-		#==   BUILD NN
+		#==   BUILD/LOAD NN
 		#===========================
 		#- Create the network or load it from file?
 		if self.modelfile!="":
@@ -650,6 +663,11 @@ class SClassifierNN(object):
 			if self.__create_model()<0:
 				logger.error("NN build failed!")
 				return -1
+
+			if self.weightfile!="":
+				if self.__load_weights(self.weightfile)<0:
+					logger.error("NN load weights failed!")
+					return -1
 
 		#===========================
 		#==   TRAIN NN
@@ -1107,14 +1125,10 @@ class SClassifierNN(object):
 		#===========================
 		#==  INIT MODEL
 		#===========================
-		# - Init model
-		##self.model = models.Sequential()
-
 		# - Input layer	
 		inputShape = (self.ny, self.nx, self.nchannels)
 		self.inputs= Input(shape=inputShape, dtype='float', name='inputs')
 		self.input_data_dim= K.int_shape(self.inputs)
-		#self.model.add(self.inputs)
 		x= self.inputs
 
 		print("Input data dim=", self.input_data_dim)
@@ -1132,7 +1146,6 @@ class SClassifierNN(object):
 				weights=None,  # random initialization
 				input_tensor=self.inputs,
 				input_shape=inputShape,
-				#pooling=None
 				pooling="avg" #global average pooling will be applied to the output of the last convolutional block
 			)
 			x= resnet50(x)
@@ -1144,7 +1157,6 @@ class SClassifierNN(object):
 				weights=None,  # random initialization
 				input_tensor=self.inputs,
 				input_shape=inputShape,
-				#pooling=None
 				pooling="avg" #global average pooling will be applied to the output of the last convolutional block
 			)
 		elif self.predefined_arch=="resnet18":
@@ -1159,9 +1171,6 @@ class SClassifierNN(object):
 			logger.error("Unknown/unsupported predefined backbone architecture given (%s)!" % (self.predefined_arch))
 			return -1
 	
-		
-		##self.model.add(backbone)
-		
 		# - Add flatten layer or global average pooling?
 		#   NB: Commented as done already inside resnet block
 		#if self.use_global_avg_pooling:
@@ -1177,29 +1186,18 @@ class SClassifierNN(object):
 		if self.add_dense:
 			logger.info("Adding #%d dense layers ..." % (len(self.dense_layer_sizes)))
 			for layer_size in self.dense_layer_sizes:
-				##x = layers.Dense(layer_size, activation=self.dense_layer_activation)
-				##self.model.add(x)
 				x = layers.Dense(layer_size, activation=self.dense_layer_activation)(x)
 
 				if self.add_dropout_layer:
-					##x= layers.Dropout(self.dropout_rate)
-					##self.model.add(x)
 					x= layers.Dropout(self.dropout_rate)(x)
 			
 		# - Output layer
 		#   NB: see https://glassboxmedicine.com/2019/05/26/classification-sigmoid-vs-softmax/
 		if self.multilabel:
-			##self.outputs = layers.Dense(self.nclasses, name='outputs', activation='sigmoid')
 			self.outputs = layers.Dense(self.nclasses, name='outputs', activation='sigmoid')(x)
 		else:
-			##self.outputs = layers.Dense(self.nclasses, name='outputs', activation='softmax')
 			self.outputs = layers.Dense(self.nclasses, name='outputs', activation='softmax')(x)
 
-		#self.model.add(self.outputs)
-		
-		#print("outputs shape")
-		#print(K.int_shape(self.outputs))
-		
 		#===========================
 		#==   BUILD MODEL
 		#===========================
@@ -1715,68 +1713,7 @@ class SClassifierNN(object):
 	#####################################
 	##     LOAD MODEL
 	#####################################
-	def __load_model(self, modelfile):
-		""" Load model and weights from input h5 file """
-
-		#==============================
-		#==   LOAD MODEL ARCHITECTURE
-		#==============================
-		custom_objects= None
-		if self.add_chanminmaxnorm_layer:
-			custom_objects['ChanMinMaxNorm']= ChanMinMaxNorm 
-		if self.add_chanmaxscale_layer:
-			custom_objects['ChanMaxScale']= ChanMaxScale 
-		if self.add_chanmeanratio_layer:
-			custom_objects['ChanMeanRatio']= ChanMeanRatio
-		if self.add_chanmaxratio_layer:
-			custom_objects['ChanMaxRatio']= ChanMaxRatio
-		if self.add_chanposdef_layer:
-			custom_objects['ChanPosDef']= ChanPosDef
-
-		if self.multilabel:
-			custom_objects['loss']= self.__multilabel_loss
-
-		print("== custom_objects ==")
-		print(custom_objects)
-
-		try:
-			self.model= load_model(modelfile, custom_objects=custom_objects, compile=False)
-			
-		except Exception as e:
-			logger.warn("Failed to load model from file %s (err=%s)!" % (modelfile, str(e)))
-			return -1
-
-		if not self.model or self.model is None:
-			logger.error("Model object is None, loading failed!")
-			return -1
-
-		
-		#===========================
-		#==   SET LOSS & METRICS
-		#===========================
-		if self.multilabel:
-			self.model.compile(
-				optimizer=self.optimizer, 
-				loss=self.__multilabel_loss,
-				#metrics=['accuracy', f1score_metric, precision_metric, recall_metric], 
-				run_eagerly=True
-			)
-		else:
-			self.model.compile(
-				optimizer=self.optimizer, 
-				loss=self.loss_type, 
-				metrics=['accuracy', f1score_metric, precision_metric, recall_metric], 
-				run_eagerly=True
-			)
-		
-		# - Print and draw model
-		self.model.summary()
-		plot_model(self.model,to_file='model.png',show_shapes=True)
-
-		return 0
-
-
-	def __load_model(self, modelfile, weightfile):
+	def __load_model(self, modelfile, weightfile=""):
 		""" Load model and weights from input h5 file """
 
 		#==============================
@@ -1802,12 +1739,10 @@ class SClassifierNN(object):
 		print(custom_objects)
 
 		# - Load model
+		logger.info("Loading model from file %s ..." % (modelfile))
 		try:
-			####self.model = model_from_json(open(modelfile_json).read())
-			#self.model = load_model(modelfile, custom_objects={'recall_metric': recall_metric, 'precision_metric': precision_metric, 'f1score_metric': f1score_metric})
 			self.model = load_model(modelfile, custom_objects=custom_objects, compile=False)
-			self.model.load_weights(weightfile)
-
+			
 		except Exception as e:
 			logger.warn("Failed to load model from file %s (err=%s)!" % (modelfile, str(e)))
 			return -1
@@ -1815,6 +1750,15 @@ class SClassifierNN(object):
 		if not self.model or self.model is None:
 			logger.error("Model object is None, loading failed!")
 			return -1
+
+		# - Load weights
+		if weightfile!="":
+			logger.info("Loading model weights from file %s ..." % (weightfile))
+			try:
+				self.model.load_weights(weightfile)
+			except Exception as e:
+				logger.warn("Failed to load weights from file %s (err=%s)!" % (weightfile, str(e)))
+				return -1
 
 		#===========================
 		#==   SET LOSS & METRICS
@@ -1834,6 +1778,28 @@ class SClassifierNN(object):
 				run_eagerly=True
 			)
 		
+		return 0
+
+	def __load_weights(self, weightfile):
+		""" Load model weights in created model """
+	
+		# - Do some checks
+		if weightfile=="":
+			logger.error("Given weightfile is empty string!")
+			return -1
+
+		if not self.model or self.model is None:
+			logger.error("Model object is None, you must first load or create the model!")
+			return -1
+
+		# - Load weights
+		logger.info("Loading model weights from file %s ..." % (weightfile))
+		try:
+			self.model.load_weights(weightfile)
+		except Exception as e:
+			logger.warn("Failed to load weights from file %s (err=%s)!" % (weightfile, str(e)))
+			return -1
+
 		return 0
 
 	#####################################
