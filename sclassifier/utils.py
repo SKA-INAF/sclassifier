@@ -45,6 +45,7 @@ from astropy.wcs import WCS
 from astropy.io import ascii
 from astropy.table import Column
 from astropy.nddata.utils import Cutout2D
+from astropy.stats import sigma_clipped_stats
 import regions
 
 import fitsio
@@ -58,7 +59,14 @@ from montage_wrapper.commands import mImgtbl
 import skimage.color
 import skimage.io
 import skimage.transform
+import skimage.measure
+from skimage.segmentation import join_segmentations
+from skimage.filters import median as median_filter
+from skimage.morphology import disk
 ##from mahotas.features import zernike
+
+from scipy.ndimage.morphology import distance_transform_edt
+from scipy.ndimage.filters import gaussian_filter
 
 ## SCUTOUT MODULES
 import scutout
@@ -66,7 +74,7 @@ from scutout.config import Config
 
 ## GRAPHICS MODULES
 import matplotlib.pyplot as plt
-
+from matplotlib import patches
 
 logger = logging.getLogger(__name__)
 
@@ -1303,4 +1311,294 @@ class Utils(object):
 
 		return config
 
+	#=============================
+	#==   FIND SOURCES IN IMAGE
+	#=============================
+	@classmethod
+	def find_sources_robust(cls, data, niters=2, dsigma=0.5, seed_thr=5, merge_thr=3, sigma_clip=3, npix_min_thr=5, npix_max_thr=-1, draw=False):
+		""" Find sources in input image using an iterative procedure """
+
+		smask= np.zeros_like(data)
+
+		data_curr= np.copy(data)
+		seedThr_curr= seed_thr
+
+		for i in range(niters):
+			# - Extract source at this iteration
+			sources, label_map= Utils.find_sources(
+				data=data_curr, 
+				seed_thr=seedThr_curr, merge_thr=merge_thr, 
+				sigma_clip=sigma_clip, 
+				npix_min_thr=npix_min_thr, npix_max_thr=npix_max_thr,
+				draw=draw
+			)
+
+			# - Update global source mask
+			smask[label_map!=0]= 1
+
+			# - Mask found sources
+			data_curr[label_map!=0]= 0
+
+			# - Decrease seed thr
+			seedThr_curr-= dsigma
+
+		# - Compute source & label map from global map
+		label_map_final= skimage.measure.label(smask)
+		sources_final= skimage.measure.regionprops(label_map_final, data)
+
+		logger.debug("#%d sources detected iteratively ..." % (len(sources_final)))
+
+		return sources_final, label_map_final
 		
+
+
+	@classmethod
+	def find_sources(cls, data, seed_thr=5, merge_thr=3, sigma_clip=3, npix_min_thr=5, npix_max_thr=-1, draw=False):
+		""" Find sources in input image """
+		
+		# - Get data info
+		data_shape= data.shape
+		y_c= data_shape[0]/2.;
+		x_c= data_shape[1]/2.;
+
+		# - Compute mask
+		logger.debug("Computing mask ...")
+		mask= np.logical_and(data!=0, np.isfinite(data))	
+		data_1d= data[mask]
+	
+		# - Compute clipped stats
+		logger.debug("Computing image clipped stats ...")
+		mean, median, stddev= sigma_clipped_stats(data_1d, sigma=sigma_clip)
+
+		# - Threshold image at seed_thr
+		zmap= (data-median)/stddev
+		binary_map= (zmap>merge_thr).astype(np.int32)
+	
+		# - Compute blobs
+		logger.debug("Extracting blobs ...")
+		label_map= skimage.measure.label(binary_map)
+		regprops= skimage.measure.regionprops(label_map, data)
+
+		if draw:
+			fig, ax = plt.subplots()
+			##plt.imshow(label_map)
+			##plt.imshow(data)
+			plt.imshow(zmap)
+			plt.colorbar()
+
+		counter= 0
+		sources= []
+		logger.debug("#%d raw sources detected ..." % (len(regprops)))
+
+		label_map_final= np.zeros_like(binary_map)
+
+		for regprop in regprops:
+			counter+= 1
+
+			# - Check if region max is >=seed_thr
+			sslice= regprop.slice
+			zmask= zmap[sslice]
+			zmask_1d= zmask[np.logical_and(zmask!=0, np.isfinite(zmask))]	
+			zmax= zmask_1d.max()
+			if zmax<seed_thr:
+				logger.debug("Skip source %d as zmax=%f<thr=%f" % (counter, zmax, seed_thr))
+				continue
+
+			# - Update binary mask and regprops
+			label= regprop.label
+			bmap= np.zeros_like(binary_map)
+			bmap[sslice]= label_map[sslice]
+			bmap[bmap!=label]= 0
+			bmap[bmap==label]= 1
+			bmap= bmap.astype(np.uint8)
+
+			# - Check number of pixels
+			npix= np.count_nonzero(bmap==1)
+			if npix<npix_min_thr:
+				logger.debug("Skip source %d as npix=%d<%d" % (counter, npix, npix_min_thr))
+				continue
+			if npix_max_thr>0 and npix_max_thr>npix_min_thr and npix>npix_max_thr:
+				logger.debug("Skip source %d as npix=%d>%d" % (counter, npix, npix_max_thr))
+				continue
+
+			# - Add sources to list
+			sources.append(regprop)
+
+			# - Update label map
+			label_map_final[sslice]= label_map[sslice]
+
+
+			# - Draw bounding box
+			if draw:
+				bbox= regprop.bbox
+				ymin= bbox[0]
+				ymax= bbox[2]
+				xmin= bbox[1]
+				xmax= bbox[3]
+				dx= xmax-xmin-1
+				dy= ymax-ymin-1
+				rect = patches.Rectangle((xmin,ymin), dx, dy, linewidth=1, edgecolor='r', facecolor='none')
+				ax.add_patch(rect)
+
+			
+		#===========================
+		#==   DRAW
+		#===========================
+		if draw:
+			plt.show()
+
+		logger.debug("#%d sources detected ..." % (len(sources)))
+
+		return sources, label_map_final
+
+	
+
+	@classmethod
+	def get_source_subtracted_map_helper(cls, data, sources, label_map, bkgbox_thickness=10, grow_source_mask=False, grow_size=3, smooth_bkg=True, bkg_smooth_filter_size=3):
+		""" Find sources in input image and remove them, replacing with local background """
+
+		# - Retrieve image info
+		data_shape= data.shape
+		nx= data_shape[1]
+		ny= data_shape[0]
+
+		# - Compute binary mask
+		bmask= np.copy(label_map)
+		bmask[bmask>0]= 1
+
+		# - Enlarge binary mask with a dilation filter and update masks
+		if grow_source_mask:
+			logger.debug("Enlarge binary mask around each source by size %d ..." % (grow_size))
+			bmask_enlarged= Utils.grow_mask(bmask, grow_size)
+			bmask= bmask_enlarged
+
+			# - Re-extract sources and update source & label map
+			logger.debug("Re-extract source after mask growth ...")
+			label_map_enlarged= skimage.measure.label(bmask)
+			sources_enlarged= skimage.measure.regionprops(label_map_enlarged, data)
+
+			sources= sources_enlarged
+			label_map= label_map_enlarged
+
+			# - Compute binary mask
+			bmask_enlarged= np.copy(label_map_enlarged)
+			bmask_enlarged[bmask_enlarged>0]= 1
+			bmask= bmask_enlarged
+
+		
+		# - Compute source mask
+		cond= np.logical_or(bmask==1, ~np.isfinite(data))
+		smask= np.copy(data)
+		smask[cond]= 0
+		
+		# - Loop over all sources and compute local background
+		#data_sremoved= np.copy(data)
+		bkgmap= np.zeros(data_shape)
+
+		for regprop in sources:
+
+			# - Compute background as median value of pixels around each source (excluding masked pixels)
+			bbox= regprop.bbox
+			ymin= bbox[0]
+			ymax= bbox[2]
+			xmin= bbox[1]
+			xmax= bbox[3]
+
+			xmin_bkg= max(0, xmin - bkgbox_thickness)
+			xmax_bkg= min(xmax + bkgbox_thickness, nx)
+			ymin_bkg= max(0, ymin - bkgbox_thickness)
+			ymax_bkg= min(ymax + bkgbox_thickness, ny)
+			data_bkg= smask[ymin:ymax, xmin:xmax]
+			data_bkg_1d= data_bkg[data_bkg!=0]
+
+			bkg_value= 0
+			bkg_sigma= 1.e-6
+			sigma_clip= 3
+			if data_bkg_1d.size>0:
+				mean, median, stddev= sigma_clipped_stats(data_bkg_1d, sigma=sigma_clip)
+				bkg_value= median
+				bkg_sigma= stddev
+				
+			# - Replace source pixels with background value
+			label= regprop.label
+			bkg_pixels= data[label_map==label]
+			#bkg_pixels= data_sremoved[label_map==label]
+			randomized_bkg_pix_values= np.random.normal(loc=bkg_value, scale=bkg_sigma, size=bkg_pixels.shape)
+
+			#randomized_conv_bkg_pix_values= gaussian_filter(a, sigma=7)
+			#data_sremoved[label_map==label]= bkg_value
+			#data_sremoved[label_map==label]= randomized_bkg_pix_values
+			bkgmap[label_map==label]= randomized_bkg_pix_values
+			
+			logger.debug("Source bkg=%f (label=%d)" % (bkg_value, label))
+
+		# - Replace source data with background
+		data_sremoved= np.copy(data)
+		data_sremoved[bkgmap!=0]= bkgmap[bkgmap!=0]
+
+		# - Smooth the background
+		if smooth_bkg:
+			bkgmap_conv= median_filter(data_sremoved, selem=disk(bkg_smooth_filter_size))
+			cond_bkg= np.logical_and(bkgmap!=0, bkgmap_conv!=0)
+			data_sremoved_conv= np.copy(data)
+			data_sremoved_conv[cond_bkg]= bkgmap_conv[cond_bkg]
+			data_sremoved= data_sremoved_conv
+
+		return data_sremoved
+	
+
+	@classmethod
+	def get_source_subtracted_map(cls, data, niters=2, dsigma=0.5, seed_thr=5, merge_thr=3, sigma_clip=3, npix_min_thr=5, npix_max_thr=-1, bkgbox_thickness=10, grow_source_mask=False, grow_size=3, smooth_bkg=True, bkg_smooth_filter_size=3, draw=False):
+		""" Find sources in input image and remove them, replacing with local background """
+
+		# - Retrieve image info
+		data_shape= data.shape
+		nx= data_shape[1]
+		ny= data_shape[0]
+
+		# - Find sources in image
+		logger.debug("Searching for sources in image ...")
+		sources, label_map= Utils.find_sources_robust(
+			data=data,
+			niters=niters, dsigma=dsigma,
+			seed_thr=seed_thr, merge_thr=merge_thr, 
+			sigma_clip=sigma_clip, 
+			npix_min_thr=npix_min_thr, npix_max_thr=npix_max_thr, 
+			draw=draw
+		)
+
+		# - Get the map without sources
+		data_nosources= Utils.get_source_subtracted_map_helper(
+			data=data, 
+			sources=sources, label_map=label_map, 
+			bkgbox_thickness=bkgbox_thickness, 
+			grow_source_mask=grow_source_mask, grow_size=grow_size,
+			smooth_bkg=smooth_bkg, bkg_smooth_filter_size=bkg_smooth_filter_size
+		)
+
+		return data_nosources
+
+
+	@classmethod
+	def grow_mask(cls, mask, distance=1):
+		""" Grow mask by given pixel distance """
+
+		distances, nearest_label_coords = distance_transform_edt(
+			mask == 0, return_indices=True
+		)
+    
+		mask_expanded = np.zeros_like(mask)
+		dilate_mask = distances <= distance
+
+		# build the coordinates to find nearest labels,
+		# in contrast to [1] this implementation supports label arrays
+		# of any dimension
+		masked_nearest_label_coords = [
+			dimension_indices[dilate_mask]
+			for dimension_indices in nearest_label_coords
+		]
+		nearest_labels = mask[tuple(masked_nearest_label_coords)]
+		mask_expanded[dilate_mask] = nearest_labels
+  
+		return mask_expanded
+
