@@ -29,7 +29,7 @@ from astropy.visualization import ZScaleInterval
 
 ## SKIMAGE
 from skimage.util import img_as_float64
-from skimage.exposure import adjust_sigmoid, rescale_intensity
+from skimage.exposure import adjust_sigmoid, rescale_intensity, equalize_hist
 
 ## IMG AUG
 import imgaug
@@ -1393,6 +1393,38 @@ class ZScaleTransformer(object):
 			transform= ZScaleInterval(contrast=self.contrasts[i]) # able to handle NANs
 			data_transf= transform(data_ch)
 			data_stretched[:,:,i]= data_transf
+
+		# - Scale data
+		data_stretched[~cond]= 0 # Restore 0 and nans set in original data
+
+		return data_stretched
+
+
+##############################
+##   HistEqualizer
+##############################
+class HistEqualizer(object):
+	""" Apply histogram equalization to each channel """
+
+	def __init__(self, **kwparams):
+		""" Create a data pre-processor object """
+
+	def __call__(self, data):
+		""" Apply transformation and return transformed data """
+
+		# - Check data
+		if data is None:
+			logger.error("Input data is None!")
+			return None
+
+		cond= np.logical_and(data!=0, np.isfinite(data))
+		nchans= data.shape[-1]
+	
+		# - Transform each channel
+		data_stretched= np.copy(data)
+
+		for i in range(data.shape[-1]):
+			data_stretched[:,:,i]= equalize_hist(data[:,:,i])
 
 		# - Scale data
 		data_stretched[~cond]= 0 # Restore 0 and nans set in original data
