@@ -38,6 +38,8 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.models import load_model
 
+## IMAGE PROCESSING
+import cv2
 
 # DISPLAY
 from IPython.display import Image, display
@@ -76,7 +78,6 @@ def get_args():
 
 	# - Input options
 	parser.add_argument('-datalist','--datalist', dest='datalist', required=True, type=str, help='Input data json filelist') 
-	parser.add_argument('-inputfile','--inputfile', dest='inputfile', required=False, type=str, help='Input data FITS file') 
 	
 	# - Data pre-processing options
 	parser.add_argument('--resize', dest='resize', action='store_true',help='Resize images')	
@@ -196,6 +197,11 @@ def get_args():
 	parser.add_argument('--save', dest='save', action='store_true', help='Save heatmap superimposed over image')	
 	parser.set_defaults(save=False)
 
+	# - Run/Draw options
+	parser.add_argument('--selected_classes', dest='selected_classes', required=False, type=str, default='',help='Selected class to look at. If empty see all.') 
+	parser.add_argument('--color_palette', dest='color_palette', required=False, type=str, default='jet',help='Color palette: {jet,magma,inferno,viridis,plasma,Reds,Blues}') 
+	
+
 	args = parser.parse_args()	
 
 	return args
@@ -230,16 +236,33 @@ def make_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_index=None
 
 	# This is a vector where each entry is the mean intensity of the gradient
 	# over a specific feature map channel
+	logger.info("Reduce grads ...")
 	pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
 
 	# We multiply each channel in the feature map array
 	# by "how important this channel is" with regard to the top predicted class
 	# then sum all the channels to obtain the heatmap class activation
+	logger.info("Retrieve last conv layer output ...")
 	last_conv_layer_output = last_conv_layer_output[0]
+
+	logger.info("Computing heatmap ...")
 	heatmap = last_conv_layer_output @ pooled_grads[..., tf.newaxis]
+
+	print("img_array.shape")
+	print(img_array.shape)
+
+	print("heatmap.shape")
+	print(heatmap.shape)
+
+	logger.info("Squeezing heatmap ...")
 	heatmap = tf.squeeze(heatmap)
 
+	print("heatmap.shape")
+	print(heatmap.shape)
+
+
 	# For visualization purpose, we will also normalize the heatmap between 0 & 1
+	logger.info("Normalize heatmap ...")
 	heatmap = tf.maximum(heatmap, 0) / tf.math.reduce_max(heatmap)
     
 	return heatmap.numpy()
@@ -270,31 +293,58 @@ def load_model_from_file(modelfile, weightfile="", custom_objects=None):
 
 
 
-def save_and_display_gradcam(img, heatmap, alpha=0.4, draw=True, save=False, outfilename="cam.jpg"):
+def save_and_display_gradcam(img, heatmap, alpha=0.4, draw=True, save=False, outfilename="cam.jpg", cmap="jet"):
 	""" Save and display heatmap superimposed over """
 
 	# - Load the original image
 	#img = keras.preprocessing.image.load_img(img_path)
 	#img = keras.preprocessing.image.img_to_array(img)
 
+	# - Reshape original image
+	#   NB: need to be (ny, nx, nchan) here
+	logger.info("Reshape image ...")
+	img= tf.reshape(img, (img.shape[1],img.shape[2], img.shape[3]))
+
+	print("img.shape")
+	print(img.shape)
+
+	# - Convert to RGB if it has only one chan
+	if img.shape[2]==1:
+		stacked_img = np.concatenate((img,)*3, axis=-1)
+		img= stacked_img*255
+
 	# - Rescale heatmap to a range 0-255
 	heatmap = np.uint8(255 * heatmap)
 
 	# - Use jet colormap to colorize heatmap
-	jet = cm.get_cmap("jet")
+	jet = cm.get_cmap(cmap)
 
 	# - Use RGB values of the colormap
 	jet_colors = jet(np.arange(256))[:, :3]
 	jet_heatmap = jet_colors[heatmap]
 
 	# - Create an image with RGB colorized heatmap
+	logger.info("Create an RGB image ...")
 	jet_heatmap = keras.preprocessing.image.array_to_img(jet_heatmap)
 	jet_heatmap = jet_heatmap.resize((img.shape[1], img.shape[0]))
 	jet_heatmap = keras.preprocessing.image.img_to_array(jet_heatmap)
 
+	print("jet_heatmap.shape")
+	print(jet_heatmap.shape)
+
+	# - Change color palette
+	#colormap= cv2.COLORMAP_VIRIDIS
+	#colormap= cv2.COLORMAP_INFERNO
+	#jet_heatmap = cv2.applyColorMap(jet_heatmap.astype("uint8"), colormap)
+	
 	# - Superimpose the heatmap on original image
 	superimposed_img = jet_heatmap * alpha + img
 	superimposed_img = keras.preprocessing.image.array_to_img(superimposed_img)
+
+	#superimposed_img = cv2.addWeighted(img, alpha, jet_heatmap, 1 - alpha, 0)
+	
+	print("superimposed_img.shape")
+	print(superimposed_img.size)
 
 	# - Save the superimposed image
 	if save:
@@ -302,7 +352,9 @@ def save_and_display_gradcam(img, heatmap, alpha=0.4, draw=True, save=False, out
 
 	# - Display Grad CAM
 	if draw:
-		display(Image(outfilename))
+		#display(Image(outfilename))
+		plt.imshow(np.asarray(superimposed_img))
+		plt.show()
 
 
 ##############
@@ -323,8 +375,7 @@ def main():
 
 	# - Input filelist
 	datalist= args.datalist
-	inputfile= args.inputfile
-
+	
 	# - Model options
 	modelfile= args.modelfile
 	weightfile= args.weightfile
@@ -439,6 +490,11 @@ def main():
 
 	# - Save options
 	save= args.save
+	selected_classes= []
+	if args.selected_classes!="":
+		selected_classes= [str(x) for x in args.selected_classes.split(',')]
+
+	color_palette= args.color_palette
 
 	#===============================
 	#==  CREATE DATA PRE-PROCESSOR
@@ -543,11 +599,16 @@ def main():
 
 	# - Read data	
 	logger.info("Running data generator ...")
-	data_generator= dg.generate_cnn_data(
-		batch_size=1,
-		shuffle=False,
-		classtarget_map=classid_remap, nclasses=nclasses
-	)
+	#data_generator= dg.generate_cnn_data(
+	#	batch_size=1,
+	#	shuffle=False,
+	#	classtarget_map=classid_remap, nclasses=nclasses
+	#)
+
+	data_generator= dg.generate_data(
+		batch_size=1, 
+		shuffle=False
+	)	
 
 	#===============================
 	#==  LOAD MODEL
@@ -570,25 +631,46 @@ def main():
 		try:
 			# - Read data from generator
 			logger.info("Reading data from generator ...")
-			#data, sdata= next(data_generator)
-			data, _= next(data_generator)
+			data, sdata= next(data_generator)
 			img_counter+= 1
 
-			#sname= sdata.sname
-			#label= sdata.label
-			#classid= sdata.id
+			print("data.shape")
+			print(data.shape)
 
-			##logger.info("Reading image no. %d (name=%s, label=%s) ..." % (img_counter, sname, label))
-			logger.info("Reading image no. %d ..." % (img_counter))
+			sname= sdata.sname
+			label= sdata.label
+			classid= sdata.id
+			
+			# - Convert label to list if string (to support multilabel)
+			if isinstance(label, str):
+				labels= [label] 
+				label= labels
 
+			logger.info("Reading image no. %d (name=%s, label=%s) ..." % (img_counter, sname, str(label)))
+			
 			# - Check if data is None
 			if data is None:
-				#logger.warn("Image %d (name=%s, label=%s) is None (hint: some pre-processing stage failed, see logs), skipping it ..." % (img_counter, sname, label))
-				logger.warn("Image %d is None (hint: some pre-processing stage failed, see logs), skipping it ..." % (img_counter))
+				logger.warn("Image %d (name=%s, label=%s) is None (hint: some pre-processing stage failed, see logs), skipping it ..." % (img_counter, sname, str(label)))
 				continue
 
-			nchannels= data.shape[3]
+			# - Skip class?
+			if selected_classes:
+				selected= False
+				for label_sel in selected_classes:
+					for l in label:
+						if l==label_sel:
+							selected= True
+							break
+					if selected:
+						break					
 
+				if not selected:
+					continue
+
+			# - Reshape data to 3 dim
+			nchannels= data.shape[3]
+			data_shape= data.shape
+			
 			# - Predict data
 			logger.info("Predicting data ...")
 			predout= model.predict(
@@ -600,11 +682,16 @@ def main():
 			)
 
 			# - Generate the heatmap
-			heatmap = make_gradcam_heatmap(data, model, last_conv_layer_name)
+			data_reshaped= data
+			#data_reshaped= np.reshape(data, (data_shape[1], data_shape[2], data_shape[3]))
+			heatmap = make_gradcam_heatmap(data_reshaped, model, last_conv_layer_name)
+
+			plt.matshow(heatmap, cmap=color_palette)
+			plt.show()
 
 			# - Display heatmap
-			outfilename= sname + "_gradcam.jpg"
-			save_and_display_gradcam(data, heatmap, alpha=0.4, draw=True, save=save, outfilename=outfilename)
+			outfilename= "gradcam_" + str(img_counter) + ".jpg"
+			save_and_display_gradcam(data_reshaped, heatmap, alpha=0.4, draw=True, save=save, outfilename=outfilename, cmap=color_palette)
 
 		except (GeneratorExit, KeyboardInterrupt):
 			logger.info("Stop loop (keyboard interrupt) ...")

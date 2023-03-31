@@ -682,15 +682,31 @@ class DataGenerator(object):
 				data_shape= sdata.img_cube.shape
 				inputs_shape= (batch_size,) + data_shape
 
+				
+
 				# - Apply class rebalancing?
 				class_id= sdata.id
 				class_name= sdata.label
-				if balance_classes and class_probs:					
-					prob= class_probs[class_name]
-					r= random.uniform(0, 1)
-					accept= r<prob
+				multilabel= (isinstance(class_id, list)) and (isinstance(class_name, list))
+
+				if balance_classes and class_probs:
+					accept= True
+
+					if multilabel:
+						for item in class_name:
+							prob= class_probs[item]
+							r= random.uniform(0, 1)
+							if r<prob:
+								accept= False
+								break
+					else:
+						prob= class_probs[class_name]
+						r= random.uniform(0, 1)
+						accept= r<prob
+						
 					if not accept:
 						continue
+
 
 				# - Initialize return data
 				if nb==0:
@@ -705,11 +721,12 @@ class DataGenerator(object):
 				# - Return data if number of batch is reached and restart the batch
 				if nb>=batch_size:
 					# - Compute class abundances in batch
-					class_counts= np.bincount(class_ids)
-					class_fracts= class_counts/len(class_ids)
-					class_counts_str= ' '.join([str(x) for x in class_counts])
-					class_fracts_str= ' '.join([str(x) for x in class_fracts])
-					logger.debug("Class counts/fract in batch: counts=[%s], fract=[%s]" % (class_counts_str, class_fracts_str))
+					if not multilabel:
+						class_counts= np.bincount(class_ids)
+						class_fracts= class_counts/len(class_ids)
+						class_counts_str= ' '.join([str(x) for x in class_counts])
+						class_fracts_str= ' '.join([str(x) for x in class_fracts])
+						logger.debug("Class counts/fract in batch: counts=[%s], fract=[%s]" % (class_counts_str, class_fracts_str))
 
 					# - Return data
 					yield inputs, sdata
