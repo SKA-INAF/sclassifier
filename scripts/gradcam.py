@@ -348,10 +348,7 @@ def main():
 	augment= args.augment
 	augmenter= args.augmenter
 	shuffle= args.shuffle
-	draw= args.draw
-	dump_stats= args.dump_stats
-	dump_sample_stats= args.dump_sample_stats
-	dump_flags= args.dump_flags
+	
 	scale= args.scale
 	scale_factors= []
 	if args.scale_factors!="":
