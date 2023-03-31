@@ -547,6 +547,7 @@ def main():
 			outfilename= sname + "_gradcam.jpg"
 			save_and_display_gradcam(data, heatmap, alpha=0.4, draw=True, save=save, outfilename=outfilename)
 
+
 	return 0
 
 ###################
@@ -554,5 +555,3 @@ def main():
 ###################
 if __name__ == "__main__":
 	sys.exit(main())
-
-
