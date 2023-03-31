@@ -332,15 +332,6 @@ class DataGenerator(object):
 
 				data_shape= sdata.img_cube.shape
 				inputs_shape= (batch_size,) + data_shape
-
-				#print("datasize")
-				#print(self.datasize)
-				#print("batch_size")
-				#print(batch_size)
-				#print("data_shape")
-				#print(data_shape)
-				#print("inputs_shape")
-				#print(inputs_shape)
 				
 				# - Apply class rebalancing?
 				class_id= sdata.id
@@ -363,16 +354,6 @@ class DataGenerator(object):
 					inputs[nb]= sdata.img_cube
 				except Exception as e:
 					logger.error("Exception occurred while filling input data (nb=%d), exit generator!" % (nb))
-					print("datasize")
-					print(self.datasize)
-					print("data_index")
-					print(data_index)
-					print("batch_size")
-					print(batch_size)
-					print("data_shape")
-					print(data_shape)
-					print("inputs_shape")
-					print(inputs_shape)
 					break
 
 				class_ids.append(class_id)
@@ -436,7 +417,7 @@ class DataGenerator(object):
 				
 				if sdata_1 is None or sdata_2 is None:
 					logger.warn("Failed to read source data pair at index %d!" % (data_index))
-					return None
+					continue
 
 				data_shape= sdata_1.img_cube.shape
 				inputs_shape= (batch_size,) + data_shape
@@ -530,7 +511,7 @@ class DataGenerator(object):
 				
 				if sdata_1 is None or sdata_2 is None:
 					logger.warn("Failed to read source data pair at index %d!" % (data_index))
-					return None
+					return continue
 
 				data_shape= sdata_1.img_cube.shape
 				inputs_shape= (2*batch_size,) + data_shape
@@ -617,7 +598,7 @@ class DataGenerator(object):
 				
 				if sdata_1 is None or sdata_2 is None:
 					logger.warn("Failed to read source data pair at index %d!" % (data_index))
-					return None
+					return continue
 
 				data_shape= sdata_1.img_cube.shape
 				inputs_shape= (batch_size,) + data_shape
