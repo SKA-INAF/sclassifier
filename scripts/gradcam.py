@@ -38,14 +38,24 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.models import load_model
 
-## MODULES
-from sclassifier import __version__, __date__
-from sclassifier import logger
 
 # DISPLAY
 from IPython.display import Image, display
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+
+## MODULES
+from sclassifier import __version__, __date__
+from sclassifier import logger
+from sclassifier.data_loader import DataLoader
+from sclassifier.utils import Utils
+from sclassifier.data_generator import DataGenerator
+from sclassifier.preprocessing import DataPreprocessor
+from sclassifier.preprocessing import BkgSubtractor, SigmaClipper, SigmaClipShifter, Scaler, LogStretcher, Augmenter
+from sclassifier.preprocessing import Resizer, MinMaxNormalizer, AbsMinMaxNormalizer, MaxScaler, AbsMaxScaler, ChanMaxScaler
+from sclassifier.preprocessing import Shifter, Standardizer, ChanDivider, MaskShrinker, BorderMasker
+from sclassifier.preprocessing import ChanResizer, ZScaleTransformer, Chan3Trasformer
+
 
 
 #### GET SCRIPT ARGS ####
