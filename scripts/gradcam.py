@@ -547,6 +547,12 @@ def main():
 			outfilename= sname + "_gradcam.jpg"
 			save_and_display_gradcam(data, heatmap, alpha=0.4, draw=True, save=save, outfilename=outfilename)
 
+		except (GeneratorExit, KeyboardInterrupt):
+			logger.info("Stop loop (keyboard interrupt) ...")
+			break
+		except Exception as e:
+			logger.warn("Stop loop (exception catched %s) ..." % str(e))
+			break
 
 	return 0
 
