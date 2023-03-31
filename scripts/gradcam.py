@@ -537,6 +537,7 @@ def main():
 			nchannels= data.shape[3]
 
 			# - Predict data
+			logger.info("Predicting data ...")
 			predout= model.predict(
 				x=data,
 				batch_size=1,
