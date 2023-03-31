@@ -570,18 +570,21 @@ def main():
 		try:
 			# - Read data from generator
 			logger.info("Reading data from generator ...")
-			data, sdata= next(data_generator)
+			#data, sdata= next(data_generator)
+			data, _= next(data_generator)
 			img_counter+= 1
 
-			sname= sdata.sname
-			label= sdata.label
-			classid= sdata.id
+			#sname= sdata.sname
+			#label= sdata.label
+			#classid= sdata.id
 
-			logger.info("Reading image no. %d (name=%s, label=%s) ..." % (img_counter, sname, label))
+			##logger.info("Reading image no. %d (name=%s, label=%s) ..." % (img_counter, sname, label))
+			logger.info("Reading image no. %d ..." % (img_counter))
 
 			# - Check if data is None
 			if data is None:
-				logger.warn("Image %d (name=%s, label=%s) is None (hint: some pre-processing stage failed, see logs), skipping it ..." % (img_counter, sname, label))
+				#logger.warn("Image %d (name=%s, label=%s) is None (hint: some pre-processing stage failed, see logs), skipping it ..." % (img_counter, sname, label))
+				logger.warn("Image %d is None (hint: some pre-processing stage failed, see logs), skipping it ..." % (img_counter))
 				continue
 
 			nchannels= data.shape[3]
