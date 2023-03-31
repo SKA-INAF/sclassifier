@@ -180,7 +180,14 @@ def get_args():
 	parser.add_argument('-weightfile', '--weightfile', dest='weightfile', required=False, type=str, default="", action='store',help='Weight file (hd5) to be loaded (default=no)')	
 	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=True, type=str, default="", action='store',help='Model architecture file (json) to be loaded (default=no)')
 	parser.add_argument('--last_conv_layer_name', dest='last_conv_layer_name', required=False, type=str, default='layer4.1.relu2',help='Last conv layer size') 
-	
+
+	# - Override class target configuration
+	parser.add_argument('--classid_remap', dest='classid_remap', required=False, type=str, default='', help='Class ID remap dictionary')
+	parser.add_argument('--target_label_map', dest='target_label_map', required=False, type=str, default='', help='Target label dictionary')	
+	parser.add_argument('--classid_label_map', dest='classid_label_map', required=False, type=str, default='', help='Class ID label dictionary')
+	parser.add_argument('--target_names', dest='target_names', required=False, type=str, default='', help='Target names')
+	parser.add_argument('-nclasses', '--nclasses', dest='nclasses', required=False, type=int, default=0, action='store', help='Number of classes (default=-1)')
+
 	# - resnet18: layer4.1.relu2
 	# - resnet50/resnet101: conv5_block3_out (or avg_pool?)
 	# - custom: max_pooling2d_N  (es. max_pooling2d_3)
@@ -389,6 +396,47 @@ def main():
 	chan3_preproc= args.chan3_preproc
 	sigma_clip_baseline= args.sigma_clip_baseline
 
+	# - Override target/class id configuration
+	classid_remap= {}
+	if args.classid_remap!="":
+		try:
+			classid_remap= ast.literal_eval(args.classid_remap)
+		except Exception as e:
+			logger.error("Failed to convert class id remap string to dict (err=%s)!" % (str(e)))
+			return -1	
+		
+		print("== classid_remap ==")
+		print(classid_remap)
+
+	target_label_map= {}
+	if args.target_label_map!="":
+		try:
+			target_label_map= ast.literal_eval(args.target_label_map)
+		except Exception as e:
+			logger.error("Failed to convert target label map string to dict (err=%s)!" % (str(e)))
+			return -1	
+		
+		print("== target_label_map ==")
+		print(target_label_map)
+
+	classid_label_map= {}
+	if args.classid_label_map!="":
+		try:
+			classid_label_map= ast.literal_eval(args.classid_label_map)
+		except Exception as e:
+			logger.error("Failed to convert classid label map string to dict (err=%s)!" % (str(e)))
+			return -1	
+		
+		print("== classid_label_map ==")
+		print(classid_label_map)
+
+
+	target_names= []
+	if args.target_names:
+		target_names= [str(x) for x in args.target_names.split(',')]
+
+	nclasses= args.nclasses
+
 	# - Save options
 	save= args.save
 
@@ -495,10 +543,11 @@ def main():
 
 	# - Read data	
 	logger.info("Running data generator ...")
-	data_generator= dg.generate_data(
-		batch_size=1, 
-		shuffle=shuffle
-	)	
+	data_generator= dg.generate_cnn_data(
+		batch_size=1,
+		shuffle=False,
+		classtarget_map=classid_remap, nclasses=nclasses
+	)
 
 	#===============================
 	#==  LOAD MODEL
@@ -520,6 +569,7 @@ def main():
 	while True:
 		try:
 			# - Read data from generator
+			logger.info("Reading data from generator ...")
 			data, sdata= next(data_generator)
 			img_counter+= 1
 
