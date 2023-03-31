@@ -511,7 +511,7 @@ class DataGenerator(object):
 				
 				if sdata_1 is None or sdata_2 is None:
 					logger.warn("Failed to read source data pair at index %d!" % (data_index))
-					return continue
+					continue
 
 				data_shape= sdata_1.img_cube.shape
 				inputs_shape= (2*batch_size,) + data_shape
@@ -598,7 +598,7 @@ class DataGenerator(object):
 				
 				if sdata_1 is None or sdata_2 is None:
 					logger.warn("Failed to read source data pair at index %d!" % (data_index))
-					return continue
+					continue
 
 				data_shape= sdata_1.img_cube.shape
 				inputs_shape= (batch_size,) + data_shape
