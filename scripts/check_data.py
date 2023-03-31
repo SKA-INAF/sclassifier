@@ -42,7 +42,7 @@ from sclassifier.preprocessing import DataPreprocessor
 from sclassifier.preprocessing import BkgSubtractor, SigmaClipper, SigmaClipShifter, Scaler, LogStretcher, Augmenter
 from sclassifier.preprocessing import Resizer, MinMaxNormalizer, AbsMinMaxNormalizer, MaxScaler, AbsMaxScaler, ChanMaxScaler
 from sclassifier.preprocessing import Shifter, Standardizer, ChanDivider, MaskShrinker, BorderMasker
-from sclassifier.preprocessing import ChanResizer, ZScaleTransformer
+from sclassifier.preprocessing import ChanResizer, ZScaleTransformer, Chan3Trasformer
 
 
 import matplotlib.pyplot as plt
@@ -162,6 +162,9 @@ def get_args():
 	parser.set_defaults(zscale_stretch=False)
 	parser.add_argument('--zscale_contrasts', dest='zscale_contrasts', required=False, type=str, default='0.25,0.25,0.25',help='zscale contrasts applied to all channels') 
 	
+	parser.add_argument('--chan3_preproc', dest='chan3_preproc', action='store_true',help='Use the 3 channel pre-processor')	
+	parser.set_defaults(chan3_preproc=False)
+	parser.add_argument('-sigma_clip_baseline', '--sigma_clip_baseline', dest='sigma_clip_baseline', required=False, type=float, default=0, action='store',help='Lower sigma threshold to be used for clipping pixels below (mean-sigma_low*stddev) in first channel of 3-channel preprocessing (default=0)')
 
 	parser.add_argument('--draw', dest='draw', action='store_true',help='Draw images')	
 	parser.set_defaults(draw=False)
@@ -278,7 +281,9 @@ def main():
 
 	zscale_stretch= args.zscale_stretch
 	zscale_contrasts= [float(x) for x in args.zscale_contrasts.split(',')]
-
+	
+	chan3_preproc= args.chan3_preproc
+	sigma_clip_baseline= args.sigma_clip_baseline
 
 	outfile_stats= "stats_info.dat"
 	outfile_flags= "stats_flags.dat"
@@ -334,6 +339,9 @@ def main():
 	if erode:
 		preprocess_stages.append(MaskShrinker(kernel=erode_kernel))
 	
+	if chan3_preproc:
+		preprocess_stages.append( Chan3Trasformer(sigma_clip_baseline=sigma_clip_baseline, sigma_clip_low=sigma_clip_low, sigma_clip_up=sigma_clip_up, zscale_contrast=zscale_contrasts[0]) )
+
 	if augment:
 		preprocess_stages.append(Augmenter(augmenter_choice=augmenter))
 
@@ -399,41 +407,6 @@ def main():
 	#===========================
 	#==   READ DATA
 	#===========================
-	# - Create data loader
-	#dl= DataLoader(filename=datalist)
-
-	# - Read datalist	
-	#logger.info("Reading datalist %s ..." % datalist)
-	#if dl.read_datalist()<0:
-	#	logger.error("Failed to read input datalist!")
-	#	return 1
-
-	#source_labels= dl.snames
-	
-	#nsamples= len(source_labels)
-	#if nmax>0 and nmax<nsamples:
-	#	nsamples= nmax
-
-	#logger.info("#%d samples to be read ..." % nsamples)
-
-
-	# - Read data	
-	#logger.info("Running data loader ...")
-	#data_generator= dl.data_generator(
-	#	batch_size=1, 
-	#	shuffle=shuffle,
-	#	resize=resize, nx=nx, ny=ny, 	
-	#	normalize=normalize, scale_to_abs_max=scale_to_abs_max, scale_to_max=scale_to_max,
-	#	augment=augment,
-	#	log_transform=log_transform,
-	#	scale=scale, scale_factors=scale_factors,
-	#	standardize=standardize, means=img_means, sigmas=img_sigmas,
-	#	chan_divide=chan_divide, chan_mins=chan_mins,
-	#	erode=erode, erode_kernel=erode_kernel,
-	#	subtract_bkg_and_clip=subtract_bkg_and_clip,
-	#	outdata_choice='sdata'
-	#)	
-
 	img_counter= 0
 	img_stats_all= []
 	img_flags_all= []
