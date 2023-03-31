@@ -490,9 +490,7 @@ def main():
 	source_labels= dg.snames
 	
 	nsamples= len(source_labels)
-	if nmax>0 and nmax<nsamples:
-		nsamples= nmax
-
+	
 	logger.info("#%d samples to be read ..." % nsamples)
 
 	# - Read data	
