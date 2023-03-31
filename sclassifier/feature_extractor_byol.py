@@ -260,7 +260,8 @@ class FeatExtractorByol(object):
 		""" Set train data & generator from loader """
 
 		# - Retrieve info from data loader
-		self.nchannels= self.dg.nchannels
+		if self.nchannels<=0 or self.nchannels is None:
+			self.nchannels= self.dg.nchannels # NB: if pre-processor modifies the tensor dimension, you must exclicitly set nchannels!
 		self.source_labels= self.dg.labels
 		self.source_ids= self.dg.classids
 		self.source_names= self.dg.snames

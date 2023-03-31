@@ -1346,7 +1346,7 @@ class Utils(object):
 		label_map_final= skimage.measure.label(smask)
 		sources_final= skimage.measure.regionprops(label_map_final, data)
 
-		logger.debug("#%d sources detected iteratively ..." % (len(sources_final)))
+		logger.info("#%d sources detected iteratively ..." % (len(sources_final)))
 
 		return sources_final, label_map_final
 		

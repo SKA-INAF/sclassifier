@@ -25,11 +25,11 @@ import json
 from astropy.io import ascii
 from astropy.stats import sigma_clipped_stats
 from astropy.stats import sigma_clip
-from astropy.visualization import ZScaleInterval
+from astropy.visualization import ZScaleInterval, MinMaxInterval, PercentileInterval, HistEqStretch
 
 ## SKIMAGE
 from skimage.util import img_as_float64
-from skimage.exposure import adjust_sigmoid, rescale_intensity, equalize_hist
+from skimage.exposure import adjust_sigmoid, rescale_intensity, equalize_hist, equalize_adapthist
 
 ## IMG AUG
 import imgaug
@@ -1406,8 +1406,11 @@ class ZScaleTransformer(object):
 class HistEqualizer(object):
 	""" Apply histogram equalization to each channel """
 
-	def __init__(self, **kwparams):
+	def __init__(self, adaptive=False, clip_limit=0.03, **kwparams):
 		""" Create a data pre-processor object """
+
+		self.clip_limit= clip_limit
+		self.adaptive= adaptive
 
 	def __call__(self, data):
 		""" Apply transformation and return transformed data """
@@ -1424,13 +1427,127 @@ class HistEqualizer(object):
 		data_stretched= np.copy(data)
 
 		for i in range(data.shape[-1]):
-			data_stretched[:,:,i]= equalize_hist(data[:,:,i])
-
+			if self.adaptive:
+				data_stretched[:,:,i]= equalize_adapthist(data[:,:,i], clip_limit=self.clip_limit)
+			else:
+				data_stretched[:,:,i]= equalize_hist(data[:,:,i])
+				#interval = MinMaxInterval()
+				#transform= HistEqStretch( interval(data[:,:,i]) ) # astropy implementation
+				#data_stretched[:,:,i]= transform( interval(data[:,:,i]) )
+				
 		# - Scale data
 		data_stretched[~cond]= 0 # Restore 0 and nans set in original data
 
 		return data_stretched
 
+
+##############################
+##   SourceRemover
+##############################
+class SourceRemover(object):
+	""" Remove sources from each channel using an iterative flood-fill algorith """
+
+	def __init__(self, niters=2, seed_thr=4., npix_max_thr=100, **kwparams):
+		""" Create a data pre-processor object """
+
+		self.niters= niters
+		self.dsigma= 0.5
+		self.seed_thr= seed_thr
+		self.merge_thr= 2.5
+		self.sigma_clip= 3
+		self.npix_min_thr= 5
+		self.npix_max_thr= npix_max_thr
+		self.bkgbox_thickness= 10
+		self.grow_source_mask= True
+		self.grow_size= 5
+
+	def __call__(self, data):
+		""" Apply transformation and return transformed data """
+
+		# - Check data
+		if data is None:
+			logger.error("Input data is None!")
+			return None
+
+		cond= np.logical_and(data!=0, np.isfinite(data))
+		nchans= data.shape[-1]
+	
+		# - Transform each channel
+		data_transf= np.copy(data)
+
+		for i in range(data.shape[-1]):
+			data_nosource= Utils.get_source_subtracted_map(
+				data[:,:,i],
+				niters=self.niters, dsigma=self.dsigma,
+				seed_thr=self.seed_thr, merge_thr=self.merge_thr, sigma_clip=self.sigma_clip, 
+				npix_min_thr=self.npix_min_thr, npix_max_thr=self.npix_max_thr,
+				bkgbox_thickness=self.bkgbox_thickness, 
+				grow_source_mask=self.grow_source_mask, grow_size=self.grow_size,
+				draw=False
+			)
+			data_transf[:,:,i]= data_nosource
+
+		# - Restore 0 and nans set in original data
+		data_transf[~cond]= 0 
+
+		return data_transf
+
+##############################
+##   Chan3Trasformer
+##############################
+class Chan3Trasformer(object):
+	""" Create 3 channels with a different transform per each channel: 
+				- ch1: sigmaclip(0,20) + zscale(0.25)
+				- ch2: sigmaclip(1,20) + zscale(0.25)
+				- ch3: histeq
+	"""
+
+	def __init__(self, sigma_clip_baseline=0, sigma_clip_low=1, sigma_clip_up=20, zscale_contrast=0.25, **kwparams):
+		""" Create a data pre-processor object """
+
+		self.sigma_clip_baseline= sigma_clip_baseline
+		self.sigma_clip_low= sigma_clip_low
+		self.sigma_clip_up= sigma_clip_up
+		self.zscale_contrast= zscale_contrast
+		
+	def __call__(self, data):
+		""" Apply transformation and return transformed data """
+
+		# - Check data
+		if data is None:
+			logger.error("Input data is None!")
+			return None
+
+		cond= np.logical_and(data!=0, np.isfinite(data))
+		nchans= data.shape[-1]
+	
+		# - Apply ChanResizer to create 3 channels
+		cr= ChanResizer(nchans=3)
+		data_cube= cr(data)
+
+		# - Define transforms
+		sclipper= SigmaClipper(sigma_low=self.sigma_clip_baseline, sigma_up=self.sigma_clip_up, chid=-1)
+		sclipper2= SigmaClipper(sigma_low=self.sigma_clip_low, sigma_up=self.sigma_clip_up, chid=-1)
+		zscale= ZScaleTransformer(contrasts=[self.zscale_contrast])
+		histEq= HistEqualizer(adaptive=False)
+		#sremover= SourceRemover(niters=self.niters, seed_thr=self.seed_thr, npix_max_thr=self.npix_max_thr)
+
+		# - Create channel 1: sigmaclip(0,20) + zscale(0.25)	
+		data_transf_ch1= zscale(sclipper(np.expand_dims(data_cube[:,:,0], axis=-1)))
+		data_cube[:,:,0]= data_transf_ch1[:,:,0]
+
+		# - Create channel 2: sigmaclip(1,20) + zscale(0.25)
+		data_transf_ch2= zscale(sclipper2(np.expand_dims(data_cube[:,:,1], axis=-1)))
+		data_cube[:,:,1]= data_transf_ch2[:,:,0]
+
+		# - Create channel 3: histeq
+		#data_transf_ch3= histEq(zscale(np.expand_dims(data_cube[:,:,2], axis=-1)))
+		#data_transf_ch3= histEq(sremover(np.expand_dims(data_cube[:,:,2], axis=-1)))
+		#data_transf_ch3= histEq(sremover(sclipper(np.expand_dims(data_cube[:,:,2], axis=-1))))
+		data_transf_ch3= histEq( np.expand_dims(data_cube[:,:,2], axis=-1) )
+		data_cube[:,:,2]= data_transf_ch3[:,:,0]
+		
+		return data_cube
 
 ##############################
 ##   ChanResizer
@@ -1476,7 +1593,7 @@ class ChanResizer(object):
 		# - Expand array first?
 		#   NB: If 2D first create an extra dimension
 		if ndim_curr==2:
-			data= np.expand_dims(data, axis=data.shape[-1]-1)
+			data= np.expand_dims(data, axis=-1)
 
 		# - Copy last channel in new ones
 		data_resized= np.zeros((data.shape[0], data.shape[1], self.nchans))
