@@ -42,7 +42,7 @@ from sclassifier.preprocessing import DataPreprocessor
 from sclassifier.preprocessing import BkgSubtractor, SigmaClipper, SigmaClipShifter, Scaler, LogStretcher, Augmenter
 from sclassifier.preprocessing import Resizer, MinMaxNormalizer, AbsMinMaxNormalizer, MaxScaler, AbsMaxScaler, ChanMaxScaler
 from sclassifier.preprocessing import Shifter, Standardizer, ChanDivider, MaskShrinker, BorderMasker
-from sclassifier.preprocessing import ChanResizer, ZScaleTransformer
+from sclassifier.preprocessing import ChanResizer, ZScaleTransformer, Chan3Trasformer
 
 #### GET SCRIPT ARGS ####
 def str2bool(v):
@@ -146,6 +146,10 @@ def get_args():
 	parser.set_defaults(zscale_stretch=False)
 	parser.add_argument('--zscale_contrasts', dest='zscale_contrasts', required=False, type=str, default='0.25,0.25,0.25',help='zscale contrasts applied to all channels') 
 	
+	parser.add_argument('--chan3_preproc', dest='chan3_preproc', action='store_true',help='Use the 3 channel pre-processor')	
+	parser.set_defaults(chan3_preproc=False)
+	parser.add_argument('-sigma_clip_baseline', '--sigma_clip_baseline', dest='sigma_clip_baseline', required=False, type=float, default=0, action='store',help='Lower sigma threshold to be used for clipping pixels below (mean-sigma_low*stddev) in first channel of 3-channel preprocessing (default=0)')
+	parser.add_argument('-nchannels', '--nchannels', dest='nchannels', required=False, type=int, default=-1, action='store',help='Number of channels (if -1=take from data generator). If you modify channels in preprocessing you must set this (default=-1)')
 
 	# - Network training options
 	parser.add_argument('-nepochs', '--nepochs', dest='nepochs', required=False, type=int, default=100, action='store',help='Number of epochs used in network training (default=100)')	
@@ -306,6 +310,10 @@ def main():
 	zscale_stretch= args.zscale_stretch
 	zscale_contrasts= [float(x) for x in args.zscale_contrasts.split(',')]
 
+	chan3_preproc= args.chan3_preproc
+	sigma_clip_baseline= args.sigma_clip_baseline
+	nchannels= args.nchannels
+
 	# - Model architecture
 	modelfile_encoder= args.modelfile_encoder
 	weightfile_encoder= args.weightfile_encoder
@@ -413,6 +421,9 @@ def main():
 	if erode:
 		preprocess_stages.append(MaskShrinker(kernel=erode_kernel))
 	
+	if chan3_preproc:
+		preprocess_stages.append( Chan3Trasformer(sigma_clip_baseline=sigma_clip_baseline, sigma_clip_low=sigma_clip_low, sigma_clip_up=sigma_clip_up, zscale_contrast=zscale_contrasts[0]) )
+
 	preprocess_stages.append(Augmenter(augmenter_choice=augmenter))
 
 	if mask_borders:
@@ -485,6 +496,7 @@ def main():
 	#==   BUILD MODEL
 	#===========================
 	byol= FeatExtractorByol(dg)
+	byol.nchannels= nchannels
 	byol.modelfile_encoder= modelfile_encoder
 	byol.weightfile_encoder= weightfile_encoder
 	byol.modelfile_projector= modelfile_projector
