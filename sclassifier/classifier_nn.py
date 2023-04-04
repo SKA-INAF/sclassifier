@@ -1147,6 +1147,8 @@ class SClassifierNN(object):
 		base_weights= None
 		if backbone_weights!="":
 			base_weights= backbone_weights
+			logger.info("Loading backbone weights from file %s ..." % (base_weights))
+			
 		try:
 			backbone_model= Classifiers.get(self.predefined_arch)[0](
 				include_top=False,
