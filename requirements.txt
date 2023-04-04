@@ -25,3 +25,4 @@ montage_wrapper
 scutout
 mpi4py
 optuna
+image-classifiers

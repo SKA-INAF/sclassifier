@@ -73,6 +73,7 @@ reqs.append('montage_wrapper')
 reqs.append('scutout')
 reqs.append('mpi4py')
 reqs.append('optuna')
+reqs.append('image-classifiers')
 
 
 data_dir = 'data'
