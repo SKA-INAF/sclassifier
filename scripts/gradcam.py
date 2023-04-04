@@ -227,7 +227,7 @@ def make_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_index=None
 		last_conv_layer_output, preds = grad_model(img_array)
 
 		print("preds.shape")
-		print(pred.shape)
+		print(preds.shape)
 		print("preds[0]")
 		print(preds[0])
 		
