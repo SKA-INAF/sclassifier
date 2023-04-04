@@ -98,6 +98,7 @@ from tensorflow.python.framework.ops import disable_eager_execution, enable_eage
 from tensorflow.keras.utils import to_categorical
 
 import tensorflow_addons as tfa
+from classification_models.tfkeras import Classifiers
 
 ## GRAPHICS MODULES
 import matplotlib
@@ -232,6 +233,7 @@ class SClassifierNN(object):
 		# - NN architecture
 		self.modelfile= ""
 		self.weightfile= ""
+		self.weightfile_backbone= ""
 		self.fitout= None		
 		self.model= None
 		self.use_predefined_arch= False
@@ -1114,14 +1116,14 @@ class SClassifierNN(object):
 		""" Create model (custom vs predefined) """
 
 		if self.use_predefined_arch:
-			return self.__create_predefined_model()
+			return self.__create_predefined_model(backbone_weights=self.weightfile_backbone)
 		else:
 			return self.__create_custom_model()
 
 	#####################################
 	##     CREATE PREDEFINED MODEL
 	#####################################
-	def __create_predefined_model(self):
+	def __create_predefined_model(self, backbone_weights=""):
 		""" Create model using a predefined architecture as backbone """
 
 		#===========================
@@ -1141,46 +1143,64 @@ class SClassifierNN(object):
 		#==  BACKBONE NET
 		#===========================
 		# - Add backbone net
-		if self.predefined_arch=="resnet50":
-			logger.info("Using resnet50 as base encoder ...")
-			resnet50= tf.keras.applications.resnet50.ResNet50(
-				include_top=False, # disgard the fully-connected layer as we are training from scratch
-				weights=None,  # random initialization
-				input_tensor=self.inputs,
+		logger.info("Using %s as base encoder ..." % (self.predefined_arch))
+		base_weights= None
+		if backbone_weights!="":
+			base_weights= backbone_weights
+		try:
+			backbone_model= Classifiers.get(self.predefined_arch)[0](
+				include_top=False,
+				weights=base_weights, 
+				input_tensor=self.inputs, 
 				input_shape=inputShape,
-				pooling="avg" #global average pooling will be applied to the output of the last convolutional block
 			)
-			x= resnet50(x)
-			
-		elif self.predefined_arch=="resnet101":
-			logger.info("Using resnet101 as base encoder ...")
-			resnet101= tf.keras.applications.resnet.ResNet101(
-				include_top=False, # disgard the fully-connected layer as we are training from scratch
-				weights=None,  # random initialization
-				input_tensor=self.inputs,
-				input_shape=inputShape,
-				pooling="avg" #global average pooling will be applied to the output of the last convolutional block
-			)
-		elif self.predefined_arch=="resnet18":
-			logger.info("Using resnet18 as base encoder ...")
-			x= resnet18(self.inputs, include_top=False)
-
-		elif self.predefined_arch=="resnet34":
-			logger.info("Using resnet34 as base encoder ...")
-			x= resnet34(self.inputs, include_top=False)		
-
-		else:
-			logger.error("Unknown/unsupported predefined backbone architecture given (%s)!" % (self.predefined_arch))
+		except Exception as e:
+			logger.error("Failed to build base encoder %s (err=%s)!" % (self.predefined_arch, str(e)))
 			return -1
+
+		x= backbone_model(x)
+
+		#if self.predefined_arch=="resnet50":
+		#	logger.info("Using resnet50 as base encoder ...")
+			#resnet50= tf.keras.applications.resnet50.ResNet50(
+			#	include_top=False, # disgard the fully-connected layer as we are training from scratch
+			#	weights=backbone_weights,  # random initialization
+			#	input_tensor=self.inputs,
+			#	input_shape=inputShape,
+			#	pooling="avg" #global average pooling will be applied to the output of the last convolutional block
+			#)
+			#x= resnet50(x)
+
+		#elif self.predefined_arch=="resnet101":
+		#	logger.info("Using resnet101 as base encoder ...")
+			#resnet101= tf.keras.applications.resnet.ResNet101(
+			#	include_top=False, # disgard the fully-connected layer as we are training from scratch
+			#	weights=backbone_weights,  # random initialization
+			#	input_tensor=self.inputs,
+			#	input_shape=inputShape,
+			#	pooling="avg" #global average pooling will be applied to the output of the last convolutional block
+			#)
+			#x= resnet101(x)
+
+		#elif self.predefined_arch=="resnet18":
+		#	logger.info("Using resnet18 as base encoder ...")
+		#	x= resnet18(self.inputs, include_top=False) # custom implementation in original simclr repo (2 layers more wrt image-classifier & mrcnn packages) 	
+
+		#elif self.predefined_arch=="resnet34":
+		#	logger.info("Using resnet34 as base encoder ...")
+		#	x= resnet34(self.inputs, include_top=False)	# custom implementation in original simclr repo (2 layers more wrt image-classifier & mrcnn packages) 
+			
+		#else:
+		#	logger.error("Unknown/unsupported predefined backbone architecture given (%s)!" % (self.predefined_arch))
+		#	return -1
 	
 		# - Add flatten layer or global average pooling?
-		#   NB: Commented as done already inside resnet block
-		#if self.use_global_avg_pooling:
-		#	x= layers.GlobalAveragePooling2D()
-		#else:
-		#	x = layers.Flatten()
-		#self.model.add(x)
-
+		#   NB: Originally commented as done already inside resnet block. Uncommented if using Classifiers module
+		if self.use_global_avg_pooling:
+			x= layers.GlobalAveragePooling2D()(x)
+		else:
+			x = layers.Flatten()(x)
+		
 		#===========================
 		#==  MODEL OUTPUT LAYERS
 		#===========================

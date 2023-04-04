@@ -175,6 +175,7 @@ def get_args():
 	parser.set_defaults(binary_class=False)
 
 	parser.add_argument('-weightfile', '--weightfile', dest='weightfile', required=False, type=str, default="", action='store',help='Weight file (hd5) to be loaded (default=no)')	
+	parser.add_argument('-weightfile_backbone', '--weightfile_backbone', dest='weightfile_backbone', required=False, type=str, default="", action='store',help='Weight file (hd5) to be loaded for backbone model (default=no)')	
 	
 	parser.add_argument('-nepochs', '--nepochs', dest='nepochs', required=False, type=int, default=100, action='store',help='Number of epochs used in network training (default=100)')	
 	parser.add_argument('-optimizer', '--optimizer', dest='optimizer', required=False, type=str, default='adam', action='store',help='Optimizer used (default=adam)')
@@ -393,6 +394,7 @@ def main():
 	multilabel= args.multilabel
 
 	weightfile= args.weightfile
+	weightfile_backbone= args.weightfile_backbone
 	optimizer= args.optimizer
 	learning_rate= args.learning_rate
 	batch_size= args.batch_size
@@ -614,6 +616,7 @@ def main():
 	sclass.nchannels= nchannels
 	sclass.modelfile= modelfile
 	sclass.weightfile= weightfile
+	sclass.weightfile_backbone= weightfile_backbone
 	#sclass.set_image_size(nx, ny)
 	sclass.set_image_size(resize_size, resize_size)
 	sclass.augmentation= augment
