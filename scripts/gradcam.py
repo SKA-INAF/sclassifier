@@ -193,6 +193,11 @@ def get_args():
 	# - resnet50/resnet101: conv5_block3_out (or avg_pool?)
 	# - custom: max_pooling2d_N  (es. max_pooling2d_3)
 
+	parser.add_argument('--multilabel', dest='multilabel', action='store_true', help='Assume multilabel classification')	
+	parser.set_defaults(multilabel=False)
+	parser.add_argument('-prob_thr', '--prob_thr', dest='prob_thr', required=False, type=float, default=0.5, action='store', help='Probability threshold of predicted classes (default=0.5)')
+
+
 	# - Save
 	parser.add_argument('--save', dest='save', action='store_true', help='Save heatmap superimposed over image')	
 	parser.set_defaults(save=False)
@@ -223,27 +228,24 @@ def make_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_index=None
 	# Then, we compute the gradient of the top predicted class for our input image
 	# with respect to the activations of the last conv layer
 	logger.info("Compute the gradient ...")
+	
 	with tf.GradientTape() as tape:
 		last_conv_layer_output, preds = grad_model(img_array)
 
-		print("preds.shape")
-		print(preds.shape)
-		print("preds[0]")
-		print(preds[0])
-		
 		if pred_index is None:
 			pred_index = tf.argmax(preds[0])
 		class_channel = preds[:, pred_index]
-
-		print("tf.argmax(preds[0])")
-		print(tf.argmax(preds[0]))
-		print("class_channel")
-		print(class_channel)
-
+			
 	# This is the gradient of the output neuron (top predicted or chosen)
 	# with regard to the output feature map of the last conv layer
-	logger.info("Compute the gradient of the output neuron ...")
+	logger.info("Compute the gradient of the output neuron for class_channel ...")
+	print(class_channel)
+		
 	grads = tape.gradient(class_channel, last_conv_layer_output)
+
+	if grads is None:
+		logger.warn("grads is None!")
+		return None
 
 	# This is a vector where each entry is the mean intensity of the gradient
 	# over a specific feature map channel
@@ -271,13 +273,12 @@ def make_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_index=None
 	print("heatmap.shape")
 	print(heatmap.shape)
 
-
 	# For visualization purpose, we will also normalize the heatmap between 0 & 1
 	logger.info("Normalize heatmap ...")
 	heatmap = tf.maximum(heatmap, 0) / tf.math.reduce_max(heatmap)
     
 	return heatmap.numpy()
-
+	
 
 def load_model_from_file(modelfile, weightfile="", custom_objects=None):
 	""" Load model & weights """
@@ -304,7 +305,7 @@ def load_model_from_file(modelfile, weightfile="", custom_objects=None):
 
 
 
-def save_and_display_gradcam(img, heatmap, alpha=0.4, draw=True, save=False, outfilename="cam.jpg", cmap="jet"):
+def save_and_display_gradcam(img, heatmap, alpha=0.4, draw=True, save=False, outfilename="cam.jpg", cmap="jet", title=""):
 	""" Save and display heatmap superimposed over """
 
 	# - Load the original image
@@ -365,6 +366,8 @@ def save_and_display_gradcam(img, heatmap, alpha=0.4, draw=True, save=False, out
 	if draw:
 		#display(Image(outfilename))
 		plt.imshow(np.asarray(superimposed_img))
+		if title!="":
+			plt.title(title)
 		plt.show()
 
 
@@ -391,6 +394,8 @@ def main():
 	modelfile= args.modelfile
 	weightfile= args.weightfile
 	last_conv_layer_name= args.last_conv_layer_name
+	multilabel= args.multilabel
+	prob_thr= args.prob_thr
 
 	# - Data process options	
 	#nx= args.nx
@@ -692,17 +697,33 @@ def main():
     		use_multiprocessing=False
 			)
 
-			# - Generate the heatmap
+			# - Compute predicted classes
+			pred_indices= []
+			if multilabel:
+				pred_indices= list( np.flatnonzero(predout[0] > prob_thr) )
+			else:
+				pred_index = tf.argmax(predout[0])
+				pred_indices= [pred_index]
+			
+			print("pred_indices")
+			print(pred_indices)
+
+			# - Generate the heatmaps
 			data_reshaped= data
-			#data_reshaped= np.reshape(data, (data_shape[1], data_shape[2], data_shape[3]))
-			heatmap = make_gradcam_heatmap(data_reshaped, model, last_conv_layer_name)
+			#heatmap = make_gradcam_heatmap(data_reshaped, model, last_conv_layer_name)
+			heatmaps= []
+			for pred_index in pred_indices:
+				heatmap = make_gradcam_heatmap(data_reshaped, model, last_conv_layer_name, pred_index=pred_index)
+				
+				class_prob= predout[:, pred_index]
 
-			plt.matshow(heatmap, cmap=color_palette)
-			plt.show()
+				#plt.matshow(heatmap, cmap=color_palette)
+				#plt.show()
 
-			# - Display heatmap
-			outfilename= "gradcam_" + str(img_counter) + ".jpg"
-			save_and_display_gradcam(data_reshaped, heatmap, alpha=0.4, draw=True, save=save, outfilename=outfilename, cmap=color_palette)
+				# - Display heatmap
+				outfilename= "gradcam_" + str(img_counter) + '_classindex' + str(pred_index) + ".jpg"
+				title= 'class_index=' + str(pred_index) + " (prob=" + str(class_prob) + ")"
+				save_and_display_gradcam(data_reshaped, heatmap, alpha=0.4, draw=True, save=save, outfilename=outfilename, cmap=color_palette, title=title)
 
 		except (GeneratorExit, KeyboardInterrupt):
 			logger.info("Stop loop (keyboard interrupt) ...")
