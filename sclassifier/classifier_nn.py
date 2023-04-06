@@ -24,6 +24,7 @@ import pickle
 from copy import deepcopy
 from itertools import chain
 import json
+import tempfile
 
 ##############################
 ##     GLOBAL VARS
@@ -284,6 +285,9 @@ class SClassifierNN(object):
 		self.sigmoid_thr= 0.5 # used in multilabel
 		self.focal_loss_alpha= 0.25 # tfa defaults
 		self.focal_loss_gamma= 2.0  # tfa default
+
+		self.reg_factor= 0.01 # tf default
+		self.add_regularization= False
 
 		# *****************************
 		# ** Output
@@ -1160,6 +1164,13 @@ class SClassifierNN(object):
 			logger.error("Failed to build base encoder %s (err=%s)!" % (self.predefined_arch, str(e)))
 			return -1
 
+		# - Add regularization?
+		if self.add_regularization:
+			logger.info("Applying regularization to built backbone ...")
+			regularizer= tf.keras.regularizers.l2(self.reg_factor)
+			backbone_model= self.__get_regularized_model(backbone_model, regularizer)
+
+		# - Apply model to inputs
 		x= backbone_model(x)
 
 		#if self.predefined_arch=="resnet50":
@@ -1249,6 +1260,38 @@ class SClassifierNN(object):
 		self.model.summary()
 		
 		return 0
+
+	#####################################
+	##     ADD REGULARIZATION
+	#####################################
+	# NB: Saving and reloading both model & weights is needed, otherwise the regularization is not applied in the loss or the pretrained weights are reset 
+	#     See: https://sthalles.github.io/keras-regularizer/
+	def __get_regularized_model(self, model, regularizer=tf.keras.regularizers.l2(0.01)):
+		""" Add regularization to existing backbone model """
+
+		if not isinstance(regularizer, tf.keras.regularizers.Regularizer):
+			logger.warn("Regularizer must be a subclass of tf.keras.regularizers.Regularizer, returning same model...")
+			return model
+
+		for layer in model.layers:
+			for attr in ['kernel_regularizer']:
+				if hasattr(layer, attr):
+					setattr(layer, attr, regularizer)
+
+		# - When we change the layers attributes, the change only happens in the model config file
+		model_json = model.to_json()
+
+		# - Save the weights before reloading the model.
+		tmp_weights_path = os.path.join(tempfile.gettempdir(), 'tmp_weights.h5')
+		model.save_weights(tmp_weights_path)
+
+		# - Load the model from the config
+		model = tf.keras.models.model_from_json(model_json)
+    
+		# Reload the model weights
+		model.load_weights(tmp_weights_path, by_name=True)
+
+		return model
 
 	#####################################
 	##     CREATE CUSTOM MODEL

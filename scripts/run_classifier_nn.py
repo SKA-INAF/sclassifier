@@ -221,6 +221,10 @@ def get_args():
 	parser.add_argument('--multilabel', dest='multilabel', action='store_true',help='Do multilabel classification (default=false)')	
 	parser.set_defaults(multilabel=False)
 
+	parser.add_argument('--add_regularization', dest='add_regularization', action='store_true',help='Apply L2 regularization to backbone (default=false)')	
+	parser.set_defaults(add_regularization=False)
+	parser.add_argument('-reg_factor', '--reg_factor', dest='reg_factor', required=False, type=float, default=0.01, action='store',help='L2 regularization factor (default=0.01)')
+
 	# - Network architecture options
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
 	parser.set_defaults(predict=False)
@@ -396,6 +400,8 @@ def main():
 		multiclass= False
 
 	multilabel= args.multilabel
+	add_regularization= args.add_regularization
+	reg_factor= args.reg_factor
 
 	weightfile= args.weightfile
 	weightfile_backbone= args.weightfile_backbone
@@ -643,6 +649,9 @@ def main():
 
 	sclass.balance_classes= balance_classes_in_batch
 	sclass.class_probs= class_probs_dict
+
+	sclass.add_regularization= add_regularization
+	sclass.reg_factor= reg_factor
 
 	# - Override class target configuration?
 	if classid_remap:
