@@ -243,11 +243,11 @@ class DataGenerator(object):
 				if balance_classes and class_probs:
 					accept= True
 
-					if multilabel: 
+					if multilabel:
 					  # - Find the largest prob among available classes
 					  #   Example probs={"COMPACT":0.5,"EXTENDED":0.7,"DIFFUSE":1.0} ==> ["COMPACT"] will be generated less frequently than ["COMPACT","EXTENDED","DIFFUSE"]
-            prob_max= 0
-            for item in class_name:
+					  prob_max= 0
+					  for item in class_name:
 							prob= class_probs[item]
 							if prob>prob_max:
 							  prob_max= prob
