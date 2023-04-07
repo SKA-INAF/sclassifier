@@ -242,21 +242,20 @@ class DataGenerator(object):
 				# - Apply class rebalancing?
 				if balance_classes and class_probs:
 					accept= True
-
 					if multilabel:
-					  # - Find the largest prob among available classes
-					  #   Example probs={"COMPACT":0.5,"EXTENDED":0.7,"DIFFUSE":1.0} ==> ["COMPACT"] will be generated less frequently than ["COMPACT","EXTENDED","DIFFUSE"]
-					  prob_max= 0
-					  for item in class_name:
+						# - Find the largest prob among available classes
+						#   Example probs={"COMPACT":0.5,"EXTENDED":0.7,"DIFFUSE":1.0} ==> ["COMPACT"] will be generated less frequently than ["COMPACT","EXTENDED","DIFFUSE"]
+						prob_max= 0
+						for item in class_name:
 							prob= class_probs[item]
 							if prob>prob_max:
-							  prob_max= prob
+								prob_max= prob
 						prob= prob_max
 					else:
-					  prob= class_probs[class_name]
+						prob= class_probs[class_name]
 					  
 					r= random.uniform(0, 1)
-					accept= r<prob	
+					accept= r<prob
 					if not accept:
 						continue
 					
