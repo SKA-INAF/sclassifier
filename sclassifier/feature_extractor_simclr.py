@@ -462,6 +462,7 @@ class FeatExtractorSimCLR(object):
 		# - Add backbone net using image-classifier implementation
 		#		NB: This is the implementation used in mrcnn tf2 porting and for which resnet18/34 imagenet weights are available (image-classifier module) 	
 		if self.use_backbone_impl_v2:
+			logger.info("Using backbone image-classifier implementation ...")
 			try:
 				backbone_model= Classifiers.get(self.predefined_arch)[0](
 					include_top=False,
