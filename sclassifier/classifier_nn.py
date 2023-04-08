@@ -286,7 +286,7 @@ class SClassifierNN(object):
 		self.focal_loss_alpha= 0.25 # tfa defaults
 		self.focal_loss_gamma= 2.0  # tfa default
 
-		self.use_backbone_impl_v2= True
+		self.use_backbone_impl_v2= False
 		self.reg_factor= 0.01 # tf default
 		self.add_regularization= False
 
@@ -1155,7 +1155,7 @@ class SClassifierNN(object):
 			
 		# - Add backbone net using image-classifier implementation
 		#		NB: This is the implementation used in mrcnn tf2 porting and for which resnet18/34 imagenet weights are available (image-classifier module) 	
-		self.use_backbone_impl_v2:
+		if self.use_backbone_impl_v2:
 			try:
 				backbone_model= Classifiers.get(self.predefined_arch)[0](
 					include_top=False,
@@ -1187,6 +1187,8 @@ class SClassifierNN(object):
 				regularizer= tf.keras.regularizers.l2(self.reg_factor)
 				backbone_model= self.__get_regularized_model(backbone_model, regularizer)
 
+			backbone_model.summary()
+			
 			# - Apply model to inputs
 			x= backbone_model(x)
 
