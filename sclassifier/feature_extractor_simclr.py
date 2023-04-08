@@ -80,6 +80,7 @@ from tensorflow.python.framework.ops import disable_eager_execution, enable_eage
 #disable_eager_execution()
 #enable_eager_execution()
 from tensorboard.plugins import projector
+from classification_models.tfkeras import Classifiers
 
 ## SCIKIT MODULES
 from skimage.metrics import mean_squared_error
@@ -175,6 +176,10 @@ class FeatExtractorSimCLR(object):
 		self.use_global_avg_pooling= False
 		self.use_predefined_arch= False
 		self.predefined_arch= "resnet50"
+		self.use_backbone_impl_v2= True
+		self.weightfile_backbone= ""	
+		self.reg_factor= 0.01 # tf default
+		self.add_regularization= False	
 
 		# - Training options
 		self.nepochs= 10
@@ -422,7 +427,7 @@ class FeatExtractorSimCLR(object):
 	########################################
 	##     CREATE BASE MODEL (PREDEFINED)
 	########################################
-	def __create_predefined_base_model(self, inputShape):
+	def __create_predefined_base_model(self, inputShape, backbone_weights=""):
 		""" Create the encoder base model """
 
 		#===========================
@@ -447,44 +452,78 @@ class FeatExtractorSimCLR(object):
 		#===========================
 		#==  RES NET 
 		#===========================
-		if self.predefined_arch=="resnet50":
-			logger.info("Using resnet50 as base encoder ...")
-			resnet50= tf.keras.applications.resnet50.ResNet50(
-				include_top=False, # disgard the fully-connected layer as we are training from scratch
-				weights=None,  # random initialization
-				input_tensor=inputs,
-				input_shape=inputShape,
-				pooling="avg" #global average pooling will be applied to the output of the last convolutional block
-			)
-			x= resnet50(x)
+		# - Set backbone weights
+		logger.info("Using %s as base encoder ..." % (self.predefined_arch))
+		base_weights= None
+		if backbone_weights!="":
+			base_weights= backbone_weights
+			logger.info("Loading backbone weights from file %s ..." % (base_weights))
+		
+		# - Add backbone net using image-classifier implementation
+		#		NB: This is the implementation used in mrcnn tf2 porting and for which resnet18/34 imagenet weights are available (image-classifier module) 	
+		if self.use_backbone_impl_v2:
+			try:
+				backbone_model= Classifiers.get(self.predefined_arch)[0](
+					include_top=False,
+					weights=base_weights,
+					input_tensor=inputs, 
+					input_shape=inputShape,
+				)
+			except Exception as e:
+				logger.error("Failed to build base encoder %s (err=%s)!" % (self.predefined_arch, str(e)))
+				return None
 
-		elif self.predefined_arch=="resnet101":
-			logger.info("Using resnet101 as base encoder ...")
-			resnet101= tf.keras.applications.resnet.ResNet101(
-				include_top=False, # disgard the fully-connected layer as we are training from scratch
-				weights=None,  # random initialization
-				input_tensor=inputs,
-				input_shape=inputShape,
-				pooling="avg" #global average pooling will be applied to the output of the last convolutional block
-			)
-			x= resnet101(x)
+			# - Add regularization?
+			if self.add_regularization:
+				logger.info("Applying regularization to built backbone ...")
+				regularizer= tf.keras.regularizers.l2(self.reg_factor)
+				backbone_model= self.__get_regularized_model(backbone_model, regularizer)
 
-		elif self.predefined_arch=="resnet18":
-			logger.info("Using resnet18 as base encoder ...")
-			x= resnet18(x, include_top=False)
-
-		elif self.predefined_arch=="resnet34":
-			logger.info("Using resnet34 as base encoder ...")
-			x= resnet34(x, include_top=False)			
+			# - Apply model to inputs
+			x= backbone_model(x)
+		
 		else:
-			logger.error("Unknown/unsupported predefined backbone architecture given (%s)!" % (self.predefined_arch))
-			return None
+			# - Use default tf impl for resnet50/101 & resnet18/resnet34 implementation provided in model.py (from authors of simclr tf porting)
+			if self.predefined_arch=="resnet50":
+				logger.info("Using resnet50 as base encoder ...")
+				resnet50= tf.keras.applications.resnet50.ResNet50(
+					include_top=False, # disgard the fully-connected layer as we are training from scratch
+					weights=base_weights,  # random initialization
+					input_tensor=inputs,
+					input_shape=inputShape,
+					pooling="avg" #global average pooling will be applied to the output of the last convolutional block
+				)
+				x= resnet50(x)
+
+			elif self.predefined_arch=="resnet101":
+				logger.info("Using resnet101 as base encoder ...")
+				resnet101= tf.keras.applications.resnet.ResNet101(
+					include_top=False, # disgard the fully-connected layer as we are training from scratch
+					weights=base_weights,  # random initialization
+					input_tensor=inputs,
+					input_shape=inputShape,
+					pooling="avg" #global average pooling will be applied to the output of the last convolutional block
+				)
+				x= resnet101(x)
+
+			elif self.predefined_arch=="resnet18":
+				logger.info("Using resnet18 as base encoder ...")
+				x= resnet18(x, include_top=False)
+
+			elif self.predefined_arch=="resnet34":
+				logger.info("Using resnet34 as base encoder ...")
+				x= resnet34(x, include_top=False)			
+			else:
+				logger.error("Unknown/unsupported predefined backbone architecture given (%s)!" % (self.predefined_arch))
+				return None
 
 		#===========================
 		#==  FLATTEN LAYER
 		#===========================
-		###x = layers.Flatten()(x) # done already inside resnet block
-		###x= layers.GlobalAveragePooling2D()(x) # done already inside pooling
+		# - Not done for impl1 as flattening is done already inside resnet block
+		if self.use_backbone_impl_v2:
+			###x = layers.Flatten()(x) 
+			x= layers.GlobalAveragePooling2D()(x) # done already inside pooling
 
 		#===========================
 		#==  DENSE LAYER
@@ -506,13 +545,45 @@ class FeatExtractorSimCLR(object):
 		return x
 
 	#####################################
+	##     ADD REGULARIZATION
+	#####################################
+	# NB: Saving and reloading both model & weights is needed, otherwise the regularization is not applied in the loss or the pretrained weights are reset 
+	#     See: https://sthalles.github.io/keras-regularizer/
+	def __get_regularized_model(self, model, regularizer=tf.keras.regularizers.l2(0.01)):
+		""" Add regularization to existing backbone model """
+
+		if not isinstance(regularizer, tf.keras.regularizers.Regularizer):
+			logger.warn("Regularizer must be a subclass of tf.keras.regularizers.Regularizer, returning same model...")
+			return model
+
+		for layer in model.layers:
+			for attr in ['kernel_regularizer']:
+				if hasattr(layer, attr):
+					setattr(layer, attr, regularizer)
+
+		# - When we change the layers attributes, the change only happens in the model config file
+		model_json = model.to_json()
+
+		# - Save the weights before reloading the model.
+		tmp_weights_path = os.path.join(tempfile.gettempdir(), 'tmp_weights.h5')
+		model.save_weights(tmp_weights_path)
+
+		# - Load the model from the config
+		model = tf.keras.models.model_from_json(model_json)
+    
+		# Reload the model weights
+		model.load_weights(tmp_weights_path, by_name=True)
+
+		return model
+		
+	#####################################
 	##     CREATE BASE MODEL
 	#####################################
 	def __create_base_model(self, inputShape):
 		""" Create the encoder base model """
 
 		if self.use_predefined_arch:
-			return self.__create_predefined_base_model(inputShape)	
+			return self.__create_predefined_base_model(inputShape, backbone_weights=self.weightfile_backbone)	
 		else:
 			return self.__create_custom_base_model(inputShape)
 
