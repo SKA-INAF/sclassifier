@@ -286,6 +286,7 @@ class SClassifierNN(object):
 		self.focal_loss_alpha= 0.25 # tfa defaults
 		self.focal_loss_gamma= 2.0  # tfa default
 
+		self.use_backbone_impl_v2= True
 		self.reg_factor= 0.01 # tf default
 		self.add_regularization= False
 
@@ -1146,73 +1147,95 @@ class SClassifierNN(object):
 		#===========================
 		#==  BACKBONE NET
 		#===========================
-		# - Add backbone net
+		# - Add backbone weights
 		logger.info("Using %s as base encoder ..." % (self.predefined_arch))
 		base_weights= None
 		if backbone_weights!="":
 			base_weights= backbone_weights
-			logger.info("Loading backbone weights from file %s ..." % (base_weights))
 			
-		try:
-			backbone_model= Classifiers.get(self.predefined_arch)[0](
-				include_top=False,
-				weights=base_weights, 
-				input_tensor=self.inputs, 
-				input_shape=inputShape,
-			)
-		except Exception as e:
-			logger.error("Failed to build base encoder %s (err=%s)!" % (self.predefined_arch, str(e)))
-			return -1
+		# - Add backbone net using image-classifier implementation
+		#		NB: This is the implementation used in mrcnn tf2 porting and for which resnet18/34 imagenet weights are available (image-classifier module) 	
+		self.use_backbone_impl_v2:
+			try:
+				backbone_model= Classifiers.get(self.predefined_arch)[0](
+					include_top=False,
+					#weights=base_weights,
+					weights=None, 
+					input_tensor=self.inputs, 
+					input_shape=inputShape,
+				)
+			except Exception as e:
+				logger.error("Failed to build base encoder %s (err=%s)!" % (self.predefined_arch, str(e)))
+				return -1
+				
+			# - Load weights
+			if backbone_weights!="":
+				logger.info("Loading backbone weights from file %s ..." % (base_weights))
+				try:
+					backbone_model.load_weights(base_weights)
+				except Exception as e:
+					logger.warn("Failed to load weights from file %s (err=%s), retrying to load by layer name ..." % (base_weights, str(e)))
+					try:
+						backbone_model.load_weights(base_weights, by_name=True)
+					except Exception as e:
+						logger.error("Failed to load weights from file %s by name (err=%s), giving up!" % (base_weights, str(e)))	
+						return -1
+		
+			# - Add regularization?
+			if self.add_regularization:
+				logger.info("Applying regularization to built backbone ...")
+				regularizer= tf.keras.regularizers.l2(self.reg_factor)
+				backbone_model= self.__get_regularized_model(backbone_model, regularizer)
 
-		# - Add regularization?
-		if self.add_regularization:
-			logger.info("Applying regularization to built backbone ...")
-			regularizer= tf.keras.regularizers.l2(self.reg_factor)
-			backbone_model= self.__get_regularized_model(backbone_model, regularizer)
+			# - Apply model to inputs
+			x= backbone_model(x)
 
-		# - Apply model to inputs
-		x= backbone_model(x)
-
-		#if self.predefined_arch=="resnet50":
-		#	logger.info("Using resnet50 as base encoder ...")
-			#resnet50= tf.keras.applications.resnet50.ResNet50(
-			#	include_top=False, # disgard the fully-connected layer as we are training from scratch
-			#	weights=backbone_weights,  # random initialization
-			#	input_tensor=self.inputs,
-			#	input_shape=inputShape,
-			#	pooling="avg" #global average pooling will be applied to the output of the last convolutional block
-			#)
-			#x= resnet50(x)
-
-		#elif self.predefined_arch=="resnet101":
-		#	logger.info("Using resnet101 as base encoder ...")
-			#resnet101= tf.keras.applications.resnet.ResNet101(
-			#	include_top=False, # disgard the fully-connected layer as we are training from scratch
-			#	weights=backbone_weights,  # random initialization
-			#	input_tensor=self.inputs,
-			#	input_shape=inputShape,
-			#	pooling="avg" #global average pooling will be applied to the output of the last convolutional block
-			#)
-			#x= resnet101(x)
-
-		#elif self.predefined_arch=="resnet18":
-		#	logger.info("Using resnet18 as base encoder ...")
-		#	x= resnet18(self.inputs, include_top=False) # custom implementation in original simclr repo (2 layers more wrt image-classifier & mrcnn packages) 	
-
-		#elif self.predefined_arch=="resnet34":
-		#	logger.info("Using resnet34 as base encoder ...")
-		#	x= resnet34(self.inputs, include_top=False)	# custom implementation in original simclr repo (2 layers more wrt image-classifier & mrcnn packages) 
-			
-		#else:
-		#	logger.error("Unknown/unsupported predefined backbone architecture given (%s)!" % (self.predefined_arch))
-		#	return -1
-	
-		# - Add flatten layer or global average pooling?
-		#   NB: Originally commented as done already inside resnet block. Uncommented if using Classifiers module
-		if self.use_global_avg_pooling:
-			x= layers.GlobalAveragePooling2D()(x)
 		else:
-			x = layers.Flatten()(x)
+			# - Use default tf impl for resnet50/101 & resnet18/resnet34 implementation provided in model.py (from authors of simclr tf porting)
+			if self.predefined_arch=="resnet50":
+				logger.info("Using resnet50 as base encoder ...")
+				resnet50= tf.keras.applications.resnet50.ResNet50(
+					include_top=False, # disgard the fully-connected layer as we are training from scratch
+					weights=base_weights,  # random initialization
+					input_tensor=self.inputs,
+					input_shape=inputShape,
+					pooling="avg" #global average pooling will be applied to the output of the last convolutional block
+				)
+				x= resnet50(x)
+
+			elif self.predefined_arch=="resnet101":
+				logger.info("Using resnet101 as base encoder ...")
+				resnet101= tf.keras.applications.resnet.ResNet101(
+					include_top=False, # disgard the fully-connected layer as we are training from scratch
+					weights=base_weights,  # random initialization
+					input_tensor=self.inputs,
+					input_shape=inputShape,
+					pooling="avg" #global average pooling will be applied to the output of the last convolutional block
+				)
+				x= resnet101(x)
+
+			elif self.predefined_arch=="resnet18":
+				logger.info("Using resnet18 as base encoder ...")
+				x= resnet18(self.inputs, include_top=False) # custom implementation in original simclr repo (2 layers more wrt image-classifier & mrcnn packages) 	
+
+			elif self.predefined_arch=="resnet34":
+				logger.info("Using resnet34 as base encoder ...")
+				x= resnet34(self.inputs, include_top=False)	# custom implementation in original simclr repo (2 layers more wrt image-classifier & mrcnn packages) 
+			
+			else:
+				logger.error("Unknown/unsupported predefined backbone architecture given (%s)!" % (self.predefined_arch))
+				return -1
+	
+		#===========================
+		#==  FLATTEN LAYER
+		#===========================
+		# - Add flatten layer or global average pooling?
+		#   NB: Not done for impl1 as flattening is done already inside resnet block
+		if self.use_backbone_impl_v2:
+			if self.use_global_avg_pooling:
+				x= layers.GlobalAveragePooling2D()(x)
+			else:
+				x = layers.Flatten()(x)
 		
 		#===========================
 		#==  MODEL OUTPUT LAYERS
