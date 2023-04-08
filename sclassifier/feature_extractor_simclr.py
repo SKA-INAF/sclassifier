@@ -176,7 +176,7 @@ class FeatExtractorSimCLR(object):
 		self.use_global_avg_pooling= False
 		self.use_predefined_arch= False
 		self.predefined_arch= "resnet50"
-		self.use_backbone_impl_v2= True
+		self.use_backbone_impl_v2= False
 		self.weightfile_backbone= ""	
 		self.reg_factor= 0.01 # tf default
 		self.add_regularization= False	
@@ -197,7 +197,7 @@ class FeatExtractorSimCLR(object):
 		self.balance_classes= False
 		self.class_probs= {}
 
-		self.use_simclr_impl_v2= True
+		self.use_simclr_impl_v2= False
 
 		# *****************************
 		# ** Output
@@ -692,7 +692,7 @@ class FeatExtractorSimCLR(object):
 		# - Create softmax cosine similarity layer
 		feat_dim= K.int_shape(projhead_outputs[0])[1]
 		##soft_cos_sim= SoftmaxCosineSim(batch_size=self.batch_size, feat_dim=self.latent_dim) # NB: Don't understand why in original code feat_dim is equal to encoder output shape
-		soft_cos_sim= SoftmaxCosineSim(batch_size=self.batch_size, feat_dim=feat_dim)
+		soft_cos_sim= SoftmaxCosineSim(batch_size=self.batch_size, feat_dim=feat_dim, temperature=self.temperature)
 
 		model_outputs= soft_cos_sim(projhead_outputs)
 

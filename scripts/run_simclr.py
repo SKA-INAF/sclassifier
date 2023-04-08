@@ -174,6 +174,11 @@ def get_args():
 	
 	parser.add_argument('-loss_temperature', '--loss_temperature', dest='loss_temperature', required=False, type=float, default=0.1, action='store',help='Loss temperature parameter (default=0.1)')
 
+	parser.add_argument('--add_regularization', dest='add_regularization', action='store_true',help='Apply L2 regularization to backbone (default=false)')	
+	parser.set_defaults(add_regularization=False)
+	parser.add_argument('-reg_factor', '--reg_factor', dest='reg_factor', required=False, type=float, default=0.01, action='store',help='L2 regularization factor (default=0.01)')
+
+
 	# - Network architecture options
 	parser.add_argument('-weightfile', '--weightfile', dest='weightfile', required=False, type=str, default="", action='store',help='Weight file (hd5) to be loaded (default=no)')	
 	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=False, type=str, default="", action='store',help='Model architecture file (json) to be loaded (default=no)')
@@ -181,6 +186,7 @@ def get_args():
 	parser.add_argument('-modelfile_encoder', '--modelfile_encoder', dest='modelfile_encoder', required=False, type=str, default="", action='store',help='Encoder model architecture file (json) to be loaded (default=no)')
 	parser.add_argument('-weightfile_projhead', '--weightfile_projhead', dest='weightfile_projhead', required=False, type=str, default="", action='store',help='Projection head weight file (hd5) to be loaded (default=no)')	
 	parser.add_argument('-modelfile_projhead', '--modelfile_projhead', dest='modelfile_projhead', required=False, type=str, default="", action='store',help='Projection head model architecture file (json) to be loaded (default=no)')
+	parser.add_argument('-weightfile_backbone', '--weightfile_backbone', dest='weightfile_backbone', required=False, type=str, default="", action='store',help='Weight file (hd5) to be loaded for backbone model (default=no)')	
 	parser.add_argument('-latentdim', '--latentdim', dest='latentdim', required=False, type=int, default=2, action='store',help='Dimension of latent vector (default=2)')	
 	parser.add_argument('--add_maxpooling_layer', dest='add_maxpooling_layer', action='store_true',help='Add max pooling layer after conv layers ')	
 	parser.set_defaults(add_maxpooling_layer=False)	
@@ -209,6 +215,8 @@ def get_args():
 	parser.add_argument('--use_predefined_arch', dest='use_predefined_arch', action='store_true',help='Use pre-defined conv architecture and not a custom ones (default=false)')	
 	parser.set_defaults(use_predefined_arch=False)
 	parser.add_argument('-predefined_arch', '--predefined_arch', dest='predefined_arch', required=False, type=str, default='resnet50', action='store',help='Predefined architecture to be used {resnet18, resnet34, resnet50, resnet101}')
+	parser.add_argument('--use_backbone_impl_v2', dest='use_backbone_impl_v2', action='store_true',help='Use alternative backbone implementation (from image-classifier module) (default=false)')	
+	parser.set_defaults(use_backbone_impl_v2=False)
 
 	# - Run options
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
@@ -327,6 +335,7 @@ def main():
 	weightfile_encoder= args.weightfile_encoder
 	modelfile_projhead= args.modelfile_projhead
 	weightfile_projhead= args.weightfile_projhead
+	weightfile_backbone= args.weightfile_backbone
 	latentdim= args.latentdim
 	add_maxpooling_layer= args.add_maxpooling_layer
 	add_batchnorm_layer= args.add_batchnorm_layer
@@ -344,6 +353,9 @@ def main():
 	
 	use_predefined_arch= args.use_predefined_arch
 	predefined_arch= args.predefined_arch
+	use_backbone_impl_v2= args.use_backbone_impl_v2
+	add_regularization= args.add_regularization
+	reg_factor= args.reg_factor
 
 	# - Train options
 	optimizer= args.optimizer
@@ -512,6 +524,7 @@ def main():
 	simclr.weightfile_encoder= weightfile_encoder
 	simclr.modelfile_projhead= modelfile_projhead
 	simclr.weightfile_projhead= weightfile_projhead
+	simclr.weightfile_backbone= weightfile_backbone
 	simclr.set_image_size(resize_size, resize_size)
 	simclr.latent_dim= latentdim
 
@@ -555,6 +568,9 @@ def main():
 
 	simclr.temperature= loss_temperature
 	simclr.use_simclr_impl_v2= use_v2_impl
+	simclr.use_backbone_impl_v2= use_backbone_impl_v2
+	simclr.add_regularization= add_regularization
+	simclr.reg_factor= reg_factor
 
 	# - Run train/predict
 	if predict:
