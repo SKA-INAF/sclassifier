@@ -479,6 +479,8 @@ class FeatExtractorSimCLR(object):
 				regularizer= tf.keras.regularizers.l2(self.reg_factor)
 				backbone_model= self.__get_regularized_model(backbone_model, regularizer)
 
+			backbone_model.summary()
+
 			# - Apply model to inputs
 			x= backbone_model(x)
 		
