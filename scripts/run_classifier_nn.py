@@ -235,6 +235,8 @@ def get_args():
 	parser.add_argument('-predefined_arch', '--predefined_arch', dest='predefined_arch', required=False, type=str, default='resnet50', action='store',help='Predefined architecture to be used {resnet50, resnet101, resnet18, resnet34}')
 	parser.add_argument('--use_backbone_impl_v2', dest='use_backbone_impl_v2', action='store_true',help='Use alternative backbone implementation (from image-classifier module) (default=false)')	
 	parser.set_defaults(use_backbone_impl_v2=False)
+	parser.add_argument('--freeze_backbone', dest='freeze_backbone', action='store_true',help='Make backbone layers are non-tranable (default=false)')	
+	parser.set_defaults(freeze_backbone=False)
 
 	parser.add_argument('--add_maxpooling_layer', dest='add_maxpooling_layer', action='store_true',help='Add max pooling layer after conv layers ')	
 	parser.set_defaults(add_maxpooling_layer=False)	
@@ -405,6 +407,7 @@ def main():
 	add_regularization= args.add_regularization
 	reg_factor= args.reg_factor
 	use_backbone_impl_v2= args.use_backbone_impl_v2
+	freeze_backbone= args.freeze_backbone
 
 	weightfile= args.weightfile
 	weightfile_backbone= args.weightfile_backbone
@@ -656,6 +659,7 @@ def main():
 	sclass.add_regularization= add_regularization
 	sclass.reg_factor= reg_factor
 	sclass.use_backbone_impl_v2= use_backbone_impl_v2
+	sclass.freeze_backbone= freeze_backbone
 
 	# - Override class target configuration?
 	if classid_remap:

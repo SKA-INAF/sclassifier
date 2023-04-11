@@ -289,6 +289,7 @@ class SClassifierNN(object):
 		self.use_backbone_impl_v2= False
 		self.reg_factor= 0.01 # tf default
 		self.add_regularization= False
+		self.freeze_backbone= False
 
 		# *****************************
 		# ** Output
@@ -1187,6 +1188,12 @@ class SClassifierNN(object):
 				regularizer= tf.keras.regularizers.l2(self.reg_factor)
 				backbone_model= self.__get_regularized_model(backbone_model, regularizer)
 
+			# - Freeze backbone (make non-trainable)
+			if self.freeze_backbone:
+				logger.info("Making backbone non-trainable ...")
+				for layer in backbone_model.layers:
+					layer.trainable = False
+
 			backbone_model.summary()
 			
 			# - Apply model to inputs
@@ -1203,6 +1210,13 @@ class SClassifierNN(object):
 					input_shape=inputShape,
 					pooling="avg" #global average pooling will be applied to the output of the last convolutional block
 				)
+				
+				# - Freeze backbone (make non-trainable)
+				if self.freeze_backbone:
+					logger.info("Making backbone non-trainable ...")
+					for layer in resnet50.layers:
+						layer.trainable = False
+				
 				x= resnet50(x)
 
 			elif self.predefined_arch=="resnet101":
@@ -1214,6 +1228,13 @@ class SClassifierNN(object):
 					input_shape=inputShape,
 					pooling="avg" #global average pooling will be applied to the output of the last convolutional block
 				)
+				
+				# - Freeze backbone (make non-trainable)
+				if self.freeze_backbone:
+					logger.info("Making backbone non-trainable ...")
+					for layer in resnet101.layers:
+						layer.trainable = False
+						
 				x= resnet101(x)
 
 			elif self.predefined_arch=="resnet18":
