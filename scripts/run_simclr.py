@@ -483,8 +483,9 @@ def main():
 	logger.info("Creating data pre-processor for validation data ...")
 	preprocess_stages_val= []
 	for stage in preprocess_stages:
-		if isinstance(stage, Augmenter):
-			continue
+		# - Augmentation should not be removed on validation for SimCLR
+		#if isinstance(stage, Augmenter):
+		#	continue
 		preprocess_stages_val.append(stage)
 
 	print("== PRE-PROCESSING STAGES (VAL) ==")
