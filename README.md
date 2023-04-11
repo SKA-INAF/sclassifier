@@ -30,3 +30,21 @@ To build and install the package:
   ``` python setup install```   
 * If required (e.g. outside virtual env), add installation path to your ```PYTHONPATH``` environment variable:   
   ``` export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python3.6/site-packages ```
+
+## **Usage**
+Several python scripts are provided in the ```scripts``` directory to run desired tasks, described below.  
+
+### **Image supervised classification with CNNs**
+WRITE ME
+
+### **Image feature extraction with CAE**
+WRITE ME
+
+### **Image feature extraction with SimCLR**
+WRITE ME
+
+### **Feature reduction with UMAP**
+WRITE ME
+
+### **Clustering feature data with HDBSCAN**
+WRITE ME
