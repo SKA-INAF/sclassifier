@@ -17,15 +17,16 @@ This software is distributed with GPLv3 license. If you use it for your research
 
 To build and install the package:    
 
-* Clone this repository:   
-  ```git clone ```
+* Clone this repository in a local directory (e.g. $SRC_DIR):   
+  ```git clone https://github.com/SKA-INAF/sclassifier.git```
 * Create a virtual environment with your preferred python version (e.g. python3.6) in a local install directory (e.g. INSTALL_DIR):   
-  ```python3.6 -m venv $INSTALL_DIR```   
+  ``` python3.6 -m venv $INSTALL_DIR```   
 * Activate your virtual environment:   
   ```source $INSTALL_DIR/bin/activate```
-* Add installation path to your ```PYTHONPATH``` environment variable:   
-  ``` export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python3.6/site-packages ```
+* Install module dependencies listed in ```requirements.txt```:    
+  ``` pip install -r requirements.txt```  
 * Build and install package:   
-  ``` python3.6 setup.py sdist bdist_wheel```    
-  ``` python3.6 setup build```   
-  ``` python3.6 setup install --prefix=$INSTALL_DIR```   
+  ``` python setup build```   
+  ``` python setup install```   
+* If required (e.g. outside virtual env), add installation path to your ```PYTHONPATH``` environment variable:   
+  ``` export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python3.6/site-packages ```
