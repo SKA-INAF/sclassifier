@@ -1265,7 +1265,7 @@ class SClassifierNN(object):
 		#===========================
 		# - Creating base model
 		logger.info("Creating base model ...")
-		base_model= Model(inputs, x, name='base_model')
+		base_model= Model(self.inputs, x, name='base_model')
 		
 		# - Loading base model weights?
 		if base_weights!="":
