@@ -1288,7 +1288,7 @@ class SClassifierNN(object):
 		base_model.summary()
 		
 		# - Set layer
-		x= base_model(x)
+		x= base_model(self.inputs)
 		
 		#===========================
 		#==  CLASSIFICATION HEAD
