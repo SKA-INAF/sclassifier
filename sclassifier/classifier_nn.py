@@ -1313,7 +1313,7 @@ class SClassifierNN(object):
 		#==   BUILD MODEL
 		#===========================
 		# - Create model
-		self.model= Model(self.inputs, self.outputs)
+		self.model= Model(self.inputs, self.outputs, name='classifier_model')
 
 		# - Compile model
 		if self.multilabel:
