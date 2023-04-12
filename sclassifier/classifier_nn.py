@@ -1183,10 +1183,10 @@ class SClassifierNN(object):
 						return -1
 		
 			# - Add regularization?
-			if self.add_regularization:
-				logger.info("Applying regularization to built backbone ...")
-				regularizer= tf.keras.regularizers.l2(self.reg_factor)
-				backbone_model= self.__get_regularized_model(backbone_model, regularizer)
+			#if self.add_regularization:
+			#	logger.info("Applying regularization to built backbone ...")
+			#	regularizer= tf.keras.regularizers.l2(self.reg_factor)
+			#	backbone_model= self.__get_regularized_model(backbone_model, regularizer)
 
 			# - Freeze backbone (make non-trainable)
 			#if self.freeze_backbone:
@@ -1279,6 +1279,13 @@ class SClassifierNN(object):
 				except Exception as e:
 					logger.error("Failed to load weights from file %s by name (err=%s), giving up!" % (base_weights, str(e)))	
 					return -1
+					
+		# - Add regularization?
+		#   NB: Do it after loading weights
+		if self.add_regularization:
+			logger.info("Applying regularization to built backbone ...")
+			regularizer= tf.keras.regularizers.l2(self.reg_factor)
+			base_model= self.__get_regularized_model(base_model, regularizer)
 		
 		# - Freeze base weights?
 		if self.freeze_backbone:
