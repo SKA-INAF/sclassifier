@@ -235,6 +235,7 @@ class SClassifierNN(object):
 		self.modelfile= ""
 		self.weightfile= ""
 		self.weightfile_backbone= ""
+		self.weightfile_base= ""
 		self.fitout= None		
 		self.model= None
 		self.use_predefined_arch= False
@@ -1122,14 +1123,14 @@ class SClassifierNN(object):
 		""" Create model (custom vs predefined) """
 
 		if self.use_predefined_arch:
-			return self.__create_predefined_model(backbone_weights=self.weightfile_backbone)
+			return self.__create_predefined_model(backbone_weights=self.weightfile_backbone, base_weights=self.weightfile_base)
 		else:
 			return self.__create_custom_model()
 
 	#####################################
 	##     CREATE PREDEFINED MODEL
 	#####################################
-	def __create_predefined_model(self, backbone_weights=""):
+	def __create_predefined_model(self, backbone_weights="", base_weights=""):
 		""" Create model using a predefined architecture as backbone """
 
 		#===========================
@@ -1150,9 +1151,9 @@ class SClassifierNN(object):
 		#===========================
 		# - Add backbone weights
 		logger.info("Using %s as base encoder ..." % (self.predefined_arch))
-		base_weights= None
+		bbone_weights= None
 		if backbone_weights!="":
-			base_weights= backbone_weights
+			bbone_weights= backbone_weights
 			
 		# - Add backbone net using image-classifier implementation
 		#		NB: This is the implementation used in mrcnn tf2 porting and for which resnet18/34 imagenet weights are available (image-classifier module) 	
@@ -1160,7 +1161,6 @@ class SClassifierNN(object):
 			try:
 				backbone_model= Classifiers.get(self.predefined_arch)[0](
 					include_top=False,
-					#weights=base_weights,
 					weights=None, 
 					input_tensor=self.inputs, 
 					input_shape=inputShape,
@@ -1171,15 +1171,15 @@ class SClassifierNN(object):
 				
 			# - Load weights
 			if backbone_weights!="":
-				logger.info("Loading backbone weights from file %s ..." % (base_weights))
+				logger.info("Loading backbone weights from file %s ..." % (bbone_weights))
 				try:
-					backbone_model.load_weights(base_weights)
+					backbone_model.load_weights(bbone_weights)
 				except Exception as e:
-					logger.warn("Failed to load weights from file %s (err=%s), retrying to load by layer name ..." % (base_weights, str(e)))
+					logger.warn("Failed to load weights from file %s (err=%s), retrying to load by layer name ..." % (bbone_weights, str(e)))
 					try:
-						backbone_model.load_weights(base_weights, by_name=True)
+						backbone_model.load_weights(bbone_weights, by_name=True)
 					except Exception as e:
-						logger.error("Failed to load weights from file %s by name (err=%s), giving up!" % (base_weights, str(e)))	
+						logger.error("Failed to load weights from file %s by name (err=%s), giving up!" % (bbone_weights, str(e)))	
 						return -1
 		
 			# - Add regularization?
@@ -1189,10 +1189,10 @@ class SClassifierNN(object):
 				backbone_model= self.__get_regularized_model(backbone_model, regularizer)
 
 			# - Freeze backbone (make non-trainable)
-			if self.freeze_backbone:
-				logger.info("Making backbone non-trainable ...")
-				for layer in backbone_model.layers:
-					layer.trainable = False
+			#if self.freeze_backbone:
+			#	logger.info("Making backbone non-trainable ...")
+			#	for layer in backbone_model.layers:
+			#		layer.trainable = False
 
 			backbone_model.summary()
 			
@@ -1205,17 +1205,17 @@ class SClassifierNN(object):
 				logger.info("Using resnet50 as base encoder ...")
 				resnet50= tf.keras.applications.resnet50.ResNet50(
 					include_top=False, # disgard the fully-connected layer as we are training from scratch
-					weights=base_weights,  # random initialization
+					weights=bbone_weights,  # random initialization
 					input_tensor=self.inputs,
 					input_shape=inputShape,
 					pooling="avg" #global average pooling will be applied to the output of the last convolutional block
 				)
 				
 				# - Freeze backbone (make non-trainable)
-				if self.freeze_backbone:
-					logger.info("Making backbone non-trainable ...")
-					for layer in resnet50.layers:
-						layer.trainable = False
+				#if self.freeze_backbone:
+				#	logger.info("Making backbone non-trainable ...")
+				#	for layer in resnet50.layers:
+				#		layer.trainable = False
 				
 				x= resnet50(x)
 
@@ -1223,17 +1223,17 @@ class SClassifierNN(object):
 				logger.info("Using resnet101 as base encoder ...")
 				resnet101= tf.keras.applications.resnet.ResNet101(
 					include_top=False, # disgard the fully-connected layer as we are training from scratch
-					weights=base_weights,  # random initialization
+					weights=bbone_weights,  # random initialization
 					input_tensor=self.inputs,
 					input_shape=inputShape,
 					pooling="avg" #global average pooling will be applied to the output of the last convolutional block
 				)
 				
 				# - Freeze backbone (make non-trainable)
-				if self.freeze_backbone:
-					logger.info("Making backbone non-trainable ...")
-					for layer in resnet101.layers:
-						layer.trainable = False
+				#if self.freeze_backbone:
+				#	logger.info("Making backbone non-trainable ...")
+				#	for layer in resnet101.layers:
+				#		layer.trainable = False
 						
 				x= resnet101(x)
 
@@ -1261,7 +1261,37 @@ class SClassifierNN(object):
 				x = layers.Flatten()(x)
 		
 		#===========================
-		#==  MODEL OUTPUT LAYERS
+		#==  BUILD BASE MODEL
+		#===========================
+		# - Creating base model
+		logger.info("Creating base model ...")
+		base_model= Model(inputs, x, name='base_model')
+		
+		# - Loading base model weights?
+		if base_weights!="":
+			logger.info("Loading base weights from file %s ..." % (base_weights))
+			try:
+				base_model.load_weights(base_weights)
+			except Exception as e:
+				logger.warn("Failed to load weights from file %s (err=%s), retrying to load by layer name ..." % (base_weights, str(e)))
+				try:
+					base_model.load_weights(base_weights, by_name=True)
+				except Exception as e:
+					logger.error("Failed to load weights from file %s by name (err=%s), giving up!" % (base_weights, str(e)))	
+					return -1
+		
+		# - Freeze base weights?
+		if self.freeze_backbone:
+			logger.info("Freezing base weights ...")
+			base_model= self.__get_non_trainable_model(base_model)
+			
+		base_model.summary()
+		
+		# - Set layer
+		x= base_model(x)
+		
+		#===========================
+		#==  CLASSIFICATION HEAD
 		#===========================
 		# - Add dense layer?
 		if self.add_dense:
@@ -1336,6 +1366,18 @@ class SClassifierNN(object):
     
 		# Reload the model weights
 		model.load_weights(tmp_weights_path, by_name=True)
+
+		return model
+
+	def __get_non_trainable_model(self, model):
+		""" Set each layer as non-trainable """
+		
+		for layer in model.layers:
+			if hasattr(layer, 'layers'): # nested layer
+				for nested_layer in layer.layers:
+					nested_layer.trainable= False
+			else:
+				layer.trainable = False
 
 		return model
 
