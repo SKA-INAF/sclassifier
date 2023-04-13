@@ -191,7 +191,7 @@ def hamming_score_v2(y_true, y_pred, normalize=True, sample_weight=None):
 			
 		acc_list.append(tmp_a)
 		   
-	return acc_list, np.nanmean(acc_list)
+	return np.nanmean(acc_list)
 
 ##################################
 ##     SClassifierNN CLASS
@@ -1046,9 +1046,9 @@ class SClassifierNN(object):
 		
 		h_loss= hamming_loss(y_true, y_pred)
 		#h_score= hamming_score_v2(y_true, y_pred)
-		#accuracy_per_class= measure_per_label(accuracy_score, y_true, y_pred)
-		accuracy_per_class, h_score= hamming_score_v2(y_true, y_pred)
-		
+		#accuracy_per_class= measure_per_label(accuracy_score, y_true, y_pred)   # not working (syntax error in .toarray method, reimplemented below)
+		h_score= hamming_score_v2(y_true, y_pred)
+		accuracy_per_class= [accuracy_score(y_true[:,i], y_pred[:,i]) for i in range(y_true.shape[1]) ]
 		print("accuracy_per_class")
 		print(accuracy_per_class)
 		
@@ -1075,6 +1075,7 @@ class SClassifierNN(object):
 			
 			
 		logger.info("accuracy=%f" % (self.accuracy))
+		logger.info("accuracy_per_class=%s" % (self.class_accuracy))
 		logger.info("hamming_score=%f" % (h_score))	
 		logger.info("hamming_loss=%f" % (h_loss))
 		logger.info("precision=%f" % (self.precision))
