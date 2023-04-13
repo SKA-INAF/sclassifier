@@ -54,7 +54,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 from sklearn.metrics import recall_score, precision_score, f1_score
 from sklearn.preprocessing import MultiLabelBinarizer
 
-from skmultilearn.utils import measure_per_label
+#from skmultilearn.utils import measure_per_label
 
 ## TENSORFLOW & KERAS MODULES
 import tensorflow as tf
@@ -191,7 +191,7 @@ def hamming_score_v2(y_true, y_pred, normalize=True, sample_weight=None):
 			
 		acc_list.append(tmp_a)
 		   
-	return np.nanmean(acc_list)
+	return acc_list, np.nanmean(acc_list)
 
 ##################################
 ##     SClassifierNN CLASS
@@ -1044,7 +1044,11 @@ class SClassifierNN(object):
 		#self.accuracy= report['accuracy'] # this fails as accuracy is not present in report, using sklearn.metrics.accuracy_score
 		self.accuracy= accuracy_score(y_true, y_pred, normalize=True) # NB: This computes subset accuracy (the set of labels predicted for a sample must exactly match the corresponding set of labels in y_true)
 		
-		accuracy_per_class= measure_per_label(accuracy_score, y_true, y_pred)
+		h_loss= hamming_loss(y_true, y_pred)
+		#h_score= hamming_score_v2(y_true, y_pred)
+		#accuracy_per_class= measure_per_label(accuracy_score, y_true, y_pred)
+		accuracy_per_class, h_score= hamming_score_v2(y_true, y_pred)
+		
 		print("accuracy_per_class")
 		print(accuracy_per_class)
 		
@@ -1053,8 +1057,6 @@ class SClassifierNN(object):
 		for acc in accuracy_per_class:
 			self.class_accuracy.append(acc)
 		
-		h_loss= hamming_loss(y_true, y_pred)
-		h_score= hamming_score_v2(y_true, y_pred)
 		self.precision= report['weighted avg']['precision']
 		self.recall= report['weighted avg']['recall']    
 		self.f1score= report['weighted avg']['f1-score']

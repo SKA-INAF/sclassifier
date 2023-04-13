@@ -74,7 +74,6 @@ reqs.append('scutout')
 reqs.append('mpi4py')
 reqs.append('optuna')
 reqs.append('image-classifiers')
-reqs.append('scikit-multilearn')
 
 
 data_dir = 'data'
