@@ -54,6 +54,8 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 from sklearn.metrics import recall_score, precision_score, f1_score
 from sklearn.preprocessing import MultiLabelBinarizer
 
+from skmultilearn.utils import measure_per_label
+
 ## TENSORFLOW & KERAS MODULES
 import tensorflow as tf
 from tensorflow import keras 
@@ -170,8 +172,26 @@ def f1score_metric(y_true, y_pred):
 
 # - See https://stackoverflow.com/questions/32239577/getting-the-accuracy-for-multi-label-prediction-in-scikit-learn
 def hamming_score(y_true, y_pred):
-	""" Compute the hamming score """   
+	""" Compute the hamming score """
 	return ( (y_true & y_pred).sum(axis=1) / (y_true | y_pred).sum(axis=1) ).mean()
+	
+def hamming_score_v2(y_true, y_pred, normalize=True, sample_weight=None):
+	""" Compute the Hamming score (a.k.a. label-based accuracy) for the multi-label case (http://stackoverflow.com/q/32239577/395857)"""
+	acc_list = []
+	for i in range(y_true.shape[0]):
+		set_true = set( np.where(y_true[i])[0] )
+		set_pred = set( np.where(y_pred[i])[0] )
+		tmp_a = None
+		if len(set_true) == 0 and len(set_pred) == 0:
+			tmp_a = 1
+		else:
+			num= len(set_true.intersection(set_pred))
+			denom= float( len(set_true.union(set_pred)) )
+			tmp_a = num/denom
+			
+		acc_list.append(tmp_a)
+		   
+	return np.nanmean(acc_list)
 
 ##################################
 ##     SClassifierNN CLASS
@@ -227,6 +247,7 @@ class SClassifierNN(object):
 		self.class_precisions= []
 		self.class_recalls= []  
 		self.class_f1scores= []
+		self.class_accuracy= []
 		self.feat_ranks= []
 		self.nclasses= 7
 		
@@ -1012,16 +1033,28 @@ class SClassifierNN(object):
 		y_true= mlb.fit_transform(target_ids_true)
 		y_pred= mlb.fit_transform(target_ids_pred)
 		
-		# - Compute classification metrics
+		# - Compute classification report
 		logger.info("Computing classification metrics on predicted data ...")
 		report= classification_report(y_true, y_pred, target_names=self.target_names, output_dict=True)
 		print("report")
 		print(report)
 
+		# - Compute accuracy
+		logger.info("Computing classification multi-label accuracy ...")
 		#self.accuracy= report['accuracy'] # this fails as accuracy is not present in report, using sklearn.metrics.accuracy_score
 		self.accuracy= accuracy_score(y_true, y_pred, normalize=True) # NB: This computes subset accuracy (the set of labels predicted for a sample must exactly match the corresponding set of labels in y_true)
+		
+		accuracy_per_class= measure_per_label(accuracy_score, y_true, y_pred)
+		print("accuracy_per_class")
+		print(accuracy_per_class)
+		
+		# - Fill metrics
+		self.class_accuracy= []
+		for acc in accuracy_per_class:
+			self.class_accuracy.append(acc)
+		
 		h_loss= hamming_loss(y_true, y_pred)
-		h_score= hamming_score(y_true, y_pred)
+		h_score= hamming_score_v2(y_true, y_pred)
 		self.precision= report['weighted avg']['precision']
 		self.recall= report['weighted avg']['recall']    
 		self.f1score= report['weighted avg']['f1-score']
@@ -1029,6 +1062,7 @@ class SClassifierNN(object):
 		self.class_precisions= []
 		self.class_recalls= []  
 		self.class_f1scores= []
+		
 		for class_name in self.target_names:
 			class_precision= report[class_name]['precision']
 			class_recall= report[class_name]['recall']    
@@ -1036,6 +1070,7 @@ class SClassifierNN(object):
 			self.class_precisions.append(class_precision)
 			self.class_recalls.append(class_recall)
 			self.class_f1scores.append(class_f1score)
+			
 			
 		logger.info("accuracy=%f" % (self.accuracy))
 		logger.info("hamming_score=%f" % (h_score))	
@@ -1081,9 +1116,14 @@ class SClassifierNN(object):
 			precision= self.class_precisions[i]
 			recall= self.class_recalls[i]
 			f1score= self.class_f1scores[i]
+			accuracy= self.class_accuracy[i]
+			
+			metrics.append(accuracy)
 			metrics.append(precision)
 			metrics.append(recall)
 			metrics.append(f1score)
+			
+			metric_names.append("accuracy_" + classname)
 			metric_names.append("precision_" + classname)
 			metric_names.append("recall_" + classname)
 			metric_names.append("f1score_" + classname)
