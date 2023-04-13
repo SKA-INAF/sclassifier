@@ -26,4 +26,4 @@ scutout
 mpi4py
 optuna
 image-classifiers
-skmultilearn
+scikit-multilearn
