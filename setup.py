@@ -50,12 +50,12 @@ else:
 #reqs.append('keras>=2.0')
 
 #reqs.append('six<1.16')
-reqs.append('six==1.15.0')
-reqs.append('numpy==1.19.5')
+##reqs.append('six==1.15.0')
+##reqs.append('numpy==1.19.5')
 
 #reqs.append('tensorflow>=2.3')
 #reqs.append('tensorflow==2.6.0')
-reqs.append('tensorflow>=2.6.1')
+#reqs.append('tensorflow>=2.6.1')
 
 #reqs.append('imgaug')
 reqs.append('imgaug>=0.4.0')
@@ -74,6 +74,7 @@ reqs.append('scutout')
 reqs.append('mpi4py')
 reqs.append('optuna')
 reqs.append('image-classifiers')
+reqs.append('scikit-multilearn')
 
 
 data_dir = 'data'
@@ -89,5 +90,5 @@ setup(
 	long_description=read('README.md'),
 	packages=['sclassifier'],
 	install_requires=reqs,
-	scripts=['scripts/check_data.py','scripts/run_ae.py','scripts/run_predict.py','scripts/run_clustering.py','scripts/reconstruct_data.py','scripts/extract_features.py','scripts/select_features.py','scripts/run_classifier.py','scripts/merge_features.py','scripts/run_classifier_nn.py','scripts/classify_source.py','scripts/find_outliers.py','scripts/run_pipeline.py','scripts/run_umap.py','scripts/run_simclr.py','scripts/run_byol.py','scripts/run_pca.py','scripts/run_imgclassifier.py','scripts/gradcam.py'],
+	scripts=['scripts/check_data.py','scripts/run_ae.py','scripts/run_predict.py','scripts/run_clustering.py','scripts/reconstruct_data.py','scripts/extract_features.py','scripts/select_features.py','scripts/run_classifier.py','scripts/merge_features.py','scripts/run_classifier_nn.py','scripts/classify_source.py','scripts/find_outliers.py','scripts/run_pipeline.py','scripts/run_umap.py','scripts/run_simclr.py','scripts/run_byol.py','scripts/run_pca.py','scripts/run_imgclassifier.py','scripts/gradcam.py','scripts/read_model_weights.py'],
 )
