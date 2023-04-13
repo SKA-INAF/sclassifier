@@ -58,6 +58,8 @@ Input data (train/validation) must be given in json format with the following st
 }   
 ```    
 
+For multilabel classification the ```id``` and ```label``` keys must be lists.    
+
 Two run modes are supported: training, inference. To perform inference you need to specify the ```--predict``` option. To perform binary or multi-class classification you must specify the options ```--binary_class``` and ```--multilabel```, respectively. 
 
 To customize the desired class id/label names and relative targets, eventually remapping them with respect to values given in the input data list, you must specify the following options:   
