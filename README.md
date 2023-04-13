@@ -37,44 +37,75 @@ Several python scripts are provided in the ```scripts``` directory to run desire
 ### **Image supervised classification with CNNs**
 The script `run_classifier_nn.py` allows to perform binary and multi-class (single or multi-label) radio image (single- or multi-channel, FITS format) classification using customized or predefined CNN architectures (resnet18/resnet34/resnet50/resnet101). Customized networks can be built by user through input options, piling up stacks of Conv2D/MaxPool/BatchNorm/Dropout layers, enabled or disabled when desired. Several user options are provided to customize network architecture, data pre-processing and augmentation. A list if available with: ```python run_classifier_nn.py --help```.    
 
+Input data (train/validation) must be given in json format with the following structure:    
+
+```
+{  
+  "data": [    
+    {    
+      "filepaths": [     
+        "G340.743+00.313_ch1.fits",    
+        "G340.743+00.313_ch2.fits",    
+        "G340.743+00.313_ch3.fits"   
+      ],    
+      "sname": "G340.743+00.313",   
+      "id": 6,   
+      "label": "HII"    
+    },    
+    ...
+    ...
+  ]   
+}   
+```    
+
 Two run modes are supported: training, inference. To perform inference you need to specify the ```--predict``` option. To perform binary or multi-class classification you must specify the options ```--binary_class``` and ```--multilabel```, respectively. 
 
 To customize the desired class id/label names and relative targets, eventually remapping them with respect to values given in the input data list, you must specify the following options:   
 
-```--nclasses=$NCLASSES```     
-```--classid_remap=$CLASSID_REMAP```     
-```--target_label_map=$TARGET_LABEL_MAP```      
-```--classid_label_map=$CLASSID_LABEL_MAP```     
-```--target_names=$TARGET_NAMES```     
+```
+--nclasses=$NCLASSES     
+--classid_remap=$CLASSID_REMAP    
+--target_label_map=$TARGET_LABEL_MAP      
+--classid_label_map=$CLASSID_LABEL_MAP     
+--target_names=$TARGET_NAMES     
+```
 
 For example:   
      
-```NCLASSES=4```     
-```CLASS_PROBS='{"BACKGROUND":1.0,"COMPACT":0.1,"EXTENDED":1.0,"DIFFUSE":1.0}'```    
-```CLASSID_REMAP='{0:-1,1:0,2:1,3:2,4:3}'```    
-```TARGET_LABEL_MAP='{-1:"UNKNOWN",0:"BACKGROUND",1:"COMPACT",2:"EXTENDED",3:"DIFFUSE"}'```    
-```CLASSID_LABEL_MAP='{0:"UNKNOWN",1:"BACKGROUND",2:"COMPACT",3:"EXTENDED",4:"DIFFUSE"}'```    
-```TARGET_NAMES="BACKGROUND,COMPACT,EXTENDED,DIFFUSE"```    
+```
+NCLASSES=4     
+CLASS_PROBS='{"BACKGROUND":1.0,"COMPACT":0.1,"EXTENDED":1.0,"DIFFUSE":1.0}'    
+CLASSID_REMAP='{0:-1,1:0,2:1,3:2,4:3}'    
+TARGET_LABEL_MAP='{-1:"UNKNOWN",0:"BACKGROUND",1:"COMPACT",2:"EXTENDED",3:"DIFFUSE"}'    
+CLASSID_LABEL_MAP='{0:"UNKNOWN",1:"BACKGROUND",2:"COMPACT",3:"EXTENDED",4:"DIFFUSE"}'    
+TARGET_NAMES="BACKGROUND,COMPACT,EXTENDED,DIFFUSE"
+```    
 
 Below we report some run examples:
 
 * To train a custom model (2 conv layers + 1 dense layer) from scratch:   
-  ```python run_classifier_nn.py --datalist=$DATALIST_TRAIN --datalist_cv=$DATALIST_CV --nepochs=10 \```    
-  ```  --nfilters_cnn=16,32 --kernsizes_cnn=3,3 --strides_cnn=1,1 --add_maxpooling_layer \```    
-  ```  --add_dense_layer --dense_layer_sizes=16 \```    
-  ```  --add_dropout --dropout_rate=0.4 --add_conv_dropout --conv_dropout_rate=0.2 \```  
-  ```  --batch_size=64 --optimizer=adam --learning_rate=1e-4 \```    
-  ```  --augment --augmenter=cnn --augment_scale_factor=5 \```    
-  ```  --resize_size=64 --scale_to_abs_max```   
+  ```
+  python run_classifier_nn.py --datalist=$DATALIST_TRAIN --datalist_cv=$DATALIST_CV --nepochs=10 \    
+    --nfilters_cnn=16,32 --kernsizes_cnn=3,3 --strides_cnn=1,1 --add_maxpooling_layer \    
+    --add_dense_layer --dense_layer_sizes=16 \    
+    --add_dropout --dropout_rate=0.4 --add_conv_dropout --conv_dropout_rate=0.2 \  
+    --batch_size=64 --optimizer=adam --learning_rate=1e-4 \    
+    --augment --augmenter=cnn --augment_scale_factor=5 \    
+    --resize_size=64 --scale_to_abs_max
+  ```   
   
 * To train a predefined model (resnet18) using pre-trained backbone .h5 weights (e.g. $WEIGHTFILE):    
-  ```python run_classifier_nn.py --datalist=$DATALIST_TRAIN --datalist_cv=$DATALIST_CV [OPTIONS] \```    
-  ```  --use_predefined_arch --predefined_arch=resnet18 --weightfile_backbone=$WEIGHTFILE ```    
+  ```
+  python run_classifier_nn.py --datalist=$DATALIST_TRAIN --datalist_cv=$DATALIST_CV [OPTIONS] \    
+    --use_predefined_arch --predefined_arch=resnet18 --weightfile_backbone=$WEIGHTFILE 
+  ```    
 
 * To perform inference with a saved .h5 model (e.g. $WEIGHTFILE) and weights (e.g. $WEIGHTFILE):     
-  ```python run_classifier_nn.py --datalist=$DATALIST_TEST [OPTIONS] \```    
-  ```  --modelfile=$MODELFILE --weightfile=$WEIGHTFILE [OPTIONS] \```    
-  ```  --predict```    
+  ```
+  python run_classifier_nn.py --datalist=$DATALIST_TEST [OPTIONS] \    
+    --modelfile=$MODELFILE --weightfile=$WEIGHTFILE [OPTIONS] \    
+    --predict
+  ```    
 
 ### **Image feature extraction with CAE**
 WRITE ME
