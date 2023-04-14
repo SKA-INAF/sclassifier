@@ -1536,7 +1536,7 @@ class FeatExtractorSimCLR(object):
 		#==   LOAD MODEL ARCHITECTURE
 		#==============================
 		try:
-			self.model= load_model(modelfile, custom_objects={'SoftmaxCosineSim': SoftmaxCosineSim, 'WarmupCosineDecay': WarmupCosineDecay})
+			self.model= load_model(modelfile, custom_objects={'SoftmaxCosineSim': SoftmaxCosineSim, 'WarmUpCosineDecay': WarmUpCosineDecay})
 			
 		except Exception as e:
 			logger.warn("Failed to load model from file %s (err=%s)!" % (modelfile, str(e)))
