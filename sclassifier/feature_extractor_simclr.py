@@ -120,7 +120,7 @@ class WarmUpCosineDecay(keras.optimizers.schedules.LearningRateSchedule):
 		""" Override base method """
 		
 		# - Compute global step (accounting also previous epochs
-		global_step= self.steps_done + step
+		global_step= self.steps_done + step + 1 # step is starting from 0
 		
 		# - Compute learning rate
 		lr = self.lr_warmup_cosine_decay(global_step)
