@@ -156,6 +156,13 @@ def get_args():
 	parser.add_argument('-nepochs', '--nepochs', dest='nepochs', required=False, type=int, default=100, action='store',help='Number of epochs used in network training (default=100)')	
 	parser.add_argument('-optimizer', '--optimizer', dest='optimizer', required=False, type=str, default='rmsprop', action='store',help='Optimizer used (default=rmsprop)')
 	parser.add_argument('-learning_rate', '--learning_rate', dest='learning_rate', required=False, type=float, default=None, action='store',help='Learning rate. If None, use default for the selected optimizer (default=None)')
+	
+	parser.add_argument('--use_warmup_lr_schedule', dest='use_warmup_lr_schedule', action='store_true',help='Use linear warmup+cos decay schedule to update learning rate (default=false)')	
+	parser.set_defaults(use_warmup_lr_schedule=False)
+	parser.add_argument('-nepochs_warmup', '--nepochs_warmup', dest='nepochs_warmup', required=False, type=int, default=10, action='store',help='Number of epochs used in network training for warmup (default=100)')
+	parser.add_argument('-nepochs_done', '--nepochs_done', dest='nepochs_done', required=False, type=int, default=0, action='store',help='Number of training epochs already done. If you retrain set it to the performed epochs (default=0)')
+	parser.add_argument('-nepochs_schedule_tot', '--nepochs_schedule_tot', dest='nepochs_schedule_tot', required=False, type=int, default=100, action='store',help='Number of training epochs for the schedule, used as cos decay end (default=100)')
+	
 	parser.add_argument('-batch_size', '--batch_size', dest='batch_size', required=False, type=int, default=32, action='store',help='Batch size used in training (default=32)')
 	parser.add_argument('-weight_seed', '--weight_seed', dest='weight_seed', required=False, type=int, default=None, action='store',help='Weight seed to set reproducible training (default=None)')
 	parser.add_argument('--reproducible', dest='reproducible', action='store_true',help='Fix seed and make model reproducible from run to run')	
@@ -360,6 +367,11 @@ def main():
 	# - Train options
 	optimizer= args.optimizer
 	learning_rate= args.learning_rate
+	use_warmup_lr_schedule= args.use_warmup_lr_schedule
+	nepochs_warmup= args.nepochs_warmup
+	nepochs_done= args.nepochs_done
+	nepochs_schedule_tot= args.nepochs_schedule_tot
+		
 	batch_size= args.batch_size
 	nepochs= args.nepochs
 	weight_seed= args.weight_seed
@@ -572,6 +584,11 @@ def main():
 	simclr.use_backbone_impl_v2= use_backbone_impl_v2
 	simclr.add_regularization= add_regularization
 	simclr.reg_factor= reg_factor
+	
+	simclr.use_warmup_lr_schedule= use_warmup_lr_schedule
+	simclr.nepochs_warmup= nepochs_warmup
+	simclr.nepochs_done= nepochs_done
+	simclr.nepochs_schedule_tot= nepochs_schedule_tot
 
 	# - Run train/predict
 	if predict:

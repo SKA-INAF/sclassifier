@@ -100,6 +100,63 @@ from .utils import Utils
 from .tf_utils import SoftmaxCosineSim, nt_xent_loss
 from .models import resnet18, resnet34
 
+
+###################################
+##   WarmUpCosineDecay CLASS
+###################################
+# - Taken from https://stackabuse.com/learning-rate-warmup-with-cosine-decay-in-keras-and-tensorflow/
+class WarmUpCosineDecay(keras.optimizers.schedules.LearningRateSchedule):
+	""" Implement linear warm-up + cosine decay learning rate update """    
+	
+	def __init__(self, target_lr, warmup_steps, total_steps, steps_done, lr_min=1.e-6):
+		super().__init__()
+		self.target_lr = target_lr
+		self.warmup_steps = warmup_steps
+		self.total_steps = total_steps
+		self.steps_done= steps_done  # Number of steps done before this training run
+		self.lr_min= lr_min
+
+	def __call__(self, step):
+		""" Override base method """
+		
+		# - Compute global step (accounting also previous epochs
+		global_step= self.steps_done + step
+		
+		# - Compute learning rate
+		lr = lr_warmup_cosine_decay(global_step)
+
+		return tf.where(
+			step > self.total_steps, self.lr_min, lr, name="learning_rate"
+		)
+
+	def lr_warmup_cosine_decay(self, global_step):
+		""" Helper function """
+	
+		# - Compute warmup LR
+		#   Target LR * progress of warmup (=1 at the final warmup step)
+		warmup_lr = self.target_lr * (global_step / self.warmup_steps)
+		logger.info("global_step=%d, warmup_steps=%d, target_lr=%f ==> warmup_lr=%f" % (global_step, self.warmup_steps, self.target_lr, warmup_lr))
+		
+		# - Compute cosine decay LR
+		decay_lr= self.lr_min + 0.5 * (self.target_lr - self.lr_min) * (1 + tf.cos(tf.constant(np.pi) * (global_step - self.warmup_steps) / float(self.total_steps - self.warmup_steps)))
+		logger.info("global_step=%d, warmup_steps=%d, decay_lr=%f ==> decay_lr=%f" % (global_step, self.warmup_steps, self.target_lr, decay_lr))
+
+		# - Choose between `warmup_lr`, `target_lr` and `learning_rate` based on whether `global_step < warmup_steps` and we're still holding.
+		learning_rate = tf.where(global_step < self.warmup_steps, warmup_lr, decay_lr)
+		logger.info("Final lr=%f" % (learning_rate))		
+		
+		return learning_rate
+        
+	def get_config(self):
+		config = {
+			'target_lr': self.target_lr,
+			'warmup_steps': self.warmup_steps,
+			'total_steps': self.total_steps,
+			'steps_done': self.steps_done,
+			'lr_min': self.lr_min
+		}
+		return config
+
 ################################
 ##   FeatExtractorSimCLR CLASS
 ################################
@@ -182,10 +239,18 @@ class FeatExtractorSimCLR(object):
 		self.add_regularization= False	
 
 		# - Training options
-		self.nepochs= 10
+		self.nepochs= 30
 		self.batch_size= 32
 		self.learning_rate= 1.e-4
-		self.optimizer= tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
+		self.optimizer_type= "adam"
+		self.set_optimizer(self.optimizer_type, self.learning_rate)
+		#self.optimizer= tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
+		self.use_warmup_lr_schedule= False
+		self.lr_schedule= None
+		self.nepochs_done= 0
+		self.nepochs_warmup= 10
+		self.nepochs_schedule_tot= 100
+		
 		self.temperature = 0.1 # 0.5
 		self.ph_regul= 0.005
 		self.loss_type= "categorical_crossentropy"
@@ -225,16 +290,23 @@ class FeatExtractorSimCLR(object):
 	def set_optimizer(self, opt, learning_rate=1.e-4):
 		""" Set optimizer """
 
+		if type(learning_rate)==float:
+			logger.info("Setting %s optimizer with lr=%f ..." % (opt, learning_rate))
+		else: 
+			logger.info("Setting %s optimizer with lr schedule ..." % (opt))				
+		
 		if opt=="rmsprop":
-			logger.info("Setting rmsprop optimizer with lr=%f ..." % (learning_rate))
 			self.optimizer= tf.keras.optimizers.RMSprop(learning_rate=learning_rate)
+			self.optimizer_type= opt
+			self.learning_rate= learning_rate
 		elif opt=="adam":
-			logger.info("Setting adam optimizer with lr=%f ..." % (learning_rate))
 			self.optimizer= tf.keras.optimizers.Adam(learning_rate=learning_rate)
+			self.optimizer_type= opt
+			self.learning_rate= learning_rate
 		else:
 			logger.warn("Unknown optimizer selected (%s), won't change the default ..." % (opt))
 
-		
+	
 	def set_reproducible_model(self):
 		""" Set model in reproducible mode """
 
@@ -783,7 +855,7 @@ class FeatExtractorSimCLR(object):
 		reduce_lr = ReduceLROnPlateau(
 			monitor="val_loss", patience=5, verbose=1, factor=0.5,
 		)
-        
+		    
 		return checkpoint, earlyStopping, reduce_lr
 
 	
@@ -955,12 +1027,43 @@ class FeatExtractorSimCLR(object):
 				val_steps_per_epoch= self.nsamples_cv // self.batch_size
 			else:
 				val_steps_per_epoch= 1
+				
+		#===========================
+		#==  SET LR SCHEDULE
+		#===========================
+		if self.use_warmup_lr_schedule:
+			# - Define learning rate schedule
+			total_steps = steps_per_epoch*self.nepochs_schedule_tot
+			warmup_steps= steps_per_epoch*self.nepochs_warmup
+			steps_done= steps_per_epoch*self.nepochs_done
+			#target_lr= 0.1*self.batch_size/256. # taken from BYOL paper (https://hal.inria.fr/hal-02869787v1/document)
+			target_lr= self.learning_rate
+			lr_min= 1.e-6
+			
+			logger.info("Defining lr schedule with pars: total_steps=%d, warmup_steps=%d, steps_done=%d, target_lr=%f" % (total_steps, warmup_steps, steps_done, target_lr))
+			self.lr_schedule= WarmUpCosineDecay(
+				target_lr=target_lr, 
+				warmup_steps=warmup_steps, 
+				total_steps=total_steps, 
+				steps_done=steps_done, 
+				lr_min=lr_min
+			)
+			
+			# - Redefine optimizer
+			logger.info("Redefining optimizer ...")
+			self.set_optimizer(self.optimizer_type, learning_rate=self.lr_schedule)
+			
+			# - Compile model again
+			logger.info("Compiling SimCLR model after optimizer update ...")
+			self.model.compile(optimizer=self.optimizer, loss=self.loss_type, run_eagerly=True)	
+
 
 		#===========================
 		#==   TRAIN NETWORK
 		#===========================
 		# - Define train callbacks
-		checkpoint, earlyStopping, reduce_lr = self.get_callbacks()
+		#   NB: Disabling callbacks as val_loss is not reliable
+		#checkpoint, earlyStopping, reduce_lr = self.get_callbacks()
 
 		# - Train model
 		logger.info("Start SimCLR training (dataset_size=%d, batch_size=%d, steps_per_epoch=%d, val_steps_per_epoch=%d) ..." % (self.nsamples, self.batch_size, steps_per_epoch, val_steps_per_epoch))
@@ -971,7 +1074,7 @@ class FeatExtractorSimCLR(object):
 			steps_per_epoch=steps_per_epoch,
 			validation_data=self.crossval_data_generator,
 			validation_steps=val_steps_per_epoch,
-			callbacks=[checkpoint, earlyStopping, reduce_lr],
+			#callbacks=[checkpoint, earlyStopping, reduce_lr],
 			use_multiprocessing=self.use_multiprocessing,
 			workers=self.nworkers,
 			verbose=2
@@ -1433,7 +1536,7 @@ class FeatExtractorSimCLR(object):
 		#==   LOAD MODEL ARCHITECTURE
 		#==============================
 		try:
-			self.model= load_model(modelfile, custom_objects={'SoftmaxCosineSim': SoftmaxCosineSim})
+			self.model= load_model(modelfile, custom_objects={'SoftmaxCosineSim': SoftmaxCosineSim, 'WarmupCosineDecay', WarmupCosineDecay})
 			
 		except Exception as e:
 			logger.warn("Failed to load model from file %s (err=%s)!" % (modelfile, str(e)))
