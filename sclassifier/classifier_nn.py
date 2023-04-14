@@ -1048,7 +1048,7 @@ class SClassifierNN(object):
 		#h_score= hamming_score_v2(y_true, y_pred)
 		#accuracy_per_class= measure_per_label(accuracy_score, y_true, y_pred)   # not working (syntax error in .toarray method, reimplemented below)
 		h_score= hamming_score_v2(y_true, y_pred)
-		accuracy_per_class= [accuracy_score(y_true[:,i], y_pred[:,i]) for i in range(y_true.shape[1]) ]
+		accuracy_per_class= [accuracy_score(y_true[:,i], y_pred[:,i]) for i in range(y_true.shape[1]) ]  ## LIKELY NOT CORRECT!!!
 		print("accuracy_per_class")
 		print(accuracy_per_class)
 		
