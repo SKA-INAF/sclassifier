@@ -123,10 +123,10 @@ class WarmUpCosineDecay(keras.optimizers.schedules.LearningRateSchedule):
 		global_step= self.steps_done + step
 		
 		# - Compute learning rate
-		lr = lr_warmup_cosine_decay(global_step)
+		lr = self.lr_warmup_cosine_decay(global_step)
 
 		return tf.where(
-			step > self.total_steps, self.lr_min, lr, name="learning_rate"
+			global_step > self.total_steps, self.lr_min, lr, name="learning_rate"
 		)
 
 	def lr_warmup_cosine_decay(self, global_step):
