@@ -34,6 +34,7 @@ from skimage.exposure import adjust_sigmoid, rescale_intensity, equalize_hist, e
 ## IMG AUG
 import imgaug
 from imgaug import augmenters as iaa
+from imgaug import parameters as iap
 
 ## OPENCV
 import cv2
@@ -1739,6 +1740,17 @@ class Augmenter(object):
   			iaa.Affine(rotate=(-90, 90), mode='constant', cval=0.0)
 			]
 		)
+		
+		augmenter_simclr7= iaa.Sequential(
+			[
+				iaa.Sometimes(0.1, blur_aug),
+				zscaleStretch_aug,	
+				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
+  			iaa.OneOf([iaa.Rot90((1,3)), iaa.Noop()), # rotate by 90, 180 or 270 or do nothing
+  			##iaa.Sometimes(0.5, percThr_aug)
+  			percThr_aug
+			]
+		)
 
 		# - Define augmenter for BYOL
 		augmenter_byol= iaa.Sequential(
@@ -1759,6 +1771,8 @@ class Augmenter(object):
 			self.augmenter= augmenter_cnn
 		elif choice=='simclr':
 			self.augmenter= augmenter_simclr6
+		elif choice=='simclr_v7':
+			self.augmenter= augmenter_simclr7
 		elif choice=='byol':
 			self.augmenter= augmenter_byol
 		else:
