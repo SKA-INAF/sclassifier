@@ -43,7 +43,7 @@ from sclassifier.preprocessing import BkgSubtractor, SigmaClipper, SigmaClipShif
 from sclassifier.preprocessing import Resizer, MinMaxNormalizer, AbsMinMaxNormalizer, MaxScaler, AbsMaxScaler, ChanMaxScaler
 from sclassifier.preprocessing import Shifter, Standardizer, ChanDivider, MaskShrinker, BorderMasker
 from sclassifier.preprocessing import ChanResizer, ZScaleTransformer, Chan3Trasformer
-from sclassifier.preprocessing import PercentileThresholder
+from sclassifier.preprocessing import PercentileThresholder, HistEqualizer
 
 #### GET SCRIPT ARGS ####
 def str2bool(v):
