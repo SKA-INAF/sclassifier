@@ -1739,6 +1739,7 @@ class Augmenter(object):
 
 		# - Apply flip (66%) + rotate (always) + stretch zscale/sigmoid (always) + scale/blur (50%) + thresholding (50%)
 		zscaleStretch_aug= ZScaleAugmenter(contrast=0.25, random_contrast=True, random_contrast_per_ch=False, contrast_min=0.1, contrast_max=0.5)
+		zscaleStretch2_aug= ZScaleAugmenter(contrast=0.25, random_contrast=True, random_contrast_per_ch=False, contrast_min=0.25, contrast_max=0.5)
 		sigmoidStretch_aug= SigmoidStretchAugmenter(cutoff=0.5, gain=10, random_gain=True, random_gain_per_ch=False, gain_min=10, gain_max=30)
 		percThr_aug= PercentileThrAugmenter(percentile=50, random_percentile=True, random_percentile_per_ch=False, percentile_min=40, percentile_max=60)
 		scale_aug= iaa.Affine(scale=(0.5, 1.0), mode='constant', cval=0.0)
@@ -1787,7 +1788,7 @@ class Augmenter(object):
 		augmenter_simclr7= iaa.Sequential(
 			[
 				iaa.Sometimes(0.1, blur_aug),
-				zscaleStretch_aug,	
+				zscaleStretch2_aug,	
 				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
   			iaa.OneOf([iaa.Rot90((1,3)), iaa.Noop()]), # rotate by 90, 180 or 270 or do nothing
   			iaa.Sometimes(0.5, percThr_aug)
