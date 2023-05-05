@@ -43,6 +43,7 @@ from sclassifier.preprocessing import BkgSubtractor, SigmaClipper, SigmaClipShif
 from sclassifier.preprocessing import Resizer, MinMaxNormalizer, AbsMinMaxNormalizer, MaxScaler, AbsMaxScaler, ChanMaxScaler
 from sclassifier.preprocessing import Shifter, Standardizer, ChanDivider, MaskShrinker, BorderMasker
 from sclassifier.preprocessing import ChanResizer, ZScaleTransformer, Chan3Trasformer
+from sclassifier.preprocessing import PercentileThresholder
 
 #### GET SCRIPT ARGS ####
 def str2bool(v):
@@ -150,6 +151,10 @@ def get_args():
 	parser.set_defaults(chan3_preproc=False)
 	parser.add_argument('-sigma_clip_baseline', '--sigma_clip_baseline', dest='sigma_clip_baseline', required=False, type=float, default=0, action='store',help='Lower sigma threshold to be used for clipping pixels below (mean-sigma_low*stddev) in first channel of 3-channel preprocessing (default=0)')
 	parser.add_argument('-nchannels', '--nchannels', dest='nchannels', required=False, type=int, default=-1, action='store',help='Number of channels (if -1=take from data generator). If you modify channels in preprocessing you must set this (default=-1)')
+
+	parser.add_argument('--apply_percentile_thr', dest='apply_percentile_thr', action='store_true',help='Apply percentile threshold to input image')	
+	parser.set_defaults(apply_percentile_thr=False)
+	parser.add_argument('-percentile_thr', '--percentile_thr', dest='percentile_thr', required=False, type=float, default=50, action='store',help='Percentile threshold (default=50)')
 
 
 	# - Network training options
@@ -335,6 +340,9 @@ def main():
 	sigma_clip_baseline= args.sigma_clip_baseline
 	nchannels= args.nchannels
 
+	apply_percentile_thr= args.apply_percentile_thr
+	percentile_thr= args.percentile_thr
+	
 	# - Model architecture
 	modelfile= args.modelfile
 	weightfile= args.weightfile
@@ -456,6 +464,9 @@ def main():
 
 	if chan3_preproc:
 		preprocess_stages.append( Chan3Trasformer(sigma_clip_baseline=sigma_clip_baseline, sigma_clip_low=sigma_clip_low, sigma_clip_up=sigma_clip_up, zscale_contrast=zscale_contrasts[0]) )
+
+	if apply_percentile_thr:
+		preprocess_stages.append(PercentileThresholder(percthr=percentile_thr))
 
 	preprocess_stages.append(Augmenter(augmenter_choice=augmenter))
 

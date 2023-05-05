@@ -306,7 +306,8 @@ class PercentileThrAugmenter(iaa.meta.Augmenter):
 			cond_ch= np.logical_and(data_ch!=0, np.isfinite(data_ch))
 			data_ch_1d= data_ch[cond_ch]
 			
-			p= np.percentile(data, percentile)
+			#p= np.percentile(data, percentile)
+			p= np.percentile(data_ch_1d, percentile)
 
 			data_ch[data_ch<p]= 0
 			data_ch[~cond_ch]= 0
@@ -1176,7 +1177,7 @@ class SigmaClipper(object):
 		data_clipped[data_clipped>thr_up]= thr_up
 		data_clipped[~cond]= 0
 		
-		return data_clipped 
+		return data_clipped
 		
 
 	def __call__(self, data):
@@ -1197,6 +1198,48 @@ class SigmaClipper(object):
 			data_clipped[:,:,i]= data_ch_clipped
 
 		return data_clipped
+		
+		
+#################################
+##   PercentileThresholder
+#################################
+class PercentileThresholder(object):
+	""" Put to zero all pixels below specified percentile """
+
+	def __init__(self, percthr=50, **kwparams):
+		""" Create a data pre-processor object """
+
+		# - Set parameters
+		self.percthr= percthr
+	
+	def __call__(self, data):
+		""" Apply transformation and return transformed data """
+			
+		# - Check data
+		if data is None:
+			logger.error("Input data is None!")
+			return None
+
+		# - Threshold each channel
+		cond= np.logical_and(data!=0, np.isfinite(data))
+		data_thresholded= np.copy(data)
+
+		for i in range(data.shape[-1]):
+			data_ch= data_thresholded[:,:,i]
+			cond_ch= np.logical_and(data_ch!=0, np.isfinite(data_ch))
+			data_ch_1d= data_ch[cond_ch]
+			
+			p= np.percentile(data_ch_1d, self.percthr)
+
+			data_ch[data_ch<p]= 0
+			data_ch[~cond_ch]= 0
+	
+			data_thresholded[:,:,i]= data_ch
+
+		# - Scale data
+		data_thresholded[~cond]= 0 # Restore 0 and nans set in original data
+
+		return data_thresholded
 
 ##############################
 ##   Resizer
