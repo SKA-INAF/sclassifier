@@ -231,6 +231,9 @@ def get_args():
 	parser.add_argument('-predefined_arch', '--predefined_arch', dest='predefined_arch', required=False, type=str, default='resnet50', action='store',help='Predefined architecture to be used {resnet18, resnet34, resnet50, resnet101}')
 	parser.add_argument('--use_backbone_impl_v2', dest='use_backbone_impl_v2', action='store_true',help='Use alternative backbone implementation (from image-classifier module) (default=false)')	
 	parser.set_defaults(use_backbone_impl_v2=False)
+	
+	parser.add_argument('--use_global_avg_pooling', dest='use_global_avg_pooling', action='store_true',help='Use global avergae pooling instead of flatten layer (default=false)')	
+	parser.set_defaults(use_global_avg_pooling=False)
 
 	# - Run options
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
@@ -375,6 +378,7 @@ def main():
 	use_backbone_impl_v2= args.use_backbone_impl_v2
 	add_regularization= args.add_regularization
 	reg_factor= args.reg_factor
+	use_global_avg_pooling= args.use_global_avg_pooling
 
 	# - Train options
 	optimizer= args.optimizer
@@ -588,6 +592,7 @@ def main():
 	simclr.class_probs= class_probs_dict
 	simclr.use_predefined_arch= use_predefined_arch
 	simclr.predefined_arch= predefined_arch
+	simclr.use_global_avg_pooling= use_global_avg_pooling
 
 	simclr.save_tb_embeddings= save_tb_embeddings
 	simclr.nembeddings_save= nembeddings_save
