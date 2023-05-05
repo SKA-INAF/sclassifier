@@ -156,7 +156,9 @@ def get_args():
 	parser.set_defaults(apply_percentile_thr=False)
 	parser.add_argument('-percentile_thr', '--percentile_thr', dest='percentile_thr', required=False, type=float, default=50, action='store',help='Percentile threshold (default=50)')
 
-
+	parser.add_argument('--apply_histeq', dest='apply_histeq', action='store_true',help='Apply histogram equalization to input image')	
+	parser.set_defaults(apply_histeq=False)
+	
 	# - Network training options
 	parser.add_argument('-nepochs', '--nepochs', dest='nepochs', required=False, type=int, default=100, action='store',help='Number of epochs used in network training (default=100)')	
 	parser.add_argument('-optimizer', '--optimizer', dest='optimizer', required=False, type=str, default='rmsprop', action='store',help='Optimizer used (default=rmsprop)')
@@ -343,6 +345,8 @@ def main():
 	apply_percentile_thr= args.apply_percentile_thr
 	percentile_thr= args.percentile_thr
 	
+	apply_histeq= args.apply_histeq
+	
 	# - Model architecture
 	modelfile= args.modelfile
 	weightfile= args.weightfile
@@ -458,6 +462,9 @@ def main():
 
 	if zscale_stretch:
 		preprocess_stages.append(ZScaleTransformer(contrasts=zscale_contrasts))
+		
+	if apply_histeq:
+		preprocess_stages.append(HistEqualizer(adaptive=False))
 
 	if erode:
 		preprocess_stages.append(MaskShrinker(kernel=erode_kernel))

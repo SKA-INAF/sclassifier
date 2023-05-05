@@ -43,7 +43,7 @@ from sclassifier.preprocessing import BkgSubtractor, SigmaClipper, SigmaClipShif
 from sclassifier.preprocessing import Resizer, MinMaxNormalizer, AbsMinMaxNormalizer, MaxScaler, AbsMaxScaler, ChanMaxScaler
 from sclassifier.preprocessing import Shifter, Standardizer, ChanDivider, MaskShrinker, BorderMasker
 from sclassifier.preprocessing import ChanResizer, ZScaleTransformer, Chan3Trasformer
-from sclassifier.preprocessing import PercentileThresholder
+from sclassifier.preprocessing import PercentileThresholder, HistEqualizer
 
 import matplotlib.pyplot as plt
 
@@ -170,6 +170,9 @@ def get_args():
 	parser.set_defaults(apply_percentile_thr=False)
 	parser.add_argument('-percentile_thr', '--percentile_thr', dest='percentile_thr', required=False, type=float, default=50, action='store',help='Percentile threshold (default=50)')
 
+	parser.add_argument('--apply_histeq', dest='apply_histeq', action='store_true',help='Apply histogram equalization to input image')	
+	parser.set_defaults(apply_histeq=False)
+
 	parser.add_argument('--draw', dest='draw', action='store_true',help='Draw images')	
 	parser.set_defaults(draw=False)
 
@@ -292,6 +295,8 @@ def main():
 	apply_percentile_thr= args.apply_percentile_thr
 	percentile_thr= args.percentile_thr
 	
+	apply_histeq= args.apply_histeq
+	
 	outfile_stats= "stats_info.dat"
 	outfile_flags= "stats_flags.dat"
 	outfile_sample_stats= "stats_sample_info.dat"
@@ -342,6 +347,9 @@ def main():
 
 	if zscale_stretch:
 		preprocess_stages.append(ZScaleTransformer(contrasts=zscale_contrasts))
+		
+	if apply_histeq:
+		preprocess_stages.append(HistEqualizer(adaptive=False))
 	
 	if erode:
 		preprocess_stages.append(MaskShrinker(kernel=erode_kernel))
