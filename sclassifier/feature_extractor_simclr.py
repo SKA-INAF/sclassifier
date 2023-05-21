@@ -481,6 +481,7 @@ class FeatExtractorSimCLR(object):
 		#===========================
 		#==  DENSE LAYER
 		#===========================
+		# - Needed only to reduce a bit CNN output after flattening
 		if self.add_dense:
 			x = layers.Dense(self.latent_dim, activation=self.dense_layer_activation)(x)
 

@@ -80,6 +80,8 @@ def get_args():
 
 	parser.add_argument('--normalize_minmax', dest='normalize_minmax', action='store_true',help='Normalize each channel in range [0,1]')	
 	parser.set_defaults(normalize_minmax=False)
+	parser.add_argument('-norm_min', '--norm_min', dest='norm_min', required=False, type=float, default=0., action='store',help='Normalization min value (default=0)')
+	parser.add_argument('-norm_max', '--norm_max', dest='norm_max', required=False, type=float, default=1., action='store',help='Normalization max value (default=1)')
 	parser.add_argument('--normalize_absminmax', dest='normalize_absminmax', action='store_true',help='Normalize each channel in range using absolute min/max computed over all channels [0,1]')	
 	parser.set_defaults(normalize_absminmax=False)
 
@@ -297,6 +299,8 @@ def main():
 		scale_factors= [float(x.strip()) for x in args.scale_factors.split(',')]
 
 	normalize_minmax= args.normalize_minmax
+	norm_min= args.norm_min
+	norm_max= args.norm_max
 	normalize_absminmax= args.normalize_absminmax
 	scale_to_abs_max= args.scale_to_abs_max
 	scale_to_max= args.scale_to_max
@@ -488,10 +492,10 @@ def main():
 		preprocess_stages.append(Resizer(resize_size=resize_size, upscale=upscale, downscale_with_antialiasing=downscale_with_antialiasing, set_pad_val_to_min=set_pad_val_to_min))
 
 	if normalize_minmax:
-		preprocess_stages.append(MinMaxNormalizer())
+		preprocess_stages.append(MinMaxNormalizer(norm_min=norm_min, norm_max=norm_max))
 
 	if normalize_absminmax:
-		preprocess_stages.append(AbsMinMaxNormalizer())
+		preprocess_stages.append(AbsMinMaxNormalizer(norm_min=norm_min, norm_max=norm_max))
 
 	if scale_to_max:
 		preprocess_stages.append(MaxScaler())
