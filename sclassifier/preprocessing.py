@@ -27,6 +27,7 @@ from astropy.stats import sigma_clipped_stats
 from astropy.stats import sigma_clip
 from astropy.visualization import ZScaleInterval, MinMaxInterval, PercentileInterval, HistEqStretch
 
+
 ## SKIMAGE
 from skimage.util import img_as_float64
 from skimage.exposure import adjust_sigmoid, rescale_intensity, equalize_hist, equalize_adapthist
@@ -48,6 +49,14 @@ from .utils import Utils
 ##     GLOBAL VARS
 ##############################
 from sclassifier import logger
+
+
+## TENSORFLOW MODULES
+import tensorflow as tf
+try:
+	import tensorflow_models as tfm
+except:
+	logger.warn("Cannot import module tensorflow_models, not a problem if you don't use ColorJitterer pre-processor...")
 
 
 ##############################
@@ -498,18 +507,126 @@ class RandomCropResizeAugmenter(iaa.meta.Augmenter):
 
 		return batch
 	
+	
+	
+class ColorJitterAugmenter(iaa.meta.Augmenter):
+	""" Apply color jitter transform to image as augmentation step """
+	
+	def __init__(self, 
+		brightness=0.8,	
+		contrast=0.8,
+		saturation=0.8,
+		hue=0.2,
+		strength=1.0,
+		seed=None, name=None, random_state="deprecated", deterministic="deprecated"
+	):
+		""" Build class """
+
+		# - Set parent class parameters
+		super(ColorJitterAugmenter, self).__init__(
+			seed=seed, name=name,
+			random_state=random_state, deterministic=deterministic
+		)
+
+		# - Set class parameters
+		if brightness<=0:
+			raise Exception("Expected brightness to be >0, got %f!" % (brightness))
+		if contrast<=0:
+			raise Exception("Expected contrast to be >0, got %f!" % (contrast))
+		if saturation<=0:
+			raise Exception("Expected saturation to be >0, got %f!" % (saturation))
+		if hue<=0:
+			raise Exception("Expected hue to be >0, got %f!" % (hue))		
+
+		self.brightness= brightness
+		self.contrast= contrast
+		self.saturation= saturation
+		self.hue= hue
+		self.strength= strength
+		self.seed= seed
+		
+		# - Define normalizer
+		self.normalizer= MinMaxNormalizer(norm_min=0.0, norm_max=1.0)
+
+	def get_parameters(self):
+		""" Get class parameters """
+		return [self.brightness, self.contrast, self.saturation, self.hue, self.strength]
+
+	def _augment_batch_(self, batch, random_state, parents, hooks):
+		""" Augment batch of images """
+	
+		# - Check input batch
+		if batch.images is None:
+			return batch
+
+		images = batch.images
+		nb_images = len(images)
+		
+		# - Set random seed if given
+		if self.seed is not None:
+			np.random.seed(self.seed)
+
+		# - Loop over image batch
+		for i in range(nb_images):
+			image= images[i]
+			nb_channels = image.shape[2]
+			
+			# - Apply color jitter
+			#batch.images[i] = self.__get_transformed_image(image)
+			batch.images[i] = self.__get_transformed_image_v2(image)
+			
+			if batch.images[i] is None:
+				raise Exception("Color jitter augmented image at batch %d is None!" % (i+1))
+
+		return batch
+	
+	def __get_transformed_image(self, image):
+		""" Return color jittered image """
+		
+		# - Generate random brightness/contrast/saturation
+		brightness_rand= np.random.uniform( max(0, 1 - self.brightness*self.strength), 1 + self.brightness*self.strength)
+		contrast_rand= np.random.uniform( max(0, 1 - self.contrast*self.strength), 1 + self.contrast*self.strength)
+		saturation_rand= np.random.uniform( max(0, 1 - self.saturation*self.strength), 1 + self.saturation*self.strength)
+		
+		# - Apply transform
+		logger.debug("Applying color jitter transform to batch %d with pars (%f, %f, %f) " % (i+1, brightness_rand, contrast_rand, saturation_rand))
+		restore_original_range= True
+		jitterer= ColorJitterer(brightness_rand, contrast_rand, saturation_rand, restore_original_range)	
+		image_transf= jitterer(image)
+		
+		return image_transf
+		
+	
+	def __get_transformed_image_v2(self, image):
+		""" Return color jittered image """
+		
+		# - Need a tensor, normalized in range [0,1]
+		image_norm= self.normalizer(image)
+		x= tf.convert_to_tensor(image_norm)
+
+		# - Apply transforms
+		x = tf.image.random_brightness(x, max_delta=self.brightness*self.strength)
+		x = tf.image.random_contrast(x, lower=1-self.contrast*self.strength, upper=1+self.contrast*self.strength)
+		x = tf.image.random_saturation(x, lower=1-self.saturation*self.strength, upper=1+self.saturation*self.strength)
+		x = tf.image.random_hue(x, max_delta=0.2*self.strength)
+		x = tf.clip_by_value(x, 0, 1)
+
+		return x.numpy()
+	
+	
 ##############################
 ##     MinMaxNormalizer
 ##############################
 class MinMaxNormalizer(object):
 	""" Normalize each image channel to range  """
 
-	def __init__(self, norm_min=0, norm_max=1, **kwparams):
+	def __init__(self, norm_min=0., norm_max=1., exclude_zeros=True, **kwparams):
 		""" Create a data pre-processor object """
 			
 		# - Set parameters
 		self.norm_min= norm_min
 		self.norm_max= norm_max
+		self.exclude_zeros= exclude_zeros
 
 
 	def __call__(self, data):
@@ -525,7 +642,10 @@ class MinMaxNormalizer(object):
 
 		for i in range(data.shape[-1]):
 			data_ch= data[:,:,i]
-			cond= np.logical_and(data_ch!=0, np.isfinite(data_ch))
+			if self.exclude_zeros:
+				cond= np.logical_and(data_ch!=0, np.isfinite(data_ch))
+			else:
+				cond= np.isfinite(data_ch)
 			data_ch_1d= data_ch[cond]
 			if data_ch_1d.size==0:
 				logger.warn("Size of data_ch%d is zero, returning None!" % (i))
@@ -533,6 +653,9 @@ class MinMaxNormalizer(object):
 
 			data_ch_min= data_ch_1d.min()
 			data_ch_max= data_ch_1d.max()
+			
+			#logger.info("data_ch_min=%f, data_ch_max=%f" % (data_ch_min, data_ch_max))
+			
 			data_ch_norm= (data_ch-data_ch_min)/(data_ch_max-data_ch_min) * (self.norm_max-self.norm_min) + self.norm_min
 			data_ch_norm[~cond]= 0 # Restore 0 and nans set in original data
 			data_norm[:,:,i]= data_ch_norm
@@ -1655,6 +1778,121 @@ class ChanResizer(object):
 		return data_resized
 
 
+
+##############################
+##     ColorJitterer
+##############################
+class ColorJitterer(object):
+	""" Apply color jitter to input image  """
+
+	def __init__(self, brightness=0, contrast=0, saturation=0, restore_original_range=False, **kwparams):
+		""" Create a data pre-processor object """
+			
+		# - Set parameters
+		self.brightness= brightness
+		self.contrast= contrast
+		self.saturation= saturation
+		self.restore_original_range= restore_original_range
+		
+	def __call__(self, data):
+		""" Apply transformation and return transformed data """
+
+		# - Check data
+		if data is None:
+			logger.error("Input data is None!")
+			return None
+			
+		# - Check parameters
+		if self.brightness<0:
+			logger.error("Brightness parameter must be >=0!")
+			return None
+			
+		if self.contrast<0:
+			logger.error("Contrast parameter must be >=0!")
+			return None	
+			
+		if self.saturation<0:
+			logger.error("Contrast parameter must be >=0!")
+			return None		
+			
+		# - Retrieve original number of channels & normalization
+		datatype_orig= data.dtype
+		norm_min_orig= data.min()
+		norm_max_orig= data.max()
+		ndim_orig= data.ndim
+		if ndim_orig==2:
+			nchans_orig= 1
+		else:
+			nchans_orig= data.shape[-1]
+			
+		logger.debug("Data original range: [%f, %f]" % (norm_min_orig, norm_max_orig))
+		logger.debug("ndim_orig=%d, nchans_orig=%d" % (ndim_orig, nchans_orig))
+			
+		# - Define transformation
+		normalizer= MinMaxNormalizer(norm_min=0., norm_max=255.)
+		denormalizer= MinMaxNormalizer(norm_min=norm_min_orig, norm_max=norm_max_orig, exclude_zeros=False)
+		chresizer= ChanResizer(3)
+		chresizer_inv= ChanResizer(nchans_orig)
+		
+		# - Create 3 channels if only one channel is given
+		data_transf= data
+		if ndim_orig!=3 or nchans_orig!=3:
+			logger.debug("Reshaping data to 3 channels ...")
+			data_transf= chresizer(data)
+			
+		# - Convert to range [0,255]
+		if norm_min_orig!=0 or norm_max_orig!=255:
+			logger.debug("Converting to range [0,255] ...")
+			data_transf= normalizer(data_transf)
+		
+		# - Convert to uint8
+		data_transf= data_transf.astype('uint8')
+		
+		logger.debug("Data range: [%f, %f]" % (data_transf.min(), data_transf.max()))
+		logger.debug("ndim=%d, nchans=%d, dtype=%s" % (data_transf.ndim, data_transf.shape[-1], str(data_transf.dtype)))
+			
+		# - Apply color jitter
+		data_transf= self.__get_color_jittered_img(data_transf)
+		
+		logger.debug("Data range (after jitter): [%f, %f]" % (data_transf.min(), data_transf.max()))
+		logger.debug("ndim=%d, nchans=%d, dtype=%s" % (data_transf.ndim, data_transf.shape[-1], str(data_transf.dtype)))
+		
+		if self.restore_original_range:
+			# - Convert back to original type	
+			data_transf= data_transf.astype(datatype_orig)
+		
+			# - Denormalize data (revert to original range)
+			logger.debug("Denormalize data (revert to original range) ...")			
+			data_transf= denormalizer(data_transf)
+			
+			logger.debug("Data range (after restore range): [%f, %f]" % (data_transf.min(), data_transf.max()))
+		
+			# - Convert back to original dimension
+			ndim= data_transf.ndim
+			nchans= data_transf.shape[-1]
+			if ndim!=ndim_orig or nchans!=nchans_orig:
+				logger.debug("Converting back to original dimension & type ...")
+				if ndim_orig==2:
+					data_transf= data_transf[:,:,0]
+				else:
+					data_transf= chresizer_inv(data_transf)
+				
+		return data_transf
+		
+	def __get_color_jittered_img(self, image):
+		""" Return color jitter image, using TFM """
+		
+		image_transf= tfm.vision.augment.brightness(image, self.brightness)
+		image_transf= tfm.vision.augment.contrast(image_transf, self.contrast)
+		image_transf= self.__saturation(image_transf, self.saturation)
+		
+		return image_transf.numpy()
+		
+	def __saturation(self, image, saturation):
+		""" Return saturated image """
+		return tfm.vision.augment.blend(tf.repeat(tf.image.rgb_to_grayscale(image), 3, axis=-1), image, saturation)	
+	
+	
 ##############################
 ##   Augmenter
 ##############################
@@ -1746,6 +1984,15 @@ class Augmenter(object):
 		blur_aug= iaa.GaussianBlur(sigma=(1.0, 3.0))
 		noise_aug= iaa.AdditiveGaussianNoise(scale=(0, 0.1))
 		crop_aug= RandomCropResizeAugmenter(crop_fract_min=0.7, crop_fract_max=1.0)
+		
+		# - See https://arxiv.org/pdf/2002.05709.pdf (pag. 12) and https://arxiv.org/pdf/2305.16127.pdf (pag 4)
+		colorJitter_aug= ColorJitterAugmenter(
+			brightness=0.8, 
+			contrast=0.8, 
+			saturation=0.8,
+			hue=0.2,
+			strength=0.5
+		)
 
 		augmenter_simclr4= iaa.Sequential(
 			[
@@ -1789,6 +2036,16 @@ class Augmenter(object):
 			[
 				iaa.Sometimes(0.1, blur_aug),
 				zscaleStretch2_aug,
+				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
+  			iaa.OneOf([iaa.Rot90((1,3)), iaa.Noop()]), # rotate by 90, 180 or 270 or do nothing
+  			iaa.Sometimes(0.5, percThr_aug) 			
+			]
+		)
+		
+		augmenter_simclr8= iaa.Sequential(
+			[
+				iaa.Sometimes(0.1, blur_aug),
+				iaa.Sometimes(0.8, colorJitter_aug),
 				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
   			iaa.OneOf([iaa.Rot90((1,3)), iaa.Noop()]), # rotate by 90, 180 or 270 or do nothing
   			iaa.Sometimes(0.5, percThr_aug) 			
