@@ -612,6 +612,78 @@ class ColorJitterAugmenter(iaa.meta.Augmenter):
 		x = tf.clip_by_value(x, 0, 1)
 
 		return x.numpy()
+		
+		
+
+
+
+
+
+class SourceRemoverAugmenter(iaa.meta.Augmenter):
+	""" Apply source remover transform to image as augmentation step """
+	
+	#def __init__(self, niters=2, seed_thr=4., npix_max_thr=100
+	
+	def __init__(self, 
+		npix_upper_thr_min=200,
+		npix_upper_thr_max=600,
+		seed=None, name=None, random_state="deprecated", deterministic="deprecated"
+	):
+		""" Build class """
+
+		# - Set parent class parameters
+		super(SourceRemoverAugmenter, self).__init__(
+			seed=seed, name=name,
+			random_state=random_state, deterministic=deterministic
+		)
+
+		# - Set class parameters
+		if npix_upper_thr_min<=0 or npix_upper_thr_max<=0:
+			raise Exception("Expected npix_upper_thr to be >0, got %f/%f!" % (npix_upper_thr_min, npix_upper_thr_max))
+		if npix_upper_thr_min>=npix_upper_thr_max:
+			raise Exception("Expected npix_upper_thr_min to be <npix_upper_thr_max, got %f/%f!" % (npix_upper_thr_min, npix_upper_thr_max))	
+		
+		self.npix_upper_thr_min= npix_upper_thr_min
+		self.npix_upper_thr_max= npix_upper_thr_max
+		self.seed_thr= 4.0
+		self.niters= 2
+		
+		
+	def get_parameters(self):
+		""" Get class parameters """
+		return [self.npix_upper_thr_min, self.npix_upper_thr_max]
+
+	def _augment_batch_(self, batch, random_state, parents, hooks):
+		""" Augment batch of images """
+	
+		# - Check input batch
+		if batch.images is None:
+			return batch
+
+		images = batch.images
+		nb_images = len(images)
+		
+		# - Set random seed if given
+		if self.seed is not None:
+			np.random.seed(self.seed)
+
+		# - Loop over image batch
+		for i in range(nb_images):
+			image= images[i]
+			nb_channels = image.shape[2]
+			
+			# - Generate random npix_min_thr
+			npix_max_thr_rand= np.random.uniform(self.npix_upper_thr_min, self.npix_upper_thr_max)
+			
+			# - Apply source remover
+			sremover= SourceRemover(niters=self.niters, seed_thr=self.seed_thr, npix_max_thr=npix_max_thr_rand)
+			batch.images[i] = sremover(image)
+			
+			if batch.images[i] is None:
+				raise Exception("Source remover augmented image at batch %d is None!" % (i+1))
+
+		return batch
+	
 	
 	
 ##############################
@@ -1993,6 +2065,9 @@ class Augmenter(object):
 			hue=0.2,
 			strength=0.5
 		)
+		
+		# - Define compact source remover augmenter
+		sremover_aug= SourceRemoverAugmenter(npix_upper_thr_min=100, npix_upper_thr_max=500)
 
 		augmenter_simclr4= iaa.Sequential(
 			[
@@ -2044,6 +2119,7 @@ class Augmenter(object):
 		
 		augmenter_simclr8= iaa.Sequential(
 			[
+				iaa.Sometimes(0.5, sremover_aug),
 				iaa.Sometimes(0.1, blur_aug),
 				iaa.Sometimes(0.8, colorJitter_aug),
 				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
@@ -2073,6 +2149,8 @@ class Augmenter(object):
 			self.augmenter= augmenter_simclr6
 		elif choice=='simclr_v7':
 			self.augmenter= augmenter_simclr7
+		elif choice=='simclr_v8':
+			self.augmenter= augmenter_simclr8
 		elif choice=='byol':
 			self.augmenter= augmenter_byol
 		else:
