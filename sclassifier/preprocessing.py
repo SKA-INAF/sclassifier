@@ -622,8 +622,6 @@ class ColorJitterAugmenter(iaa.meta.Augmenter):
 class SourceRemoverAugmenter(iaa.meta.Augmenter):
 	""" Apply source remover transform to image as augmentation step """
 	
-	#def __init__(self, niters=2, seed_thr=4., npix_max_thr=100
-	
 	def __init__(self, 
 		npix_upper_thr_min=200,
 		npix_upper_thr_max=600,
@@ -645,6 +643,7 @@ class SourceRemoverAugmenter(iaa.meta.Augmenter):
 		
 		self.npix_upper_thr_min= npix_upper_thr_min
 		self.npix_upper_thr_max= npix_upper_thr_max
+		self.seed= seed
 		self.seed_thr= 4.0
 		self.niters= 2
 		
