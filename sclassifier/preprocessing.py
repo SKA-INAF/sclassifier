@@ -572,8 +572,8 @@ class ColorJitterAugmenter(iaa.meta.Augmenter):
 			nb_channels = image.shape[2]
 			
 			# - Apply color jitter
-			batch.images[i] = self.__get_transformed_image(image)
-			#batch.images[i] = self.__get_transformed_image_v2(image)
+			#batch.images[i] = self.__get_transformed_image(image)
+			batch.images[i] = self.__get_transformed_image_v2(image)
 			
 			if batch.images[i] is None:
 				raise Exception("Color jitter augmented image at batch %d is None!" % (i+1))
