@@ -2118,13 +2118,13 @@ class Augmenter(object):
 		
 		augmenter_simclr8= iaa.Sequential(
 			[
-				sremover_aug,
+				#sremover_aug,
 				#iaa.Sometimes(0.5, sremover_aug),
-				#iaa.Sometimes(0.1, blur_aug),
-				#iaa.Sometimes(0.8, colorJitter_aug),
-				#iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
-  			#iaa.OneOf([iaa.Rot90((1,3)), iaa.Noop()]), # rotate by 90, 180 or 270 or do nothing
-  			#iaa.Sometimes(0.5, percThr_aug) 			
+				iaa.Sometimes(0.1, blur_aug),
+				iaa.Sometimes(0.8, colorJitter_aug),
+				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
+  			iaa.OneOf([iaa.Rot90((1,3)), iaa.Noop()]), # rotate by 90, 180 or 270 or do nothing
+  			iaa.Sometimes(0.5, percThr_aug) 			
 			]
 		)
 		
