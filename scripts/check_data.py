@@ -165,7 +165,7 @@ def get_args():
 	parser.add_argument('--chan3_preproc', dest='chan3_preproc', action='store_true',help='Use the 3 channel pre-processor')	
 	parser.set_defaults(chan3_preproc=False)
 	parser.add_argument('-sigma_clip_baseline', '--sigma_clip_baseline', dest='sigma_clip_baseline', required=False, type=float, default=0, action='store',help='Lower sigma threshold to be used for clipping pixels below (mean-sigma_low*stddev) in first channel of 3-channel preprocessing (default=0)')
-
+	
 	parser.add_argument('--apply_percentile_thr', dest='apply_percentile_thr', action='store_true',help='Apply percentile threshold to input image')	
 	parser.set_defaults(apply_percentile_thr=False)
 	parser.add_argument('-percentile_thr', '--percentile_thr', dest='percentile_thr', required=False, type=float, default=50, action='store',help='Percentile threshold (default=50)')
@@ -291,7 +291,7 @@ def main():
 	
 	chan3_preproc= args.chan3_preproc
 	sigma_clip_baseline= args.sigma_clip_baseline
-
+	
 	apply_percentile_thr= args.apply_percentile_thr
 	percentile_thr= args.percentile_thr
 	
@@ -631,6 +631,10 @@ def main():
 			if draw:
 				logger.info("Drawing data ...")
 				fig = plt.figure(figsize=(20, 10))
+				plot_ncols= nchannels
+				if nchannels==3:
+					plot_ncols= 4
+					
 				for i in range(nchannels):
 					data_ch= data[0,:,:,i]
 					data_masked= np.ma.masked_equal(data_ch, 0.0, copy=False)
@@ -639,9 +643,15 @@ def main():
 					#data_ch[data_ch==0]= data_min
 
 					#logger.info("Reading nchan %d ..." % i+1)
-					plt.subplot(1, nchannels, i+1)
+					plt.subplot(1, plot_ncols, i+1)
 					im= plt.imshow(data_ch, origin='lower')
 					cbar= plt.colorbar(im)			
+
+				# - Draw RGB if 3 channels
+				if nchannels==3:
+					plt.subplot(1, plot_ncols, nchannels+1)
+					im= plt.imshow(data[0,:,:,:], origin='lower')
+					cbar= plt.colorbar(im)	
 
 				plt.tight_layout()
 				plt.show()
