@@ -589,7 +589,7 @@ class ColorJitterAugmenter(iaa.meta.Augmenter):
 		saturation_rand= np.random.uniform( max(0, 1 - self.saturation*self.strength), 1 + self.saturation*self.strength)
 		
 		# - Apply transform
-		logger.debug("Applying color jitter transform to batch %d with pars (%f, %f, %f) " % (i+1, brightness_rand, contrast_rand, saturation_rand))
+		logger.debug("Applying color jitter transform with pars (%f, %f, %f) " % (brightness_rand, contrast_rand, saturation_rand))
 		restore_original_range= True
 		jitterer= ColorJitterer(brightness_rand, contrast_rand, saturation_rand, restore_original_range)	
 		image_transf= jitterer(image)
