@@ -114,7 +114,7 @@ def main():
 	#==============================
 	#==   RUN PCA
 	#==============================
-	logger.info("Running HDBSCAN classifier prediction on input feature data ...")
+	logger.info("Running PCA on input feature data ...")
 	clust= Clusterer()
 	clust.normalize= normalize
 	clust.norm_transf= norm_transf
