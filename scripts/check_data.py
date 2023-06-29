@@ -44,6 +44,7 @@ from sclassifier.preprocessing import Resizer, MinMaxNormalizer, AbsMinMaxNormal
 from sclassifier.preprocessing import Shifter, Standardizer, ChanDivider, MaskShrinker, BorderMasker
 from sclassifier.preprocessing import ChanResizer, ZScaleTransformer, Chan3Trasformer
 from sclassifier.preprocessing import PercentileThresholder, HistEqualizer
+from sclassifier.preprocessing import BBoxResizer
 
 import matplotlib.pyplot as plt
 
@@ -172,6 +173,9 @@ def get_args():
 
 	parser.add_argument('--apply_histeq', dest='apply_histeq', action='store_true',help='Apply histogram equalization to input image')	
 	parser.set_defaults(apply_histeq=False)
+	
+	parser.add_argument('--shrink_to_mask_bbox', dest='shrink_to_mask_bbox', action='store_true',help='Extract mask from image (where data!=0) and shrink image to mask bbox shape, eventually resizing to desired resize_size')
+	parser.set_defaults(shrink_to_mask_bbox=False)
 
 	parser.add_argument('--draw', dest='draw', action='store_true',help='Draw images')	
 	parser.set_defaults(draw=False)
@@ -296,6 +300,7 @@ def main():
 	percentile_thr= args.percentile_thr
 	
 	apply_histeq= args.apply_histeq
+	shrink_to_mask_bbox= args.shrink_to_mask_bbox
 	
 	outfile_stats= "stats_info.dat"
 	outfile_flags= "stats_flags.dat"
@@ -323,6 +328,9 @@ def main():
 
 	if resize_chans:
 		preprocess_stages.append(ChanResizer(nchans=nchan_resize))
+		
+	if shrink_to_mask_bbox:
+		preprocess_stages.append(BBoxResizer(resize=resize, resize_size=resize_size))
 
 	if subtract_bkg:
 		preprocess_stages.append(BkgSubtractor(sigma=sigma_bkg, use_mask_box=use_box_mask_in_bkg, mask_fract=bkg_box_mask_fract, chid=bkg_chid))
@@ -651,7 +659,7 @@ def main():
 				if nchannels==3:
 					plt.subplot(1, plot_ncols, nchannels+1)
 					im= plt.imshow(data[0,:,:,:], origin='lower')
-					cbar= plt.colorbar(im)	
+					cbar= plt.colorbar(im)
 
 				plt.tight_layout()
 				plt.show()

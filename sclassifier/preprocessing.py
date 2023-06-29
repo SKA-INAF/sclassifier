@@ -29,6 +29,7 @@ from astropy.visualization import ZScaleInterval, MinMaxInterval, PercentileInte
 
 
 ## SKIMAGE
+import skimage
 from skimage.util import img_as_float64
 from skimage.exposure import adjust_sigmoid, rescale_intensity, equalize_hist, equalize_adapthist
 
@@ -1203,6 +1204,55 @@ class BorderMasker(object):
 			data_masked[:,:,i]= data_ch
 	
 		return data_masked
+		
+		
+##############################
+##     BBoxResizer
+##############################
+class BBoxResizer(object):
+	""" Extract image mask bounding box and eventually resize it to desired size """
+
+	def __init__(self, resize=False, resize_size=64, **kwparams):
+		""" Create a data pre-processor object """
+			
+		# - Set parameters
+		self.resize= resize
+		self.resize_size= resize
+		
+
+	def __call__(self, data):
+		""" Apply transformation and return transformed data """
+
+		# - Check data
+		if data is None:
+			logger.error("Input data is None!")
+			return None
+
+		# - Create binary mask
+		binary_map= np.ones_like(data).as_type('uint32')
+		binary_map[data==0]= 0
+		
+		# - Extract components
+		label_map= skimage.measure.label(binary_map)
+		regprops= skimage.measure.regionprops(label_map, data)
+		nregs= len(regprops)
+		if not regprops:
+			logger.error("No components extracted from image when 1 is expected!")
+			return None
+		if nregs>1:
+			logger.warn("#%d components extracted from image when 1 is expected!" % (nregs))
+			return None
+			
+		reg= regprops[0]
+		
+		# - Retrieve image 
+		data_bbox= regprop.image_intensity
+		
+		# - Resize image to desired max size
+		if self.resize:
+			data_bbox, _, _, _, _= Utils.resize_img_v2(data_bbox, min_dim=self.resize_size, max_dim=self.resize_size)
+		
+		return data_bbox
 
 ##############################
 ##   BkgSubtractor
