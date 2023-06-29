@@ -27,7 +27,6 @@ from astropy.stats import sigma_clipped_stats
 from astropy.stats import sigma_clip
 from astropy.visualization import ZScaleInterval, MinMaxInterval, PercentileInterval, HistEqStretch
 
-
 ## SKIMAGE
 import skimage
 from skimage.util import img_as_float64
@@ -1258,7 +1257,7 @@ class BBoxResizer(object):
 		
 		# - Resize image to desired max size
 		if self.resize:
-			logger.info("Resizing image to size %d ..." % (self.resize_size))
+			logger.debug("Resizing image to size %d ..." % (self.resize_size))
 			
 			max_dim= self.resize_size
 			min_dim= self.resize_size

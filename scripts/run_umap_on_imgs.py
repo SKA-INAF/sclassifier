@@ -525,8 +525,8 @@ def main():
 			class_ids.append(classid)
 			featdata_list.append(featdata)
 			
-			print("featdata.shape")
-			print(featdata.shape)
+			#print("featdata.shape")
+			#print(featdata.shape)
 			
 			# - Stop generator
 			if img_counter>=nsamples:
