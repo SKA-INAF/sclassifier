@@ -1251,7 +1251,10 @@ class BBoxResizer(object):
 		regprop= regprops[0]
 		
 		# - Retrieve image
-		data_bbox= regprop.image_intensity
+		try:
+			data_bbox= regprop.image_intensity
+		except:
+			data_bbox= regprop.intensity_image
 		
 		# - Resize image to desired max size
 		if self.resize:
