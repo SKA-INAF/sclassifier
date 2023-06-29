@@ -517,6 +517,7 @@ def main():
 
 				plt.tight_layout()
 				plt.show()
+				plt.close()
 				
 			# - Flatten data & add to list
 			featdata= data.flatten()
