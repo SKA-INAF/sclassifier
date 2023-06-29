@@ -1014,7 +1014,7 @@ class Clusterer(object):
 			return -1
 
 		if self.set_data(data, class_ids, snames)<0:
-			logger.error("Failed to read datafile %s!" % datafile)
+			logger.error("Failed to set data!")
 			return -1
 
 		#================================
