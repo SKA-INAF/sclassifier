@@ -54,10 +54,10 @@ from sclassifier import logger
 
 ## TENSORFLOW MODULES
 import tensorflow as tf
-try:
-	import tensorflow_models as tfm
-except:
-	logger.warn("Cannot import module tensorflow_models, not a problem if you don't use ColorJitterer pre-processor...")
+#try:
+#	import tensorflow_models as tfm
+#except:
+#	logger.warn("Cannot import module tensorflow_models, not a problem if you don't use ColorJitterer pre-processor...")
 
 
 ##############################
@@ -1217,7 +1217,8 @@ class BBoxResizer(object):
 			
 		# - Set parameters
 		self.resize= resize
-		self.resize_size= resize
+		self.resize_size= resize_size
+		self.downscale_with_antialiasing= False
 		
 
 	def __call__(self, data):
@@ -1228,8 +1229,12 @@ class BBoxResizer(object):
 			logger.error("Input data is None!")
 			return None
 
+		data_shape= data.shape
+		nx= data_shape[1]
+		ny= data_shape[0]
+
 		# - Create binary mask
-		binary_map= np.ones_like(data).as_type('uint32')
+		binary_map= np.ones_like(data).astype('uint32')
 		binary_map[data==0]= 0
 		
 		# - Extract components
@@ -1243,15 +1248,52 @@ class BBoxResizer(object):
 			logger.warn("#%d components extracted from image when 1 is expected!" % (nregs))
 			return None
 			
-		reg= regprops[0]
+		regprop= regprops[0]
 		
-		# - Retrieve image 
+		# - Retrieve image
 		data_bbox= regprop.image_intensity
 		
 		# - Resize image to desired max size
 		if self.resize:
-			data_bbox, _, _, _, _= Utils.resize_img_v2(data_bbox, min_dim=self.resize_size, max_dim=self.resize_size)
+			logger.info("Resizing image to size %d ..." % (self.resize_size))
+			
+			max_dim= self.resize_size
+			min_dim= self.resize_size
+			interp_order= 1 # 1=bilinear, 2=biquadratic, 3=bicubic, 4=biquartic, 5=biquintic
+			downscaling= (nx>self.resize_size) and (ny>self.resize_size)
+			antialiasing= False
+			if downscaling and self.downscale_with_antialiasing:
+				antialiasing= True
 		
+			try:
+				try: # work for skimage<=0.15.0
+					ret= Utils.resize_img_v2(data_bbox, 
+						min_dim=min_dim, max_dim=max_dim, min_scale=None, mode="square", 
+						order=interp_order, 
+						#anti_aliasing=antialiasing, 
+						preserve_range=True
+					)
+				except:
+					ret= Utils.resize_img_v2(img_as_float64(data_bbox), 
+						min_dim=min_dim, max_dim=max_dim, min_scale=None, mode="square", 
+						order=interp_order, 
+						#anti_aliasing=antialiasing, 
+						preserve_range=True
+					)
+
+				data_bbox= ret[0]
+		
+
+			except Exception as e:
+				logger.warn("Failed to resize data to size (%d,%d) (err=%s)!" % (self.resize_size, self.resize_size, str(e)))
+				return None
+
+			if data_bbox is None:
+				logger.warn("Resized data is None, failed to resize to size (%d,%d) (see logs)!" % (self.resize_size, self.resize_size))
+				return None
+		
+		
+		#return binary_map
 		return data_bbox
 
 ##############################

@@ -91,6 +91,7 @@ class Clusterer(object):
 		self.pca= None
 		self.pca_ncomps= -1
 		self.pca_varthr= 0.9
+		self.pca_transf_data= None
 		
 		# *****************************
 		# ** Clustering parameters
@@ -1075,6 +1076,8 @@ class Clusterer(object):
 			(snames, data_transf, objids),
 			axis=1
 		)
+		
+		self.pca_transf_data= data_transf
 
 		Nfeat_pca= data_transf.shape[1]
 		znames_counter= list(range(1,Nfeat_pca+1))
