@@ -122,6 +122,7 @@ class Clusterer(object):
 		self.metric_args= {}
 		self.min_cluster_size= 5   # this is the default
 		self.min_samples= None     # this is the default
+		self.cluster_selection_epsilon= 0.0 # this is the defaul
 
 		self.use_preclassified_data= True
 		self.preclassified_data_minsize= 20
@@ -490,6 +491,7 @@ class Clusterer(object):
 		clusterer = hdbscan.HDBSCAN(
 			min_cluster_size=self.min_cluster_size,
 			min_samples=self.min_samples,
+			cluster_selection_epsilon= self.cluster_selection_epsilon,
 			metric=self.metric,
 			prediction_data=True,
 		)
