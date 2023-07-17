@@ -2148,6 +2148,7 @@ class Augmenter(object):
 		blur_aug= iaa.GaussianBlur(sigma=(1.0, 3.0))
 		noise_aug= iaa.AdditiveGaussianNoise(scale=(0, 0.1))
 		crop_aug= RandomCropResizeAugmenter(crop_fract_min=0.7, crop_fract_max=1.0)
+		crop_aug_v2= RandomCropResizeAugmenter(crop_fract_min=0.8, crop_fract_max=1.0)
 		
 		# - See https://arxiv.org/pdf/2002.05709.pdf (pag. 12) and https://arxiv.org/pdf/2305.16127.pdf (pag 4)
 		colorJitter_aug= ColorJitterAugmenter(
@@ -2211,13 +2212,19 @@ class Augmenter(object):
 		
 		augmenter_simclr8= iaa.Sequential(
 			[
-				#sremover_aug,
-				#iaa.Sometimes(0.5, sremover_aug),
 				iaa.Sometimes(0.1, blur_aug),
 				iaa.Sometimes(0.8, colorJitter_aug),
 				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
-  			iaa.OneOf([iaa.Rot90((1,3)), iaa.Noop()]), # rotate by 90, 180 or 270 or do nothing
-  			#iaa.Sometimes(0.5, percThr_aug) 			
+  			iaa.OneOf([iaa.Rot90((1,3)), iaa.Noop()]), # rotate by 90, 180 or 270 or do nothing	
+			]
+		)
+		
+		augmenter_simclr9= iaa.Sequential(
+			[
+				crop_aug_v2,
+				iaa.Sometimes(0.8, colorJitter_aug),
+				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
+  			iaa.OneOf([iaa.Rot90((1,3)), iaa.Noop()]), # rotate by 90, 180 or 270 or do nothing		
 			]
 		)
 		
