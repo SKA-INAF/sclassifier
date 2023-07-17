@@ -2251,6 +2251,8 @@ class Augmenter(object):
 			self.augmenter= augmenter_simclr7
 		elif choice=='simclr_v8':
 			self.augmenter= augmenter_simclr8
+		elif choice=='simclr_v9':
+			self.augmenter= augmenter_simclr9
 		elif choice=='byol':
 			self.augmenter= augmenter_byol
 		else:
