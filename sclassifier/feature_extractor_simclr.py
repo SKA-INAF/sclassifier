@@ -1313,13 +1313,19 @@ class FeatExtractorSimCLR(object):
 		#==   LOAD MODEL
 		#===========================
 		#- Create the network architecture and weights from file
-		logger.info("Loading encoder model architecture and weights from files %s %s ..." % (modelfile_encoder, weightfile_encoder))
-		if self.__load_encoder(modelfile_encoder, weightfile_encoder)<0:
-			logger.warn("Failed to load encoder model from files!")
-			return -1
+		if modelfile_encoder!="" and weightfile_encoder!="":
+			logger.info("Loading encoder model architecture and weights from files %s %s ..." % (modelfile_encoder, weightfile_encoder))
+			if self.__load_encoder(modelfile_encoder, weightfile_encoder)<0:
+				logger.warn("Failed to load encoder model from files!")
+				return -1
 
-		self.modelfile_encoder= modelfile_encoder
-		self.weightfile_encoder= weightfile_encoder			
+			self.modelfile_encoder= modelfile_encoder
+			self.weightfile_encoder= weightfile_encoder			
+
+		else: # create model
+			logger.info("Creating encoder model ...")
+			inputShape = (self.ny, self.nx, self.nchannels)
+			self.__create_base_model(inputShape)
 
 		#================================
 		#==   PREDICT & SAVE EMBEDDINGS
