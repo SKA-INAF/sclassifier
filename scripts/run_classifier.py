@@ -68,6 +68,14 @@ def get_args():
 	parser.set_defaults(binary_class=False)
 	parser.add_argument('--balance_classes', dest='balance_classes', action='store_true',help='Apply class weights to balance classes (default=false)')	
 	parser.set_defaults(balance_classes=False)
+	
+	# - Override class target configuration
+	parser.add_argument('--classid_remap', dest='classid_remap', required=False, type=str, default='', help='Class ID remap dictionary')
+	parser.add_argument('--target_label_map', dest='target_label_map', required=False, type=str, default='', help='Target label dictionary')	
+	parser.add_argument('--classid_label_map', dest='classid_label_map', required=False, type=str, default='', help='Class ID label dictionary')
+	parser.add_argument('--target_names', dest='target_names', required=False, type=str, default='', help='Target names')
+	parser.add_argument('-nclasses', '--nclasses', dest='nclasses', required=False, type=int, default=0, action='store', help='Number of classes (default=-1)')
+	parser.add_argument('--objids_excluded_in_train', dest='objids_excluded_in_train', required=False, type=str, default='-1,0', help='Source ids not included for training as considered unknown classes')
 
 	# - Tree options
 	parser.add_argument('-max_depth','--max_depth', dest='max_depth', required=False, type=int, default=None, help='Max depth for decision tree, random forest and LGBM')
@@ -134,6 +142,48 @@ def main():
 		multiclass= False
 
 	balance_classes= args.balance_classes
+	
+	# - Override target/class id configuration
+	classid_remap= {}
+	if args.classid_remap!="":
+		try:
+			classid_remap= ast.literal_eval(args.classid_remap)
+		except Exception as e:
+			logger.error("Failed to convert class id remap string to dict (err=%s)!" % (str(e)))
+			return -1	
+		
+		print("== classid_remap ==")
+		print(classid_remap)
+
+	target_label_map= {}
+	if args.target_label_map!="":
+		try:
+			target_label_map= ast.literal_eval(args.target_label_map)
+		except Exception as e:
+			logger.error("Failed to convert target label map string to dict (err=%s)!" % (str(e)))
+			return -1	
+		
+		print("== target_label_map ==")
+		print(target_label_map)
+
+	classid_label_map= {}
+	if args.classid_label_map!="":
+		try:
+			classid_label_map= ast.literal_eval(args.classid_label_map)
+		except Exception as e:
+			logger.error("Failed to convert classid label map string to dict (err=%s)!" % (str(e)))
+			return -1	
+		
+		print("== classid_label_map ==")
+		print(classid_label_map)
+		
+	target_names= []
+	if args.target_names:
+		target_names= [str(x) for x in args.target_names.split(',')]
+		
+	nclasses= args.nclasses
+	
+	objids_excluded_in_train= [int(x) for x in args.objids_excluded_in_train.split(',')]
 
 	# - Tree options
 	max_depth= args.max_depth
@@ -210,6 +260,25 @@ def main():
 	sclass.save_outlier= save_outlier
 	sclass.outlier_outfile = outfile_outlier
 		
+	# - Override class target configuration?
+	if classid_remap:
+		sclass.set_classid_remap(classid_remap)
+
+	if target_label_map:
+		sclass.target_label_map= target_label_map
+
+	if classid_label_map:
+		sclass.set_classid_label_map(classid_label_map)	
+		
+	if nclasses>0:
+		sclass.nclasses= nclasses
+	
+	if target_names:
+		sclass.target_names= target_names
+			
+	sclass.excluded_objids_train = objids_excluded_in_train	
+		
+	# - Run predict/train
 	if predict:
 		status= sclass.run_predict(
 			data, classids, snames, 

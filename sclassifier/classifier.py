@@ -91,6 +91,8 @@ class SClassifier(object):
 		self.source_names= []
 		self.source_names_preclassified= []
 
+		self.excluded_objids_train= [-1,0] # Sources with these ids are considered not labelled and therefore excluded from training or metric calculation
+
 		# - Validation data
 		self.nsamples_cv= 0
 		self.nfeatures_cv= 0
@@ -106,6 +108,7 @@ class SClassifier(object):
 		self.data_preclassified_targetnames_cv= None
 		self.source_names_cv= []
 		self.source_names_preclassified_cv= []
+		
 
 		# *****************************
 		# ** Model
@@ -279,6 +282,19 @@ class SClassifier(object):
 		print(self.classid_remap_inv)
 		print("classid_label_map_inv")
 		print(self.classid_label_map_inv)
+
+	def set_classid_remap(self, cid_remap):
+		""" Set class id remap and update inverted map """
+	
+		self.classid_remap= cid_remap
+		self.classid_remap_inv= {v: k for k, v in self.classid_remap.items()}
+		
+	def set_classid_label_map(self, cid_label_map):
+		""" Set class id label map and update inverted map """
+	
+		self.classid_label_map= cid_label_map
+		self.classid_label_map_inv= {v: k for k, v in self.classid_label_map.items()}
+		
 
 
 	#####################################
@@ -462,7 +478,14 @@ class SClassifier(object):
 			label= self.data_labels[i]
 			target_id= self.classid_remap[obj_id] # remap obj id to target class ids
 				
-			if obj_id!=0 and obj_id!=-1:
+			add_to_train_list= True
+			for obj_id_excl in self.excluded_objids_train:
+				if obj_id==obj_id_excl:
+					add_to_train_list=False
+					break	
+				
+			#if obj_id!=0 and obj_id!=-1:
+			if add_to_train_list:
 				row_list.append(i)
 				classid_list.append(obj_id)
 				targetid_list.append(target_id)	
@@ -505,7 +528,14 @@ class SClassifier(object):
 			label= self.data_labels_cv[i]
 			target_id= self.classid_remap[obj_id] # remap obj id to target class ids
 				
-			if obj_id!=0 and obj_id!=-1:
+			add_to_train_list= True
+			for obj_id_excl in self.excluded_objids_train:
+				if obj_id==obj_id_excl:
+					add_to_train_list=False
+					break		
+				
+			#if obj_id!=0 and obj_id!=-1:
+			if add_to_train_list:
 				row_list.append(i)
 				classid_list.append(obj_id)
 				targetid_list.append(target_id)	
