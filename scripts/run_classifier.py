@@ -18,11 +18,14 @@ import numpy as np
 import random
 import math
 import logging
+import json
+import ast
 
 ## COMMAND-LINE ARG MODULES
 import getopt
 import argparse
 import collections
+
 
 ## MODULES
 from sclassifier import __version__, __date__
