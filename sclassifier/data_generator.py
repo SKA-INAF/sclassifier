@@ -268,7 +268,8 @@ class DataGenerator(object):
 				# - Update inputs
 				inputs[nb]= sdata.img_cube
 				target_ids.append(target_id)
-				class_ids.append(class_id)
+				if class_id>=0:
+					class_ids.append(class_id)
 				nb+= 1
 
 				# - Return data if number of batch is reached and restart the batch
@@ -370,7 +371,8 @@ class DataGenerator(object):
 					logger.error("Exception occurred while filling input data (nb=%d), exit generator!" % (nb))
 					break
 
-				class_ids.append(class_id)
+				if class_id>=0:
+					class_ids.append(class_id)
 				nb+= 1
 
 				# - Return data if number of batch is reached and restart the batch
@@ -480,7 +482,8 @@ class DataGenerator(object):
 				labels_ab_aa[nb, nb] = 1
 				labels_ba_bb[nb, nb] = 1
 
-				class_ids.append(class_id)
+				if class_id>=0:
+					class_ids.append(class_id)
 				nb+= 1
 
 				# - Return data if number of batch is reached and restart the batch
@@ -567,7 +570,8 @@ class DataGenerator(object):
 				inputs_simclr[nb]= sdata_1.img_cube
 				inputs_simclr[nb + 1]= sdata_2.img_cube
 
-				class_ids.append(class_id)
+				if class_id>=0:
+					class_ids.append(class_id)
 				nb+= 2
 
 				# - Return data if number of batch is reached and restart the batch
@@ -652,7 +656,8 @@ class DataGenerator(object):
 				# - Update inputs
 				inputs_1[nb]= sdata_1.img_cube
 				inputs_2[nb]= sdata_2.img_cube
-				class_ids.append(class_id)
+				if class_id>=0:
+					class_ids.append(class_id)
 				nb+= 1
 
 				# - Return data if number of batch is reached and restart the batch
@@ -744,7 +749,8 @@ class DataGenerator(object):
 					
 				# - Update inputs
 				inputs[nb]= sdata.img_cube
-				class_ids.append(class_id)
+				if class_id>=0:
+					class_ids.append(class_id)
 				nb+= 1
 
 				# - Return data if number of batch is reached and restart the batch
