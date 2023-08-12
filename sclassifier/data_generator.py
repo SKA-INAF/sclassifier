@@ -268,7 +268,7 @@ class DataGenerator(object):
 				# - Update inputs
 				inputs[nb]= sdata.img_cube
 				target_ids.append(target_id)
-				if class_id>=0:
+				if not multilabel and class_id>=0:
 					class_ids.append(class_id)
 				nb+= 1
 
