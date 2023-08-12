@@ -880,7 +880,8 @@ class SClassifierNN(object):
 		print(type(self.probs_pred))
 
 		# - Get original labels from target ids
-		labels= [[self.target_label_map[target_id] for target_id in item] for item in self.target_ids_all]
+		##labels= [[self.target_label_map[target_id] for target_id in item] for item in self.target_ids_all]
+		labels= [[self.target_label_map[target_id] if target_id in self.target_label_map else 'UNKNOWN' for target_id in item] for item in self.target_ids_all]
 
 		# - Get predicted labels from predicted target ids
 		##labels_pred= [[self.target_label_map[target_id] for target_id in item] for item in self.targets_pred]
