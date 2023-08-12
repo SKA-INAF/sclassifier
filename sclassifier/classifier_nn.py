@@ -883,7 +883,8 @@ class SClassifierNN(object):
 		labels= [[self.target_label_map[target_id] for target_id in item] for item in self.target_ids_all]
 
 		# - Get predicted labels from predicted target ids
-		labels_pred= [[self.target_label_map[target_id] for target_id in item] for item in self.targets_pred]
+		##labels_pred= [[self.target_label_map[target_id] for target_id in item] for item in self.targets_pred]
+		labels_pred= [[self.target_label_map[target_id] if target_id in self.target_label_map else 'UNKNOWN' for target_id in item] for item in self.targets_pred]
 		
 		# - Save predicted data to file
 		logger.info("Saving prediction data to file %s ..." % (self.outfile))
