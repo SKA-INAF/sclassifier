@@ -371,7 +371,7 @@ class DataGenerator(object):
 					logger.error("Exception occurred while filling input data (nb=%d), exit generator!" % (nb))
 					break
 
-				if class_id>=0:
+				if not multilabel and class_id>=0:
 					class_ids.append(class_id)
 				nb+= 1
 
