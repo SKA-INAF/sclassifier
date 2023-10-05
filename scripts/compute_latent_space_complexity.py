@@ -21,7 +21,6 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 from sklearn.preprocessing import KBinsDiscretizer
 
 ## NON-STANDARD MODULES
-##from pybdm import BDM
 import gzip
 
 ## MODULES
@@ -49,7 +48,7 @@ def get_args():
 	parser.add_argument('-strategy','--strategy', dest='strategy', required=False, type=str, default='uniform', help='Discretizer strategy (uniform, kmeans)') 	
 	
 	# - Output options
-	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='featdata_merged.dat', help='Output filename (.dat) with selected feature data') 
+	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='complexity.dat', help='Output filename (.dat) with selected feature data') 
 
 	args = parser.parse_args()	
 
@@ -213,10 +212,6 @@ def main():
 	#===========================
 	#==   COMPUTE COMPLEXITY
 	#===========================
-	# Initialize BDM object
-	#logger.info("Initialize BDM object ...")
-	#bdm = BDM(ndim=1, nsymbols=int(norm_max))
-
 	# - Compute complexity for each row
 	logger.info("Compute complexity row-by-row ...")
 	data_shape= data.shape
@@ -227,12 +222,6 @@ def main():
 	
 	for i in range(nrows):
 		X= data_binned[i,:]
-		#print("nbytes=", X.nbytes)
-		#print("X.shape")
-		#print(X)
-		#print(np.unique(X))
-		#print(X.shape)
-		#complexity= bdm.bdm(X)
 		
 		f= gzip.GzipFile(tmpfile, "w")
 		np.save(file=f, arr=X)
@@ -249,6 +238,20 @@ def main():
 	except OSError:
 		pass
 	
+	# - Save data
+	N= data_shape[0]
+	snames= np.array(snames).reshape(N,1)
+	classids= np.array(classids).reshape(N,1)
+	complexities= np.array(complexities).reshape(N,1)
+		
+	outdata= np.concatenate(
+		(snames, np.array(complexities), classids),
+		axis=1
+	)
+	head= "# sname complexity id"
+
+	logger.info("Save complexity data to file %s ..." % (outfile))
+	Utils.write_ascii(outdata, outfile, head)	
 	
 	return 0
 
