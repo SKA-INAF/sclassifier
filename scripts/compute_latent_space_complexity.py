@@ -187,7 +187,7 @@ def main():
 			n_bins=nbins, 
 			encode="ordinal", 
 			strategy=strategy, 
-			random_state=0
+			#random_state=0
 		)
 		
 		# - Fitting discretizer to data
