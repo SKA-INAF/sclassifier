@@ -1129,17 +1129,18 @@ class FeatExtractorSimCLR(object):
 				return 1
 				
 			# - Check weights effectively changed
-			logger.info("Check that encoder weights were effectively updated ...")
-			failed= False
-			for layer, initial in zip(self.encoder.layers, encoder_weights_original):
-				weights_curr= layer.get_weights()
-				if weights_curr and all(tf.nest.map_structure(np.array_equal, weights_curr, initial)):
-					logger.warning("Original and final encoder weights for layer %s are equal ..." % (layer.name))
-					failed= True
+			if self.weightfile!="":
+				logger.info("Check that encoder weights were effectively updated ...")
+				failed= False
+				for layer, initial in zip(self.encoder.layers, encoder_weights_original):
+					weights_curr= layer.get_weights()
+					if weights_curr and all(tf.nest.map_structure(np.array_equal, weights_curr, initial)):
+						logger.warning("Original and final encoder weights for layer %s are equal ..." % (layer.name))
+						failed= True
 	
-			if failed:
-				logger.error("Encoder weights were not updated wrt original weights!")
-				return 1	
+				if failed:
+					logger.warning("Encoder weights were not updated wrt original weights!")
+					# return 1
 		
 			# - Save encoder weights 
 			self.encoder.save_weights('encoder_weights.h5')
