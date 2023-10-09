@@ -1102,12 +1102,53 @@ class FeatExtractorSimCLR(object):
 		plot_model(self.model, to_file=self.outfile_model, show_shapes=True)
 
 		# - Save encoder
+		#   NB: Saving the encoder weights directly does not work when 
+		#       we load weights from a previously trained model. In this case, the
+		#       encoder weights saved are always the input loaded encoder weights and NOT 
+		#       the encoder weights at the final epoch after the current training.
+		#       In other words, the encoder model is not automatically updated after training.
+		#       We fixed that by setting the encoder weights from trained model.   
 		if self.encoder:
+			# - Get encoder weights from model
+			logger.info("Retrieving final encoder weights from trained model ...")
+			try:
+				encoder_weights= self.model.get_layer("base_model").get_weights()
+			except Exception as e:
+				logger.error("Failed to retrieve final encoder weights from model!")
+				return -1
+				
+			# - Retrieve original encoder weights
+			encoder_weights_original= [layer.get_weights() for layer in self.encoder.layers]	
+			
+			# - Update encoder weights
+			logger.info("Update encoder weights ...")
+			try:
+				self.encoder.set_weights(encoder_weights)
+			except Exception as e:
+				logger.error("Failed to set final weights in encoder model (err=%s)!" % (str(e)))
+				return 1
+				
+			# - Check weights effectively changed
+			logger.info("Check that encoder weights were effectively updated ...")
+			failed= False
+			for layer, initial in zip(self.encoder.layers, encoder_weights_original):
+				weights_curr= layer.get_weights()
+				if weights_curr and all(tf.nest.map_structure(np.array_equal, weights_curr, initial)):
+					logger.warning("Original and final encoder weights for layer %s are equal ..." % (layer.name))
+					failed= True
+	
+			if failed:
+				logger.error("Encoder weights were not updated wrt original weights!")
+				return 1	
+		
+			# - Save encoder weights 
 			self.encoder.save_weights('encoder_weights.h5')
 
+			# - Save encoder architecture
 			with open('encoder_architecture.json', 'w') as f:
 				f.write(self.encoder.to_json())
 
+			# - Save encoder model
 			self.encoder.save('encoder.h5')
 
 		
