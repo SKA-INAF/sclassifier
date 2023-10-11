@@ -19,6 +19,7 @@ import numpy as np
 import random
 import math
 import logging
+import ast
 
 ## COMMAND-LINE ARG MODULES
 import getopt
@@ -62,6 +63,7 @@ def get_args():
 	parser.add_argument('-pca_ncomps', '--pca_ncomps', dest='pca_ncomps', required=False, type=int, default=-1, action='store',help='Number of PCA components to be used (-1=retain all cumulating a variance above threshold) (default=-1)')
 	parser.add_argument('-pca_varthr', '--pca_varthr', dest='pca_varthr', required=False, type=float, default=0.9, action='store',help='Cumulative variance threshold used to retain PCA components (default=0.9)')
 
+	parser.add_argument('--classid_label_map', dest='classid_label_map', required=False, type=str, default='', help='Class ID label dictionary')
 	
 	args = parser.parse_args()	
 
@@ -93,6 +95,17 @@ def main():
 	normalize= args.normalize
 	scalerfile= args.scalerfile
 	norm_transf= args.norm_transf
+	
+	classid_label_map= {}
+	if args.classid_label_map!="":
+		try:
+			classid_label_map= ast.literal_eval(args.classid_label_map)
+		except Exception as e:
+			logger.error("Failed to convert classid label map string to dict (err=%s)!" % (str(e)))
+			return -1	
+		
+		print("== classid_label_map ==")
+		print(classid_label_map)
 
 	# - PCA model options
 	modelfile= args.modelfile
@@ -120,6 +133,7 @@ def main():
 	clust.norm_transf= norm_transf
 	clust.pca_ncomps= pca_ncomps
 	clust.pca_varthr= pca_varthr
+	clust.classid_label_map= classid_label_map
 	
 	status= 0
 	if clust.run_pca(data, class_ids=classids, snames=snames, modelfile=modelfile, scalerfile=scalerfile)<0:

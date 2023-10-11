@@ -26,6 +26,7 @@ import numpy as np
 import random
 import math
 import logging
+import ast
 
 ## COMMAND-LINE ARG MODULES
 import getopt
@@ -68,6 +69,8 @@ def get_args():
 	parser.add_argument('-reduce_dim_method', '--reduce_dim_method', dest='reduce_dim_method', default='pca', required=False, type=str, action='store',help='Dimensionality reduction method {pca} (default=pca)')
 	parser.add_argument('-pca_ncomps', '--pca_ncomps', dest='pca_ncomps', required=False, type=int, default=-1, action='store',help='Number of PCA components to be used (-1=retain all cumulating a variance above threshold) (default=-1)')
 	parser.add_argument('-pca_varthr', '--pca_varthr', dest='pca_varthr', required=False, type=float, default=0.9, action='store',help='Cumulative variance threshold used to retain PCA components (default=0.9)')
+	
+	parser.add_argument('--classid_label_map', dest='classid_label_map', required=False, type=str, default='', help='Class ID label dictionary')
 
 	# - Clustering options
 	parser.add_argument('-min_cluster_size', '--min_cluster_size', dest='min_cluster_size', required=False, type=int, default=5, action='store',help='Minimum cluster size for HDBSCAN clustering (default=5)')
@@ -114,6 +117,17 @@ def main():
 	pca_ncomps= args.pca_ncomps
 	pca_varthr= args.pca_varthr
 	
+	classid_label_map= {}
+	if args.classid_label_map!="":
+		try:
+			classid_label_map= ast.literal_eval(args.classid_label_map)
+		except Exception as e:
+			logger.error("Failed to convert classid label map string to dict (err=%s)!" % (str(e)))
+			return -1	
+		
+		print("== classid_label_map ==")
+		print(classid_label_map)
+
 	# - Clustering options
 	min_cluster_size= args.min_cluster_size
 	min_samples= args.min_samples	
@@ -150,6 +164,7 @@ def main():
 	clust_class.pca_ncomps= pca_ncomps
 	clust_class.pca_varthr= pca_varthr
 	clust_class.draw= draw
+	clust_class.classid_label_map= classid_label_map
 
 	status= 0
 	if predict_clust:
