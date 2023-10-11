@@ -2228,6 +2228,17 @@ class Augmenter(object):
 			]
 		)
 		
+		augmenter_simclr10= iaa.Sequential(
+			[
+				crop_aug_v2,
+				iaa.Sometimes(0.8, colorJitter_aug),
+				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
+  			iaa.OneOf([iaa.Rot90((1,3)), iaa.Noop()]), # rotate by 90, 180 or 270 or do nothing
+  			iaa.Sometimes(0.1, blur_aug),
+  			iaa.Sometimes(0.5, percThr_aug)
+			]
+		)
+		
 		# - Define augmenter for BYOL
 		augmenter_byol= iaa.Sequential(
 			[
@@ -2253,6 +2264,8 @@ class Augmenter(object):
 			self.augmenter= augmenter_simclr8
 		elif choice=='simclr_v9':
 			self.augmenter= augmenter_simclr9
+		elif choice=='simclr_v10':
+			self.augmenter= augmenter_simclr10	
 		elif choice=='byol':
 			self.augmenter= augmenter_byol
 		else:
