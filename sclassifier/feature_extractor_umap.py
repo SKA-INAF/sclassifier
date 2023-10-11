@@ -272,7 +272,10 @@ class FeatExtractorUMAP(object):
 				row_list.append(i)
 				classid_list.append(obj_id)	
 				label_list.append(label)
-				self.source_names_preclassified.append(source_name)				
+				self.source_names_preclassified.append(source_name)
+			else:
+				logger.info("Exclude source with id=%d from list (excluded_ids=%s) ..." % (obj_id, str(self.excluded_objids_train)))
+				
 
 		if row_list:	
 			self.data_preclassified= self.data[row_list,:]
