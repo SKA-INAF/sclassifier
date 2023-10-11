@@ -165,9 +165,7 @@ def main():
 	umap_class.set_n_neighbors(nneighbors_umap)
 	umap_class.draw= draw
 	
-	if classid_label_map:
-		umap_class.set_classid_label_map(classid_label_map)
-	
+	umap_class.classid_label_map= classid_label_map
 	umap_class.excluded_objids_train = objids_excluded_in_train
 
 	status= 0
