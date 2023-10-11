@@ -64,7 +64,8 @@ def get_args():
 	parser.add_argument('-pca_varthr', '--pca_varthr', dest='pca_varthr', required=False, type=float, default=0.9, action='store',help='Cumulative variance threshold used to retain PCA components (default=0.9)')
 
 	parser.add_argument('--classid_label_map', dest='classid_label_map', required=False, type=str, default='', help='Class ID label dictionary')
-	
+	parser.add_argument('--objids_excluded_in_train', dest='objids_excluded_in_train', required=False, type=str, default='-1,0', help='Source ids not included for training as considered unknown classes')
+
 	args = parser.parse_args()	
 
 	return args
@@ -106,6 +107,8 @@ def main():
 		
 		print("== classid_label_map ==")
 		print(classid_label_map)
+		
+	objids_excluded_in_train= [int(x) for x in args.objids_excluded_in_train.split(',')]	
 
 	# - PCA model options
 	modelfile= args.modelfile
@@ -134,6 +137,7 @@ def main():
 	clust.pca_ncomps= pca_ncomps
 	clust.pca_varthr= pca_varthr
 	clust.classid_label_map= classid_label_map
+	clust.excluded_objids_train = objids_excluded_in_train
 	
 	status= 0
 	if clust.run_pca(data, class_ids=classids, snames=snames, modelfile=modelfile, scalerfile=scalerfile)<0:
