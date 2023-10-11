@@ -26,6 +26,7 @@ import numpy as np
 import random
 import math
 import logging
+import ast
 
 ## COMMAND-LINE ARG MODULES
 import getopt
@@ -63,6 +64,9 @@ def get_args():
 	parser.set_defaults(normalize=False)
 	parser.add_argument('-scalerfile', '--scalerfile', dest='scalerfile', required=False, type=str, default='', action='store',help='Load and use data transform stored in this file (.sav)')
 	
+	parser.add_argument('--classid_label_map', dest='classid_label_map', required=False, type=str, default='', help='Class ID label dictionary')
+	parser.add_argument('--objids_excluded_in_train', dest='objids_excluded_in_train', required=False, type=str, default='-1,0', help='Source ids not included for training as considered unknown classes')
+
 	# - UMAP classifier options
 	parser.add_argument('-latentdim_umap', '--latentdim_umap', dest='latentdim_umap', required=False, type=int, default=2, action='store',help='Encoded data dim in UMAP (default=2)')
 	parser.add_argument('-mindist_umap', '--mindist_umap', dest='mindist_umap', required=False, type=float, default=0.1, action='store',help='Min dist UMAP par (default=0.1)')
@@ -108,6 +112,19 @@ def main():
 	# - Data pre-processing
 	normalize= args.normalize
 	scalerfile= args.scalerfile
+	
+	classid_label_map= {}
+	if args.classid_label_map!="":
+		try:
+			classid_label_map= ast.literal_eval(args.classid_label_map)
+		except Exception as e:
+			logger.error("Failed to convert classid label map string to dict (err=%s)!" % (str(e)))
+			return -1	
+		
+		print("== classid_label_map ==")
+		print(classid_label_map)
+		
+	objids_excluded_in_train= [int(x) for x in args.objids_excluded_in_train.split(',')]	
 
 	# - UMAP options
 	latentdim_umap= args.latentdim_umap
@@ -147,6 +164,11 @@ def main():
 	umap_class.set_min_dist(mindist_umap)
 	umap_class.set_n_neighbors(nneighbors_umap)
 	umap_class.draw= draw
+	
+	if classid_label_map:
+		umap_class.set_classid_label_map(classid_label_map)
+	
+	umap_class.excluded_objids_train = objids_excluded_in_train
 
 	status= 0
 	if predict:

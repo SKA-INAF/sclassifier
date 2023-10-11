@@ -260,8 +260,15 @@ class FeatExtractorUMAP(object):
 			source_name= self.source_names[i]
 			obj_id= self.data_classids[i]
 			label= self.data_labels[i]
-				
-			if obj_id!=0 and obj_id!=-1:
+			
+			add_to_train_list= True
+			for obj_id_excl in self.excluded_objids_train:
+				if obj_id==obj_id_excl:
+					add_to_train_list= False
+					break
+
+			if add_to_train_list:
+			#if obj_id!=0 and obj_id!=-1:
 				row_list.append(i)
 				classid_list.append(obj_id)	
 				label_list.append(label)
