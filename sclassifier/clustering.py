@@ -78,6 +78,9 @@ class Clusterer(object):
 		self.source_names= []
 		self.source_names_preclassified= []
 		
+		self.excluded_objids_train= [-1,0] # Sources with these ids are considered not labelled and therefore excluded from training or metric calculation
+		self.classid_label_map= {}
+		
 		# *****************************
 		# ** Pre-processing
 		# *****************************
@@ -318,12 +321,22 @@ class Clusterer(object):
 			source_name= self.source_names[i]
 			obj_id= self.data_classids[i]
 			label= self.data_labels[i]
+			
+			add_to_train_list= True
+			for obj_id_excl in self.excluded_objids_train:
+				if obj_id==obj_id_excl:
+					add_to_train_list= False
+					break
 				
-			if obj_id!=0 and obj_id!=-1:
+			#if obj_id!=0 and obj_id!=-1:
+			if add_to_train_list:
 				row_list.append(i)
 				classid_list.append(obj_id)	
 				label_list.append(label)
-				self.source_names_preclassified.append(source_name)				
+				self.source_names_preclassified.append(source_name)
+			else:
+				logger.info("Exclude source with id=%d from list (excluded_ids=%s) ..." % (obj_id, str(self.excluded_objids_train)))
+					
 
 		if row_list:	
 			self.data_preclassified= self.data[row_list,:]
@@ -366,7 +379,10 @@ class Clusterer(object):
 		for data in table:
 			sname= data[0]
 			classid= data[ncols-1]
-			label= self.classid_label_map[classid]
+			if self.classid_label_map:
+				label= self.classid_label_map[classid]
+			else:
+				label= str(classid)
 
 			self.source_names.append(sname)
 			self.data_labels.append(label)
@@ -436,10 +452,13 @@ class Clusterer(object):
 				logger.error("Given class ids have size (%d) different than feature data (%d)!" % (nids,self.nsamples))
 				return -1
 			self.data_classids= class_ids
-
+	
 			for classid in self.data_classids:
-				label= self.classid_label_map[classid]
-				self.data_labels.append(label)
+				if self.classid_label_map:
+					label= self.classid_label_map[classid]
+				else:
+					label= str(classid)
+				self.data_labels.append(label)					
 
 		else:
 			self.data_classids= [0]*self.nsamples # Init to unknown type

@@ -65,6 +65,8 @@ class FeatExtractorUMAP(object):
 		self.source_names= []
 		self.source_names_preclassified= []
 		
+		self.excluded_objids_train= [-1,0] # Sources with these ids are considered not labelled and therefore excluded from training or metric calculation
+		
 		# *****************************
 		# ** Pre-processing
 		# *****************************

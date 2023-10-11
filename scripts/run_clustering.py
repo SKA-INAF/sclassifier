@@ -71,6 +71,7 @@ def get_args():
 	parser.add_argument('-pca_varthr', '--pca_varthr', dest='pca_varthr', required=False, type=float, default=0.9, action='store',help='Cumulative variance threshold used to retain PCA components (default=0.9)')
 	
 	parser.add_argument('--classid_label_map', dest='classid_label_map', required=False, type=str, default='', help='Class ID label dictionary')
+	parser.add_argument('--objids_excluded_in_train', dest='objids_excluded_in_train', required=False, type=str, default='-1,0', help='Source ids not included for training as considered unknown classes')
 
 	# - Clustering options
 	parser.add_argument('-min_cluster_size', '--min_cluster_size', dest='min_cluster_size', required=False, type=int, default=5, action='store',help='Minimum cluster size for HDBSCAN clustering (default=5)')
@@ -128,6 +129,8 @@ def main():
 		print("== classid_label_map ==")
 		print(classid_label_map)
 
+	objids_excluded_in_train= [int(x) for x in args.objids_excluded_in_train.split(',')]	
+	
 	# - Clustering options
 	min_cluster_size= args.min_cluster_size
 	min_samples= args.min_samples	
@@ -165,6 +168,7 @@ def main():
 	clust_class.pca_varthr= pca_varthr
 	clust_class.draw= draw
 	clust_class.classid_label_map= classid_label_map
+	clust_class.excluded_objids_train = objids_excluded_in_train
 
 	status= 0
 	if predict_clust:
