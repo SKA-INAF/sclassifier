@@ -92,7 +92,8 @@ def get_args():
 	# - Save options
 	parser.add_argument('--save', dest='save', action='store_true',help='Save extracted cutouts (default=false)')	
 	parser.set_defaults(save=False)
-	
+	parser.add_argument('--add_coords_in_outfile', dest='add_coords_in_outfile', action='store_true',help='Add cutout center coordinates in image output file (default=false)')	
+	parser.set_defaults(add_coords_in_outfile=False)
 
 	args = parser.parse_args()	
 
@@ -113,7 +114,7 @@ def read_img(filename):
 
 	return data, header, wcs
 
-def write_fits_cutout(cutout, counter, prefix):
+def write_fits_cutout(cutout, counter, prefix, addcoords=False, xc=None, yc=None):
 	""" Write cutout file """
 
 	# - Set outfilename
@@ -133,14 +134,20 @@ def write_fits_cutout(cutout, counter, prefix):
 						
 	if MPI is None or nproc==1:
 		outfile_cutout= prefix + '_cutout' + digits + str(counter) + '.fits'
+		if addcoords:
+			outfile_cutout= prefix + '_cutout' + digits + str(counter) + '_x' + str(xc) + '_y' + str(yc) + '.fits'
 	else:
 		outfile_cutout= prefix + '_proc' + str(procId) + '_cutout' + digits + str(counter) + '.fits'
+		if addcoords:
+			outfile_cutout= prefix + '_proc' + str(procId) + '_cutout' + digits + str(counter) + '_x' + str(xc) + '_y' + str(yc) + '.fits'
 	
 	# - Save cutout
 	logger.info("[PROC %d] Saving cutout to file %s ..." % (procId, outfile_cutout))
 	hdu= fits.PrimaryHDU(cutout.data, header=cutout.wcs.to_header())
 	hdul = fits.HDUList([hdu])
 	hdul.writeto(outfile_cutout, overwrite=True)
+
+
 
 
 ##############
@@ -168,6 +175,7 @@ def main():
 	fthr_bad= args.fthr_bad
 	skip_nan= args.skip_nan
 	save= args.save
+	add_coords_in_outfile= args.add_coords_in_outfile
 
 	#===========================
 	#==   READ IMAGE
@@ -256,7 +264,12 @@ def main():
 
 		# - Save cutout
 		if save:
-			write_fits_cutout(cutout, counter, outfilename_prefix)
+			write_fits_cutout(
+				cutout, 
+				counter, 
+				outfilename_prefix,
+				add_coords_in_outfile, x, y
+			)
 
 		# - Process cutout image (e.g. apply model)
 		# ...
