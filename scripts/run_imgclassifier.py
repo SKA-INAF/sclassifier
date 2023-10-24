@@ -133,13 +133,16 @@ def write_fits_cutout(cutout, counter, prefix, addcoords=False, xc=None, yc=None
 		digits= ''
 						
 	if MPI is None or nproc==1:
-		outfile_cutout= prefix + '_cutout' + digits + str(counter) + '.fits'
 		if addcoords:
-			outfile_cutout= prefix + '_cutout' + digits + str(counter) + '_x' + str(xc) + '_y' + str(yc) + '.fits'
+			outfile_cutout= prefix + '_cutout' + '_x' + str(xc) + '_y' + str(yc) + '.fits'
+		else:
+			outfile_cutout= prefix + '_cutout' + digits + str(counter) + '.fits'
+			
 	else:
-		outfile_cutout= prefix + '_proc' + str(procId) + '_cutout' + digits + str(counter) + '.fits'
 		if addcoords:
-			outfile_cutout= prefix + '_proc' + str(procId) + '_cutout' + digits + str(counter) + '_x' + str(xc) + '_y' + str(yc) + '.fits'
+			outfile_cutout= prefix + '_proc' + str(procId) + '_cutout' + '_x' + str(xc) + '_y' + str(yc) + '.fits'
+		else:
+			outfile_cutout= prefix + '_proc' + str(procId) + '_cutout' + digits + str(counter) + '.fits'
 	
 	# - Save cutout
 	logger.info("[PROC %d] Saving cutout to file %s ..." % (procId, outfile_cutout))
