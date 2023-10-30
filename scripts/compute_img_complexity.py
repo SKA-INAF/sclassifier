@@ -14,6 +14,7 @@ import argparse
 import collections
 import csv
 import pickle
+import json
 
 ## ASTRO MODULES
 from astropy.io import ascii
@@ -29,10 +30,6 @@ from sclassifier.utils import Utils
 from sclassifier.preprocessing import DataPreprocessor
 from sclassifier.preprocessing import ChanResizer, MinMaxNormalizer, Resizer, PercentileThresholder, MedianFilterer
 
-#minmax_normalizer_2= MinMaxNormalizer(norm_min=0., norm_max=255., exclude_zeros=True)
-#minmax_normalizer= MinMaxNormalizer(norm_min=0., norm_max=1., exclude_zeros=True)
-#resizer= Resizer(resize_size=resize_size, upscale=upscale, downscale_with_antialiasing=downscale_with_antialiasing, set_pad_val_to_min=set_pad_val_to_min)
-
 ###########################
 ##     ARGS
 ###########################
@@ -43,6 +40,8 @@ def get_args():
 	# - Input options
 	parser.add_argument('-inputfile','--inputfile', dest='inputfile', required=False, type=str, default='', help='Input image file') 
 	parser.add_argument('-filelist','--filelist', dest='filelist', required=False, type=str, default='', help='Input filelist with list of image files') 
+	parser.add_argument('--jsonlist', dest='jsonlist', action='store_true', help='Treat input file as json filelist (default=no)')	
+	parser.set_defaults(jsonlist=False)
 	
 	# - Transform options
 	parser.add_argument('-resize_size', '--resize_size', dest='resize_size', required=False, type=int, default=64, action='store',help='Image resize in pixels (default=64)')	
@@ -56,7 +55,9 @@ def get_args():
 	parser.add_argument('-percentile_thr', '--percentile_thr', dest='percentile_thr', required=False, type=float, default=50, action='store',help='Percentile threshold (default=50)')
 	parser.add_argument('-median_filt_size', '--median_filt_size', dest='median_filt_size', required=False, type=int, default=3, action='store',help='Median filter window size in pixels (default=3)')	
 	
-	
+	# - Output options
+	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='complexity.dat', help='Output filename (.dat) with selected feature data') 
+
 	args = parser.parse_args()	
 
 	return args
@@ -78,14 +79,14 @@ def main():
 		logger.error("Failed to get and parse options (err=%s)",str(ex))
 		return 1
 		
-	#inputfile= args.inputfile
-	#filelist= args.filelist
 	resize_size= args.resize_size
 	downscale_with_antialiasing= args.downscale_with_antialiasing
 	upscale= args.upscale
 	set_pad_val_to_min= args.set_pad_val_to_min
 	percentile_thr= args.percentile_thr
 	median_filt_size= args.median_filt_size
+	
+	outfile= args.outfile
 	
 	# - Check args
 	if args.inputfile=='':
@@ -100,7 +101,21 @@ def main():
 					filename = filename.strip()
 					filelist.append(filename)
 	else:
-		filelist= [args.inputfile]
+		if args.jsonlist:
+			f= open(args.inputfile, "r")
+			d= json.load(f)["data"]
+			
+			filelist= []
+			for item in d:
+				filename= item["filepaths"][0]
+				sname= item["sname"]
+				filelist.append(filename)
+				
+		else:
+			filelist= [args.inputfile]
+			
+	print("filelist")
+	print(str(filelist))
 	
 	#===============================
 	#==  CREATE DATA PRE-PROCESSOR
@@ -156,6 +171,28 @@ def main():
 		complexities.append(complexity)
 		print("Image file %s: nbytes(original)=%f, complexity=%f" % (filename, X.nbytes, complexity))
 		
+	# - Remove temporary file
+	logger.info("Removing tmp file %s ..." % (tmpfile))
+	try:
+		os.remove(tmpfile)
+	except OSError:
+		pass
+	
+	# - Save data
+	N= len(complexities)
+	filenames= np.array(filelist).reshape(N,1)
+	#snames= np.array(snames).reshape(N,1)
+	#classids= np.array(classids).reshape(N,1)
+	complexities= np.array(complexities).reshape(N,1)
+		
+	outdata= np.concatenate(
+		(filenames, complexities),
+		axis=1
+	)
+	head= "# filename complexity"
+
+	logger.info("Save complexity data to file %s ..." % (outfile))
+	Utils.write_ascii(outdata, outfile, head)	
 		
 	return 0
 
