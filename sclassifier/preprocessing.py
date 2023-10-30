@@ -32,6 +32,9 @@ import skimage
 from skimage.util import img_as_float64
 from skimage.exposure import adjust_sigmoid, rescale_intensity, equalize_hist, equalize_adapthist
 
+## SCIPY
+import scipy
+
 ## IMG AUG
 import imgaug
 from imgaug import augmenters as iaa
@@ -1519,10 +1522,11 @@ class PercentileThresholder(object):
 			data_ch[~cond_ch]= 0
 	
 			data_thresholded[:,:,i]= data_ch
-
-		# - Scale data
-		data_thresholded[~cond]= 0 # Restore 0 and nans set in original data
-
+				
+		# - Restore 0 and nans set in original data
+		data_thresholded[~cond]= 0 
+		
+		
 		return data_thresholded
 
 ##############################
@@ -2056,7 +2060,34 @@ class ColorJitterer(object):
 		""" Return saturated image """
 		return tfm.vision.augment.blend(tf.repeat(tf.image.rgb_to_grayscale(image), 3, axis=-1), image, saturation)	
 	
-	
+
+##############################
+##     MedianFilterer
+##############################
+class MedianFilterer(object):
+	""" Apply median filter to input image  """
+
+	def __init__(self, size=3, **kwparams):
+		""" Create a data pre-processor object """
+			
+		# - Set parameters
+		self.size= size
+		
+	def __call__(self, data):
+		""" Apply transformation and return transformed data """
+
+		# - Check data
+		if data is None:
+			logger.error("Input data is None!")
+			return None
+			
+		# - Apply image filter
+		#data_transf= scipy.ndimage.median_filter(data, size=self.size, mode='nearest')
+		data_transf= scipy.ndimage.median_filter(data, size=self.size, mode='reflect')
+			
+		return data_transf
+			
+
 ##############################
 ##   Augmenter
 ##############################
