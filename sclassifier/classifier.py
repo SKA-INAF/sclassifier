@@ -1852,6 +1852,14 @@ class SClassifier(object):
 
 		Utils.write_ascii(outdata, self.outfile, head)	
 
+		#================================
+		#==   SAVE FEATURE IMPORTANCE
+		#================================
+		if self.classifier=='LGBMClassifier':
+			logger.info("Saving LGBM feature importance ...")			
+			ax= plot_importance(self.model, importance_type="gain", figsize=(15,15), title="LightGBM Feature Importance (Gain)")
+			plt.savefig("lgbm_feature_importance.png")	
+
 		return 0
 
 
