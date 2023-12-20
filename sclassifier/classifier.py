@@ -48,7 +48,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 
 from lightgbm import LGBMClassifier
 from lightgbm import early_stopping, log_evaluation, record_evaluation
-from lightgbm import plot_tree
+from lightgbm import plot_tree, plot_importance
 
 ## OPTUNA
 import optuna
@@ -1873,6 +1873,14 @@ class SClassifier(object):
 			#lightgbm.plot_tree(self.model)
 			ax= plot_tree(self.model, tree_index=0, figsize=(15, 15), show_info=['split_gain'])
 			plt.savefig("lgbm_tree.png")	
+			
+		#================================
+		#==   SAVE FEATURE IMPORTANCE
+		#================================
+		if self.classifier=='LGBMClassifier':
+			logger.info("Saving LGBM feature importance ...")			
+			ax= plot_importance(self.model, importance_type="gain", figsize=(15,15), title="LightGBM Feature Importance (Gain)")
+			plt.savefig("lgbm_feature_importance.png")	
 
 		#================================
 		#==   SAVE MODEL
