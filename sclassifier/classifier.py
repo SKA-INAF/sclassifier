@@ -1083,6 +1083,10 @@ class SClassifier(object):
 			model= LGBMClassifier(**param_grid)
 
 			# - Fit model	
+			featname_opt= 'auto'
+			if self.feature_name!="":
+				featname_opt= self.feature_name
+			
 			model.fit(
 				X_train, y_train,
 				eval_set=[(X_test, y_test), (X_train, y_train)],
@@ -1093,7 +1097,8 @@ class SClassifier(object):
 					earlystop_cb, 
 					logeval_cb, 
 					#receval_cb
-				]
+				],
+				feature_name= featname_opt
 			)
 		
 			# - Predict model on pre-classified data
