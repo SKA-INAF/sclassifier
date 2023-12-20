@@ -186,6 +186,11 @@ class SClassifier(object):
 		self.outfile_losses= 'losses.dat'
 		self.plotfile_decisiontree= 'decision_tree.png'
 
+		# *****************************
+		# ** Draw
+		# *****************************
+		self.feature_names= ''
+
 	#####################################
 	##     CREATE CLASS LABELS
 	#####################################
@@ -1858,6 +1863,8 @@ class SClassifier(object):
 		if self.classifier=='LGBMClassifier':
 			logger.info("Saving LGBM feature importance ...")			
 			ax= plot_importance(self.model, importance_type="gain", figsize=(15,15), title="LightGBM Feature Importance (Gain)")
+			if self.feature_names!="":
+				ax.set_yticklabels(self.feature_names)
 			plt.savefig("lgbm_feature_importance.png")	
 
 		return 0
@@ -1888,6 +1895,8 @@ class SClassifier(object):
 		if self.classifier=='LGBMClassifier':
 			logger.info("Saving LGBM feature importance ...")			
 			ax= plot_importance(self.model, importance_type="gain", figsize=(15,15), title="LightGBM Feature Importance (Gain)")
+			if self.feature_names!="":
+				ax.set_yticklabels(self.feature_names)
 			plt.savefig("lgbm_feature_importance.png")	
 
 		#================================
