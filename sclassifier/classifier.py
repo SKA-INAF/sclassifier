@@ -1229,8 +1229,8 @@ class SClassifier(object):
 		if self.classifier=='LGBMClassifier':
 			
 			featname_opt= 'auto'
-			if self.feature_name!="":
-				featname_opt= self.feature_name
+			if self.feature_names!="":
+				featname_opt= self.feature_names
 		
 			if has_cv_data:
 				# - Custom LGBM scikit fit method with early stopping
