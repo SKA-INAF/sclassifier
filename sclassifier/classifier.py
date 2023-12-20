@@ -359,7 +359,8 @@ class SClassifier(object):
 				is_provide_training_metric=True,
 				boosting_type='gbdt',
 				is_unbalance=is_unbalance,
-				verbose=1
+				verbose=1,
+				= featname_opt
 				#num_class=self.nclasses
 			)
 
@@ -1083,10 +1084,6 @@ class SClassifier(object):
 			model= LGBMClassifier(**param_grid)
 
 			# - Fit model	
-			featname_opt= 'auto'
-			if self.feature_name!="":
-				featname_opt= self.feature_name
-			
 			model.fit(
 				X_train, y_train,
 				eval_set=[(X_test, y_test), (X_train, y_train)],
@@ -1097,8 +1094,7 @@ class SClassifier(object):
 					earlystop_cb, 
 					logeval_cb, 
 					#receval_cb
-				],
-				feature_name= featname_opt
+				]
 			)
 		
 			# - Predict model on pre-classified data
@@ -1232,6 +1228,11 @@ class SClassifier(object):
 		has_cv_data= (self.data_preclassified_cv is not None) and (self.data_preclassified_targets_cv is not None)
 
 		if self.classifier=='LGBMClassifier':
+			
+			featname_opt= 'auto'
+			if self.feature_name!="":
+				featname_opt= self.feature_name
+		
 			if has_cv_data:
 				# - Custom LGBM scikit fit method with early stopping
 				earlystop_cb= early_stopping(
@@ -1248,7 +1249,8 @@ class SClassifier(object):
 						eval_set=[(self.data_preclassified_cv, self.data_preclassified_targets_cv), (self.data_preclassified, self.data_preclassified_targets)],
 						eval_names=["cv", "train"],
 						eval_metric=self.metric_lgbm,
-						callbacks=[earlystop_cb, logeval_cb, receval_cb]
+						callbacks=[earlystop_cb, logeval_cb, receval_cb],
+						feature_name= featname_opt
 					)
 		
 					print("--> lgbm eval dict")
@@ -1261,7 +1263,8 @@ class SClassifier(object):
 				# - Custom LGBM scikit fit method
 				try:
 					self.model.fit(
-						self.data_preclassified, self.data_preclassified_targets
+						self.data_preclassified, self.data_preclassified_targets,
+						feature_name= featname_opt
 					)
 				except Exception as e:
 					logger.error("Failed to fit model on data (err=%s)!" % (str(e)))
