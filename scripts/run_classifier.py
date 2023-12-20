@@ -106,6 +106,9 @@ def get_args():
 	# - Output options
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='classified_data.dat', help='Output filename (.dat) with classified data') 
 
+	# - Draw options
+	parser.add_argument('--feature_names', dest='feature_names', required=False, type=str, default='', help='Feature names shown in plots')
+
 	args = parser.parse_args()	
 
 	return args
@@ -210,6 +213,12 @@ def main():
 	
 	# - Output options
 	outfile= args.outfile
+	
+	# - Draw options
+	feature_names= ''
+	if args.feature_names!='':
+		feature_names= [str(x) for x in args.feature_names.split(',')]
+	
 
 	#===========================
 	#==   READ FEATURE DATA
@@ -280,6 +289,8 @@ def main():
 		sclass.target_names= target_names
 			
 	sclass.excluded_objids_train = objids_excluded_in_train	
+	
+	sclass.feature_names= feature_names
 		
 	# - Run predict/train
 	if predict:
