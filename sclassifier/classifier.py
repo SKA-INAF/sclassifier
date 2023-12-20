@@ -359,8 +359,7 @@ class SClassifier(object):
 				is_provide_training_metric=True,
 				boosting_type='gbdt',
 				is_unbalance=is_unbalance,
-				verbose=1,
-				= featname_opt
+				verbose=1
 				#num_class=self.nclasses
 			)
 
