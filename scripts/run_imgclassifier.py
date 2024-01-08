@@ -149,8 +149,20 @@ def write_fits_cutout(cutout, counter, prefix, addcoords=False, xc=None, yc=None
 	hdu= fits.PrimaryHDU(cutout.data, header=cutout.wcs.to_header())
 	hdul = fits.HDUList([hdu])
 	hdul.writeto(outfile_cutout, overwrite=True)
-
-
+	
+	# - Update cutout coord table
+	if MPI is None or nproc==1:
+		outfile_coordtable= 'cutout_coords.dat'
+	else:
+		outfile_coordtable= 'cutout_coords_proc' + str(procId) + '.dat'
+		
+	cutout_id= digits + str(counter)
+	coord_info= '{cutout_fname}  {cutout_id}  {x}  {y}\n'.format(cutout_fname=outfile_cutout, cutout_id=cutout_id, x=xc, y=yc)
+	
+	logger.info("[PROC %d] Updating cutout coord file %s ..." % (procId, outfile_coordtable))
+	f= open(outfile_coordtable, 'a')
+	f.write(coord_info)
+	f.close()
 
 
 ##############
