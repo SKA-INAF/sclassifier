@@ -68,14 +68,15 @@ from .data_loader import SourceData
 from .outlier_finder import OutlierFinder
 
 
-def save_feature_importance_df(model, outfile="feature_importance.csv"):
+def save_feature_importance_df(model, feat_names, outfile="feature_importance.csv"):
 	""" Save feature importance sorted by gain """
 
 	# - Get pandas data frame with feature importance sorted by gain
 	logger.info("Creating Panda data frame with trained model feature importance, sorted by importance ...")
 	importance_df = (
 		pd.DataFrame({
-			'feature_name': model.feature_name(),
+			#'feature_name': model.booster_.feature_name(),
+			'feature_name': feat_names,
 			'importance_gain': model.feature_importance(importance_type='gain'),
 			'importance_split': model.feature_importance(importance_type='split'),
 		})
@@ -1872,6 +1873,12 @@ class SClassifier(object):
 
 		znames_counter= list(range(1,self.nfeatures+1))
 		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
+		
+		if self.feature_names:
+			feat_names= self.feature_names
+		else:
+			feat_names= ['z'+str(item) for item in znames_counter]
+		
 		if self.save_labels:
 			if self.find_outliers:
 				head= '{} {} {}'.format("# sname",znames,"is_outlier outlier_score label label_pred prob")
@@ -1891,7 +1898,7 @@ class SClassifier(object):
 		#================================
 		if self.classifier=='LGBMClassifier':
 			logger.info("Saving LGBM feature importance ...")
-			save_feature_importance_df(self.model)	
+			save_feature_importance_df(self.model, feat_names)	
 			ax= plot_importance(self.model, importance_type="gain", figsize=(15,15), title="LightGBM Feature Importance (Gain)")
 			plt.savefig("lgbm_feature_importance.png")	
 
@@ -1920,13 +1927,18 @@ class SClassifier(object):
 		#================================
 		#==   SAVE FEATURE IMPORTANCE
 		#================================
+		znames_counter= list(range(1,self.nfeatures+1))
+		if self.feature_names:
+			feat_names= self.feature_names
+		else:
+			feat_names= ['z'+str(item) for item in znames_counter]
+			
 		if self.classifier=='LGBMClassifier':
 			logger.info("Saving LGBM feature importance ...")
-			save_feature_importance_df(self.model)
+			save_feature_importance_df(self.model, feat_names)
 			ax= plot_importance(self.model, importance_type="gain", figsize=(15,15), title="LightGBM Feature Importance (Gain)")
 			plt.savefig("lgbm_feature_importance.png")	
-			
-			
+				
 
 		#================================
 		#==   SAVE MODEL
