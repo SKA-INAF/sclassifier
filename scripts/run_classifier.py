@@ -88,6 +88,7 @@ def get_args():
 	parser.add_argument('-num_leaves','--num_leaves', dest='num_leaves', required=False, type=int, default=31, help='Max number of leaves in one tree for LGBM classifier') 
 	parser.add_argument('-learning_rate','--learning_rate', dest='learning_rate', required=False, type=float, default=0.1, help='Learning rate for LGBM classifier and others (TBD)') 
 	parser.add_argument('-niters','--niters', dest='niters', required=False, type=int, default=100, help='Number of boosting iterations for LGBM classifier and others (TBD)') 
+	parser.add_argument('--importance_type', dest='importance_type', required=False, type=str, default='split', help='LGBM importance_type parameter {"split","gain"}')
 	
 	# - Outlier detection
 	parser.add_argument('--find_outliers', dest='find_outliers', action='store_true',help='Find outliers in data (only in prediction step) (default=false)')	
@@ -199,6 +200,7 @@ def main():
 	num_leaves= args.num_leaves
 	learning_rate= args.learning_rate
 	niters= args.niters
+	importance_type= args.importance_type
 
 	# - Outlier search options
 	find_outliers= args.find_outliers
@@ -265,6 +267,7 @@ def main():
 	sclass.learning_rate= learning_rate
 	sclass.niters= niters
 	sclass.balance_classes= balance_classes
+	sclass.importance_type= importance_type
 
 	sclass.find_outliers = find_outliers 
 	sclass.outlier_modelfile = modelfile_outlier

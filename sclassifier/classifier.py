@@ -68,19 +68,24 @@ from .data_loader import SourceData
 from .outlier_finder import OutlierFinder
 
 
-def save_feature_importance_df(model, feat_names, outfile="feature_importance.csv"):
+def save_feature_importance_df(model, feat_names="", outfile="feature_importance.csv"):
 	""" Save feature importance sorted by gain """
 
 	# - Get pandas data frame with feature importance sorted by gain
 	logger.info("Creating Panda data frame with trained model feature importance, sorted by importance ...")
+	
+	feature_names= model.feature_name_
+	if feat_names!="":
+		feature_names= feat_names
+	
 	importance_df = (
 		pd.DataFrame({
-			#'feature_name': model.booster_.feature_name(),
-			'feature_name': feat_names,
-			'importance_gain': model.feature_importance(importance_type='gain'),
-			'importance_split': model.feature_importance(importance_type='split'),
+			'feature_name': feature_names,
+			'importance': model.feature_importances_
+			#'importance_gain': model.feature_importance(importance_type='gain'),
+			#'importance_split': model.feature_importance(importance_type='split'),
 		})
-		.sort_values('importance_gain', ascending=False)
+		.sort_values('importance', ascending=False)
 		.reset_index(drop=True)
 	)
 	
@@ -170,6 +175,7 @@ class SClassifier(object):
 		self.early_stop_round= 10
 		self.metric_lgbm= 'multi_logloss'
 		self.lgbm_eval_dict= {}
+		self.importance_type= 'split' # 'gain'
 
 		# - Set class label names
 		self.__set_target_labels(multiclass)
@@ -357,6 +363,7 @@ class SClassifier(object):
 				is_provide_training_metric=True,
 				boosting_type='gbdt',
 				class_weight=class_weight,
+				importance_type=self.importance_type,
 				verbose=1
 				#num_class=self.nclasses
 			)
@@ -382,6 +389,7 @@ class SClassifier(object):
 				is_provide_training_metric=True,
 				boosting_type='gbdt',
 				is_unbalance=is_unbalance,
+				importance_type=self.importance_type,
 				verbose=1
 				#num_class=self.nclasses
 			)
