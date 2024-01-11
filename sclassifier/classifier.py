@@ -50,6 +50,8 @@ from lightgbm import LGBMClassifier
 from lightgbm import early_stopping, log_evaluation, record_evaluation
 from lightgbm import plot_tree, plot_importance
 
+import pandas as pd
+
 ## OPTUNA
 import optuna
 from optuna.integration import LightGBMPruningCallback
@@ -64,6 +66,26 @@ from .utils import Utils
 from .data_loader import DataLoader
 from .data_loader import SourceData
 from .outlier_finder import OutlierFinder
+
+
+def save_feature_importance_df(model, outfile="feature_importance.csv"):
+	""" Save feature importance sorted by gain """
+
+	# - Get pandas data frame with feature importance sorted by gain
+	logger.info("Creating Panda data frame with trained model feature importance, sorted by importance ...")
+	importance_df = (
+		pd.DataFrame({
+			'feature_name': model.feature_name(),
+			'importance_gain': model.feature_importance(importance_type='gain'),
+			'importance_split': model.feature_importance(importance_type='split'),
+		})
+		.sort_values('importance_gain', ascending=False)
+		.reset_index(drop=True)
+	)
+	
+	# - Save to file
+	logger.info("Saving feature importance to file %s ..." % (outfile))
+	importance_df.to_csv(outfile, index=False)
 
 
 ##################################
@@ -1868,7 +1890,8 @@ class SClassifier(object):
 		#==   SAVE FEATURE IMPORTANCE
 		#================================
 		if self.classifier=='LGBMClassifier':
-			logger.info("Saving LGBM feature importance ...")			
+			logger.info("Saving LGBM feature importance ...")
+			save_feature_importance_df(self.model)	
 			ax= plot_importance(self.model, importance_type="gain", figsize=(15,15), title="LightGBM Feature Importance (Gain)")
 			plt.savefig("lgbm_feature_importance.png")	
 
@@ -1898,9 +1921,12 @@ class SClassifier(object):
 		#==   SAVE FEATURE IMPORTANCE
 		#================================
 		if self.classifier=='LGBMClassifier':
-			logger.info("Saving LGBM feature importance ...")			
+			logger.info("Saving LGBM feature importance ...")
+			save_feature_importance_df(self.model)
 			ax= plot_importance(self.model, importance_type="gain", figsize=(15,15), title="LightGBM Feature Importance (Gain)")
 			plt.savefig("lgbm_feature_importance.png")	
+			
+			
 
 		#================================
 		#==   SAVE MODEL
