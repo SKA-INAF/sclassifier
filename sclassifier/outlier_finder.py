@@ -506,14 +506,15 @@ class OutlierFinder(object):
 			'max_features': [1,2,3,self.nfeatures],
 		}
 
-		f1sc= make_scorer(f1_score(average='micro'))
+		#f1sc= make_scorer(f1_score(average='micro'))
 
 		# - Run grid search
 		logger.info("Running parameter grid scan ...")
 		grid_search = model_selection.GridSearchCV(
 			self.model,
 			param_grid,
-			scoring=f1sc, 
+			#scoring=f1sc, 
+			scoring='f1_micro',
 			refit=True,
 			cv=10, 
 			return_train_score=True
