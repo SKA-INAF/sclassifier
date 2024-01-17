@@ -493,10 +493,10 @@ class OutlierFinder(object):
 		
 		# - Define parameter grid to be searched
 		param_grid = {
-			'n_estimators': [100], 
-			'max_samples': ['auto',0.01,0.05,0.1], 
+			'n_estimators': [100,200,500,1000], 
+			'max_samples': ['auto',0.01,0.02,0.05,0.1,0.2], 
 			'contamination': ['auto'], 
-			'max_features': [1,2,3,self.nfeatures],
+			'max_features': [1,2,3,5,self.nfeatures],
 		}
 		
 		#param_grid = {
