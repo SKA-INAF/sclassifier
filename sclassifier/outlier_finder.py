@@ -492,19 +492,19 @@ class OutlierFinder(object):
 		#)
 		
 		# - Define parameter grid to be searched
-		#param_grid = {
-		#	'n_estimators': [100], 
-		#	'max_samples': ['auto',0.01,0.05,0.1], 
-		#	'contamination': ['auto'], 
-		#	'max_features': [1,2,3,self.nfeatures],
-		#}
-		
 		param_grid = {
 			'n_estimators': [100], 
-			'max_samples': ['auto'], 
+			'max_samples': ['auto',0.01,0.05,0.1], 
 			'contamination': ['auto'], 
 			'max_features': [1,2,3,self.nfeatures],
 		}
+		
+		#param_grid = {
+		#	'n_estimators': [100], 
+		#	'max_samples': ['auto'], 
+		#	'contamination': ['auto'], 
+		#	'max_features': [1,2,3,self.nfeatures],
+		#}
 
 		#f1sc= make_scorer(f1_score(average='micro'))
 
@@ -523,6 +523,11 @@ class OutlierFinder(object):
 		best_model= grid_search.fit(self.data_preclassified, self.data_preclassified_classids)
 
 		print('Optimum parameters', best_model.best_params_)
+		
+		# - Setting model to best model
+		logger.info("Setting model to best model found in scan ...")
+		self.model= best_model
+		
 		
 		return 0
 
