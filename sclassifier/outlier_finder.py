@@ -30,6 +30,11 @@ from sclassifier import logger
 ## SCI MODULES
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import mean_squared_error
+from sklearn import model_selection
+from sklearn.metrics import make_scorer, f1_score
 
 ## GRAPHICS MODULES
 import matplotlib
@@ -55,8 +60,21 @@ class OutlierFinder(object):
 		self.nsamples= 0
 		self.nfeatures= 0
 		self.data= None
+		self.data_preclassified= None
+		self.data_preclassified_labels= None
+		self.data_preclassified_classids= None
+		self.data_labels= []
 		self.data_classids= []
 		self.source_names= []
+		self.source_names_preclassified= []
+		
+		#self.excluded_objids_train= [-1,0] # Sources with these ids are considered not labelled and therefore excluded from training or metric calculation
+		self.excluded_objids_train= [] # Sources with these ids are considered not labelled and therefore excluded from training or metric calculation
+		
+		self.classid_label_map= {
+			1: "INLIER",
+			-1: "OUTLIER"
+		}
 		
 		# *****************************
 		# ** Pre-processing
@@ -78,6 +96,8 @@ class OutlierFinder(object):
 		self.verbose= 0
 		self.ncores= 1
 	
+		self.run_scan= False
+		
 		self.data_pred= None
 		self.anomaly_scores= None
 		self.anomaly_scores_df= None
@@ -145,10 +165,50 @@ class OutlierFinder(object):
 		return x_norm
 
 
-	#####################################
-	##     SET DATA FROM FILE
-	#####################################	
-	def set_data_from_file(self, filename):
+	def __set_preclass_data(self):
+		""" Set pre-classified data """
+
+		# - Set preclassified data
+		row_list= []
+		label_list= []
+		classid_list= []
+
+		for i in range(self.nsamples):
+			source_name= self.source_names[i]
+			obj_id= self.data_classids[i]
+			label= self.data_labels[i]
+			
+			add_to_train_list= True
+			for obj_id_excl in self.excluded_objids_train:
+				if obj_id==obj_id_excl:
+					add_to_train_list= False
+					break
+
+			if add_to_train_list:
+			#if obj_id!=0 and obj_id!=-1:
+				row_list.append(i)
+				classid_list.append(obj_id)	
+				label_list.append(label)
+				self.source_names_preclassified.append(source_name)
+			else:
+				logger.info("Exclude source with id=%d from list (excluded_ids=%s) ..." % (obj_id, str(self.excluded_objids_train)))
+				
+
+		if row_list:	
+			self.data_preclassified= self.data[row_list,:]
+			self.data_preclassified_labels= np.array(label_list)
+			self.data_preclassified_classids= np.array(classid_list)
+
+		
+		if self.data_preclassified is not None:
+			logger.info("#nsamples_preclass=%d" % (len(self.data_preclassified_labels)))
+
+		return 0
+
+	###########################################
+	##     SET DATA FROM FILE (OLD VERSION)
+	###########################################
+	def set_data_from_file_old(self, filename):
 		""" Set data from input file. Expected format: sname, N features, classid """
 
 		# - Read table
@@ -199,11 +259,79 @@ class OutlierFinder(object):
 			self.data= data_norm
 
 		return 0
+		
+		
+	#####################################
+	##     SET DATA FROM FILE
+	#####################################
+	def set_data_from_file(self, filename):
+		""" Set data from input file. Expected format: sname, N features, classid """
 
-	#####################################
-	##     SET DATA FROM VECTOR
-	#####################################
-	def set_data(self, featdata, class_ids=[], snames=[]):
+		# - Read table
+		row_start= 0
+		try:
+			table= ascii.read(filename, data_start=row_start)
+		except:
+			logger.error("Failed to read feature file %s!" % filename)
+			return -1
+	
+		print(table.colnames)
+		print(table)
+
+		ncols= len(table.colnames)
+		nfeat= ncols-2
+
+		# - Set data vectors
+		rowIndex= 0
+		self.data_labels= []
+		self.data_classids= []
+		self.source_names= []
+		featdata= []
+
+		for data in table:
+			sname= data[0]
+			classid= data[ncols-1]
+			if self.classid_label_map:
+				label= self.classid_label_map[classid]
+			else:
+				label= str(classid)
+
+			self.source_names.append(sname)
+			self.data_labels.append(label)
+			self.data_classids.append(classid)
+			featdata_curr= []
+			for k in range(nfeat):
+				featdata_curr.append(data[k+1])
+			featdata.append(featdata_curr)
+
+		self.data= np.array(featdata)
+		if self.data.size==0:
+			logger.error("Empty feature data vector read!")
+			return -1
+
+		self.nsamples= data_shape[0]
+		self.nfeatures= data_shape[1]
+		logger.info("#nsamples=%d" % (self.nsamples))
+		
+		# - Normalize feature data?
+		if self.normalize:
+			logger.info("Normalizing feature data ...")
+			data_norm= self.__transform_data(self.data, self.norm_min, self.norm_max)
+			if data_norm is None:
+				logger.error("Data transformation failed!")
+				return -1
+			self.data= data_norm
+
+		# - Set pre-classified data
+		logger.info("Setting pre-classified data (if any) ...")
+		self.__set_preclass_data()
+
+		return 0
+
+	##############################################
+	##     SET DATA FROM VECTOR (OLD VERSION)
+	##############################################
+	def set_data_old(self, featdata, class_ids=[], snames=[]):
 		""" Set data from input array. Optionally give labels & obj names """
 
 		# - Set data vector
@@ -257,6 +385,71 @@ class OutlierFinder(object):
 
 
 	#####################################
+	##     SET DATA FROM VECTOR
+	#####################################
+	def set_data(self, featdata, class_ids=[], snames=[]):
+		""" Set data from input array. Optionally give labels & obj names """
+
+		# - Set feature data
+		self.data= featdata
+		data_shape= self.data.shape
+
+		if self.data.size==0:
+			logger.error("Empty feature data vector given!")
+			return -1
+
+		self.nsamples= data_shape[0]
+		self.nfeatures= data_shape[1]
+
+		# - Set class ids & labels
+		if class_ids:
+			nids= len(class_ids)
+			if nids!=self.nsamples:
+				logger.error("Given class ids have size (%d) different than feature data (%d)!" % (nids,self.nsamples))
+				return -1
+			self.data_classids= class_ids
+
+			for classid in self.data_classids:
+				if self.classid_label_map:
+					label= self.classid_label_map[classid]
+				else:
+					label= str(classid)
+				self.data_labels.append(label)
+
+		else:
+			self.data_classids= [0]*self.nsamples # Init to unknown type
+			self.data_labels= ["UNKNOWN"]**self.nsamples
+		
+		
+		# - Set obj names
+		if snames:
+			n= len(snames)	
+			if n!=self.nsamples:
+				logger.error("Given source names have size (%d) different than feature data (%d)!" % (n,self.nsamples))
+				return -1
+			self.source_names= snames
+		else:
+			self.source_names= ["XXX"]*self.nsamples # Init to unclassified
+		
+		logger.info("#nsamples=%d" % (self.nsamples))
+		
+		# - Normalize feature data?
+		if self.normalize:
+			logger.info("Normalizing feature data ...")
+			data_norm= self.__transform_data(self.data, self.norm_min, self.norm_max)
+			if data_norm is None:
+				logger.error("Data transformation failed!")
+				return -1
+			self.data= data_norm
+
+		# - Set pre-classified data
+		logger.info("Setting pre-classified data (if any) ...")
+		self.__set_preclass_data()
+
+		return 0
+
+
+	#####################################
 	##     CREATE/LOAD MODEL
 	#####################################
 	def __create_model(self):
@@ -279,6 +472,62 @@ class OutlierFinder(object):
 	
 		return model
 
+	#####################################
+	##     SCAN PARAMETERS
+	#####################################
+	def __scan_parameters(self):
+		""" Scan IF hyperparameters """
+
+		# - Check if we have preclassified data
+		if self.data_preclassified is None:
+			logger.warn("No preclassfied data available, no scan performed!")
+			return -1
+
+		# - Define model for scan
+		#model_scan= IsolationForest(
+		#	bootstrap=True,
+		#	n_jobs=self.ncores,
+		#	random_state=rng,
+		#	verbose=self.verbose
+		#)
+		
+		# - Define parameter grid to be searched
+		#param_grid = {
+		#	'n_estimators': [100], 
+		#	'max_samples': ['auto',0.01,0.05,0.1], 
+		#	'contamination': ['auto'], 
+		#	'max_features': [1,2,3,self.nfeatures],
+		#}
+		
+		param_grid = {
+			'n_estimators': [100], 
+			'max_samples': ['auto'], 
+			'contamination': ['auto'], 
+			'max_features': [1,2,3,self.nfeatures],
+		}
+
+		f1sc= make_scorer(f1_score(average='micro'))
+
+		# - Run grid search
+		logger.info("Running parameter grid scan ...")
+		grid_search = model_selection.GridSearchCV(
+			self.model,
+			param_grid,
+			scoring=f1sc, 
+			refit=True,
+			cv=10, 
+			return_train_score=True
+		)
+		
+		grid_search.fit(X_train, y_train)
+
+		# - Retrieve best model
+		#best_model = grid_search.fit(X_train, y_train)
+		best_model= grid_search.fit(self.data_preclassified, self.data_preclassified_classids)
+		
+		print('Optimum parameters', best_model.best_params_)
+		
+		return 0
 
 	#####################################
 	##     DETECT OUTLIERS
@@ -361,6 +610,13 @@ class OutlierFinder(object):
 			self.model= self.__create_model()
 
 		#================================
+		#==   RUN SCAN FIRST?
+		#================================	
+		if self.run_scan:
+			if self.__scan_parameters()<0:
+				logger.warn("No parameter optimization scan performed, will run with user-supplied parameters ...")
+				
+		#================================
 		#==   FIND OUTLIERS
 		#================================	
 		logger.info("Searching for outliers ...")
@@ -423,6 +679,13 @@ class OutlierFinder(object):
 			logger.info("Creating the model ...")
 			fitdata= True
 			self.model= self.__create_model()
+
+		#================================
+		#==   RUN SCAN FIRST?
+		#================================	
+		if self.run_scan:
+			if self.__scan_parameters()<0:
+				logger.warn("No parameter optimization scan performed, will run with user-supplied parameters ...")
 
 		#================================
 		#==   FIND OUTLIERS

@@ -67,6 +67,9 @@ def get_args():
 	#parser.add_argument('-contamination','--contamination', dest='contamination', required=False, type=float, default=None, help='Fraction of outliers expected [0,0.5]. If None set it to auto (defaul=None)')
 	parser.add_argument('-anomaly_thr','--anomaly_thr', dest='anomaly_thr', required=False, type=float, default=0.9, help='Threshold in anomaly score above which observation is set as outlier (default=0.9)') 
 	
+	parser.add_argument('--run_scan', dest='run_scan', action='store_true',help='Run parameter optimization scan before run (default=false)')	
+	parser.set_defaults(run_scan=False)
+	
 	# - Output options
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='outlier_data.dat', help='Output filename (.dat) with classified data') 
 
@@ -113,6 +116,8 @@ def main():
 	if args.max_samples>0:
 		max_samples= args.max_samples
 
+	run_scan= args.run_scan
+	
 	# - Output options
 	outfile= args.outfile
 
@@ -138,6 +143,7 @@ def main():
 	ofinder.max_samples= max_samples
 	ofinder.max_features= max_features
 	#ofinder.contamination= contamination
+	ofinder.run_scan= run_scan
 	ofinder.anomaly_thr= anomaly_thr
 	ofinder.outfile= outfile
 
