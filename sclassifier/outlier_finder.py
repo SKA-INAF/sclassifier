@@ -520,12 +520,8 @@ class OutlierFinder(object):
 			return_train_score=True
 		)
 		
-		grid_search.fit(self.data_preclassified, self.data_preclassified_classids)
-
-		# - Retrieve best model
-		#best_model = grid_search.fit(X_train, y_train)
 		best_model= grid_search.fit(self.data_preclassified, self.data_preclassified_classids)
-		
+
 		print('Optimum parameters', best_model.best_params_)
 		
 		return 0
