@@ -540,11 +540,12 @@ class OutlierFinder(object):
 		logger.info("Setting model to best model found in scan ...")
 		self.model= best_model
 		
-		print("== BEST MODEL CURRENT PARAMETERS ==")
+		print("== BEST SCAN MODEL PARAMETERS ==")
 		print("n_estimators: ", len(self.model.estimators_))
 		print("max_samples: ", self.model.max_samples_)
 		print("contamination: ", self.model.contamination)
-		print("max_features: ", len(self.model.estimators_features_))
+		#print("max_features: ", len(self.model.estimators_features_))
+		print("max_features: ", self.model.n_features_in_)
 		print("======================")
 		
 		
