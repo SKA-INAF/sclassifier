@@ -463,15 +463,6 @@ class OutlierFinder(object):
 			self.random_state= np.random.RandomState(42)
 
 		# - Init isolation forest
-		print("== MODEL PARAMETERS ==")
-		print("n_estimators: ", self.n_estimators)
-		print("max_samples: ", self.max_samples)
-		print("contamination: ", self.contamination)
-		print("max_features: ", self.max_features)
-		print("bootstrap: ", self.bootstrap)
-		print("random_state: ", self.random_state)
-		print("======================")
-		
 		model= IsolationForest(
 			n_estimators=self.n_estimators,
 			max_samples=self.max_samples,
@@ -482,7 +473,16 @@ class OutlierFinder(object):
 			random_state=self.random_state,
 			verbose=self.verbose
 		)
-	
+		
+		print("== MODEL INIT PARAMETERS ==")
+		print("n_estimators: ", self.n_estimators)
+		print("max_samples: ", self.max_samples)
+		print("contamination: ", self.contamination)
+		print("max_features: ", self.max_features)
+		print("bootstrap: ", self.bootstrap)
+		print("random_state: ", self.random_state)
+		print("======================")
+			
 		return model
 
 	#####################################
@@ -539,6 +539,13 @@ class OutlierFinder(object):
 		# - Setting model to best model
 		logger.info("Setting model to best model found in scan ...")
 		self.model= best_model
+		
+		print("== BEST MODEL CURRENT PARAMETERS ==")
+		print("n_estimators: ", len(self.model.estimators_))
+		print("max_samples: ", self.model.max_samples_)
+		print("contamination: ", self.model.contamination)
+		print("max_features: ", len(self.model.estimators_features_))
+		print("======================")
 		
 		
 		return 0
@@ -622,7 +629,14 @@ class OutlierFinder(object):
 			logger.info("Creating the model ...")
 			fitdata= True
 			self.model= self.__create_model()
-
+			
+		print("== MODEL CURRENT PARAMETERS ==")
+		print("n_estimators: ", len(self.model.estimators_))
+		print("max_samples: ", self.model.max_samples_)
+		print("contamination: ", self.model.contamination)
+		print("max_features: ", len(self.model.estimators_features_))
+		print("======================")
+		
 		#================================
 		#==   RUN SCAN FIRST?
 		#================================	
