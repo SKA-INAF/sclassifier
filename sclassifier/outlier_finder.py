@@ -97,6 +97,9 @@ class OutlierFinder(object):
 		self.ncores= 1
 	
 		self.run_scan= False
+		self.scan_nestimators= False
+		self.scan_maxfeatures= False
+		self.scan_maxsamples= False
 		
 		self.data_pred= None
 		self.anomaly_scores= None
@@ -483,29 +486,28 @@ class OutlierFinder(object):
 			logger.warn("No preclassfied data available, no scan performed!")
 			return -1
 
-		# - Define model for scan
-		#model_scan= IsolationForest(
-		#	bootstrap=True,
-		#	n_jobs=self.ncores,
-		#	random_state=rng,
-		#	verbose=self.verbose
-		#)
-		
 		# - Define parameter grid to be searched
+		nestimators_scan= [self.n_estimators]
+		if self.scan_nestimators:
+			nestimators_scan= [100,200,500,1000]
+			
+		maxfeatures_scan= [self.nfeatures]
+		if self.scan_maxfeatures:
+			maxfeatures_scan= [1,2,3,5,self.nfeatures]
+			
+		maxsamples_scan= self.max_samples
+		if self.scan_maxsamples:
+			maxsamples_scan= ['auto',0.01,0.02,0.05,0.1,0.2,0.3,0.4,0.5]
+					
 		param_grid = {
-			'n_estimators': [100,200,500,1000], 
-			'max_samples': ['auto',0.01,0.02,0.05,0.1,0.2], 
+			'n_estimators': nestimators_scan, 
+			'max_samples': maxsamples_scan, 
 			'contamination': ['auto'], 
-			'max_features': [1,2,3,5,self.nfeatures],
+			'max_features': maxfeatures_scan,
 		}
 		
-		#param_grid = {
-		#	'n_estimators': [100], 
-		#	'max_samples': ['auto'], 
-		#	'contamination': ['auto'], 
-		#	'max_features': [1,2,3,self.nfeatures],
-		#}
-
+		logger.info("Scan grid parameters: %s" % (str(param_grid)))
+		
 		#f1sc= make_scorer(f1_score(average='micro'))
 
 		# - Run grid search

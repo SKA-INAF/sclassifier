@@ -72,6 +72,15 @@ def get_args():
 	parser.add_argument('--run_scan', dest='run_scan', action='store_true',help='Run parameter optimization scan before run (default=false)')	
 	parser.set_defaults(run_scan=False)
 	
+	parser.add_argument('--scan_nestimators', dest='scan_nestimators', action='store_true',help='Scan n_estimators parameter (default=false)')	
+	parser.set_defaults(scan_nestimators=False)
+	
+	parser.add_argument('--scan_maxfeatures', dest='scan_maxfeatures', action='store_true',help='Scan max_features parameter (default=false)')	
+	parser.set_defaults(scan_maxfeatures=False)
+	
+	parser.add_argument('--scan_maxsamples', dest='scan_maxsamples', action='store_true',help='Scan max_samples parameter (default=false)')	
+	parser.set_defaults(scan_maxsamples=False)
+		
 	# - Output options
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='outlier_data.dat', help='Output filename (.dat) with classified data') 
 
@@ -117,8 +126,11 @@ def main():
 	max_samples= "auto"
 	if args.max_samples>0:
 		max_samples= args.max_samples
-
+		
 	run_scan= args.run_scan
+	scan_nestimators= args.scan_nestimators
+	scan_maxfeatures= args.scan_maxfeatures
+	scan_maxsamples= args.scan_maxsamples
 	
 	classid_label_map= {}
 	if args.classid_label_map!="":
@@ -157,6 +169,9 @@ def main():
 	ofinder.max_features= max_features
 	#ofinder.contamination= contamination
 	ofinder.run_scan= run_scan
+	ofinder.scan_nestimators= scan_nestimators
+	ofinder.scan_maxfeatures= scan_maxfeatures
+	ofinder.scan_maxsamples= scan_maxsamples
 	ofinder.anomaly_thr= anomaly_thr
 	ofinder.outfile= outfile
 	ofinder.classid_label_map= classid_label_map
