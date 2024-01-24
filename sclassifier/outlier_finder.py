@@ -95,7 +95,7 @@ class OutlierFinder(object):
 		self.max_features= 1
 		self.verbose= 0
 		self.ncores= 1
-	
+		self.random_state= None
 		self.run_scan= False
 		self.scan_nestimators= False
 		self.scan_maxfeatures= False
@@ -459,9 +459,19 @@ class OutlierFinder(object):
 		""" Create model """
 
 		# - Create random seed
-		rng = np.random.RandomState(42)
+		if self.random_state is None:
+			self.random_state= np.random.RandomState(42)
 
 		# - Init isolation forest
+		print("== MODEL PARAMETERS ==")
+		print("n_estimators: ", self.n_estimators)
+		print("max_samples: ", self.max_samples)
+		print("contamination: ", self.contamination)
+		print("max_features: ", self.max_features)
+		print("bootstrap: ", self.bootstrap)
+		print("random_state: ", self.random_state)
+		print("======================")
+		
 		model= IsolationForest(
 			n_estimators=self.n_estimators,
 			max_samples=self.max_samples,
@@ -469,7 +479,7 @@ class OutlierFinder(object):
 			bootstrap=self.bootstrap,
 			max_features=self.max_features,
 			n_jobs=self.ncores,
-			random_state=rng,
+			random_state=self.random_state,
 			verbose=self.verbose
 		)
 	

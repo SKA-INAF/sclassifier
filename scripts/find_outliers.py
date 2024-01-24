@@ -80,6 +80,8 @@ def get_args():
 	
 	parser.add_argument('--scan_maxsamples', dest='scan_maxsamples', action='store_true',help='Scan max_samples parameter (default=false)')	
 	parser.set_defaults(scan_maxsamples=False)
+	
+	parser.add_argument('--random_state', dest='random_state', required=False, type=int, default=None, help='Model random state (default=None)')
 		
 	# - Output options
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='outlier_data.dat', help='Output filename (.dat) with classified data') 
@@ -131,6 +133,7 @@ def main():
 	scan_nestimators= args.scan_nestimators
 	scan_maxfeatures= args.scan_maxfeatures
 	scan_maxsamples= args.scan_maxsamples
+	random_state= args.random_state
 	
 	classid_label_map= {}
 	if args.classid_label_map!="":
@@ -175,7 +178,8 @@ def main():
 	ofinder.anomaly_thr= anomaly_thr
 	ofinder.outfile= outfile
 	ofinder.classid_label_map= classid_label_map
-
+	ofinder.random_state= random_state
+	
 	status= ofinder.run(
 		data, classids, snames, 
 		modelfile, scalerfile
