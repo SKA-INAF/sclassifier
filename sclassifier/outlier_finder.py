@@ -564,6 +564,13 @@ class OutlierFinder(object):
 		# - Predict outliers (-1=outlier, 1=inlier)
 		logger.info("Predicting outliers ...")
 		self.data_pred= self.model.predict(self.data)
+		
+		print("== FIT MODEL PARAMETERS ==")
+		print("n_estimators: ", len(self.model.estimators_))
+		print("max_samples: ", self.model.max_samples_)
+		print("contamination: ", self.model.contamination)
+		print("max_features: ", len(self.model.estimators_features_))
+		print("======================")
  		
 		# - Retrieve the anomaly scores
 		#   NB: The lower, the more abnormal. Negative scores represent outliers, positive scores represent inliers
@@ -630,13 +637,6 @@ class OutlierFinder(object):
 			fitdata= True
 			self.model= self.__create_model()
 			
-		print("== MODEL CURRENT PARAMETERS ==")
-		print("n_estimators: ", len(self.model.estimators_))
-		print("max_samples: ", self.model.max_samples_)
-		print("contamination: ", self.model.contamination)
-		print("max_features: ", len(self.model.estimators_features_))
-		print("======================")
-		
 		#================================
 		#==   RUN SCAN FIRST?
 		#================================	
@@ -708,13 +708,6 @@ class OutlierFinder(object):
 			fitdata= True
 			self.model= self.__create_model()
 			
-		print("== MODEL CURRENT PARAMETERS ==")
-		#print("n_estimators: ", len(self.model.estimators_))
-		print("max_samples: ", self.model.max_samples_)
-		print("contamination: ", self.model.contamination)
-		print("max_features: ", len(self.model.estimators_features_))
-		print("======================")
-
 		#================================
 		#==   RUN SCAN FIRST?
 		#================================	
