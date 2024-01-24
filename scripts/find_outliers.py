@@ -60,8 +60,8 @@ def get_args():
 	
 	# - Model options
 	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=False, type=str, default='', action='store',help='Classifier model filename (.sav)')
-	#parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
-	#parser.set_defaults(predict=False)
+	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
+	parser.set_defaults(predict=False)
 	parser.add_argument('--classid_label_map', dest='classid_label_map', required=False, type=str, default='', help='Class ID label dictionary')
 	parser.add_argument('-n_estimators','--n_estimators', dest='n_estimators', required=False, type=int, default=100, help='Number of forest trees to fit') 
 	parser.add_argument('-max_features','--max_features', dest='max_features', required=False, type=int, default=1, help='Number of max features used in each forest tree (default=1)')
@@ -117,7 +117,7 @@ def main():
 
 	# - Model options
 	modelfile= args.modelfile
-	#predict= args.predict
+	predict= args.predict
 	n_estimators= args.n_estimators
 	#contamination= args.contamination
 	#if contamination is None:
@@ -179,6 +179,7 @@ def main():
 	ofinder.outfile= outfile
 	ofinder.classid_label_map= classid_label_map
 	ofinder.random_state= random_state
+	ofinder.predict= predict
 	
 	status= ofinder.run(
 		data, classids, snames, 

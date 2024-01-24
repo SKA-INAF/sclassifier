@@ -106,6 +106,8 @@ class OutlierFinder(object):
 		self.anomaly_scores_df= None
 		self.anomaly_scores_orig= None
 		self.anomaly_thr= 0.9
+		
+		self.predict= False
 
 		# *****************************
 		# ** Output data
@@ -562,20 +564,21 @@ class OutlierFinder(object):
 		if fitdata: 
 			logger.info("Fitting input data ...")
 			self.model.fit(self.data)
+			
+			print("== FIT MODEL PARAMETERS ==")
+			print("n_estimators: ", len(self.model.estimators_))
+			print("max_samples: ", self.model.max_samples_)
+			print("contamination: ", self.model.contamination)
+			#print("max_features: ", len(self.model.estimators_features_))
+			print("max_features: ", self.model.n_features_in_)
+			print("offset: ", self.model.offset_)
+			print("======================")
 
 		# - Predict outliers (-1=outlier, 1=inlier)
 		logger.info("Predicting outliers ...")
 		self.data_pred= self.model.predict(self.data)
 		
-		print("== FIT MODEL PARAMETERS ==")
-		print("n_estimators: ", len(self.model.estimators_))
-		print("max_samples: ", self.model.max_samples_)
-		print("contamination: ", self.model.contamination)
-		#print("max_features: ", len(self.model.estimators_features_))
-		print("max_features: ", self.model.n_features_in_)
-		print("offset: ", self.model.offset_)
-		print("======================")
- 		
+
 		# - Retrieve the anomaly scores
 		#   NB: The lower, the more abnormal. Negative scores represent outliers, positive scores represent inliers
 		logger.info("Retrieving the anomaly score (-1 or negative values means outliers) ...")
@@ -628,7 +631,7 @@ class OutlierFinder(object):
 		#==   LOAD MODEL
 		#================================
 		if modelfile and modelfile is not None:
-			fitdata= False
+			#fitdata= False
 			logger.info("Loading the model from file %s ..." % modelfile)
 			try:
 				self.model = pickle.load((open(modelfile, 'rb')))
@@ -638,8 +641,12 @@ class OutlierFinder(object):
 
 		else:
 			logger.info("Creating the model ...")
-			fitdata= True
+			#fitdata= True
 			self.model= self.__create_model()
+			
+		fitdata= True
+		if self.predict:
+			fitdata= False
 			
 		#================================
 		#==   RUN SCAN FIRST?
@@ -699,7 +706,7 @@ class OutlierFinder(object):
 		#==   LOAD MODEL
 		#================================
 		if modelfile and modelfile is not None:
-			fitdata= False
+			#fitdata= False
 			logger.info("Loading the model from file %s ..." % modelfile)
 			try:
 				self.model = pickle.load((open(modelfile, 'rb')))
@@ -709,8 +716,12 @@ class OutlierFinder(object):
 
 		else:
 			logger.info("Creating the model ...")
-			fitdata= True
+			#fitdata= True
 			self.model= self.__create_model()
+			
+		fitdata= True
+		if self.predict:
+			fitdata= False
 			
 		#================================
 		#==   RUN SCAN FIRST?
