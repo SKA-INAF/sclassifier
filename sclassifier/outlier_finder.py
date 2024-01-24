@@ -516,7 +516,7 @@ class OutlierFinder(object):
 			'n_estimators': nestimators_scan, 
 			'max_samples': maxsamples_scan, 
 			#'contamination': ['auto'], 
-			'contamination': self.contamination,
+			'contamination': [self.contamination],
 			'max_features': maxfeatures_scan,
 		}
 		
