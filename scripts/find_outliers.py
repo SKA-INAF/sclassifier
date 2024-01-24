@@ -66,7 +66,7 @@ def get_args():
 	parser.add_argument('-n_estimators','--n_estimators', dest='n_estimators', required=False, type=int, default=100, help='Number of forest trees to fit') 
 	parser.add_argument('-max_features','--max_features', dest='max_features', required=False, type=int, default=1, help='Number of max features used in each forest tree (default=1)')
 	parser.add_argument('-max_samples','--max_samples', dest='max_samples', required=False, type=float, default=-1, help='Number of max samples used in each forest tree. -1 means auto options, e.g. 256 entries, otherwise it is the fraction of total available entries (default=-1)') 	
-	#parser.add_argument('-contamination','--contamination', dest='contamination', required=False, type=float, default=None, help='Fraction of outliers expected [0,0.5]. If None set it to auto (defaul=None)')
+	parser.add_argument('-contamination','--contamination', dest='contamination', required=False, type=float, default=None, help='Fraction of outliers expected [0,0.5]. If None set it to auto (default=None)')
 	parser.add_argument('-anomaly_thr','--anomaly_thr', dest='anomaly_thr', required=False, type=float, default=0.9, help='Threshold in anomaly score above which observation is set as outlier (default=0.9)') 
 	
 	parser.add_argument('--run_scan', dest='run_scan', action='store_true',help='Run parameter optimization scan before run (default=false)')	
@@ -119,9 +119,9 @@ def main():
 	modelfile= args.modelfile
 	predict= args.predict
 	n_estimators= args.n_estimators
-	#contamination= args.contamination
-	#if contamination is None:
-	#	contamination= 'auto'
+	contamination= args.contamination
+	if contamination is None:
+		contamination= 'auto'
 	anomaly_thr= args.anomaly_thr	
 	max_features= args.max_features
 
@@ -170,7 +170,7 @@ def main():
 	ofinder.n_estimators= n_estimators
 	ofinder.max_samples= max_samples
 	ofinder.max_features= max_features
-	#ofinder.contamination= contamination
+	ofinder.contamination= contamination
 	ofinder.run_scan= run_scan
 	ofinder.scan_nestimators= scan_nestimators
 	ofinder.scan_maxfeatures= scan_maxfeatures

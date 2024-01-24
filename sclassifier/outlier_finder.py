@@ -515,7 +515,8 @@ class OutlierFinder(object):
 		param_grid = {
 			'n_estimators': nestimators_scan, 
 			'max_samples': maxsamples_scan, 
-			'contamination': ['auto'], 
+			#'contamination': ['auto'], 
+			'contamination': self.contamination,
 			'max_features': maxfeatures_scan,
 		}
 		
