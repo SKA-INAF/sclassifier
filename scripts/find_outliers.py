@@ -18,6 +18,7 @@ import numpy as np
 import random
 import math
 import logging
+import ast
 
 ## COMMAND-LINE ARG MODULES
 import getopt
@@ -61,6 +62,7 @@ def get_args():
 	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=False, type=str, default='', action='store',help='Classifier model filename (.sav)')
 	#parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
 	#parser.set_defaults(predict=False)
+	parser.add_argument('--classid_label_map', dest='classid_label_map', required=False, type=str, default='', help='Class ID label dictionary')
 	parser.add_argument('-n_estimators','--n_estimators', dest='n_estimators', required=False, type=int, default=100, help='Number of forest trees to fit') 
 	parser.add_argument('-max_features','--max_features', dest='max_features', required=False, type=int, default=1, help='Number of max features used in each forest tree (default=1)')
 	parser.add_argument('-max_samples','--max_samples', dest='max_samples', required=False, type=float, default=-1, help='Number of max samples used in each forest tree. -1 means auto options, e.g. 256 entries, otherwise it is the fraction of total available entries (default=-1)') 	
@@ -118,6 +120,17 @@ def main():
 
 	run_scan= args.run_scan
 	
+	classid_label_map= {}
+	if args.classid_label_map!="":
+		try:
+			classid_label_map= ast.literal_eval(args.classid_label_map)
+		except Exception as e:
+			logger.error("Failed to convert classid label map string to dict (err=%s)!" % (str(e)))
+			return -1	
+		
+		print("== classid_label_map ==")
+		print(classid_label_map)
+	
 	# - Output options
 	outfile= args.outfile
 
@@ -146,6 +159,7 @@ def main():
 	ofinder.run_scan= run_scan
 	ofinder.anomaly_thr= anomaly_thr
 	ofinder.outfile= outfile
+	ofinder.classid_label_map= classid_label_map
 
 	status= ofinder.run(
 		data, classids, snames, 
