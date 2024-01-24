@@ -650,10 +650,7 @@ class OutlierFinder(object):
 			#fitdata= True
 			self.model= self.__create_model()
 			
-		fitdata= True
-		if self.predict:
-			fitdata= False
-			
+		
 		#================================
 		#==   RUN SCAN FIRST?
 		#================================	
@@ -663,7 +660,12 @@ class OutlierFinder(object):
 				
 		#================================
 		#==   FIND OUTLIERS
-		#================================	
+		#================================
+		# - Do not fit data if predict or if a fit scan was already run before	
+		fitdata= True
+		if self.predict or self.run_scan:
+			fitdata= False
+			
 		logger.info("Searching for outliers ...")
 		if self.__find_outliers(fitdata)<0:
 			logger.error("Failed to search outliers!")
@@ -725,10 +727,6 @@ class OutlierFinder(object):
 			#fitdata= True
 			self.model= self.__create_model()
 			
-		fitdata= True
-		if self.predict:
-			fitdata= False
-			
 		#================================
 		#==   RUN SCAN FIRST?
 		#================================	
@@ -739,6 +737,11 @@ class OutlierFinder(object):
 		#================================
 		#==   FIND OUTLIERS
 		#================================	
+		# - Do not fit data if predict or if a fit scan was already run before	
+		fitdata= True
+		if self.predict or self.run_scan:
+			fitdata= False
+			
 		logger.info("Searching for outliers ...")
 		if self.__find_outliers(fitdata)<0:
 			logger.error("Failed to search outliers!")
