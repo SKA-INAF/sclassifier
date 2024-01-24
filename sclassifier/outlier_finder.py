@@ -707,6 +707,13 @@ class OutlierFinder(object):
 			logger.info("Creating the model ...")
 			fitdata= True
 			self.model= self.__create_model()
+			
+		print("== MODEL CURRENT PARAMETERS ==")
+		print("n_estimators: ", len(self.model.estimators_))
+		print("max_samples: ", self.model.max_samples_)
+		print("contamination: ", self.model.contamination)
+		print("max_features: ", len(self.model.estimators_features_))
+		print("======================")
 
 		#================================
 		#==   RUN SCAN FIRST?
