@@ -507,7 +507,7 @@ class OutlierFinder(object):
 			
 		maxsamples_scan= self.max_samples
 		if self.scan_maxsamples:
-			maxsamples_scan= ['auto',0.01,0.02,0.05,0.1,0.2,0.3,0.4,0.5]
+			maxsamples_scan= ['auto',0.001,0.01,0.02,0.05,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
 					
 		param_grid = {
 			'n_estimators': nestimators_scan, 
