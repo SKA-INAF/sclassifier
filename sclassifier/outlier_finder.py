@@ -534,13 +534,17 @@ class OutlierFinder(object):
 			return_train_score=True
 		)
 		
-		best_model= grid_search.fit(self.data_preclassified, self.data_preclassified_classids)
+		##best_model= grid_search.fit(self.data_preclassified, self.data_preclassified_classids)
+		##best_pars= best_model.best_params_
+		grid_search.fit(self.data_preclassified, self.data_preclassified_classids)
+		best_pars= grid_search.best_params_
 
-		print('Optimum parameters', best_model.best_params_)
+		print('Optimum parameters', best_pars)
 		
-		# - Setting model to best model
+		# - Setting model parameters to best model
 		logger.info("Setting model to best model found in scan ...")
-		self.model= best_model
+		#self.model= best_model
+		self.model= grid_search.best_estimator_
 		
 		print("== BEST SCAN MODEL PARAMETERS ==")
 		print("n_estimators: ", len(self.model.estimators_))
