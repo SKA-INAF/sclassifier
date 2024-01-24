@@ -546,6 +546,7 @@ class OutlierFinder(object):
 		print("contamination: ", self.model.contamination)
 		#print("max_features: ", len(self.model.estimators_features_))
 		print("max_features: ", self.model.n_features_in_)
+		print("offset: ", self.model.offset_)
 		print("======================")
 		
 		
@@ -572,6 +573,7 @@ class OutlierFinder(object):
 		print("contamination: ", self.model.contamination)
 		#print("max_features: ", len(self.model.estimators_features_))
 		print("max_features: ", self.model.n_features_in_)
+		print("offset: ", self.model.offset_)
 		print("======================")
  		
 		# - Retrieve the anomaly scores
