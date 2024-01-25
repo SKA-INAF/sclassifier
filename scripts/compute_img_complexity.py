@@ -24,6 +24,9 @@ from sklearn.preprocessing import KBinsDiscretizer
 ## NON-STANDARD MODULES
 import gzip
 
+## DRAW MODULES
+import matplotlib.pyplot as plt
+
 ## MODULES
 from sclassifier import logger
 from sclassifier.utils import Utils
@@ -44,6 +47,8 @@ def get_args():
 	parser.set_defaults(jsonlist=False)
 	
 	# - Transform options
+	parser.add_argument('--resize', dest='resize', action='store_true', help='Resize images to resize_size (default=no)')	
+	parser.set_defaults(resize=False)
 	parser.add_argument('-resize_size', '--resize_size', dest='resize_size', required=False, type=int, default=64, action='store',help='Image resize in pixels (default=64)')	
 	parser.add_argument('--downscale_with_antialiasing', dest='downscale_with_antialiasing', action='store_true', help='Use anti-aliasing when downsampling the image (default=no)')	
 	parser.set_defaults(downscale_with_antialiasing=False)
@@ -57,6 +62,11 @@ def get_args():
 	
 	# - Output options
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='complexity.dat', help='Output filename (.dat) with selected feature data') 
+
+	# - Draw options
+	parser.add_argument('--draw', dest='draw', action='store_true', help='Draw image (default=no)')	
+	parser.set_defaults(draw=False)
+	
 
 	args = parser.parse_args()	
 
@@ -79,6 +89,7 @@ def main():
 		logger.error("Failed to get and parse options (err=%s)",str(ex))
 		return 1
 		
+	resize= args.resize
 	resize_size= args.resize_size
 	downscale_with_antialiasing= args.downscale_with_antialiasing
 	upscale= args.upscale
@@ -87,6 +98,7 @@ def main():
 	median_filt_size= args.median_filt_size
 	
 	outfile= args.outfile
+	draw= args.draw
 	
 	# - Check args
 	if args.inputfile=='':
@@ -128,10 +140,17 @@ def main():
 	logger.info("Create train data pre-processor ...")
 	preprocess_stages= []
 
+	#preprocess_stages.append(ChanResizer(nchans=3))
+	#preprocess_stages.append(PercentileThresholder(percthr=percentile_thr))
+	#preprocess_stages.append(MedianFilterer(size=median_filt_size))
+	#preprocess_stages.append(Resizer(resize_size=resize_size, upscale=upscale, downscale_with_antialiasing=downscale_with_antialiasing, set_pad_val_to_min=set_pad_val_to_min))
+	#preprocess_stages.append(MinMaxNormalizer(norm_min=0.0, norm_max=1.0))
+	
 	preprocess_stages.append(ChanResizer(nchans=3))
+	if resize:
+		preprocess_stages.append(Resizer(resize_size=resize_size, upscale=upscale, downscale_with_antialiasing=downscale_with_antialiasing, set_pad_val_to_min=set_pad_val_to_min))
 	preprocess_stages.append(PercentileThresholder(percthr=percentile_thr))
 	preprocess_stages.append(MedianFilterer(size=median_filt_size))
-	preprocess_stages.append(Resizer(resize_size=resize_size, upscale=upscale, downscale_with_antialiasing=downscale_with_antialiasing, set_pad_val_to_min=set_pad_val_to_min))
 	preprocess_stages.append(MinMaxNormalizer(norm_min=0.0, norm_max=1.0))
 	
 	print("== PRE-PROCESSING STAGES (TRAIN) ==")
@@ -151,16 +170,32 @@ def main():
 		# - Read fits
 		logger.info("Reading image file %s ..." % (filename))
 		data, header, wcs= Utils.read_fits(filename, strip_deg_axis=True)
-	
+
+		# - Find image min/max and convert tp uint8
+		#cond= np.logical_and(data!=0, np.isfinite(data))
+		#data_1d= data[cond]
+		#data_min= data_1d.min()
+		#data_max= data_1d.max()
+		#logger.info("Converting data to uint8 ...")
+		#data_norm= (data-data_min)/(data_max-data_min) * 255.
+		#data_norm[~cond]= 0 # Restore 0 and nans set in original data
+		#data= data_norm.astype(np.uint8)
+		
 		# - Apply transformation
 		logger.info("Applying data transformation ...")
 		data_transf= dp(data)
-			
-		# - Convert to uint8
+		
+		# - Convert to uint8 after other transformations (Segal et al 2019 do this step before, see Section 3.1)
 		logger.info("Converting data to uint8 ...")
 		X= data_transf[:,:,0]
 		X*= 255
 		X= X.astype(np.uint8)
+		
+		# - Draw?
+		if draw:
+			logger.info("Drawing image after processing ...")
+			plt.imshow(X, origin='lower')
+			plt.show()
 		
 		# - Save array to file
 		fout= gzip.GzipFile(tmpfile, "w")
@@ -169,7 +204,7 @@ def main():
 		complexity= os.path.getsize(tmpfile)
 		
 		complexities.append(complexity)
-		print("Image file %s: nbytes(original)=%f, complexity=%f" % (filename, X.nbytes, complexity))
+		logger.info("Image file %s: nbytes(original)=%f, complexity=%f" % (filename, X.nbytes, complexity))
 		
 	# - Remove temporary file
 	logger.info("Removing tmp file %s ..." % (tmpfile))
