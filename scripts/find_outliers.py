@@ -136,6 +136,7 @@ def main():
 	scan_nestimators= args.scan_nestimators
 	scan_maxfeatures= args.scan_maxfeatures
 	scan_maxsamples= args.scan_maxsamples
+	scan_contamination= args.scan_contamination
 	random_state= args.random_state
 	
 	classid_label_map= {}
