@@ -556,7 +556,8 @@ class OutlierFinder(object):
 		
 		# - Setting model parameters to best model
 		logger.info("Setting model to best model found in scan ...")
-		self.model= best_model
+		#self.model= best_model
+		self.model= res
 		
 		return 0
 
@@ -637,7 +638,6 @@ class OutlierFinder(object):
 		#==   LOAD MODEL
 		#================================
 		if modelfile and modelfile is not None:
-			#fitdata= False
 			logger.info("Loading the model from file %s ..." % modelfile)
 			try:
 				self.model = pickle.load((open(modelfile, 'rb')))
@@ -647,10 +647,8 @@ class OutlierFinder(object):
 
 		else:
 			logger.info("Creating the model ...")
-			#fitdata= True
 			self.model= self.__create_model()
 			
-		
 		#================================
 		#==   RUN SCAN FIRST?
 		#================================	
@@ -664,6 +662,7 @@ class OutlierFinder(object):
 		# - Do not fit data if predict or if a fit scan was already run before	
 		fitdata= True
 		if self.predict or self.run_scan:
+		#if self.predict:
 			fitdata= False
 			
 		logger.info("Searching for outliers ...")
@@ -714,7 +713,6 @@ class OutlierFinder(object):
 		#==   LOAD MODEL
 		#================================
 		if modelfile and modelfile is not None:
-			#fitdata= False
 			logger.info("Loading the model from file %s ..." % modelfile)
 			try:
 				self.model = pickle.load((open(modelfile, 'rb')))
@@ -724,7 +722,6 @@ class OutlierFinder(object):
 
 		else:
 			logger.info("Creating the model ...")
-			#fitdata= True
 			self.model= self.__create_model()
 			
 		#================================
@@ -740,6 +737,7 @@ class OutlierFinder(object):
 		# - Do not fit data if predict or if a fit scan was already run before	
 		fitdata= True
 		if self.predict or self.run_scan:
+		#if self.predict:
 			fitdata= False
 			
 		logger.info("Searching for outliers ...")
