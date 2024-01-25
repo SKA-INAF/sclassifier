@@ -515,7 +515,7 @@ class OutlierFinder(object):
 			
 		contamination_scan= [self.contamination]
 		if self.scan_contamination:
-			contamination_scan= ['auto',0.0,0.1,0.2,0.3,0.4,0.5]
+			contamination_scan= ['auto',0.001,0.01,0.1]
 					
 		param_grid = {
 			'n_estimators': nestimators_scan, 
