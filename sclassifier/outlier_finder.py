@@ -556,8 +556,8 @@ class OutlierFinder(object):
 		
 		# - Setting model parameters to best model
 		logger.info("Setting model to best model found in scan ...")
-		#self.model= best_model
-		self.model= res
+		self.model= best_model
+		##self.model= res
 		
 		return 0
 
@@ -661,8 +661,8 @@ class OutlierFinder(object):
 		#================================
 		# - Do not fit data if predict or if a fit scan was already run before	
 		fitdata= True
-		if self.predict or self.run_scan:
-		#if self.predict:
+		#if self.predict or self.run_scan:
+		if self.predict:
 			fitdata= False
 			
 		logger.info("Searching for outliers ...")
@@ -736,8 +736,8 @@ class OutlierFinder(object):
 		#================================	
 		# - Do not fit data if predict or if a fit scan was already run before	
 		fitdata= True
-		if self.predict or self.run_scan:
-		#if self.predict:
+		#if self.predict or self.run_scan:
+		if self.predict:
 			fitdata= False
 			
 		logger.info("Searching for outliers ...")
