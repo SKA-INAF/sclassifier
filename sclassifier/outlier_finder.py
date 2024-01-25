@@ -536,27 +536,27 @@ class OutlierFinder(object):
 			return_train_score=True
 		)
 		
-		##best_model= grid_search.fit(self.data_preclassified, self.data_preclassified_classids)
-		##best_pars= best_model.best_params_
-		grid_search.fit(self.data_preclassified, self.data_preclassified_classids)
-		best_pars= grid_search.best_params_
+		res= grid_search.fit(self.data_preclassified, self.data_preclassified_classids)
+		#best_pars= grid_search.best_params_
+		#best_model= grid_search.best_estimator_
+		best_pars= res.best_params_
+		best_model= res.best_estimator_
 
+		print("== BEST SCAN MODEL PARAMETERS ==")
 		print('Optimum parameters', best_pars)
+		print("type(best_model)", type(best_model))
+		print("type(res)", type(res))
+		print("n_estimators: ", len(best_model.estimators_))
+		print("max_samples: ", best_model.max_samples_)
+		print("contamination: ", best_model.contamination)
+		#print("max_features: ", len(best_model.estimators_features_))
+		print("max_features: ", best_model.n_features_in_)
+		print("offset: ", best_model.offset_)
+		print("======================")
 		
 		# - Setting model parameters to best model
 		logger.info("Setting model to best model found in scan ...")
-		#self.model= best_model
-		self.model= grid_search.best_estimator_
-		
-		print("== BEST SCAN MODEL PARAMETERS ==")
-		print("n_estimators: ", len(self.model.estimators_))
-		print("max_samples: ", self.model.max_samples_)
-		print("contamination: ", self.model.contamination)
-		#print("max_features: ", len(self.model.estimators_features_))
-		print("max_features: ", self.model.n_features_in_)
-		print("offset: ", self.model.offset_)
-		print("======================")
-		
+		self.model= best_model
 		
 		return 0
 
@@ -566,7 +566,7 @@ class OutlierFinder(object):
 	def __find_outliers(self, fitdata):
 		""" Find outliers """
 
-		# - Fit data (only if no modelfile given)
+		# - Fit data?
 		if fitdata: 
 			logger.info("Fitting input data ...")
 			self.model.fit(self.data)
