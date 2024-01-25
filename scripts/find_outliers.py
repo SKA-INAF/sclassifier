@@ -81,6 +81,9 @@ def get_args():
 	parser.add_argument('--scan_maxsamples', dest='scan_maxsamples', action='store_true',help='Scan max_samples parameter (default=false)')	
 	parser.set_defaults(scan_maxsamples=False)
 	
+	parser.add_argument('--scan_contamination', dest='scan_contamination', action='store_true',help='Scan contamination parameter (default=false)')	
+	parser.set_defaults(scan_contamination=False)
+	
 	parser.add_argument('--random_state', dest='random_state', required=False, type=int, default=None, help='Model random state (default=None)')
 		
 	# - Output options
@@ -175,6 +178,7 @@ def main():
 	ofinder.scan_nestimators= scan_nestimators
 	ofinder.scan_maxfeatures= scan_maxfeatures
 	ofinder.scan_maxsamples= scan_maxsamples
+	ofinder.scan_contamination= scan_contamination
 	ofinder.anomaly_thr= anomaly_thr
 	ofinder.outfile= outfile
 	ofinder.classid_label_map= classid_label_map

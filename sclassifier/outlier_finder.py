@@ -100,6 +100,7 @@ class OutlierFinder(object):
 		self.scan_nestimators= False
 		self.scan_maxfeatures= False
 		self.scan_maxsamples= False
+		self.scan_contamination= False
 		
 		self.data_pred= None
 		self.anomaly_scores= None
@@ -507,16 +508,19 @@ class OutlierFinder(object):
 		if self.scan_maxfeatures:
 			maxfeatures_scan= [1,2,3,5,self.nfeatures]
 			
-		maxsamples_scan= self.max_samples
+		maxsamples_scan= [self.max_samples]
 		if self.scan_maxsamples:
 			maxsamples_scan= ['auto',0.001,0.01,0.02,0.05,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
 			###maxsamples_scan= ['auto',0.2]
+			
+		contamination_scan= [self.contamination]
+		if self.scan_contamination:
+			contamination_scan= ['auto',0.0,0.1,0.2,0.3,0.4,0.5]
 					
 		param_grid = {
 			'n_estimators': nestimators_scan, 
 			'max_samples': maxsamples_scan, 
-			#'contamination': ['auto'], 
-			'contamination': [self.contamination],
+			'contamination': contamination_scan,
 			'max_features': maxfeatures_scan,
 		}
 		
