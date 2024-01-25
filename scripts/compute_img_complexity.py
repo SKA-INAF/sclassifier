@@ -166,10 +166,16 @@ def main():
 	
 	logger.info("Reading data ...")
 	for filename in filelist:
-			
-		# - Read fits
+		# - Read image
 		logger.info("Reading image file %s ..." % (filename))
-		data, header, wcs= Utils.read_fits(filename, strip_deg_axis=True)
+		fileext= os.path.splitext(filename)[1]
+		if fileext=='.fits':
+			data, header, wcs= Utils.read_fits(filename, strip_deg_axis=True)
+		elif fileext in ['.png', '.jpg']:
+			data= Utils.read_image(filename)
+		else:
+			logger.error("Invalid or unrecognized file extension (%s), exit!" % (fileext))
+			return 1
 
 		# - Find image min/max and convert tp uint8
 		#cond= np.logical_and(data!=0, np.isfinite(data))

@@ -613,6 +613,21 @@ class Utils(object):
 
 		return coords
 
+	#===============================
+	#==   READ PNG/JPG IMAGE FILE
+	#===============================
+	@classmethod
+	def read_image(cls, filename):
+		""" Read PNG/JPG image and return data """
+		
+		try:
+			data= plt.imread(filename)
+		except Exception as e:
+			logger.error("Failed to read image file %s (err=%s)!" % (filename, str(e)))
+			return None
+			
+		return data
+		
 	#===========================
 	#==   MAKE IMG METADATA
 	#===========================
