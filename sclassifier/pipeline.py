@@ -41,7 +41,7 @@ import scutout
 from scutout.config import Config
 
 ## MONTAGE MODULES
-from montage_wrapper.commands import mImgtbl
+#from montage_wrapper.commands import mImgtbl
 
 ## PLOT MODULES
 import matplotlib.pyplot as plt
@@ -62,6 +62,7 @@ from sclassifier.feature_merger import FeatMerger
 from sclassifier.feature_selector import FeatSelector
 from sclassifier.feature_extractor_ae import FeatExtractorAE
 from sclassifier.spectral_index_tt import SpectralIndexTTCalculator
+from sclassifier.montage_utils import MontageUtils
 
 #===========================
 #==   IMPORT MPI
@@ -275,7 +276,8 @@ class Pipeline(object):
 		status= 0
 		
 		if procId==MASTER:
-			status= Utils.write_montage_fits_metadata(inputfile=self.imgfile_fullpath, metadata_file=self.img_metadata, jobdir=self.jobdir_scutout)
+			#status= Utils.write_montage_fits_metadata(inputfile=self.imgfile_fullpath, metadata_file=self.img_metadata, jobdir=self.jobdir_scutout)
+			status= MontageUtils.write_montage_fits_metadata(inputfile=self.imgfile_fullpath, metadata_file=self.img_metadata, jobdir=self.jobdir_scutout)
 		
 		else: # OTHER PROCS
 			status= -1
