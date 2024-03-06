@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 __title__ = 'sclassifier'
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 __author__ = 'Simone Riggi'
 __license__ = 'GPL3'
 __date__ = '2024-03-06'
