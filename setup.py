@@ -89,7 +89,7 @@ setup(
 	keywords = ['radio', 'source', 'classification'],
 	long_description=read('README.md'),
 	long_description_content_type='text/markdown',
-	download_url="https://github.com/SKA-INAF/sclassifier/archive/refs/tags/v1.0.0.tar.gz",
+	download_url="https://github.com/SKA-INAF/sclassifier/archive/refs/tags/v1.0.1.tar.gz",
 	packages=['sclassifier'],
 	install_requires=reqs,
 	scripts=['scripts/check_data.py','scripts/run_ae.py','scripts/run_predict.py','scripts/run_clustering.py','scripts/reconstruct_data.py','scripts/extract_features.py','scripts/select_features.py','scripts/run_classifier.py','scripts/merge_features.py','scripts/run_classifier_nn.py','scripts/classify_source.py','scripts/find_outliers.py','scripts/run_pipeline.py','scripts/run_umap.py','scripts/run_umap_on_imgs.py','scripts/run_simclr.py','scripts/run_byol.py','scripts/run_pca.py','scripts/run_imgclassifier.py','scripts/gradcam.py','scripts/read_model_weights.py','scripts/set_encoder_weights_from_model.py','scripts/compute_latent_space_complexity.py','scripts/compute_img_complexity.py'],
