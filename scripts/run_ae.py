@@ -524,7 +524,9 @@ def main():
 	print("== PRE-PROCESSING STAGES (TRAIN) ==")
 	print(preprocess_stages)
 
-	dp= DataPreprocessor(preprocess_stages)
+	dp= None
+	if preprocess_stages:
+		dp= DataPreprocessor(preprocess_stages)
 
 	# - Creating data pre-processor for validation/test data
 	logger.info("Creating data pre-processor for validation data ...")
@@ -537,7 +539,9 @@ def main():
 	print("== PRE-PROCESSING STAGES (VAL) ==")
 	print(preprocess_stages_val)
 
-	dp_val= DataPreprocessor(preprocess_stages_val)
+	dp_val= None
+	if preprocess_stages_val:
+		dp_val= DataPreprocessor(preprocess_stages_val)
 
 	#===============================
 	#==  DATA GENERATOR
