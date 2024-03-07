@@ -401,8 +401,9 @@ def main():
 	print("== PRE-PROCESSING STAGES ==")
 	print(preprocess_stages)
 
-	dp= DataPreprocessor(preprocess_stages)
-
+	dp= None
+	if preprocess_stages:
+		dp= DataPreprocessor(preprocess_stages)
 
 	#===============================
 	#==  DATA GENERATOR
