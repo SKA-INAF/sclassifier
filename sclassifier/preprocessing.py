@@ -1072,7 +1072,7 @@ class Scaler(object):
 		""" Create a data pre-processor object """
 	
 		# - Set parameters
-		self.scale_factors= self.scale_factors
+		self.scale_factors= scale_factors
 		
 
 	def __call__(self, data):
@@ -1083,6 +1083,9 @@ class Scaler(object):
 			logger.error("Input data is None!")
 			return None
 
+		# - Check NANs/zero values
+		cond= np.logical_and(data!=0, np.isfinite(data))
+
 		# - Check size of scale factors
 		nchannels= data.shape[2]
 		nscales= len(self.scale_factors)
@@ -1092,6 +1095,10 @@ class Scaler(object):
 
 		# - Apply scale factors
 		data_scaled= data*self.scale_factors
+		
+		# - restore NANs values
+		data_scaled[~cond]= 0
+		
 
 		return data_scaled
 
