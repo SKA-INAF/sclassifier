@@ -197,7 +197,7 @@ def get_args():
 	parser.add_argument('--scale_chan_mse_loss', dest='scale_chan_mse_loss', action='store_true',help='Scale MSE loss per channel by max(mean(ch))/mean(ch)')
 	parser.set_defaults(scale_chan_mse_loss=False)
 	
-	parser.add_argument('--use_mse_loss_weights', dest='use_mse_loss_weights', action='store_true',help='Scale MSE loss per channel by fixed weights)
+	parser.add_argument('--use_mse_loss_weights', dest='use_mse_loss_weights', action='store_true',help='Scale MSE loss per channel by fixed weights')
 	parser.set_defaults(use_mse_loss_weights=False)
 	parser.add_argument('--mse_loss_chan_weights', dest='mse_loss_chan_weights', required=False, type=str, default='1,1,1',help='MSE loss function weights per each channel') 
 	
