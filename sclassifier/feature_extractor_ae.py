@@ -517,6 +517,9 @@ class FeatExtractorAE(object):
 		self.load_cv_data_in_batches= True
 		self.balance_classes= False
 		self.class_probs= {}
+		
+		self.use_mse_loss_weights= False
+		self.mse_loss_chan_weights= [1.,1.,1.]
 
 		# *****************************
 		# ** Pre-processing
@@ -1107,7 +1110,14 @@ class FeatExtractorAE(object):
 
 			y_true*= chan_weights
 			y_pred*= chan_weights
-
+			
+		# - Apply fixed channel loss weights?
+		if self.use_mse_loss_weights:
+			f= tf.cast(tf.constant(self.mse_loss_chan_weights), y_true.dtype)
+			chan_weights= tf.expand_dims(tf.expand_dims(tf.expand_dims(f, axis=0), axis=0), axis=0)
+			y_true*= chan_weights
+			y_pred*= chan_weights
+		
 		# - Compute flattened tensors
 		y_true_shape= K.shape(y_true)
 		img_cube_size= y_true_shape[1]*y_true_shape[2]*y_true_shape[3]

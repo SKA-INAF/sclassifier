@@ -197,6 +197,12 @@ def get_args():
 	parser.add_argument('--scale_chan_mse_loss', dest='scale_chan_mse_loss', action='store_true',help='Scale MSE loss per channel by max(mean(ch))/mean(ch)')
 	parser.set_defaults(scale_chan_mse_loss=False)
 	
+	parser.add_argument('--use_mse_loss_weights', dest='use_mse_loss_weights', action='store_true',help='Scale MSE loss per channel by fixed weights)
+	parser.set_defaults(use_mse_loss_weights=False)
+	parser.add_argument('--mse_loss_chan_weights', dest='mse_loss_chan_weights', required=False, type=str, default='1,1,1',help='MSE loss function weights per each channel') 
+	
+	
+	
 	parser.add_argument('--ssim_loss', dest='ssim_loss', action='store_true',help='Compute and include SSIM reco loss in total loss')
 	parser.add_argument('--no-ssim_loss', dest='ssim_loss', action='store_false',help='Skip SSIM calculation and exclude SSIM reco loss from total loss')
 	parser.set_defaults(ssim_loss=False)
@@ -422,7 +428,11 @@ def main():
 
 		print("== class_probs ==")
 		print(class_probs_dict)
-
+		
+		
+	use_mse_loss_weights= args.use_mse_loss_weights
+	mse_loss_chan_weights= args.mse_loss_chan_weights
+	
 	# - Reco metrics & plot options
 	winsize= args.winsize
 	save_plots= args.save_plots
@@ -617,6 +627,9 @@ def main():
 	ae.balance_classes= balance_classes_in_batch
 	ae.class_probs= class_probs_dict
 
+	ae.use_mse_loss_weights= use_mse_loss_weights
+	ae.mse_loss_chan_weights= mse_loss_chan_weights
+	
 	if predict:
 		logger.info("Running autoencoder predict ...")
 		status= ae.predict_model(modelfile_encoder, weightfile_encoder)
