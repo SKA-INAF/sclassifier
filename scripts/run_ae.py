@@ -431,7 +431,10 @@ def main():
 		
 		
 	use_mse_loss_weights= args.use_mse_loss_weights
-	mse_loss_chan_weights= args.mse_loss_chan_weights
+	mse_loss_chan_weights= []
+	if args.mse_loss_chan_weights!="":
+		mse_loss_chan_weights= [float(x.strip()) for x in args.mse_loss_chan_weights.split(',')]
+		
 	
 	# - Reco metrics & plot options
 	winsize= args.winsize
