@@ -929,11 +929,19 @@ class SClassifierNN(object):
 				continue
 			y_true.append(target_id)
 			y_pred.append(pred_id)
+			
+		nclasses= len(self.target_names)
+		labels= list(range(0,nclasses))
+		print("target_names")
+		print(self.target_names)
+		print("labels")
+		print(labels)
 
 		# - Compute classification metrics
 		logger.info("Computing classification metrics on predicted data ...")
-		##report= classification_report(self.target_ids, self.targets_pred, target_names=self.target_names, output_dict=True)
-		report= classification_report(y_true, y_pred, target_names=self.target_names, output_dict=True)
+		######report= classification_report(self.target_ids, self.targets_pred, target_names=self.target_names, output_dict=True)
+		##report= classification_report(y_true, y_pred, target_names=self.target_names, output_dict=True)
+		report= classification_report(y_true, y_pred, target_names=self.target_names, labels=labels, output_dict=True)
 		self.accuracy= report['accuracy']
 		self.precision= report['weighted avg']['precision']
 		self.recall= report['weighted avg']['recall']    
