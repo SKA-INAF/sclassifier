@@ -1,10 +1,10 @@
 #! /usr/bin/env python
 
 __title__ = 'sclassifier'
-__version__ = '1.0.4'
+__version__ = '1.0.5'
 __author__ = 'Simone Riggi'
 __license__ = 'GPL3'
-__date__ = '2024-03-11'
+__date__ = '2024-03-14'
 __copyright__ = 'Copyright 2024 by Simone Riggi - INAF'
 
 
