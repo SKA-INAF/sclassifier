@@ -1095,13 +1095,15 @@ class FeatExtractorAE(object):
 			###tf.print("--> MSE loss: data_abs_max=", data_abs_max, output_stream=sys.stdout)
 			
 			y_true_safe= tf.where(~cond, tf.ones_like(y_true) * 0, y_true)
-			y_true_nonzeros= tf.cast(y_true_safe!= 0, tf.float32)
+			#y_true_nonzeros= tf.cast(y_true_safe!= 0, tf.float32)
+			y_true_nonzeros= tf.cast(y_true_safe!=0, tf.float64)
 			n_nonzeros= tf.reduce_sum(y_true_nonzeros, axis=(1,2))
 			n_sum= tf.reduce_sum(y_true_safe, axis=(1,2)) 
 			data_means= tf.math.divide_no_nan(n_sum, n_nonzeros) # NB: This returns 0 if n_nonzeros=0
 			data_means_max= tf.reduce_max(data_means, axis=1)
 			data_means_max= tf.expand_dims(data_means_max, axis=1)
-			chan_weights= tf.where(data_means==0, tf.ones_like(data_means)*1, data_means_max/data_means)
+			##chan_weights= tf.where(data_means==0, tf.ones_like(data_means)*1, data_means_max/data_means)
+			chan_weights= tf.where(data_means==0, tf.ones_like(data_means)*1, tf.expand_dims(data_means_max, axis=-1)/data_means)
 			chan_weights= tf.expand_dims(tf.expand_dims(chan_weights, axis=1), axis=1)
 			
 			#tf.print("--> MSE loss: data_means=", data_means, output_stream=sys.stdout)
