@@ -942,10 +942,19 @@ class SClassifierNN(object):
 		######report= classification_report(self.target_ids, self.targets_pred, target_names=self.target_names, output_dict=True)
 		##report= classification_report(y_true, y_pred, target_names=self.target_names, output_dict=True)
 		report= classification_report(y_true, y_pred, target_names=self.target_names, labels=labels, output_dict=True)
-		self.accuracy= report['accuracy']
-		self.precision= report['weighted avg']['precision']
-		self.recall= report['weighted avg']['recall']    
-		self.f1score= report['weighted avg']['f1-score']
+		self.accuracy= 0
+		self.precision= 0
+		self.recall= 0
+		self.f1score= 0
+		if 'accuracy' in report:
+			self.accuracy= report['accuracy']
+		if 'weighted avg' in report:
+			if 'precision' in report['weighted avg']:	
+				self.precision= report['weighted avg']['precision']
+			if 'recall' in report['weighted avg']:
+				self.recall= report['weighted avg']['recall']    
+			if 'f1-score' in report['weighted avg']:
+				self.f1score= report['weighted avg']['f1-score']
 
 		self.class_precisions= []
 		self.class_recalls= []  
