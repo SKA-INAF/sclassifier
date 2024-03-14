@@ -1108,7 +1108,7 @@ class FeatExtractorAE(object):
 			
 			#tf.print("--> MSE loss: data_means=", data_means, output_stream=sys.stdout)
 			#tf.print("--> MSE loss: data_means_max=", data_means_max, output_stream=sys.stdout)
-			#tf.print("--> MSE loss: chan_weights=", chan_weights, output_stream=sys.stdout)
+			tf.print("--> MSE loss: chan_weights=", chan_weights, output_stream=sys.stdout)
 
 			y_true*= chan_weights
 			y_pred*= chan_weights
@@ -1139,7 +1139,8 @@ class FeatExtractorAE(object):
 		are_empty= tf.logical_or(y_true_isempty, y_pred_isempty)
 		
 		# - Compute reconstruction loss term
-		reco_loss_default= 1.e+99
+		#reco_loss_default= 1.e+99
+		reco_loss_default= tf.float32.max
 		reco_loss= tf.cond(are_empty, lambda: tf.constant(reco_loss_default), lambda: self.mse_loss_fcn(y_true_flattened_masked, y_pred_flattened_masked))
 		#reco_loss*= tf.cast(img_cube_size, tf.float32)
 		reco_loss= tf.cast(reco_loss, tf.float32)
