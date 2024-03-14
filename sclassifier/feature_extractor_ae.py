@@ -1108,7 +1108,7 @@ class FeatExtractorAE(object):
 			
 			#tf.print("--> MSE loss: data_means=", data_means, output_stream=sys.stdout)
 			#tf.print("--> MSE loss: data_means_max=", data_means_max, output_stream=sys.stdout)
-			tf.print("--> MSE loss: chan_weights=", chan_weights, output_stream=sys.stdout)
+			#tf.print("--> MSE loss: chan_weights=", chan_weights, output_stream=sys.stdout)
 
 			y_true*= chan_weights
 			y_pred*= chan_weights
