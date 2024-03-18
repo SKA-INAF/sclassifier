@@ -18,19 +18,12 @@ def get_version():
 	return sclassifier.__version__
 
 
-#reqs = ['numpy>=1.10',
-#        'astropy>=2.0, <3',
-#        'keras>=2.0',
-#        'tensorflow>=1.13']
-
 PY_MAJOR_VERSION=sys.version_info.major
 PY_MINOR_VERSION=sys.version_info.minor
 print("PY VERSION: maj=%s, min=%s" % (PY_MAJOR_VERSION,PY_MINOR_VERSION))
 
 reqs= []
-#reqs.append('numpy>=1.18')
 reqs.append('numpy==1.22.4') ## imgaug was not updated to fix np.bool-->bool numpy errors occurring from numpy >1.24
-##reqs.append('astropy>=2.0, <3')
 reqs.append('astropy>=2.0')
 
 
@@ -48,23 +41,14 @@ else:
 	reqs.append('pyparsing')
 	reqs.append('matplotlib')
 
-#reqs.append('keras>=2.0')
+reqs.append('fitsio')
+reqs.append('tensorflow>=2.6.1')
+reqs.append('tensorflow_addons')
 
-#reqs.append('six<1.16')
-##reqs.append('six==1.15.0')
-##reqs.append('numpy==1.19.5')
-
-#reqs.append('tensorflow>=2.3')
-#reqs.append('tensorflow==2.6.0')
-#reqs.append('tensorflow>=2.6.1')
-
-#reqs.append('imgaug')
 reqs.append('imgaug>=0.4.0')
-
 reqs.append('umap-learn')
 reqs.append('hdbscan')
 reqs.append('seaborn')
-##reqs.append('scikit-image<=0.15.0')
 reqs.append('scikit-image')
 reqs.append('lightgbm')
 reqs.append('opencv-python')
@@ -75,9 +59,7 @@ reqs.append('scutout')
 reqs.append('mpi4py')
 reqs.append('optuna')
 reqs.append('image-classifiers')
-reqs.append('fitsio')
-reqs.append('tensorflow_addons')
-
+reqs.append('pandas')
 
 
 data_dir = 'data'
@@ -93,7 +75,7 @@ setup(
 	keywords = ['radio', 'source', 'classification'],
 	long_description=read('README.md'),
 	long_description_content_type='text/markdown',
-	download_url="https://github.com/SKA-INAF/sclassifier/archive/refs/tags/v1.0.5.tar.gz",
+	download_url="https://github.com/SKA-INAF/sclassifier/archive/refs/tags/v1.0.6.tar.gz",
 	packages=['sclassifier'],
 	install_requires=reqs,
 	scripts=['scripts/check_data.py','scripts/run_ae.py','scripts/run_predict.py','scripts/run_clustering.py','scripts/reconstruct_data.py','scripts/extract_features.py','scripts/select_features.py','scripts/run_classifier.py','scripts/merge_features.py','scripts/run_classifier_nn.py','scripts/classify_source.py','scripts/find_outliers.py','scripts/run_pipeline.py','scripts/run_umap.py','scripts/run_umap_on_imgs.py','scripts/run_simclr.py','scripts/run_byol.py','scripts/run_pca.py','scripts/run_imgclassifier.py','scripts/gradcam.py','scripts/read_model_weights.py','scripts/set_encoder_weights_from_model.py','scripts/compute_latent_space_complexity.py','scripts/compute_img_complexity.py'],
