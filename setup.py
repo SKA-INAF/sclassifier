@@ -28,8 +28,9 @@ PY_MINOR_VERSION=sys.version_info.minor
 print("PY VERSION: maj=%s, min=%s" % (PY_MAJOR_VERSION,PY_MINOR_VERSION))
 
 reqs= []
-reqs.append('numpy>=1.18')
-#reqs.append('astropy>=2.0, <3')
+#reqs.append('numpy>=1.18')
+reqs.append('numpy==1.22.4') ## imgaug was not updated to fix np.bool-->bool numpy errors occurring from numpy >1.24
+##reqs.append('astropy>=2.0, <3')
 reqs.append('astropy>=2.0')
 
 
