@@ -75,6 +75,7 @@ reqs.append('mpi4py')
 reqs.append('optuna')
 reqs.append('image-classifiers')
 reqs.append('fitsio')
+reqs.append('tensorflow_addons')
 
 
 
