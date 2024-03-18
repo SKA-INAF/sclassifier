@@ -74,6 +74,8 @@ reqs.append('scutout')
 reqs.append('mpi4py')
 reqs.append('optuna')
 reqs.append('image-classifiers')
+reqs.append('fitsio')
+
 
 
 data_dir = 'data'
