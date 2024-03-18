@@ -1,5 +1,5 @@
 astropy>=2.0
-fitsio
+fitsio==1.1.7
 scipy
 scikit-learn
 pyparsing<=2.4.7
