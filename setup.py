@@ -23,7 +23,8 @@ PY_MINOR_VERSION=sys.version_info.minor
 print("PY VERSION: maj=%s, min=%s" % (PY_MAJOR_VERSION,PY_MINOR_VERSION))
 
 reqs= []
-reqs.append('numpy==1.22.4') ## imgaug was not updated to fix np.bool-->bool numpy errors occurring from numpy >1.24
+##reqs.append('numpy==1.22.4') ## imgaug was not updated to fix np.bool-->bool numpy errors occurring from numpy >1.24
+reqs.append('numpy<=1.22.4') ## imgaug was not updated to fix np.bool-->bool numpy errors occurring from numpy >1.24
 reqs.append('astropy>=2.0')
 
 
@@ -41,7 +42,8 @@ else:
 	reqs.append('pyparsing')
 	reqs.append('matplotlib')
 
-reqs.append('fitsio==1.1.7')  ## This is the version compiled with numpy 1.22.4 (see requirements above)
+##reqs.append('fitsio==1.1.7')  ## 1.1.7 is the last version compiled with numpy 1.22.4 (see requirements above)
+reqs.append('fitsio<=1.1.7')  ## This is the version compiled with numpy 1.22.4 (see requirements above)
 reqs.append('tensorflow>=2.6.1')
 reqs.append('tensorflow_addons')
 
