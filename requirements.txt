@@ -1,11 +1,11 @@
 astropy>=2.0
-fitsio==1.1.7
+fitsio<=1.1.7
 scipy
 scikit-learn
 pyparsing<=2.4.7
 matplotlib
 six==1.15.0
-numpy==1.22.4
+numpy<=1.22.4
 tensorflow>=2.6.1
 tensorflow_addons
 imgaug>=0.4.0
