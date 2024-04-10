@@ -603,6 +603,10 @@ class ColorJitterAugmenter(iaa.meta.Augmenter):
 	def __get_transformed_image_v2(self, image):
 		""" Return color jittered image """
 		
+		# - Check number of channels
+		#   NB: saturation & hue applicable only to RGB
+		nchans= image.shape[-1]
+		
 		# - Need a tensor, normalized in range [0,1]
 		image_norm= self.normalizer(image)
 		x= tf.convert_to_tensor(image_norm)
@@ -610,8 +614,9 @@ class ColorJitterAugmenter(iaa.meta.Augmenter):
 		# - Apply transforms
 		x = tf.image.random_brightness(x, max_delta=self.brightness*self.strength)
 		x = tf.image.random_contrast(x, lower=1-self.contrast*self.strength, upper=1+self.contrast*self.strength)
-		x = tf.image.random_saturation(x, lower=1-self.saturation*self.strength, upper=1+self.saturation*self.strength)
-		x = tf.image.random_hue(x, max_delta=0.2*self.strength)
+		if nchans==3:
+			x = tf.image.random_saturation(x, lower=1-self.saturation*self.strength, upper=1+self.saturation*self.strength)
+			x = tf.image.random_hue(x, max_delta=0.2*self.strength)
 		x = tf.clip_by_value(x, 0, 1)
 
 		return x.numpy()

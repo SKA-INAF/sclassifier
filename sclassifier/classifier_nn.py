@@ -472,6 +472,8 @@ class SClassifierNN(object):
 		##     Guess the correct way was directly using keras binary_crossentropy with argument from_logits=False (this is the default)
 		#return tf.nn.sigmoid_cross_entropy_with_logits(labels=y_true, logits=y_pred)
 
+		# - This will be replaced in the future by keras-cv function https://github.com/keras-team/keras-cv/blob/master/keras_cv/losses/focal.py
+		#   as TFA will end its life in May 2024
 		return tfa.losses.sigmoid_focal_crossentropy(
 			y_true, y_pred, 
 			alpha=self.focal_loss_alpha, 
