@@ -291,7 +291,11 @@ class SClassifierNN(object):
 		self.nepochs= 10
 		self.learning_rate= 1.e-4
 		self.optimizer_default= 'adam'
-		self.optimizer= 'adam' # 'rmsprop'
+		self.optimizer= 'adam'      # {'rmsprop','adam','adamw'}
+		self.weight_decay= None     # TF default=0.004
+		self.beta_1= 0.9            # TF default=0.9
+		self.beta_2= 0.999          # TF default=0.999
+		
 		self.weight_init_seed= None
 		self.shuffle_train_data= True
 		self.augment_scale_factor= 1
@@ -335,16 +339,36 @@ class SClassifierNN(object):
 	def set_optimizer(self, opt, learning_rate=None):
 		""" Set optimizer """
 
+		if self.weight_decay is None:
+			logger.info("Optimizer weight decay is disabled ...")
+		else:
+			logger.info("Optimizer weight decay is enabled (weight_decay=%f) ... " % (self.weight_decay))
+
 		if learning_rate is None or learning_rate<=0:
 			logger.info("Setting %s optimizer (no lr given) ..." % (opt))
 			self.optimizer= opt
 		else:
 			if opt=="rmsprop":
 				logger.info("Setting rmsprop optimizer with lr=%f ..." % (learning_rate))
-				self.optimizer= tf.keras.optimizers.RMSprop(learning_rate=learning_rate)
+				self.optimizer= tf.keras.optimizers.RMSprop(
+					learning_rate=learning_rate
+				)
 			elif opt=="adam":
 				logger.info("Setting adam optimizer with lr=%f ..." % (learning_rate))
-				self.optimizer= tf.keras.optimizers.Adam(learning_rate=learning_rate)
+				self.optimizer= tf.keras.optimizers.Adam(
+					learning_rate=learning_rate,
+					weight_decay=self.weight_decay,
+					beta_1=self.beta_1,
+					beta_2=self.beta_2
+				)
+			elif opt=="adamw":
+				logger.info("Setting AdamW optimizer with lr=%f ..." % (learning_rate))
+				self.optimizer= tf.keras.optimizers.AdamW(
+					learning_rate=learning_rate,
+					weight_decay=self.weight_decay,
+					beta_1=self.beta_1,
+					beta_2=self.beta_2
+				)				
 			else:
 				logger.warn("Unknown optimizer selected (%s), setting to the default (%s) ..." % (opt, self.optimizer_default))
 				self.optimizer= self.optimizer_default

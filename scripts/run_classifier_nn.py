@@ -183,6 +183,7 @@ def get_args():
 	parser.add_argument('-nepochs', '--nepochs', dest='nepochs', required=False, type=int, default=100, action='store',help='Number of epochs used in network training (default=100)')	
 	parser.add_argument('-optimizer', '--optimizer', dest='optimizer', required=False, type=str, default='adam', action='store',help='Optimizer used (default=adam)')
 	parser.add_argument('-learning_rate', '--learning_rate', dest='learning_rate', required=False, type=float, default=None, action='store',help='Learning rate. If None, use default for the selected optimizer (default=None)')
+	parser.add_argument('-weight_decay', '--weight_decay', dest='weight_decay', required=False, type=float, default=None, action='store',help='Optimizer weight decay parameter (default=None)')
 	parser.add_argument('-batch_size', '--batch_size', dest='batch_size', required=False, type=int, default=32, action='store',help='Batch size used in training (default=32)')
 	parser.add_argument('-weight_seed', '--weight_seed', dest='weight_seed', required=False, type=int, default=None, action='store',help='Weight seed to set reproducible training (default=None)')
 	parser.add_argument('--reproducible', dest='reproducible', action='store_true',help='Fix seed and make model reproducible from run to run')	
@@ -414,6 +415,7 @@ def main():
 	weightfile_base= args.weightfile_base
 	optimizer= args.optimizer
 	learning_rate= args.learning_rate
+	weight_decay= args.weight_decay
 	batch_size= args.batch_size
 	nepochs= args.nepochs
 	weight_seed= args.weight_seed
@@ -628,6 +630,7 @@ def main():
 	sclass.batch_size= batch_size
 	sclass.nepochs= nepochs
 	sclass.validation_steps= validation_steps
+	sclass.weight_decay= weight_decay
 	sclass.set_optimizer(optimizer, learning_rate)
 	if reproducible:
 		sclass.set_reproducible_model()
