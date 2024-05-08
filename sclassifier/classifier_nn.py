@@ -355,12 +355,19 @@ class SClassifierNN(object):
 				)
 			elif opt=="adam":
 				logger.info("Setting adam optimizer with lr=%f ..." % (learning_rate))
-				self.optimizer= tf.keras.optimizers.Adam(
-					learning_rate=learning_rate,
-					weight_decay=self.weight_decay,
-					beta_1=self.beta_1,
-					beta_2=self.beta_2
-				)
+				try:
+					self.optimizer= tf.keras.optimizers.Adam(
+						learning_rate=learning_rate,
+						weight_decay=self.weight_decay,
+						beta_1=self.beta_1,
+						beta_2=self.beta_2
+					)
+				except:
+					self.optimizer= tf.keras.optimizers.Adam(
+						learning_rate=learning_rate,
+						beta_1=self.beta_1,
+						beta_2=self.beta_2
+					)
 			elif opt=="adamw":
 				logger.info("Setting AdamW optimizer with lr=%f ..." % (learning_rate))
 				self.optimizer= tf.keras.optimizers.AdamW(
