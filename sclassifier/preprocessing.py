@@ -15,6 +15,8 @@ import signal
 from threading import Thread
 import datetime
 import numpy as np
+np.bool = np.bool_  # This is to fix numpy deprecation (imgaug require older numpy version relying on np.numpy statement)
+
 import random
 import math
 import logging
