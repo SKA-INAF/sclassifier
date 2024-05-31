@@ -385,9 +385,10 @@ def main():
 	
 	# - Extract selected feature data
 	logger.info("Extract selected feature data ...")
+	N= len(indices_sel)
 	data_sel= data[indices_sel_sorted, :]
-	snames_sel= np.array(snames)[indices_sel_sorted]
-	classids_sel= np.array(classids)[indices_sel_sorted]
+	snames_sel= np.array(snames)[indices_sel_sorted].reshape(N,1)
+	classids_sel= np.array(classids)[indices_sel_sorted].reshape(N,1)
 	datalist_sel= list(np.array(datalist)[indices_sel_sorted])
 	
 	# - Write selected feature data table
