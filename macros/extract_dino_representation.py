@@ -109,6 +109,12 @@ def transform_img(data, contrast, clip_data, sigma_low, sigma_up, sigma_bkg=3):
 	""" Transform input data """
 
 	data_transf= np.copy(data)
+	
+	# - Replace nan values with min
+	cond= np.logical_and(data_transf!=0, np.isfinite(data_transf))
+	data_1d= data_transf[cond]
+	data_min= np.min(data_1d)
+	data_transf[~np.isfinite(data_transf)]= data_min 
 
 	# - Clip data?
 	if clip_data:
