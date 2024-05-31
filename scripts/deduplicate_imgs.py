@@ -223,8 +223,12 @@ def main():
 		return 1
 		
 	# - Input filelist
-	if args.inputfile=="":
-		logger.error("Empty input file list!")
+	if args.inputfile_embeddings=="":
+		logger.error("Empty embeddings input file!")
+		return 1
+		
+	if args.inputfile_datalist=="":
+		logger.error("Empty datalist input file!")
 		return 1
 		
 	inputfile_embeddings= args.inputfile_embeddings
