@@ -308,10 +308,12 @@ def main():
 	# - Build index for cosine similarity
 	logger.info("Building index for cosine similarity search ...")
 	if metric=="cossim":
+		logger.info("Using cosine similarity metric ...")
 		faiss.normalize_L2(data)
 		#index= faiss.index_factory(nfeats, "Flat", faiss.METRIC_INNER_PRODUCT)
 		index= faiss.IndexFlatIP(nfeats)
 	elif metric=="l2":
+		logger.info("Using L2 metric ...")
 		index= faiss.IndexFlatL2(nfeats)	
 		
 	index.add(data)
