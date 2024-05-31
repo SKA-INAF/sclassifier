@@ -341,11 +341,14 @@ def main():
 	
 	logger.info("Looping through %d connected graph components and retain only the centroid of subgraphs ..." % (n_cc))
 	indices_sel= []
+	counter= 0
 	for subgraph in subgraphs:
-		# - Add connected componet barycenter to selected list
+		# - Add connected component barycenter to selected list
+		logger.info("Finding barycenter of subgraph no. %d/%d ..." % (counter, len(subgraphs)))
 		barycenter_node= nx.barycenter(subgraph, weight="weight")
 		barycenter_first_node= barycenter_node[0]
 		indices_sel.append(barycenter_first_node)
+		counter+= 1
 		
 		# - Draw images inside the connected group for testing
 		if draw:
