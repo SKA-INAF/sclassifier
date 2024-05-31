@@ -88,6 +88,8 @@ def get_args():
 	parser.set_defaults(draw=False)
 	parser.add_argument('-nimgs_draw', '--nimgs_draw', dest='nimgs_draw', required=False, type=int, default=3, action='store',help='Number of similar images nxn to draw (default=3)')
 	
+	parser.add_argument('--debug', dest='debug', action='store_true',help='Print debug information (default=false)')	
+	parser.set_defaults(debug=False)
 
 	args = parser.parse_args()	
 
@@ -252,7 +254,8 @@ def main():
 	# - Draw options
 	draw= args.draw
 	nimgs_draw= args.nimgs_draw
-
+	debug= args.debug
+	
 	#===========================
 	#==   READ DATALIST
 	#===========================
@@ -317,7 +320,9 @@ def main():
 	n, d = I.shape
 
 	for i in range(n):
-		print("Img no. %d: nneigh=%s, scores=%s" % (i, str(I[i,:]), str(D[i,:])))
+		if debug:
+			print("Img no. %d: nneigh=%s, scores=%s" % (i, str(I[i,:]), str(D[i,:])))
+			
 		for j in range(d):
 			nn_index= I[i,j]
 			score= D[i,j]
