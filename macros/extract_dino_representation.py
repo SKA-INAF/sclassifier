@@ -246,7 +246,7 @@ def main():
 	
 	for i in range(nfiles):
 		# - Read image
-		filename= datalist[i]["filepath"][0]
+		filename= datalist[i]["filepaths"][0]
 		sname= datalist[i]["sname"]
 		class_id= datalist[i]["id"]
 		img= read_img(filename)
