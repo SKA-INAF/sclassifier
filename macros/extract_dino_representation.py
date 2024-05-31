@@ -273,6 +273,9 @@ def main():
 	print("INFO: Writing selected feature data to file %s ..." % (outfile))
 	
 	N= len(feature_list)
+	nfeats= feature_list[0].shape[0]
+	print("INFO: N=%d, nfeats=%d" % (N, nfeats))
+	
 	featdata_arr= np.array(feature_list)
 	snames_arr= np.array(snames).reshape(N,1)
 	classids_arr= np.array(class_ids).reshape(N,1)
