@@ -344,8 +344,12 @@ def main():
 	counter= 0
 	for subgraph in subgraphs:
 		# - Add connected component barycenter to selected list
-		logger.info("Finding barycenter of subgraph no. %d/%d ..." % (counter, len(subgraphs)))
 		ids= [node for node in subgraph]
+		nneighbors= len(ids)
+		logger.info("subgraph no. %d/%d has %d nodes ..." % (counter, len(subgraphs), nneighbors))
+		
+		
+		#logger.info("Finding barycenter of subgraph no. %d/%d ..." % (counter, len(subgraphs)))
 		#barycenter_node= nx.barycenter(subgraph, weight="weight")
 		#barycenter_first_node= barycenter_node[0]
 		barycenter_first_node= ids[0]
@@ -353,7 +357,7 @@ def main():
 		counter+= 1
 		
 		# - Draw images inside the connected group for testing
-		if draw:
+		if draw and nneighbors>1:
 			nn_indices= [node for node in subgraph if node!=barycenter_first_node]
 			
 			fig, axs = plt.subplots(nimgs_draw, nimgs_draw, figsize=(15, 15))
