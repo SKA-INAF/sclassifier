@@ -345,8 +345,10 @@ def main():
 	for subgraph in subgraphs:
 		# - Add connected component barycenter to selected list
 		logger.info("Finding barycenter of subgraph no. %d/%d ..." % (counter, len(subgraphs)))
-		barycenter_node= nx.barycenter(subgraph, weight="weight")
-		barycenter_first_node= barycenter_node[0]
+		ids= [node for node in subgraph]
+		#barycenter_node= nx.barycenter(subgraph, weight="weight")
+		#barycenter_first_node= barycenter_node[0]
+		barycenter_first_node= ids[0]
 		indices_sel.append(barycenter_first_node)
 		counter+= 1
 		
