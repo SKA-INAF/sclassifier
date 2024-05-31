@@ -93,7 +93,7 @@ def get_args():
 	return args
 
 
-def transform_data(self, x, norm_min=0, norm_max=1, data_scaler=None, outfile_scaler='datascaler.sav'):
+def transform_data(x, norm_min=0, norm_max=1, data_scaler=None, outfile_scaler='datascaler.sav'):
 	""" Transform input data here or using a loaded scaler """
 
 	# - Print input data min/max
