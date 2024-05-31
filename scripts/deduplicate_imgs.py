@@ -362,11 +362,11 @@ def main():
 				for j in range(nimgs_draw):
 					gindex= i*nimgs_draw + j
 					if i==0 and j==0:
-						filename_img= datalist[barycenter_first_node]["img"]
+						filename_img= datalist[barycenter_first_node]["filepaths"][0]
 					else:
 						if gindex<len(nn_indices):
 							nn_index= nn_indices[gindex]
-							filename_img= datalist[nn_index]["img"]
+							filename_img= datalist[nn_index]["filepaths"][0]
 						else:
 							filename_img= ""
 							
