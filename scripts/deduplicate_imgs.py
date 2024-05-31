@@ -317,6 +317,7 @@ def main():
 	n, d = I.shape
 
 	for i in range(n):
+		print("Img no. %d: nneigh=%s, scores=%s" % (i, str(I[i,:]), str(D[i,:])))
 		for j in range(d):
 			nn_index= I[i,j]
 			score= D[i,j]
