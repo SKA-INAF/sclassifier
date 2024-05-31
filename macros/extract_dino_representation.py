@@ -112,12 +112,10 @@ def transform_img(data, contrast, clip_data, sigma_low, sigma_up, sigma_bkg=3):
 
 	# - Clip data?
 	if clip_data:
-		print("DEBUG: Applying sigma clipping ...")
 		data_clipped= sigma_clipping(data_transf, sigma_low, sigma_up, sigma_bkg)
 		data_transf= data_clipped
 
 	# - Apply zscale stretch
-	print("DEBUG: Applying zscale stretch ...")
 	data_stretched= zscale_stretch(data_transf, contrast=contrast)
 	data_transf= data_stretched 
 	
@@ -245,6 +243,9 @@ def main():
 	class_ids= []
 	
 	for i in range(nfiles):
+		if i>100:
+			break
+	
 		# - Read image
 		filename= datalist[i]["filepaths"][0]
 		sname= datalist[i]["sname"]
