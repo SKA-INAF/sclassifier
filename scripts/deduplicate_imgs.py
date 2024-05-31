@@ -76,6 +76,7 @@ def get_args():
 	parser.add_argument('-scalerfile', '--scalerfile', dest='scalerfile', required=False, type=str, default='', action='store',help='Load and use data transform stored in this file (.sav)')
 	
 	# - Similarity search options
+	parser.add_argument('-metric', '--metric', dest='metric', required=False, type=str, default='cossim', action='store',help='Similarity metric (default=cossim)')
 	parser.add_argument('-k', '--k', dest='k', required=False, type=int, default=64, action='store',help='Number of neighbors in similarity search (default=64)')
 	parser.add_argument('-score_thr', '--score_thr', dest='score_thr', required=False, type=float, default=0.6, action='store',help='Similarity threshold below which neighbors are not include in graph (default=0.6)')
 	
@@ -103,9 +104,9 @@ def transform_data(x, norm_min=0, norm_max=1, data_scaler=None, outfile_scaler='
 	x_min= x.min(axis=0)
 	x_max= x.max(axis=0)
 
-	print("== INPUT DATA MIN/MAX ==")
-	print(x_min)
-	print(x_max)
+	#print("== INPUT DATA MIN/MAX ==")
+	#print(x_min)
+	#print(x_max)
 
 	if data_scaler is None:
 		# - Define and run scaler
@@ -113,9 +114,9 @@ def transform_data(x, norm_min=0, norm_max=1, data_scaler=None, outfile_scaler='
 		data_scaler= MinMaxScaler(feature_range=(norm_min, norm_max))
 		x_transf= data_scaler.fit_transform(x)
 
-		print("== TRANSFORM DATA MIN/MAX ==")
-		print(data_scaler.data_min_)
-		print(data_scaler.data_max_)
+		#print("== TRANSFORM DATA MIN/MAX ==")
+		#print(data_scaler.data_min_)
+		#print(data_scaler.data_max_)
 
 		# - Save scaler to file
 		logger.info("Saving data scaler to file %s ..." % (outfile_scaler))
@@ -127,11 +128,11 @@ def transform_data(x, norm_min=0, norm_max=1, data_scaler=None, outfile_scaler='
 		x_transf = data_scaler.transform(x)
 
 	# - Print transformed data min/max
-	print("== TRANSFORMED DATA MIN/MAX ==")
+	#print("== TRANSFORMED DATA MIN/MAX ==")
 	x_transf_min= x_transf.min(axis=0)
 	x_transf_max= x_transf.max(axis=0)
-	print(x_transf_min)
-	print(x_transf_max)
+	#print(x_transf_min)
+	#print(x_transf_max)
 	
 	return x_transf
 
@@ -154,7 +155,7 @@ def sigma_clipping(data, sigma_low, sigma_up, sigma_bkg=3):
 	res= sigma_clip(data_1d, sigma_lower=sigma_low, sigma_upper=sigma_up, masked=True, return_bounds=True)
 	thr_low= float(res[1])
 	thr_up= float(res[2])
-	print("thr_low=%f, thr_up=%f" % (thr_low, thr_up))
+	#print("thr_low=%f, thr_up=%f" % (thr_low, thr_up))
 
 	data_clipped= np.copy(data)
 	data_clipped[data_clipped<thr_low]= thr_low
@@ -177,12 +178,12 @@ def transform_img(data, contrast, clip_data, sigma_low, sigma_up, sigma_bkg=3):
 
 	# - Clip data?
 	if clip_data:
-		logger.info("Applying sigma clipping ...")
+		logger.debug("Applying sigma clipping ...")
 		data_clipped= sigma_clipping(data_transf, sigma_low, sigma_up, sigma_bkg)
 		data_transf= data_clipped
 
 	# - Apply zscale stretch
-	logger.info("Applying zscale stretch ...")
+	logger.debug("Applying zscale stretch ...")
 	data_stretched= zscale_stretch(data_transf, contrast=contrast)
 	data_transf= data_stretched 
 	
@@ -244,6 +245,7 @@ def main():
 	scalerfile= args.scalerfile
 	
 	# - Similarity search options
+	metric= args.metric
 	k= args.k + 1  # adding +1 to search for exactly k neibhbors in addition to the self similarity
 	score_thr= args.score_thr
 	
@@ -302,12 +304,16 @@ def main():
 	logger.info("L2 normalize feature data ...")
 	nrows= data.shape[0]
 	nfeats= data.shape[1]
-	faiss.normalize_L2(data)
 	
 	# - Build index for cosine similarity
 	logger.info("Building index for cosine similarity search ...")
-	index= faiss.index_factory(nfeats, "Flat", faiss.METRIC_INNER_PRODUCT)
-	#index= faiss.IndexFlatIP(nfeats)
+	if metric=="cossim":
+		faiss.normalize_L2(data)
+		#index= faiss.index_factory(nfeats, "Flat", faiss.METRIC_INNER_PRODUCT)
+		index= faiss.IndexFlatIP(nfeats)
+	elif metric=="l2":
+		index= faiss.IndexFlatL2(nfeats)	
+		
 	index.add(data)
 	logger.info("Created index (ntotal=%d) ..." % (index.ntotal))
 	
@@ -349,7 +355,6 @@ def main():
 		nneighbors= len(ids)
 		logger.info("subgraph no. %d/%d has %d nodes ..." % (counter, len(subgraphs), nneighbors))
 		
-		
 		#logger.info("Finding barycenter of subgraph no. %d/%d ..." % (counter, len(subgraphs)))
 		#barycenter_node= nx.barycenter(subgraph, weight="weight")
 		#barycenter_first_node= barycenter_node[0]
@@ -383,7 +388,6 @@ def main():
 							
 			plt.show()						
 							
-	
 	# - Sort selected indices
 	logger.info("#%d/%d feature rows selected, sorting them ..." % (len(indices_sel), nrows))
 	indices_sel_sorted= sorted(indices_sel) 
