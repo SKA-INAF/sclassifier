@@ -112,12 +112,12 @@ def transform_img(data, contrast, clip_data, sigma_low, sigma_up, sigma_bkg=3):
 
 	# - Clip data?
 	if clip_data:
-		logger.debug("Applying sigma clipping ...")
+		print("DEBUG: Applying sigma clipping ...")
 		data_clipped= sigma_clipping(data_transf, sigma_low, sigma_up, sigma_bkg)
 		data_transf= data_clipped
 
 	# - Apply zscale stretch
-	logger.debug("Applying zscale stretch ...")
+	print("DEBUG: Applying zscale stretch ...")
 	data_stretched= zscale_stretch(data_transf, contrast=contrast)
 	data_transf= data_stretched 
 	
@@ -174,7 +174,7 @@ def write_ascii(data, filename, header=''):
 
 	# - Skip if data is empty
 	if data.size<=0:
-		logger.warn("Empty data given, no file will be written!")
+		print("WARN: Empty data given, no file will be written!")
 		return
 
 	# - Open file and write header
