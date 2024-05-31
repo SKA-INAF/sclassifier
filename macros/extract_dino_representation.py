@@ -244,8 +244,10 @@ def main():
 	class_ids= []
 	
 	for i in range(nfiles):
-		if i>100:
-			break
+		if i%1000==0:
+			print("%d/%d images processed ..." % (i+1, nfiles))
+		#if i>100:
+		#	break
 	
 		# - Read image
 		filename= datalist[i]["filepaths"][0]
@@ -258,11 +260,13 @@ def main():
 			features = model(img.to(device))[0]
 			##features = model(img.to("cuda"))[0]
 	
-		print("features.shape")
-		print(features.shape)
 		features_numpy= features.cpu().numpy()
-		print("features_numpy.shape")
-		print(features_numpy.shape)
+		
+		if i==0:
+			print("features.shape")
+			print(features.shape)
+			print("features_numpy.shape")
+			print(features_numpy.shape)
 		
 		# - Append to main list
 		feature_list.append(features_numpy)
