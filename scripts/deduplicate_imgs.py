@@ -306,7 +306,8 @@ def main():
 	
 	# - Build index for cosine similarity
 	logger.info("Building index for cosine similarity search ...")
-	index= faiss.IndexFlatIP(nfeats)
+	index= faiss.index_factory(nfeats, "Flat", faiss.METRIC_INNER_PRODUCT)
+	#index= faiss.IndexFlatIP(nfeats)
 	index.add(data)
 	logger.info("Created index (ntotal=%d) ..." % (index.ntotal))
 	
