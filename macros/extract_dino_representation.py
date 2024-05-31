@@ -216,6 +216,7 @@ def main():
 	
 	inputfile= args.inputfile
 	model= args.model
+	outfile= args.outfile
 		
 	#===========================
 	#==   READ DATALIST
