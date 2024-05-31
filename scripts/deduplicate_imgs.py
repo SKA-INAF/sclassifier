@@ -26,6 +26,7 @@ import argparse
 import collections
 import csv
 import json
+import pickle
 
 ## ASTRO/IMG PROCESSING MODULES
 from astropy.io import ascii
