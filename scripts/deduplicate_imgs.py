@@ -330,10 +330,11 @@ def main():
 	logger.info("#nodes=%d, #edges=%d, #connected_components=%d" % (n_nodes, n_edges, n_cc))
 
 	# - Loop through connected graph components and retain only the centroid of subgraphs
-	logger.info("Looping through %d connected graph components and retain only the centroid of subgraphs ..." % (n_cc))
+	logger.info("Finding connected components and subgraphs ...")
 	cc= nx.connected_components(G)
 	subgraphs = [G.subgraph(c).copy() for c in cc]
 	
+	logger.info("Looping through %d connected graph components and retain only the centroid of subgraphs ..." % (n_cc))
 	indices_sel= []
 	for subgraph in subgraphs:
 		# - Add connected componet barycenter to selected list
