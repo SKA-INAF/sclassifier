@@ -61,7 +61,7 @@ def get_args():
 	parser.add_argument('-inputfile','--inputfile', dest='inputfile', required=True, type=str, help='Path to file with image datalist (.json)') 
 	
 	# - Model option
-	parser.add_argument('-model','--model', dest='model', required=False, type=str, default="dinov2_vits14", help='DINO v2 pretrained model {dinov2_vits14,dinov2_vits14_reg}') 
+	parser.add_argument('-model','--model', dest='model', required=False, type=str, default="dinov2_vits14", help='DINO v2 pretrained model {dinov2_vits14,dinov2_vits14_reg,dinov2_vitl14,dinov2_vitl14_reg}') 
 	
 	# - Outfile option
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='featdata.dat', help='Output filename (.dat) of feature data') 
@@ -253,8 +253,8 @@ def main():
 		
 		# - Extract model prediction
 		with torch.no_grad():
-  		features = model(img.to(device))[0]
-  		##features = model(img.to("cuda"))[0]
+			features = model(img.to(device))[0]
+			##features = model(img.to("cuda"))[0]
 	
 		print("features.shape")
 		print(features.shape)
