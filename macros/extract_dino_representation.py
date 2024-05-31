@@ -125,10 +125,10 @@ def transform_img(data, contrast, clip_data, sigma_low, sigma_up, sigma_bkg=3):
 	data_transf= (data_transf*255.).astype(np.uint8)
 
 	# - Convert to 3 channels
-	data_cube= np.zeros((data.shape[0], data.shape[1], 3), dtype=data.dtype)
-	data_cube[:,:,0]= data
-	data_cube[:,:,1]= data
-	data_cube[:,:,2]= data
+	data_cube= np.zeros((data_transf.shape[0], data_transf.shape[1], 3), dtype=data_transf.dtype)
+	data_cube[:,:,0]= data_transf
+	data_cube[:,:,1]= data_transf
+	data_cube[:,:,2]= data_transf
 	
 	# - Import image in pytorch
 	PIL_image = Image.fromarray(data_cube)
