@@ -25,9 +25,14 @@ import getopt
 import argparse
 import collections
 import csv
+import json
 
 ## ASTRO/IMG PROCESSING MODULES
 from astropy.io import ascii
+from astropy.io import fits
+from astropy.stats import sigma_clipped_stats
+from astropy.stats import sigma_clip
+from astropy.visualization import ZScaleInterval
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 
 ## ADDON MODULES
@@ -59,7 +64,8 @@ def get_args():
 	parser = argparse.ArgumentParser(description="Parse args.")
 
 	# - Input options
-	parser.add_argument('-inputfile','--inputfile', dest='inputfile', required=True, type=str, help='Input feature data table filename') 
+	parser.add_argument('-inputfile_embeddings','--inputfile_embeddings', dest='inputfile_embeddings', required=True, type=str, help='Path to feature data table file (.dat/.txt)') 
+	parser.add_argument('-inputfile_datalist','--inputfile_datalist', dest='inputfile_datalist', required=True, type=str, help='Path to file with image datalist (.json)') 
 	
 	# - Pre-processing options
 	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize feature data in range [0,1] before applying models (default=false)')	
@@ -72,9 +78,15 @@ def get_args():
 	parser.add_argument('-k', '--k', dest='k', required=False, type=int, default=64, action='store',help='Number of neighbors in similarity search (default=64)')
 	parser.add_argument('-score_thr', '--score_thr', dest='score_thr', required=False, type=float, default=0.6, action='store',help='Similarity threshold below which neighbors are not include in graph (default=0.6)')
 	
-	
 	# - Output options
-	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='featdata_dedupl.dat', help='Output filename (.dat) with duplicated features removed') 
+	parser.add_argument('-outfile_embeddings','--outfile_embeddings', dest='outfile_embeddings', required=False, type=str, default='featdata_dedupl.dat', help='Output filename (.dat) of feature data with duplicated images removed') 
+	parser.add_argument('-outfile_datalist','--outfile_datalist', dest='outfile_datalist', required=False, type=str, default='filelist_dedupl.json', help='Output datalist filename (.json) with duplicated image entries removed') 
+	
+	# - Draw options
+	parser.add_argument('--draw', dest='draw', action='store_true',help='Draw similar images in connected component graph (default=false)')	
+	parser.set_defaults(draw=False)
+	parser.add_argument('-nimgs_draw', '--nimgs_draw', dest='nimgs_draw', required=False, type=int, default=3, action='store',help='Number of similar images nxn to draw (default=3)')
+	
 
 	args = parser.parse_args()	
 
@@ -121,6 +133,79 @@ def transform_data(self, x, norm_min=0, norm_max=1, data_scaler=None, outfile_sc
 	return x_transf
 
 
+def sigma_clipping(data, sigma_low, sigma_up, sigma_bkg=3):
+	""" Clip input data """
+
+	# - Get 1D data
+	cond= np.logical_and(data!=0, np.isfinite(data))
+	data_1d= data[cond]
+	
+	# - Subtract background
+	bkgval, _, _ = sigma_clipped_stats(data_1d, sigma=sigma_bkg)
+	data_bkgsub= data - bkgval
+	data= data_bkgsub
+
+	# - Clip all pixels that are below sigma clip
+	cond= np.logical_and(data!=0, np.isfinite(data))
+	data_1d= data[cond]
+	res= sigma_clip(data_1d, sigma_lower=sigma_low, sigma_upper=sigma_up, masked=True, return_bounds=True)
+	thr_low= float(res[1])
+	thr_up= float(res[2])
+	print("thr_low=%f, thr_up=%f" % (thr_low, thr_up))
+
+	data_clipped= np.copy(data)
+	data_clipped[data_clipped<thr_low]= thr_low
+	data_clipped[data_clipped>thr_up]= thr_up
+	
+	return data_clipped
+
+def zscale_stretch(data, contrast):
+	""" Apply zscale stretch """	
+	
+	transform = ZScaleInterval(contrast=contrast)
+	data_stretched = transform(data)
+	
+	return data_stretched
+
+def transform_img(data, contrast, clip_data, sigma_low, sigma_up, sigma_bkg=3):
+	""" Transform input data """
+
+	data_transf= np.copy(data)
+
+	# - Clip data?
+	if clip_data:
+		logger.info("Applying sigma clipping ...")
+		data_clipped= sigma_clipping(data_transf, sigma_low, sigma_up, sigma_bkg)
+		data_transf= data_clipped
+
+	# - Apply zscale stretch
+	logger.info("Applying zscale stretch ...")
+	data_stretched= zscale_stretch(data_transf, contrast=contrast)
+	data_transf= data_stretched 
+	
+	return data_transf
+	
+def read_img(filename):
+	""" Read fits image """
+
+	# - Check filename
+	if filename=="":
+		return None
+		
+	# - Read fits image
+	data, _, _= Utils.read_fits(filename)
+	if data is None:
+		return None
+		
+	# - Apply transform
+	data_transf= transform_img(data, 
+		contrast=0.25, 
+		clip_data=False, 
+		sigma_low=5, sigma_up=30, sigma_bkg=3
+	)
+
+	return data_transf
+
 ##############
 ##   MAIN   ##
 ##############
@@ -142,7 +227,8 @@ def main():
 		logger.error("Empty input file list!")
 		return 1
 		
-	inputfile= args.inputfile
+	inputfile_embeddings= args.inputfile_embeddings
+	inputfile_datalist= args.inputfile_datalist
 	
 	# - Data pre-processing
 	normalize= args.normalize
@@ -155,19 +241,39 @@ def main():
 	score_thr= args.score_thr
 	
 	# - Output options
-	outfile= args.outfile
+	outfile_embeddings= args.outfile_embeddings
+	outfile_datalist= args.outfile_datalist
+	
+	# - Draw options
+	draw= args.draw
+	nimgs_draw= args.nimgs_draw
 
+	#===========================
+	#==   READ DATALIST
+	#===========================
+	logger.info("Read image dataset filelist %s ..." % (inputfile_datalist))
+	fp= open(inputfile_datalist, "r")
+	datalist= json.load(fp)["data"]
+	nfiles= len(datalist)
+	
 	#===========================
 	#==   READ FEATURE DATA
 	#===========================
-	ret= Utils.read_feature_data(inputfile)
+	logger.info("Read feature data from file %s ..." % (inputfile_embeddings))
+	ret= Utils.read_feature_data(inputfile_embeddings)
 	if not ret:
-		logger.error("Failed to read data from file %s!" % (inputfile))
+		logger.error("Failed to read data from file %s!" % (inputfile_embeddings))
 		return 1
 
 	data= ret[0]
 	snames= ret[1]
 	classids= ret[2]
+	
+	# - Check for mismatch between feature table and datalist
+	nrows= data.shape[0]
+	if nrows!=nfiles:
+		logger.warning("Mismatch found between number of entries in datalist (%d) and in feature table (%d), exit!" % (nfiles, nrows))
+		return 1
 	
 	#===========================
 	#==   NORMALIZE FEATURES
@@ -224,9 +330,37 @@ def main():
 	
 	indices_sel= []
 	for subgraph in subgraphs:
+		# - Add connected componet barycenter to selected list
 		barycenter_node= nx.barycenter(subgraph, weight="weight")
 		barycenter_first_node= barycenter_node[0]
-		indices_sel.append(indices_sel)
+		indices_sel.append(barycenter_first_node)
+		
+		# - Draw images inside the connected group for testing
+		if draw:
+			nn_indices= [node for node in subgraph if node!=barycenter_first_node]
+			
+			fig, axs = plt.subplots(nimgs_draw, nimgs_draw, figsize=(15, 15))
+			
+			for i in range(nimgs_draw):
+				for j in range(nimgs_draw):
+					gindex= i*nimgs_draw + j
+					if i==0 and j==0:
+						filename_img= datalist[barycenter_first_node]["img"]
+					else:
+						if gindex<len(nn_indices):
+							nn_index= nn_indices[gindex]
+							filename_img= datalist[nn_index]["img"]
+						else:
+							filename_img= ""
+							
+					# - Read image
+					if filename_img!="":
+						imgdata= read_img(filename_img)
+						if imgdata is not None:
+							axs[i][j].imshow(imgdata, origin='lower', cmap='inferno')
+							
+			plt.show()						
+							
 	
 	# - Sort selected indices
 	logger.info("#%d/%d feature rows selected, sorting them ..." % (len(indices_sel), nrows))
@@ -237,9 +371,10 @@ def main():
 	data_sel= data[indices_sel_sorted, :]
 	snames_sel= np.array(snames)[indices_sel_sorted]
 	classids_sel= np.array(classids)[indices_sel_sorted]
+	datalist_sel= list(np.array(datalist)[indices_sel_sorted])
 	
-	# - Wrte selected feature data table
-	logger.info("Writing selected feature data to file %s ..." % (outfile))
+	# - Write selected feature data table
+	logger.info("Writing selected feature data to file %s ..." % (outfile_embeddings))
 	outdata= np.concatenate(
 		(snames_sel, data_sel, classids_sel),
 		axis=1
@@ -249,7 +384,14 @@ def main():
 	znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
 	head= '{} {} {}'.format("# sname",znames,"id")
 	
-	Utils.write_ascii(outdata, outfile, head)
+	Utils.write_ascii(outdata, outfile_embeddings, head)
+	
+	# - Write selected datalist
+	logger.info("Write selected datalist to file %s ..." % (outfile_datalist))
+	
+	outdata_datalist= {"data": datalist_sel}
+	with open(outfile_datalist, 'w') as fp:
+		json.dump(outdata_datalist, fp)	
 	
 	return 0
 
