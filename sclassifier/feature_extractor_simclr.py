@@ -168,13 +168,15 @@ class SaveModelCheckpointCB(tf.keras.callbacks.Callback):
 	def __save(self, epoch):
 		""" Save model & encoder model & weights """
 		
+		cpid= epoch + 1
+		
 		#- Save the model weights
-		weight_filepath= 'weights_' + f'epoch-{epoch:04d}.h5'
+		weight_filepath= 'weights_' + f'cp{cpid:04d}.h5'
 		logger.info("Saving model weights to file %s ..." % (weight_filepath))
 		self.model.save_weights(weight_filepath, overwrite=True)
 				
 		#- Save the model
-		model_filepath= 'model_' + f'epoch-{epoch:04d}.h5'
+		model_filepath= 'model_' + f'cp{cpid:04d}.h5'
 		logger.info("Saving full model to file %s ..." % (model_filepath))
 		self.model.save(model_filepath, overwrite=True)
 		
@@ -206,12 +208,12 @@ class SaveModelCheckpointCB(tf.keras.callbacks.Callback):
 				return -1
 				
 			# - Save encoder weights 
-			encoder_weight_filepath= 'encoder_weights_' + f'epoch-{epoch:04d}.h5'
+			encoder_weight_filepath= 'encoder_weights_' + f'cp{cpid:04d}.h5'
 			logger.info("Saving encoder model weights to file %s ..." % (encoder_weight_filepath))
 			self.encoder.save_weights(encoder_weight_filepath, overwrite=True)
 
 			# - Save encoder model
-			encoder_model_filepath= 'encoder_' + f'epoch-{epoch:04d}.h5'
+			encoder_model_filepath= 'encoder_' + f'cp{cpid:04d}.h5'
 			logger.info("Saving encoder model to file %s ..." % (encoder_model_filepath))
 			self.encoder.save(encoder_model_filepath, overwrite=True)
 			
