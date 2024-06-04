@@ -1134,7 +1134,7 @@ class FeatExtractorSimCLR(object):
 		#   NB: Disabling callbacks as val_loss is not reliable
 		callbacks= None
 		#checkpoint, earlyStopping, reduce_lr = self.get_callbacks()
-		if save_model_every_epoch:
+		if self.save_model_every_epoch:
 			checkpointCB= SaveModelCheckpointCB(encoder_model=self.encoder)
 			callbacks= [checkpointCB]
 			logger.info("Adding SaveModelCheckpointCB to model callbacks ...")
