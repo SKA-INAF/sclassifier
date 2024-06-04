@@ -156,6 +156,73 @@ class WarmUpCosineDecay(keras.optimizers.schedules.LearningRateSchedule):
 			'lr_min': self.lr_min
 		}
 		return config
+		
+
+class SaveModelCheckpointCB(tf.keras.callbacks.Callback):
+	""" Define custom callback to save model every epoch """
+	
+	def __init__(self, encoder_model):
+		super().__init__()
+		self.encoder= encoder_model
+	
+	def __save(self):
+		""" Save model & encoder model & weights """
+		
+		#- Save the model weights
+		weight_filepath= 'weights_' + f'epoch-{epoch:04d}.h5'
+		logger.info("Saving model weights to file %s ..." % (weight_filepath))
+		self.model.save_weights(weight_filepath, overwrite=True)
+				
+		#- Save the model
+		model_filepath= 'model_' + f'epoch-{epoch:04d}.h5'
+		logger.info("Saving full model to file %s ..." % (model_filepath))
+		self.model.save(model_filepath, overwrite=True)
+		
+		# - Save encoder
+		#   NB: Saving the encoder weights directly does not work when 
+		#       we load weights from a previously trained model. In this case, the
+		#       encoder weights saved are always the input loaded encoder weights and NOT 
+		#       the encoder weights at the final epoch after the current training.
+		#       In other words, the encoder model is not automatically updated after training.
+		#       We fixed that by setting the encoder weights from trained model.   
+		if self.encoder:
+			# - Get encoder weights from model
+			logger.info("Retrieving current encoder weights at epoch %d from trained model ..." % (epoch))
+			try:
+				encoder_weights= self.model.get_layer("base_model").get_weights()
+			except Exception as e:
+				logger.error("Failed to retrieve current encoder weights from model!")
+				return -1
+				
+			# - Retrieve original encoder weights
+			encoder_weights_original= [layer.get_weights() for layer in self.encoder.layers]	
+			
+			# - Update encoder weights
+			logger.info("Set current weights in encoder model ...")
+			try:
+				self.encoder.set_weights(encoder_weights)
+			except Exception as e:
+				logger.error("Failed to set current weights in encoder model (err=%s)!" % (str(e)))
+				return -1
+				
+			# - Save encoder weights 
+			encoder_weight_filepath= 'encoder_weights_' + f'epoch-{epoch:04d}.h5'
+			logger.info("Saving encoder model weights to file %s ..." % (encoder_weight_filepath))
+			self.encoder.save_weights(encoder_weight_filepath, overwrite=True)
+
+			# - Save encoder model
+			encoder_model_filepath= 'encoder_' + f'epoch-{epoch:04d}.h5'
+			logger.info("Saving encoder model to file %s ..." % (encoder_model_filepath))
+			self.encoder.save(encoder_model_filepath, overwrite=True)
+			
+		return 0
+	
+	def on_epoch_end(self, epoch, logs=None):
+	
+		logger.info("Saving model & weights after epoch %d ..." % (epoch))
+		if self.__save()<0:
+			logger.warn("Some failures occurred when saving model/weights after epoch %d ..." % (epoch))
+		
 
 ################################
 ##   FeatExtractorSimCLR CLASS
@@ -278,6 +345,7 @@ class FeatExtractorSimCLR(object):
 		self.img_embedding_scale= 1.0 
 		self.shuffle_embeddings= False
 		self.outfile_tb_embeddings= 'feature_vecs.tsv'
+		self.save_model_every_epoch= False
 
 	#####################################
 	##     SETTERS/GETTERS
@@ -1064,7 +1132,12 @@ class FeatExtractorSimCLR(object):
 		#===========================
 		# - Define train callbacks
 		#   NB: Disabling callbacks as val_loss is not reliable
+		callbacks= None
 		#checkpoint, earlyStopping, reduce_lr = self.get_callbacks()
+		if save_model_every_epoch:
+			checkpointCB= SaveModelCheckpointCB(encoder_model=self.encoder)
+			callbacks= [checkpointCB]
+			logger.info("Adding SaveModelCheckpointCB to model callbacks ...")
 
 		# - Train model
 		logger.info("Start SimCLR training (dataset_size=%d, batch_size=%d, steps_per_epoch=%d, val_steps_per_epoch=%d) ..." % (self.nsamples, self.batch_size, steps_per_epoch, val_steps_per_epoch))
@@ -1076,6 +1149,7 @@ class FeatExtractorSimCLR(object):
 			validation_data=self.crossval_data_generator,
 			validation_steps=val_steps_per_epoch,
 			#callbacks=[checkpoint, earlyStopping, reduce_lr],
+			callbacks=callbacks,
 			use_multiprocessing=self.use_multiprocessing,
 			workers=self.nworkers,
 			verbose=2

@@ -258,6 +258,8 @@ def get_args():
 	parser.add_argument('--shuffle_embeddings', dest='shuffle_embeddings', action='store_true',help='Shuffle embeddings to be saved (default=false)')	
 	parser.set_defaults(shuffle_embeddings=False)
 
+	parser.add_argument('--save_model_every_epoch', dest='save_model_every_epoch', action='store_true', help='Save model every epoch (default=false)')	
+	parser.set_defaults(save_model_every_epoch=False)
 	
 	args = parser.parse_args()	
 
@@ -426,6 +428,7 @@ def main():
 	img_embedding_scale= args.img_embedding_scale
 	shuffle_embeddings= args.shuffle_embeddings
 	no_save_embeddings= args.no_save_embeddings
+	save_model_every_epoch= args.save_model_every_epoch
 
 	#===============================
 	#==  CREATE DATA PRE-PROCESSOR
@@ -605,6 +608,8 @@ def main():
 	simclr.save_embeddings= True
 	if no_save_embeddings:
 		simclr.save_embeddings= False
+		
+	simclr.save_model_every_epoch= save_model_every_epoch
 
 	simclr.temperature= loss_temperature
 	simclr.use_simclr_impl_v2= use_v2_impl
