@@ -165,7 +165,7 @@ class SaveModelCheckpointCB(tf.keras.callbacks.Callback):
 		super().__init__()
 		self.encoder= encoder_model
 	
-	def __save(self):
+	def __save(self, epoch):
 		""" Save model & encoder model & weights """
 		
 		#- Save the model weights
@@ -220,7 +220,7 @@ class SaveModelCheckpointCB(tf.keras.callbacks.Callback):
 	def on_epoch_end(self, epoch, logs=None):
 	
 		logger.info("Saving model & weights after epoch %d ..." % (epoch))
-		if self.__save()<0:
+		if self.__save(epoch)<0:
 			logger.warn("Some failures occurred when saving model/weights after epoch %d ..." % (epoch))
 		
 
