@@ -92,6 +92,7 @@ def get_args():
 	
 	# - Linear classifier custom options
 	parser.add_argument('-tol','--tol', dest='tol', required=False, type=float, default=None, help='Linear classifier tol parameter')
+	parser.add_argument('-verbosity','--verbosity', dest='verbosity', required=False, type=float, default=None, help='Linear classifier verbosity parameter')
 	
 	
 	# - Outlier detection
@@ -208,6 +209,7 @@ def main():
 	
 	# - Linear classifier options
 	tol= args.tol
+	verbosity= args.verbosity
 
 	# - Outlier search options
 	find_outliers= args.find_outliers
@@ -276,6 +278,7 @@ def main():
 	sclass.balance_classes= balance_classes
 	sclass.importance_type= importance_type
 	sclass.tol= tol
+	sclass.verbosity= verbosity
 
 	sclass.find_outliers = find_outliers 
 	sclass.outlier_modelfile = modelfile_outlier

@@ -180,6 +180,7 @@ class SClassifier(object):
 		
 		# - Linear classifier custom options
 		self.tol= None # 1.e-3
+		self.verbosity= 1
 
 		# - Set class label names
 		self.__set_target_labels(multiclass)
@@ -429,7 +430,7 @@ class SClassifier(object):
 			early_stopping=False,
 			warm_start=False,
 			shuffle=True,
-			verbose=1,
+			verbose=self.verbosity,
 			random_state=0
 		)
 
