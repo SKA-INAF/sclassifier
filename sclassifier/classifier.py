@@ -1460,10 +1460,14 @@ class SClassifier(object):
 		print(self.cm_norm)
 
 		# - Retrieving the feature importances
-		self.feat_ranks= self.model.feature_importances_
+		try:
+			self.feat_ranks= self.model.feature_importances_
+			print("feat ranks")
+			print(self.feat_ranks)
+			
+		except Exception as e:
+			logger.warn("Failed to get feature ranks from model (err=%s)..." % (str(e)))
 	
-		print("feat ranks")
-		print(self.feat_ranks)
 	
 		return 0
 
