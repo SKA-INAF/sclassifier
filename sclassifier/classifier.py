@@ -428,7 +428,8 @@ class SClassifier(object):
 			class_weight=class_weight,
 			early_stopping=False,
 			warm_start=False,
-			shuffle= True,
+			shuffle=True,
+			verbose=1,
 			random_state=0
 		)
 
