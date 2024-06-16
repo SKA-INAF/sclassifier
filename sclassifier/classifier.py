@@ -39,6 +39,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.svm import SVC
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+from sklearn.linear_model import Perceptron
 from sklearn import metrics
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
@@ -176,6 +177,9 @@ class SClassifier(object):
 		self.metric_lgbm= 'multi_logloss'
 		self.lgbm_eval_dict= {}
 		self.importance_type= 'split' # 'gain'
+		
+		# - Linear classifier custom options
+		self.tol= None # 1.e-3
 
 		# - Set class label names
 		self.__set_target_labels(multiclass)
@@ -409,6 +413,24 @@ class SClassifier(object):
 			n_estimators=self.n_estimators, 
 			max_features=1
 		)
+		
+		# - Set linear classifier
+		class_weight= None
+		if self.balance_classes:
+			class_weight= 'balanced'
+				
+		lc= Perceptron(
+			eta0=self.learning_rate,
+			tol=self.tol,
+			penalty=None,
+			max_iter=self.niters,
+			fit_intercept=True,
+			class_weight=class_weight,
+			early_stopping=False,
+			warm_start=False,
+			shuffle= True,
+			random_state=0
+		)
 
 		# - Set inventory
 		self.classifier_inventory= {
@@ -419,6 +441,7 @@ class SClassifier(object):
 			#"SVC": SVC(gamma=2, C=1),
 			"SVC": SVC(),
 			"QuadraticDiscriminantAnalysis": QuadraticDiscriminantAnalysis(),
+			"LinearClassifier", lc,
 			"LGBMClassifier": lgbm
     }
 

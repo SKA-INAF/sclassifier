@@ -63,7 +63,7 @@ def get_args():
 	parser.add_argument('-scalerfile', '--scalerfile', dest='scalerfile', required=False, type=str, default='', action='store',help='Load and use data transform stored in this file (.sav)')
 	
 	# - Model options
-	parser.add_argument('-classifier','--classifier', dest='classifier', required=False, type=str, default='DecisionTreeClassifier', help='Classifier to be used.') 
+	parser.add_argument('-classifier','--classifier', dest='classifier', required=False, type=str, default='DecisionTreeClassifier', help='Classifier to be used {DecisionTreeClassifier, RandomForestClassifier, GradientBoostingClassifier, MLPClassifier, SVC, QuadraticDiscriminantAnalysis, LinearClassifier, LGBMClassifier}.') 
 	parser.add_argument('-modelfile', '--modelfile', dest='modelfile', required=False, type=str, default='', action='store',help='Classifier model filename (.sav)')
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
 	parser.set_defaults(predict=False)
@@ -89,6 +89,10 @@ def get_args():
 	parser.add_argument('-learning_rate','--learning_rate', dest='learning_rate', required=False, type=float, default=0.1, help='Learning rate for LGBM classifier and others (TBD)') 
 	parser.add_argument('-niters','--niters', dest='niters', required=False, type=int, default=100, help='Number of boosting iterations for LGBM classifier and others (TBD)') 
 	parser.add_argument('--importance_type', dest='importance_type', required=False, type=str, default='split', help='LGBM importance_type parameter {"split","gain"}')
+	
+	# - Linear classifier custom options
+	parser.add_argument('-tol','--tol', dest='tol', required=False, type=float, default=None, help='Linear classifier tol parameter')
+	
 	
 	# - Outlier detection
 	parser.add_argument('--find_outliers', dest='find_outliers', action='store_true',help='Find outliers in data (only in prediction step) (default=false)')	
@@ -201,6 +205,9 @@ def main():
 	learning_rate= args.learning_rate
 	niters= args.niters
 	importance_type= args.importance_type
+	
+	# - Linear classifier options
+	tol= args.tol
 
 	# - Outlier search options
 	find_outliers= args.find_outliers
@@ -268,6 +275,7 @@ def main():
 	sclass.niters= niters
 	sclass.balance_classes= balance_classes
 	sclass.importance_type= importance_type
+	sclass.tol= tol
 
 	sclass.find_outliers = find_outliers 
 	sclass.outlier_modelfile = modelfile_outlier
