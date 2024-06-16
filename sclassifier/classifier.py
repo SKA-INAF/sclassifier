@@ -1364,14 +1364,25 @@ class SClassifier(object):
 		logger.info("Predicting class and probabilities on train data ...")
 		try:
 			self.targets_pred= self.model.predict(self.data_preclassified)
+			#class_probs_pred= self.model.predict_proba(self.data_preclassified)
+			#print("== class_probs_pred ==")
+			#print(class_probs_pred.shape)
+			#self.probs_pred= np.max(class_probs_pred, axis=1)
+
+		except Exception as e:
+			logger.error("Failed to predict model on data (err=%s)!" % (str(e)))
+			return -1
+			
+		try:
 			class_probs_pred= self.model.predict_proba(self.data_preclassified)
 			print("== class_probs_pred ==")
 			print(class_probs_pred.shape)
 			self.probs_pred= np.max(class_probs_pred, axis=1)
 
 		except Exception as e:
-			logger.error("Failed to predict model on data (err=%s)!" % (str(e)))
-			return -1
+			logger.warn("Failed to get model prob on data (err=%s), setting them to -1..." % (str(e)))
+			N= self.data_preclassified.shape[0]
+			self.probs_pred= [-1]*N
 
 		if self.multiclass:
 			# - Convert targets to obj ids
@@ -1628,14 +1639,25 @@ class SClassifier(object):
 		logger.info("Predicting class and probabilities on input data ...")
 		try:
 			self.targets_pred= self.model.predict(self.data)
+			#class_probs_pred= self.model.predict_proba(self.data)
+			#print("== class_probs_pred ==")
+			#print(class_probs_pred.shape)
+			#self.probs_pred= np.max(class_probs_pred, axis=1)
+
+		except Exception as e:
+			logger.error("Failed to predict model on data (err=%s)!" % (str(e)))
+			return -1
+			
+		try:
 			class_probs_pred= self.model.predict_proba(self.data)
 			print("== class_probs_pred ==")
 			print(class_probs_pred.shape)
 			self.probs_pred= np.max(class_probs_pred, axis=1)
 
 		except Exception as e:
-			logger.error("Failed to predict model on data (err=%s)!" % (str(e)))
-			return -1
+			logger.warn("Failed to get model prob on data (err=%s), setting them to -1 ..." % (str(e)))
+			N= self.data.shape[0]
+			self.probs_pred= [-1]*N
 
 		
 		if self.multiclass:
@@ -1660,15 +1682,23 @@ class SClassifier(object):
 			logger.info("Predicting class and probabilities on input pre-classified data ...")
 			try:
 				targets_pred_preclass= self.model.predict(self.data_preclassified)
+				#class_probs_pred_preclass= self.model.predict_proba(self.data_preclassified)
+				#print("== class_probs_pred (preclass data) ==")
+				#print(class_probs_pred_preclass.shape)
+				#probs_pred_preclass= np.max(class_probs_pred_preclass, axis=1)
+
+			except Exception as e:
+				logger.error("Failed to predict model on pre-classified data (err=%s)!" % (str(e)))
+				return -1
+				
+			try:
 				class_probs_pred_preclass= self.model.predict_proba(self.data_preclassified)
 				print("== class_probs_pred (preclass data) ==")
 				print(class_probs_pred_preclass.shape)
 				probs_pred_preclass= np.max(class_probs_pred_preclass, axis=1)
 
 			except Exception as e:
-				logger.error("Failed to predict model on pre-classified data (err=%s)!" % (str(e)))
-				return -1
-
+				logger.warn("Failed to obtain model probability on pre-classified data (err=%s) ..." % (str(e)))
 
 			print("target_names")
 			print(self.target_names)
