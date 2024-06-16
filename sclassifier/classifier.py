@@ -347,7 +347,7 @@ class SClassifier(object):
 			max_depth_lgbm= -1
 
 		if self.multiclass:
-			logger.info("Setting LGBM classifier for multiclass classification ...")
+			#logger.info("Setting LGBM classifier for multiclass classification ...")
 			objective_lgbm= 'multiclass'
 			self.metric_lgbm= 'multi_logloss'
 			
@@ -373,7 +373,7 @@ class SClassifier(object):
 			)
 
 		else:
-			logger.info("Setting LGBM classifier for binary classification ...")
+			#logger.info("Setting LGBM classifier for binary classification ...")
 			objective_lgbm= 'binary'
 			self.metric_lgbm= 'binary_logloss'
 
