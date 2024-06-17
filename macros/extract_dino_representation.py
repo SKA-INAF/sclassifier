@@ -113,6 +113,10 @@ def transform_img(data, contrast, clip_data, sigma_low, sigma_up, sigma_bkg=3):
 	# - Replace nan values with min
 	cond= np.logical_and(data_transf!=0, np.isfinite(data_transf))
 	data_1d= data_transf[cond]
+	if data_1d.size == 0:
+		print("WARN: Input data are all zeros/nan, return None!")
+		return None
+		
 	data_min= np.min(data_1d)
 	data_transf[~np.isfinite(data_transf)]= data_min 
 
@@ -259,7 +263,12 @@ def main():
 		filename= datalist[i]["filepaths"][0]
 		sname= datalist[i]["sname"]
 		class_id= datalist[i]["id"]
+		
+		print("INFO: Reading image %s ..." % (filename))
 		img= read_img(filename)
+		if img is None:
+			print("WARN: Read/processed image %s is None, skip to next!" % (filename))
+			continue
 		
 		# - Extract model prediction
 		with torch.no_grad():
