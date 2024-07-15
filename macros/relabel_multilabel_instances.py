@@ -146,6 +146,12 @@ def main():
 			if label_new not in labels_new:
 				labels_new.append(label_new)
 		
+		# - Remove background label if >1 labels found
+		nlabels= len(labels_new)
+		if nlabels>1 and "BACKGROUND" in labels_new:
+			labels_new.remove("BACKGROUND")
+			classids_new.remove(0)
+		
 		# - Update labels & ids
 		datalist[k]["label"]= labels_new
 		datalist[k]["id"]= classids_new
