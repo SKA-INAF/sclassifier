@@ -133,7 +133,7 @@ def main():
 		classids= item["id"]
 		labels_new= []
 		classids_new= []
-		for i in range(labels):
+		for i in range(len(labels)):
 			label= labels[i]
 			classid= classids[i]
 			label_new= label_remap[label]
