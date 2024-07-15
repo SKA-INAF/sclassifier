@@ -675,7 +675,7 @@ class SClassifierNN(object):
 			shuffle=self.shuffle_train_data,
 			classtarget_map=self.classid_remap, nclasses=self.nclasses,
 			balance_classes=self.balance_classes, class_probs=self.class_probs,
-			skip_first_label=skip_first_label
+			skip_first_class=self.skip_first_class
 		)
 		
 		# - Create cross validation data generator
@@ -719,7 +719,7 @@ class SClassifierNN(object):
 			batch_size=1,
 			shuffle=False,
 			classtarget_map=self.classid_remap, nclasses=self.nclasses,
-			skip_first_label=self.skip_first_label
+			skip_first_class=self.skip_first_class
 		)
 
 
