@@ -195,7 +195,7 @@ class DataGenerator(object):
 	#####################################
 	##     GENERATE CNN TRAIN DATA
 	#####################################
-	def generate_cnn_data(self, batch_size=32, shuffle=True, read_crop=False, crop_size=32, classtarget_map={}, nclasses=7, balance_classes=False, class_probs={}):
+	def generate_cnn_data(self, batch_size=32, shuffle=True, read_crop=False, crop_size=32, classtarget_map={}, nclasses=7, balance_classes=False, class_probs={}, skip_first_label=False):
 		""" Generator function for CNN classification task """
 
 		nb= 0
@@ -285,8 +285,11 @@ class DataGenerator(object):
 					# - Return data
 					logger.debug("Batch size (%d) reached, yielding generated data of size (%d,%d,%d,%d) ..." % (nb,inputs.shape[0],inputs.shape[1],inputs.shape[2],inputs.shape[3]))
 					if multilabel:
-						mlb = MultiLabelBinarizer(classes=np.arange(0,nclasses))
+						mlb = MultiLabelBinarizer(classes=np.arange(0, nclasses))
 						output_targets= mlb.fit_transform(target_ids).astype('float32')
+						if skip_first_label: # do not include first label (e.g. NONE/BACKGROUND) as target, e.g. these instances will have [0,0,0...0] encoding
+							output_targets= output_targets[:, 1:nclasses]
+						
 					else:
 						output_targets= to_categorical(np.array(target_ids), num_classes=nclasses)
 

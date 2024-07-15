@@ -317,6 +317,8 @@ class SClassifierNN(object):
 		self.reg_factor= 0.01 # tf default
 		self.add_regularization= False
 		self.freeze_backbone= False
+		
+		self.skip_first_class= False # to skip first class (e.g. NONE, BACKGROUND) in multilabel
 
 		# *****************************
 		# ** Output
@@ -649,8 +651,12 @@ class SClassifierNN(object):
 			logger.info("No known class found in dataset (not a problem if predicting) ...")
 
 		print("== TARGET NAMES ==")
+		#if self.skip_first_class:
+		#	logger.info("Removing first class %s from targets ..." % (self.target_names[0]))
+		#	self.target_names= self.target_names[1:]
+			
 		print(self.target_names)
-
+		
 		# - Create data generators
 		logger.info("Creating data generators ...")
 		self.__set_data_generators()
@@ -668,7 +674,8 @@ class SClassifierNN(object):
 			batch_size=self.batch_size, 
 			shuffle=self.shuffle_train_data,
 			classtarget_map=self.classid_remap, nclasses=self.nclasses,
-			balance_classes=self.balance_classes, class_probs=self.class_probs
+			balance_classes=self.balance_classes, class_probs=self.class_probs,
+			skip_first_label=skip_first_label
 		)
 		
 		# - Create cross validation data generator
@@ -711,7 +718,8 @@ class SClassifierNN(object):
 			#batch_size=self.nsamples,
 			batch_size=1,
 			shuffle=False,
-			classtarget_map=self.classid_remap, nclasses=self.nclasses
+			classtarget_map=self.classid_remap, nclasses=self.nclasses,
+			skip_first_label=self.skip_first_label
 		)
 
 
@@ -900,10 +908,12 @@ class SClassifierNN(object):
 		self.targets_pred= [list( np.flatnonzero(row > self.sigmoid_thr) ) for row in predout]
 
 		# - Check if some source was not classified (e.g. all probs are below threshold)
-		#   In this case the list will be empty, replace it with a [-1]
+		#   In this case the list will be empty, replace it with a [0] (or [-1]??)
 		for i in range(len(self.targets_pred)):
 			if not self.targets_pred[i]:
 				self.targets_pred[i]= [-1]
+				if self.skip_first_class: # assign unclassified to first target id=0
+					self.targets_pred[i]= [0]
 
 		print("targets_pred")
 		#print(self.targets_pred)
@@ -1100,7 +1110,7 @@ class SClassifierNN(object):
 			target_ids_pred.append(pred_ids)
 
 		# - Convert target vector in hot encoding format (needed for metrics), e.g. [0,1,0,0,1,0]
-		mlb = MultiLabelBinarizer(classes=np.arange(0,self.nclasses))
+		mlb = MultiLabelBinarizer(classes=np.arange(0, self.nclasses))
 		y_true= mlb.fit_transform(target_ids_true)
 		y_pred= mlb.fit_transform(target_ids_pred)
 		
@@ -1426,7 +1436,10 @@ class SClassifierNN(object):
 		# - Output layer
 		#   NB: see https://glassboxmedicine.com/2019/05/26/classification-sigmoid-vs-softmax/
 		if self.multilabel:
-			self.outputs = layers.Dense(self.nclasses, name='outputs', activation='sigmoid')(x)
+			if self.skip_first_class:
+				self.outputs = layers.Dense(self.nclasses-1, name='outputs', activation='sigmoid')(x)
+			else:
+				self.outputs = layers.Dense(self.nclasses, name='outputs', activation='sigmoid')(x)
 		else:
 			self.outputs = layers.Dense(self.nclasses, name='outputs', activation='softmax')(x)
 
