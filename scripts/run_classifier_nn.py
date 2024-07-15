@@ -222,6 +222,9 @@ def get_args():
 
 	parser.add_argument('--multilabel', dest='multilabel', action='store_true',help='Do multilabel classification (default=false)')	
 	parser.set_defaults(multilabel=False)
+	
+	parser.add_argument('--use_focal_loss', dest='use_focal_loss', action='store_true',help='Use focal loss in multilabel classification (default=use binary cross-entropy)')	
+	parser.set_defaults(use_focal_loss=False)
 
 	parser.add_argument('--add_regularization', dest='add_regularization', action='store_true',help='Apply L2 regularization to backbone (default=false)')	
 	parser.set_defaults(add_regularization=False)
@@ -406,6 +409,7 @@ def main():
 		multiclass= False
 
 	multilabel= args.multilabel
+	use_focal_loss= args.use_focal_loss
 	add_regularization= args.add_regularization
 	reg_factor= args.reg_factor
 	use_backbone_impl_v2= args.use_backbone_impl_v2
@@ -670,6 +674,8 @@ def main():
 	sclass.reg_factor= reg_factor
 	sclass.use_backbone_impl_v2= use_backbone_impl_v2
 	sclass.freeze_backbone= freeze_backbone
+	
+	sclass.use_focal_loss= use_focal_loss
 
 	# - Override class target configuration?
 	if classid_remap:

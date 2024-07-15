@@ -308,6 +308,7 @@ class SClassifierNN(object):
 
 		self.__set_target_labels(multiclass)
 
+		self.use_focal_loss= False
 		self.sigmoid_thr= 0.5 # used in multilabel
 		self.focal_loss_alpha= 0.25 # tfa defaults
 		self.focal_loss_gamma= 2.0  # tfa default
@@ -503,14 +504,32 @@ class SClassifierNN(object):
 		##     Guess the correct way was directly using keras binary_crossentropy with argument from_logits=False (this is the default)
 		#return tf.nn.sigmoid_cross_entropy_with_logits(labels=y_true, logits=y_pred)
 
-		# - This will be replaced in the future by keras-cv function https://github.com/keras-team/keras-cv/blob/master/keras_cv/losses/focal.py
-		#   as TFA will end its life in May 2024
-		return tfa.losses.sigmoid_focal_crossentropy(
-			y_true, y_pred, 
-			alpha=self.focal_loss_alpha, 
-			gamma=self.focal_loss_gamma,
-			from_logits=False # false because y_pred are already probabilities as coming from sigmoid layer output
-		)
+		if self.use_focal_loss:
+			# - This will be replaced in the future by keras-cv function https://github.com/keras-team/keras-cv/blob/master/keras_cv/losses/focal.py
+			#   as TFA will end its life in May 2024
+			#   To disable weighting give a alpha value = None
+			#return tfa.losses.sigmoid_focal_crossentropy(
+			#	y_true, y_pred, 
+			#	alpha=self.focal_loss_alpha, 
+			#	gamma=self.focal_loss_gamma,
+			#	from_logits=False # false because y_pred are already probabilities as coming from sigmoid layer output
+			#)
+			
+			# - NB: TF & TFA codes are equal but the return value: TF: mean(loss), TFA: sum(loss)
+			#       TFA automatically enable weighting through alpha, while TF allows to choose if enabling/disabling
+			return tf.keras.losses.binary_focal_crossentropy(
+				y_true, y_pred,
+				apply_class_balancing=True,# this takes into account alpha
+				alpha=self.focal_loss_alpha,
+				gamma=self.focal_loss_gamma,
+				from_logits=False # false because y_pred are already probabilities as coming from sigmoid layer output
+			)
+			
+		else:
+			return tf.keras.losses.binary_crossentropy(
+    		y_true, y_pred, 
+    		from_logits=False
+    	)
 
 	#####################################
 	##     SET TRAIN DATA
