@@ -1643,7 +1643,11 @@ class SClassifierNN(object):
 			
 		# - Output layer
 		if self.multilabel:
-			self.outputs = layers.Dense(self.nclasses, name='outputs', activation='sigmoid')
+			if self.skip_first_class:
+				self.outputs = layers.Dense(self.nclasses-1, name='outputs', activation='sigmoid')
+			else:
+				self.outputs = layers.Dense(self.nclasses, name='outputs', activation='sigmoid')
+				
 		else:
 			self.outputs = layers.Dense(self.nclasses, name='outputs', activation='softmax')
 		
@@ -1789,7 +1793,10 @@ class SClassifierNN(object):
 			
 		# - Output layer
 		if self.multilabel:
-			self.outputs = layers.Dense(self.nclasses, name='outputs', activation='sigmoid')(x)
+			if self.skip_first_class:
+				self.outputs = layers.Dense(self.nclasses-1, name='outputs', activation='sigmoid')(x)
+			else:
+				self.outputs = layers.Dense(self.nclasses, name='outputs', activation='sigmoid')(x)
 		else:
 			self.outputs = layers.Dense(self.nclasses, name='outputs', activation='softmax')(x)
 		
