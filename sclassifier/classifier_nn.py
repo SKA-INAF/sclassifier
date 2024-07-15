@@ -710,7 +710,8 @@ class SClassifierNN(object):
 			self.crossval_data_generator= self.dg_cv.generate_cnn_data(
 				batch_size=batch_size_cv, 
 				shuffle=False,
-				classtarget_map=self.classid_remap, nclasses=self.nclasses
+				classtarget_map=self.classid_remap, nclasses=self.nclasses,
+				skip_first_class=self.skip_first_class
 			)
 
 		
