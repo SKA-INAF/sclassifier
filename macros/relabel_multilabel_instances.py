@@ -80,7 +80,7 @@ def main():
 	#==   COUNT CLASSES
 	#===========================
 	count_dict= {
-		"NONE": 0,
+		"BACKGROUND": 0,
 		"RADIO-GALAXY": 0,
 		"EXTENDED": 0,
 		"DIFFUSE": 0,
@@ -89,8 +89,8 @@ def main():
 	}
 	
 	label_remap= {
-		"BACKGROUND": "NONE",
-		"COMPACT": "NONE",
+		"BACKGROUND": "BACKGROUND",
+		"COMPACT": "BACKGROUND",
 		"RADIO-GALAXY": "RADIO-GALAXY",
 		"EXTENDED": "EXTENDED",
 		"DIFFUSE": "DIFFUSE",
@@ -106,14 +106,14 @@ def main():
 	}
 	
 	classid_remap= {
-		1: -1, # BACKGROUND
-		2: -1, # COMPACT
-		3: 0,  # RADIO-GALAXY
-		4: 1,  # EXTENDED
-		5: 2,  # DIFFUSE
-		6: 3,  # DIFFUSE-LARGE
-		7: 3,  # FILAMENT
-		8: 4,  # ARTEFACT
+		1: 0, # BACKGROUND
+		2: 0, # COMPACT
+		3: 1,  # RADIO-GALAXY
+		4: 2,  # EXTENDED
+		5: 3,  # DIFFUSE
+		6: 4,  # DIFFUSE-LARGE
+		7: 4,  # FILAMENT
+		8: 5,  # ARTEFACT
 		9: -1, # RING
 		10: -1, # ARC
 		11: -1, # BORDER
@@ -138,6 +138,9 @@ def main():
 			classid= classids[i]
 			label_new= label_remap[label]
 			classid_new= classid_remap[classid]
+			if classid_new==-1: # skip classid=-1
+				continue
+			
 			if classid_new not in classids_new:
 				classids_new.append(classid_new)
 			if label_new not in labels_new:
