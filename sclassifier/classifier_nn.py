@@ -506,9 +506,12 @@ class SClassifierNN(object):
 		##     Guess the correct way was directly using keras binary_crossentropy with argument from_logits=False (this is the default)
 		#return tf.nn.sigmoid_cross_entropy_with_logits(labels=y_true, logits=y_pred)
 
+		print("y_true.shape")
+		print(K.int_shape(y_true))
+		print("y_pred.shape")
+		print(K.int_shape(y_pred))
+
 		if self.use_focal_loss:
-			
-			
 			# - NB: TF & TFA codes are equal but the return value: TF: mean(loss), TFA: sum(loss)
 			#       TFA automatically enable weighting through alpha, while TF allows to choose if enabling/disabling
 			try:
@@ -1441,6 +1444,8 @@ class SClassifierNN(object):
 		if self.multilabel:
 			if self.skip_first_class:
 				self.outputs = layers.Dense(self.nclasses-1, name='outputs', activation='sigmoid')(x)
+				print("self.outputs.shape")
+				print(K.int_shape(self.outputs))
 			else:
 				self.outputs = layers.Dense(self.nclasses, name='outputs', activation='sigmoid')(x)
 		else:
