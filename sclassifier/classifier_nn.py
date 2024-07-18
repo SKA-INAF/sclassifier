@@ -924,25 +924,25 @@ class SClassifierNN(object):
 				if not self.targets_pred[i]:
 					self.targets_pred[i]= [-1]
 					
-		print("predout")
-		print(predout)
-		print(type(predout))
-		print(predout.shape)
+		#print("predout")
+		#print(predout)
+		#print(type(predout))
+		#print(predout.shape)
 			
-		print("targets_pred")
-		print(self.targets_pred)
-		print(type(self.targets_pred))
+		#print("targets_pred")
+		#print(self.targets_pred)
+		#print(type(self.targets_pred))
 		
-		print("self.classid_remap_inv")
-		print(self.classid_remap_inv)
+		#print("self.classid_remap_inv")
+		#print(self.classid_remap_inv)
 
 		# - Get predicted output class id (2D list)
 		logger.info("Computing predicted class ids from targets ...")
 		self.classids_pred= [[self.classid_remap_inv[target_id] for target_id in item] for item in self.targets_pred]
 		
-		print("classids_pred")
-		print(self.classids_pred)
-		print(type(self.classids_pred))
+		#print("classids_pred")
+		#print(self.classids_pred)
+		#print(type(self.classids_pred))
 		
 		# - Get predicted output class prob (2D list)
 		logger.info("Predicting output classid ...")
@@ -954,23 +954,23 @@ class SClassifierNN(object):
 			if not self.probs_pred[i]:
 				self.probs_pred[i]= [0.]
 
-		print("probs_pred")
-		print(self.probs_pred)
-		print(type(self.probs_pred))
+		#print("probs_pred")
+		#print(self.probs_pred)
+		#print(type(self.probs_pred))
 
 		# - Get original labels from target ids
 		##labels= [[self.target_label_map[target_id] for target_id in item] for item in self.target_ids_all]
 		labels= [[self.target_label_map[target_id] if target_id in self.target_label_map else 'UNKNOWN' for target_id in item] for item in self.target_ids_all]
 		
-		print("labels")
-		print(labels)
+		#print("labels")
+		#print(labels)
 
 		# - Get predicted labels from predicted target ids
 		##labels_pred= [[self.target_label_map[target_id] for target_id in item] for item in self.targets_pred]
 		labels_pred= [[self.target_label_map[target_id] if target_id in self.target_label_map else 'UNKNOWN' for target_id in item] for item in self.targets_pred]
 		
-		print("labels_pred")
-		print(labels_pred)
+		#print("labels_pred")
+		#print(labels_pred)
 		
 		# - Save predicted data to file
 		logger.info("Saving prediction data to file %s ..." % (self.outfile))
@@ -1127,10 +1127,10 @@ class SClassifierNN(object):
 		for i in range(len(self.target_ids_all)):
 			target_ids= self.target_ids_all[i]
 			pred_ids= self.targets_pred[i]
-			print("target_ids")
-			print(target_ids)
-			print("pred_ids")
-			print(pred_ids)
+			#print("target_ids")
+			#print(target_ids)
+			#print("pred_ids")
+			#print(pred_ids)
 			
 			if len(target_ids)==1 and target_ids[0]<0:
 				continue
@@ -1144,12 +1144,12 @@ class SClassifierNN(object):
 		y_true= mlb.fit_transform(target_ids_true)
 		y_pred= mlb.fit_transform(target_ids_pred)
 		
-		print("y_true")
-		print(y_true)
-		print("y_pred")
-		print(y_pred)
-		print("self.target_names")
-		print(self.target_names)
+		#print("y_true")
+		#print(y_true)
+		#print("y_pred")
+		#print(y_pred)
+		#print("self.target_names")
+		#print(self.target_names)
 
 		# - Compute classification report
 		logger.info("Computing classification metrics on predicted data ...")
