@@ -915,7 +915,8 @@ class SClassifierNN(object):
 		if self.skip_first_class:
 			for i in range(len(self.targets_pred)):
 				if self.targets_pred[i]: # add +1 in pred label
-					self.targets_pred[i]+= 1
+					for j in range(len(self.targets_pred[i])):
+						self.targets_pred[i][j]+= 1
 				else: # assign unclassified to first target id=0
 					self.targets_pred[i]= [0]
 		else:
