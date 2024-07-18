@@ -1127,16 +1127,30 @@ class SClassifierNN(object):
 		for i in range(len(self.target_ids_all)):
 			target_ids= self.target_ids_all[i]
 			pred_ids= self.targets_pred[i]
+			print("target_ids")
+			print(target_ids)
+			print("pred_ids")
+			print(pred_ids)
+			
 			if len(target_ids)==1 and target_ids[0]<0:
 				continue
 			target_ids_true.append(target_ids)
 			target_ids_pred.append(pred_ids)
 
+
+		
 		# - Convert target vector in hot encoding format (needed for metrics), e.g. [0,1,0,0,1,0]
 		mlb = MultiLabelBinarizer(classes=np.arange(0, self.nclasses))
 		y_true= mlb.fit_transform(target_ids_true)
 		y_pred= mlb.fit_transform(target_ids_pred)
 		
+		print("y_true")
+		print(y_true)
+		print("y_pred")
+		print(y_pred)
+		print("self.target_names")
+		print(self.target_names)
+
 		# - Compute classification report
 		logger.info("Computing classification metrics on predicted data ...")
 		report= classification_report(y_true, y_pred, target_names=self.target_names, output_dict=True)
