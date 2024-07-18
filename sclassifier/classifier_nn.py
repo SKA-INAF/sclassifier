@@ -912,12 +912,17 @@ class SClassifierNN(object):
 
 		# - Check if some source was not classified (e.g. all probs are below threshold)
 		#   In this case the list will be empty, replace it with a [0] (or [-1]??)
-		for i in range(len(self.targets_pred)):
-			if not self.targets_pred[i]:
-				self.targets_pred[i]= [-1]
-				if self.skip_first_class: # assign unclassified to first target id=0
+		if self.skip_first_class:
+			for i in range(len(self.targets_pred)):
+				if self.targets_pred[i]: # add +1 in pred label
+					self.targets_pred[i]+= 1
+				else: # assign unclassified to first target id=0
 					self.targets_pred[i]= [0]
-
+		else:
+			for i in range(len(self.targets_pred)):
+				if not self.targets_pred[i]:
+					self.targets_pred[i]= [-1]
+					
 		print("predout")
 		print(predout)
 		print(type(predout))
