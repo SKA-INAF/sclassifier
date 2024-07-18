@@ -289,10 +289,10 @@ class DataGenerator(object):
 						output_targets= mlb.fit_transform(target_ids).astype('float32')
 						if skip_first_class: # do not include first label (e.g. NONE/BACKGROUND) as target, e.g. these instances will have [0,0,0...0] encoding
 							output_targets= output_targets[:, 1:nclasses]
-							print("data_generator --> target_ids")
-							print(target_ids)
-							print("data_generator --> output_targets")
-							print(output_targets)
+							#print("data_generator --> target_ids")
+							#print(target_ids)
+							#print("data_generator --> output_targets")
+							#print(output_targets)
 						
 					else:
 						output_targets= to_categorical(np.array(target_ids), num_classes=nclasses)

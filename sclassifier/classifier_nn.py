@@ -506,10 +506,10 @@ class SClassifierNN(object):
 		##     Guess the correct way was directly using keras binary_crossentropy with argument from_logits=False (this is the default)
 		#return tf.nn.sigmoid_cross_entropy_with_logits(labels=y_true, logits=y_pred)
 
-		print("y_true.shape")
-		print(K.int_shape(y_true))
-		print("y_pred.shape")
-		print(K.int_shape(y_pred))
+		#print("y_true.shape")
+		#print(K.int_shape(y_true))
+		#print("y_pred.shape")
+		#print(K.int_shape(y_pred))
 
 		if self.use_focal_loss:
 			# - NB: TF & TFA codes are equal but the return value: TF: mean(loss), TFA: sum(loss)
@@ -923,15 +923,18 @@ class SClassifierNN(object):
 					self.targets_pred[i]= [0]
 
 		print("targets_pred")
-		#print(self.targets_pred)
+		print(self.targets_pred)
 		print(type(self.targets_pred))
+		
+		print("self.classid_remap_inv")
+		print(self.classid_remap_inv)
 
 		# - Get predicted output class id (2D list)
 		logger.info("Computing predicted class ids from targets ...")
 		self.classids_pred= [[self.classid_remap_inv[target_id] for target_id in item] for item in self.targets_pred]
 		
 		print("classids_pred")
-		#print(self.classids_pred)
+		print(self.classids_pred)
 		print(type(self.classids_pred))
 		
 		# - Get predicted output class prob (2D list)
@@ -945,16 +948,22 @@ class SClassifierNN(object):
 				self.probs_pred[i]= [0.]
 
 		print("probs_pred")
-		#print(self.probs_pred)
+		print(self.probs_pred)
 		print(type(self.probs_pred))
 
 		# - Get original labels from target ids
 		##labels= [[self.target_label_map[target_id] for target_id in item] for item in self.target_ids_all]
 		labels= [[self.target_label_map[target_id] if target_id in self.target_label_map else 'UNKNOWN' for target_id in item] for item in self.target_ids_all]
+		
+		print("labels")
+		print(labels)
 
 		# - Get predicted labels from predicted target ids
 		##labels_pred= [[self.target_label_map[target_id] for target_id in item] for item in self.targets_pred]
 		labels_pred= [[self.target_label_map[target_id] if target_id in self.target_label_map else 'UNKNOWN' for target_id in item] for item in self.targets_pred]
+		
+		print("labels_pred")
+		print(labels_pred)
 		
 		# - Save predicted data to file
 		logger.info("Saving prediction data to file %s ..." % (self.outfile))
