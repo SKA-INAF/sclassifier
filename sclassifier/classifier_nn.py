@@ -830,10 +830,6 @@ class SClassifierNN(object):
     	use_multiprocessing=self.use_multiprocessing
 		)
 
-		print("predout")
-		print(type(predout))
-		print(predout.shape)
-
 		# - Save prediction data to file
 		logger.info("Saving predicted data to file ...")
 		if self.multilabel:
@@ -922,6 +918,11 @@ class SClassifierNN(object):
 				if self.skip_first_class: # assign unclassified to first target id=0
 					self.targets_pred[i]= [0]
 
+		print("predout")
+		print(predout)
+		print(type(predout))
+		print(predout.shape)
+			
 		print("targets_pred")
 		print(self.targets_pred)
 		print(type(self.targets_pred))
