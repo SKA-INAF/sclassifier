@@ -275,7 +275,7 @@ def main():
 	
 	for i in range(nfiles):
 		if nmax!=-1 and i>=nmax:
-			logger.info("Max number of entries processed (n=%d), exit." % (nmax))
+			print("INFO: Max number of entries processed (n=%d), exit." % (nmax))
 			break
 			
 		if i%1000==0:
