@@ -249,7 +249,6 @@ def main():
 	# - Load model
 	print("INFO: Loading model %s ..." % (model_id))
 	device = 'cuda' if torch.cuda.is_available() else 'cpu'
-	#device= 'cuda'
 	print('device:',device)
 
 	model = AutoModel.from_pretrained(model_id).to(device)
