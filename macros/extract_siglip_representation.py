@@ -67,6 +67,9 @@ def get_args():
 	# - Model option
 	parser.add_argument('-model','--model', dest='model', required=False, type=str, default="google/siglip-so400m-patch14-384", help='SigLIP pretrained model {google/siglip-so400m-patch14-384,google/siglip-so400m-patch14-224,google/siglip-base-patch16-256,google/siglip-large-patch16-256}') 
 	
+	# - Run options
+	parser.add_argument('-device','--device', dest='device', required=False, type=str, default="cuda", help='Device where to run inference. Default is cuda, if not found use cpu.') 
+	
 	# - Outfile option
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='featdata.dat', help='Output filename (.dat) of feature data') 
 	
@@ -234,6 +237,16 @@ def main():
 	nmax= args.nmax
 	model_id= args.model
 	outfile= args.outfile
+	
+	#device = 'cuda' if torch.cuda.is_available() else 'cpu'
+	device= args.device
+	if "cuda" in device:
+		if not torch.cuda.is_available():
+			print("WARN: cuda not available, using cpu...")
+			device= "cpu"
+	
+	print('device:',device)
+
 		
 	#===========================
 	#==   READ DATALIST
@@ -248,9 +261,7 @@ def main():
 	#===========================
 	# - Load model
 	print("INFO: Loading model %s ..." % (model_id))
-	device = 'cuda' if torch.cuda.is_available() else 'cpu'
-	print('device:',device)
-
+	
 	model = AutoModel.from_pretrained(model_id).to(device)
 	
 	# - Load model processor
