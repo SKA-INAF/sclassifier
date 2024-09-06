@@ -180,6 +180,8 @@ def read_img(filename):
 		clip_data=False, 
 		sigma_low=5, sigma_up=30, sigma_bkg=3
 	)
+	if data_transf is None:
+		return None
 	
 	# - Convert to PIL image RGB
 	img= Image.fromarray(data_transf).convert("RGB")
