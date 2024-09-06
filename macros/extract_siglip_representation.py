@@ -293,7 +293,7 @@ def main():
 			continue
 			
 		# - Apply model pre-processing
-		inputs = processor(images=img, return_tensors="pt")
+		inputs = processor(images=img, return_tensors="pt").to(device)
 		
 		# - Extract image features
 		with torch.no_grad():
