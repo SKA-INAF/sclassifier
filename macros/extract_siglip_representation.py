@@ -299,7 +299,7 @@ def main():
 		with torch.no_grad():
 			features= model.get_image_features(**inputs)
     
-		features_numpy= features.cpu().numpy()
+		features_numpy= features.cpu().numpy()[0]
 		
 		if i==0:
 			print("features.shape")
