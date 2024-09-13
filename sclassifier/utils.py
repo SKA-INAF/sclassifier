@@ -143,7 +143,7 @@ class Utils(object):
 		return functools.reduce(lambda f, g: lambda x: f(g(x)), funcs)
 		
 	@classmethod
-	def compose_fcns_v2(*funcs):
+	def compose_fcns_v2(csl, *funcs):
 		""" Compose a list of functions like (f . g . h)(x) = f(g(h(x)) """
 		return functools.reduce(lambda f, g: lambda x, **kwargs: f(g(x,**kwargs),**kwargs), funcs)
 
