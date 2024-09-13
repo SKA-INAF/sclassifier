@@ -2487,7 +2487,7 @@ class Augmenters(object):
 		return augmenter
 
 		
-	def __call__(self, data, , **kwargs):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 			
 		# - Check data
