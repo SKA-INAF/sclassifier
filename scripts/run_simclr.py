@@ -39,7 +39,7 @@ from sclassifier import logger
 from sclassifier.feature_extractor_simclr import FeatExtractorSimCLR
 from sclassifier.data_generator import DataGenerator
 from sclassifier.preprocessing import DataPreprocessor
-from sclassifier.preprocessing import BkgSubtractor, SigmaClipper, SigmaClipShifter, Scaler, LogStretcher, Augmenter
+from sclassifier.preprocessing import BkgSubtractor, SigmaClipper, SigmaClipShifter, Scaler, LogStretcher, Augmenter, Augmenters
 from sclassifier.preprocessing import Resizer, MinMaxNormalizer, AbsMinMaxNormalizer, MaxScaler, AbsMaxScaler, ChanMaxScaler
 from sclassifier.preprocessing import Shifter, Standardizer, ChanDivider, MaskShrinker, BorderMasker
 from sclassifier.preprocessing import ChanResizer, ZScaleTransformer, Chan3Trasformer
@@ -76,7 +76,8 @@ def get_args():
 	parser.add_argument('--set_pad_val_to_min', dest='set_pad_val_to_min', action='store_true', help='Set masked value in resized image to min, otherwise leave to masked values (default=no)')	
 	parser.set_defaults(set_pad_val_to_min=False)
 
-	parser.add_argument('-augmenter', '--augmenter', dest='augmenter', required=False, type=str, default='simclr', action='store',help='Predefined augmenter to be used (default=simclr)')
+	parser.add_argument('-augmenter', '--augmenter', dest='augmenter', required=False, type=str, default='simclr_v10', action='store',help='Predefined augmenter to be used (default=simclr)')
+	parser.add_argument('-augmenters', '--augmenters', dest='augmenters', required=False, type=str, default='', action='store',help='Predefined list of augmenters to be used, to support different augmenters per image, according to the augmenter_index provided in the json dataset list. This option takes precedence over --augmenter option if list is specified, otherwise it is ignored (default=ignored)')
 
 	parser.add_argument('--normalize_minmax', dest='normalize_minmax', action='store_true',help='Normalize each channel in range [0,1]')	
 	parser.set_defaults(normalize_minmax=False)
@@ -295,6 +296,9 @@ def main():
 	upscale= args.upscale
 	set_pad_val_to_min= args.set_pad_val_to_min
 	augmenter= args.augmenter
+	augmenters= []
+	if args.augmenters!="":
+		augmenters= [str(x.strip()) for x in args.augmenters.split(',')]
 	scale= args.scale
 	scale_factors= []
 	if args.scale_factors!="":
@@ -486,7 +490,12 @@ def main():
 	if apply_percentile_thr:
 		preprocess_stages.append(PercentileThresholder(percthr=percentile_thr))
 
-	preprocess_stages.append(Augmenter(augmenter_choice=augmenter))
+	if augmenters:
+		logger.info("Using more augmenters (%s) for the dataset (chosen augmenter per image selected with the augmenter_index dataset info) ..." % (str(augmenters)))
+		preprocess_stages.append(Augmenters(augmenter_choices=augmenters))
+	else:
+		logger.info("Using a unique augmenter (%s) for the entire dataset ..." % (augmenter))
+		preprocess_stages.append(Augmenter(augmenter_choice=augmenter))
 
 	if mask_borders:
 		preprocess_stages.append(BorderMasker(mask_border_fract))

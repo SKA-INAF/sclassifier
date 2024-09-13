@@ -170,11 +170,20 @@ class DataGenerator(object):
 		if sdata.img_cube is None:
 			logger.error("Source image data cube at index %d (sname=%s, label=%s, classid=%s) is None!" % (index, sname, str(label), str(classid)))
 			return None
+			
+		# - Check if more augmenters are required for this dataset
+		augmenter_index= 0
+		if 'augmenter_index' in d:
+			augmenter_index= d['augmenter_index']
+			if augmenter_index<0 or augmenter_index is None:
+				logger.error("Invalid augmenter_index specified (must be [0, naugmenters-1]!")
+				return None
 
 		# - Apply pre-processing?
 		if self.preprocessor is not None:
 			logger.debug("Apply pre-processing ...")
-			data_proc= self.preprocessor(sdata.img_cube)
+			#data_proc= self.preprocessor(sdata.img_cube)
+			data_proc= self.preprocessor(sdata.img_cube, augmenter_index=augmenter_index)
 			if data_proc is None:
 				logger.error("Failed to pre-process source image data at index %d (sname=%s, label=%s, classid=%s)!" % (index, sname, str(label), str(classid)))
 				return None

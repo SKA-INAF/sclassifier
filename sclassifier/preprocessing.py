@@ -84,11 +84,16 @@ class DataPreprocessor(object):
 		#print(self.fcns)
 
 		# - Create pipeline
-		self.pipeline= Utils.compose_fcns(*self.fcns)
+		#self.pipeline= Utils.compose_fcns(*self.fcns)
+		self.pipeline= Utils.compose_fcns_v2(*self.fcns)
 
-	def __call__(self, data):
+	#def __call__(self, data):
+	#	""" Apply sequence of pre-processing steps """
+	#	return self.pipeline(data)
+		
+	def __call__(self, data, **kwargs):
 		""" Apply sequence of pre-processing steps """
-		return self.pipeline(data)
+		return self.pipeline(data, **kwargs)
 
 	def disable_augmentation(self):
 		""" Disable augmentation pre-processing (if existing) """
@@ -97,7 +102,8 @@ class DataPreprocessor(object):
 		recreate_pipeline= False
 		fcns_new= []
 		for i in range(len(self.fcns)):
-			is_augmenter= isinstance(self.fcns[i].__self__, Augmenter)
+			#is_augmenter= isinstance(self.fcns[i].__self__, Augmenter)
+			is_augmenter= isinstance(self.fcns[i].__self__, Augmenter) or isinstance(self.fcns[i].__self__, Augmenters)
 			if is_augmenter:
 				recreate_pipeline= True
 			else:
@@ -108,7 +114,8 @@ class DataPreprocessor(object):
 			logger.info("Recreating pipeline with these pre-processing stages ...")
 			print(fcns_new)
 			self.fcns= fcns_new
-			self.pipeline= Utils.compose_fcns(*self.fcns)
+			#self.pipeline= Utils.compose_fcns(*self.fcns)
+			self.pipeline= Utils.compose_fcns_v2(*self.fcns)
 		
 
 #######################################
@@ -706,7 +713,7 @@ class MinMaxNormalizer(object):
 		self.exclude_zeros= exclude_zeros
 
 
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 
 		# - Check data
@@ -752,7 +759,7 @@ class AbsMinMaxNormalizer(object):
 		self.norm_min= norm_min
 		self.norm_max= norm_max
 
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 
 		# - Check data
@@ -784,7 +791,7 @@ class MaxScaler(object):
 	def __init__(self, **kwparams):
 		""" Create a data pre-processor object """
 
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 
 		# - Check data
@@ -817,7 +824,7 @@ class AbsMaxScaler(object):
 		self.use_mask_box= use_mask_box
 		self.mask_fract= mask_fract
 
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 
 		# - Check data
@@ -868,7 +875,7 @@ class ChanMaxScaler(object):
 		self.use_mask_box= use_mask_box
 		self.mask_fract= mask_fract
 
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 
 		# - Check data
@@ -931,7 +938,7 @@ class MinShifter(object):
 		if 'chid' in kwparams:	
 			self.chid= kwparams['chid']
 		
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 
 		# - Check data
@@ -969,7 +976,7 @@ class Shifter(object):
 		self.offsets= offsets
 		
 		
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 
 		# - Check data
@@ -1005,7 +1012,7 @@ class Standardizer(object):
 		self.means= means
 		self.sigmas= sigmas
 
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 
 		# - Check data
@@ -1040,7 +1047,7 @@ class NegativeDataFixer(object):
 	def __init__(self, **kwparams):
 		""" Create a data pre-processor object """
 
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 
 		# - Check data
@@ -1082,7 +1089,7 @@ class Scaler(object):
 		self.scale_factors= scale_factors
 		
 
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 
 		# - Check data
@@ -1126,7 +1133,7 @@ class LogStretcher(object):
 		self.data_norm_max= data_norm_max
 		self.clip_neg= clip_neg
 
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 
 		# - Check data
@@ -1186,7 +1193,7 @@ class BorderMasker(object):
 		# - Set parameters
 		self.mask_fract= mask_fract
 
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 			
 		# - Check data
@@ -1237,7 +1244,7 @@ class BBoxResizer(object):
 		self.downscale_with_antialiasing= False
 		
 
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 
 		# - Check data
@@ -1368,7 +1375,7 @@ class BkgSubtractor(object):
 		return data_bkgsub
 
 
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 			
 		# - Check data
@@ -1427,7 +1434,7 @@ class SigmaClipShifter(object):
 		return data_clipped 
 		
 
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 			
 		# - Check data
@@ -1481,7 +1488,7 @@ class SigmaClipper(object):
 		return data_clipped
 		
 
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 			
 		# - Check data
@@ -1513,7 +1520,7 @@ class PercentileThresholder(object):
 		# - Set parameters
 		self.percthr= percthr
 	
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 			
 		# - Check data
@@ -1559,7 +1566,7 @@ class Resizer(object):
 		self.downscale_with_antialiasing=downscale_with_antialiasing  # Use antialiasing when down-scaling an image
 		self.set_pad_val_to_min= set_pad_val_to_min
 		
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 			
 		# - Check data
@@ -1650,7 +1657,7 @@ class ChanDivider(object):
 		self.trim_min= trim_min
 		self.trim_max= trim_max
 		
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 			
 		# - Check data
@@ -1714,7 +1721,7 @@ class ZScaleTransformer(object):
 
 		self.contrasts= contrasts
 		
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 
 		# - Check data
@@ -1761,7 +1768,7 @@ class HistEqualizer(object):
 		self.clip_limit= clip_limit
 		self.adaptive= adaptive
 
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 
 		# - Check data
@@ -1810,7 +1817,7 @@ class SourceRemover(object):
 		self.grow_source_mask= True
 		self.grow_size= 5
 
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 
 		# - Check data
@@ -1859,7 +1866,7 @@ class Chan3Trasformer(object):
 		self.sigma_clip_up= sigma_clip_up
 		self.zscale_contrast= zscale_contrast
 		
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 
 		# - Check data
@@ -1911,7 +1918,7 @@ class ChanResizer(object):
 		self.nchans_max= 1000
 		
 
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 
 		# - Check data
@@ -1976,7 +1983,7 @@ class ColorJitterer(object):
 		self.saturation= saturation
 		self.restore_original_range= restore_original_range
 		
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 
 		# - Check data
@@ -2087,7 +2094,7 @@ class MedianFilterer(object):
 		# - Set parameters
 		self.size= size
 		
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 
 		# - Check data
@@ -2101,6 +2108,44 @@ class MedianFilterer(object):
 			
 		return data_transf
 			
+##############################
+##   MaskShrinker
+##############################
+class MaskShrinker(object):
+	""" Shrink input data mask using an erosion operation """
+
+	def __init__(self, kernsize, **kwparams):
+		""" Create a data pre-processor object """
+
+		# - Set parameters
+		self.kernsize= kernsize
+
+	def __call__(self, data, **kwargs):
+		""" Apply transformation and return transformed data """
+			
+		# - Check data
+		if data is None:
+			logger.error("Input data is None!")
+			return None
+
+		# - Define erosion operation
+		structel= cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (self.kernsize, self.kernsize))
+		#structel= cv2.getStructuringElement(cv2.MORPH_RECTANGLE, (self.kernsize, self.kernsize))
+
+		# - Create erosion masks and apply to input data
+		data_shrinked= np.copy(data)
+
+		for i in range(data.shape[-1]):
+			mask= np.logical_and(data[:,:,i]!=0, np.isfinite(data[:,:,i])).astype(np.uint8)
+			mask= mask.astype(np.uint8)
+			mask_eroded = cv2.erode(mask, structel, iterations = 1)
+			
+			img_eroded= data[:,:,i]
+			img_eroded[mask_eroded==0]= 0
+			data_shrinked[:,:,i]= img_eroded
+			
+		return data_shrinked
+		
 
 ##############################
 ##   Augmenter
@@ -2318,7 +2363,7 @@ class Augmenter(object):
 			self.augmenter= augmenter_cae
 
 		
-	def __call__(self, data):
+	def __call__(self, data, **kwargs):
 		""" Apply transformation and return transformed data """
 			
 		# - Check data
@@ -2340,42 +2385,135 @@ class Augmenter(object):
 
 
 
-##############################
-##   MaskShrinker
-##############################
-class MaskShrinker(object):
-	""" Shrink input data mask using an erosion operation """
 
-	def __init__(self, kernsize, **kwparams):
+
+
+
+##############################
+##   Augmenters
+##############################
+class Augmenters(object):
+	""" Perform image augmentation per image basis according to given model """
+
+	def __init__(self, augmenter_choices=["cae"], augmenters=[], **kwparams):
 		""" Create a data pre-processor object """
 
 		# - Set parameters
-		self.kernsize= kernsize
+		if not augmenters:
+			self.augmenters= []
+			for choice in augmenter_choices:
+				augmenter= self.__get_augmenter(choice)
+				self.augmenters.append(augmenter)
+		else:
+			self.augmenters= augmenters
 
-	def __call__(self, data):
+	######################################
+	##     DEFINE PREDEFINED AUGMENTERS
+	######################################
+	def __get_augmenter(self, choice):
+		""" Define and set augmenters """
+
+		# - Define augmenter for Conv Autoencoder
+		augmenter_cae= iaa.Sequential(
+			[
+				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
+  			iaa.Affine(rotate=(-90, 90), mode='constant', cval=0.0),
+				#iaa.Sometimes(0.5, iaa.Affine(scale=(0.5, 1.0), mode='constant', cval=0.0))
+			]
+		)
+
+		# - Define augmenter for CNN
+		augmenter_cnn= iaa.Sequential(
+			[
+				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
+  			iaa.Affine(rotate=(-90, 90), mode='constant', cval=0.0)
+				#iaa.Sometimes(0.5, iaa.Affine(translate_percent={"x": (-0.1, 0.1), "y": (-0.1, 0.1)}, mode='constant', cval=0.0))
+			]
+		)
+
+		# - Apply flip (66%) + rotate (always) + stretch zscale/sigmoid (always) + scale/blur (50%) + thresholding (50%)
+		zscaleStretch_aug= ZScaleAugmenter(contrast=0.25, random_contrast=True, random_contrast_per_ch=False, contrast_min=0.1, contrast_max=0.5)
+		zscaleStretch2_aug= ZScaleAugmenter(contrast=0.25, random_contrast=True, random_contrast_per_ch=False, contrast_min=0.25, contrast_max=0.5)
+		sigmoidStretch_aug= SigmoidStretchAugmenter(cutoff=0.5, gain=10, random_gain=True, random_gain_per_ch=False, gain_min=10, gain_max=30)
+		percThr_aug= PercentileThrAugmenter(percentile=50, random_percentile=True, random_percentile_per_ch=False, percentile_min=40, percentile_max=60)
+		scale_aug= iaa.Affine(scale=(0.5, 1.0), mode='constant', cval=0.0)
+		blur_aug= iaa.GaussianBlur(sigma=(1.0, 3.0))
+		noise_aug= iaa.AdditiveGaussianNoise(scale=(0, 0.1))
+		crop_aug= RandomCropResizeAugmenter(crop_fract_min=0.7, crop_fract_max=1.0)
+		crop_aug_v2= RandomCropResizeAugmenter(crop_fract_min=0.8, crop_fract_max=1.0)
+		
+		# - See https://arxiv.org/pdf/2002.05709.pdf (pag. 12) and https://arxiv.org/pdf/2305.16127.pdf (pag 4)
+		colorJitter_aug= ColorJitterAugmenter(
+			brightness=0.8, 
+			contrast=0.8, 
+			saturation=0.8,
+			hue=0.2,
+			strength=0.5
+		)
+		
+		augmenter_simclr9= iaa.Sequential(
+			[
+				crop_aug_v2,
+				iaa.Sometimes(0.8, colorJitter_aug),
+				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
+  			iaa.OneOf([iaa.Rot90((1,3)), iaa.Noop()]), # rotate by 90, 180 or 270 or do nothing		
+			]
+		)
+		
+		augmenter_simclr10= iaa.Sequential(
+			[
+				crop_aug_v2,
+				iaa.Sometimes(0.8, colorJitter_aug),
+				iaa.OneOf([iaa.Fliplr(1.0), iaa.Flipud(1.0), iaa.Noop()]),
+  			iaa.OneOf([iaa.Rot90((1,3)), iaa.Noop()]), # rotate by 90, 180 or 270 or do nothing
+  			iaa.Sometimes(0.1, blur_aug),
+  			iaa.Sometimes(0.5, percThr_aug)
+			]
+		)
+		
+		# - Return augmenter chosen
+		if choice=='cae':
+			augmenter= augmenter_cae
+		elif choice=='cnn':
+			augmenter= augmenter_cnn
+		elif choice=='simclr_v9':
+			augmenter= augmenter_simclr9
+		elif choice=='simclr_v10':
+			augmenter= augmenter_simclr10	
+		else:
+			logger.warn("Unknown choice (%s), setting CAE augmenter..." % (choice))
+			augmenter= augmenter_cae
+			
+		return augmenter
+
+		
+	def __call__(self, data, , **kwargs):
 		""" Apply transformation and return transformed data """
 			
 		# - Check data
 		if data is None:
 			logger.error("Input data is None!")
 			return None
-
-		# - Define erosion operation
-		structel= cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (self.kernsize, self.kernsize))
-		#structel= cv2.getStructuringElement(cv2.MORPH_RECTANGLE, (self.kernsize, self.kernsize))
-
-		# - Create erosion masks and apply to input data
-		data_shrinked= np.copy(data)
-
-		for i in range(data.shape[-1]):
-			mask= np.logical_and(data[:,:,i]!=0, np.isfinite(data[:,:,i])).astype(np.uint8)
-			mask= mask.astype(np.uint8)
-			mask_eroded = cv2.erode(mask, structel, iterations = 1)
 			
-			img_eroded= data[:,:,i]
-			img_eroded[mask_eroded==0]= 0
-			data_shrinked[:,:,i]= img_eroded
-			
-		return data_shrinked
-		
+		# - Retrieve augmenter index from kwargs
+		if 'augmenter_index' in kwargs:
+			augmenter_index= kwargs.get('augmenter_index')
+		else:
+			logger.warn("augmenter_index key not found in argument, setting it to 0 (first augmenter), check if this is the expected behavior!")
+			augmenter_index= 0
+
+		# - Make augmenters deterministic to apply similarly to images and masks
+		##augmenter_det = self.augmenters[augmenter_index].to_deterministic()
+
+		# - Augment data cube
+		try:
+			data_aug= self.augmenters[augmenter_index].augment_image(data)
+		except Exception as e:
+			logger.error("Failed to augment data (err=%s)!" % str(e))
+			return None
+
+		return data_aug
+
+
+
 
