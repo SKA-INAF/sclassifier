@@ -145,7 +145,7 @@ class Utils(object):
 	@classmethod
 	def compose_fcns_v2(*funcs):
 		""" Compose a list of functions like (f . g . h)(x) = f(g(h(x)) """
-  	return functools.reduce(lambda f, g: lambda x, **kwargs: f(g(x,**kwargs),**kwargs), funcs)
+		return functools.reduce(lambda f, g: lambda x, **kwargs: f(g(x,**kwargs),**kwargs), funcs)
 
 	@classmethod
 	def write_ascii(cls,data,filename,header=''):
