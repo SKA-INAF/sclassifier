@@ -45,7 +45,7 @@ import pickle
 
 ## PYTORCH
 import torch
-#import torchvision.transforms as T
+import torchvision.transforms as T
 from PIL import Image
 
 ## TRANSFORMERS
