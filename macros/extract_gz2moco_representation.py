@@ -175,7 +175,7 @@ def transform_img(data, contrast, clip_data, sigma_low, sigma_up, sigma_bkg=3):
   	]
 	)
 	
-	img= transform(data_cube)
+	img= transform(data_cube).unsqueeze(0)
 	#img= transform(PIL_image)[:3].unsqueeze(0)
 	
 	print("type(img)")
