@@ -282,7 +282,7 @@ def main():
 	#===========================
 	# - Load model
 	print("INFO: Loading mode from checkpoint %s ..." % (model_checkpoint))
-	model = load_model_from_checkpoint(ckpt)
+	model = load_model_from_checkpoint(model_checkpoint)
 	
 	
 	# - Loop over images and get representation
