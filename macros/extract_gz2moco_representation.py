@@ -289,7 +289,7 @@ def main():
 	# - Load model
 	print("INFO: Loading mode from checkpoint %s ..." % (model_checkpoint))
 	model = load_model_from_checkpoint(model_checkpoint)
-	
+	model.to(device)
 	
 	# - Loop over images and get representation
 	feature_list= []
