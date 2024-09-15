@@ -170,14 +170,20 @@ def transform_img(data, contrast, clip_data, sigma_low, sigma_up, sigma_bkg=3):
   	[
   		T.ToTensor(),	
   	  T.Resize(224, interpolation=T.InterpolationMode.BICUBIC),
-  #	  ###T.Normalize(mean=[0.5], std=[0.5])
-  #	  T.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+  	  ##T.Normalize(mean=[0.5], std=[0.5])
+  	  #T.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
   	]
 	)
 	
+	img= transform(data_cube)
 	#img= transform(PIL_image)[:3].unsqueeze(0)
 	
-	return data_transf
+	print("type(img)")
+	print(type(img))
+	print(img.shape)
+	
+	return img
+	
 	
 def read_img(filename):
 	""" Read fits image """
