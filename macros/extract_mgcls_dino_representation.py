@@ -271,7 +271,7 @@ def get_args():
 	parser.add_argument('--to_uint8', dest='to_uint8', action='store_true',help='Convert to uint8 (default=false)')	
 	parser.set_defaults(to_uint8=False)
 	parser.add_argument('--in_chans', default = 1, type = int, help = 'Length of subset of dataset to use.')
-  parser.add_argument('--set_zero_to_min', dest='shift_zero_to_min', action='store_true',help='Set blank pixels to min>0 (default=false)')	
+	parser.add_argument('--set_zero_to_min', dest='shift_zero_to_min', action='store_true',help='Set blank pixels to min>0 (default=false)')	
 	parser.set_defaults(set_zero_to_min=False)
 	
 	# - Model options
