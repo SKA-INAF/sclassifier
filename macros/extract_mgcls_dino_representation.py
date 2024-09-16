@@ -434,6 +434,9 @@ def main():
 		with torch.no_grad():
 			feats = model(imgs)
 
+		print("class_ids")
+		print(class_ids)
+
 		features_numpy= feats[0].cpu().numpy()
 		class_ids_numpy= class_ids[0].cpu().numpy()
 
