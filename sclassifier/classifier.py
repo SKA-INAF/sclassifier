@@ -1158,6 +1158,9 @@ class SClassifier(object):
 					#receval_cb
 				]
 			)
+			
+			print("model.best_score")
+			print(model.best_score)
 		
 			# - Predict model on pre-classified data
 			y_pred= model.predict(X_test)
