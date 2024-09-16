@@ -1095,7 +1095,7 @@ class SClassifier(object):
 			"is_provide_training_metric": True,
 			#"learning_rate": self.learning_rate,
 			###"learning_rate": trial.suggest_float("learning_rate", 0.01, 0.5),
-			"learning_rate": trial.suggest_categorical("learning_rate", [0.1,0.2,0.5,0.01,0.05,0.001])
+			"learning_rate": trial.suggest_categorical("learning_rate", [0.1,0.2,0.5,0.01,0.05,0.001]),
 			#"min_data_in_leaf": self.min_samples_leaf,
 			###"min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 10, 200, step=10),
 			"min_data_in_leaf": trial.suggest_categorical("min_data_in_leaf", [1,2,5,10,20,50,100]),
