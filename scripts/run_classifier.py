@@ -92,6 +92,7 @@ def get_args():
 	
 	parser.add_argument('--early_stop_round', dest='early_stop_round', required=False, type=int, default=10, help='LGBM early_stop_round if val data is available (default=10)')
 	parser.add_argument('--scan_test_size', dest='scan_test_size', required=False, type=float, default=0.3, help='LGBM scan fold test size. (default=0.2)')
+	parser.add_argument('-nsplits','--nsplits', dest='nsplits', required=False, type=int, default=5, help='Number of Optuna fold splits (default=5)') 
 	
 	# - Linear classifier custom options
 	parser.add_argument('-tol','--tol', dest='tol', required=False, type=float, default=None, help='Linear classifier tol parameter')
@@ -210,6 +211,7 @@ def main():
 	niters= args.niters
 	importance_type= args.importance_type
 	early_stop_round= args.early_stop_round
+	nsplits= args.nsplits
 	scan_test_size= args.scan_test_size
 	if args.scan_test_size>1:
 		scan_test_size= int(args.scan_test_size)
@@ -286,6 +288,7 @@ def main():
 	sclass.importance_type= importance_type
 	sclass.early_stop_round= early_stop_round
 	sclass.scan_test_size= scan_test_size
+	sclass.nsplits= nsplits
 	sclass.tol= tol
 	sclass.verbosity= verbosity
 

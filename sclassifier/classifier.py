@@ -178,6 +178,7 @@ class SClassifier(object):
 		self.lgbm_eval_dict= {}
 		self.importance_type= 'split' # 'gain'
 		self.scan_test_size= 0.3
+		self.nsplits= 5
 		
 		# - Linear classifier custom options
 		self.tol= None # 1.e-3
@@ -1121,7 +1122,7 @@ class SClassifier(object):
 		}
 
 		# - Define data split
-		nsplits= 5
+		nsplits= self.nsplits
 		#cv = StratifiedKFold(n_splits=nsplits, shuffle=True, random_state=1121218)
 		cv = StratifiedShuffleSplit(n_splits=nsplits, test_size=self.scan_test_size, random_state=1121218)
 		cv_scores = np.empty(nsplits)
