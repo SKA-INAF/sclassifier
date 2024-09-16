@@ -139,6 +139,10 @@ class AstroImageDataset(Dataset):
 		data[~cond]= data_min
 
 		data_transf= data
+		
+		print("== DATA MIN/MAX ==")
+		print(data_transf.min())
+		print(data_transf.max())
 
 		# - Clip data?
 		if self.clip_data:
@@ -164,7 +168,7 @@ class AstroImageDataset(Dataset):
 			data_norm= (data_transf-data_min)/(data_max-data_min) * (norm_max-norm_min) + norm_min
 			data_transf= data_norm
 			
-		print("== DATA MIN/MAX ==")
+		print("== DATA MIN/MAX (AFTER TRANSF) ==")
 		print(data_transf.min())
 		print(data_transf.max())
 	
