@@ -1161,10 +1161,16 @@ class SClassifier(object):
 			# - Retrieve metrics
 			logger.info("Computing classification metrics on train data ...")
 			report= classification_report(y_test, y_pred, target_names=self.target_names, output_dict=True)
+			print("report")
+			print(report)
 			f1score= report['weighted avg']['f1-score']
 			cv_scores[idx]= f1score
+			mean_cv_score= np.mean(cv_scores)
+			print("mean_cv_score")
+			print(mean_cv_score)
 
-		return np.mean(cv_scores)
+
+		return mean_cv_score
 
 
 
@@ -1214,7 +1220,7 @@ class SClassifier(object):
 		logger.info("Run optuna study ...")
 		study.optimize(func, n_trials=n_trials)
 
-		print(f"\tBest value (rmse): {study.best_value:.5f}")
+		print(f"\tBest value (F1-score): {study.best_value:.5f}")
 		print(f"\tBest params:")
 
 		for key, value in study.best_params.items():
