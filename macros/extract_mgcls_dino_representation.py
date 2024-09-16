@@ -447,12 +447,12 @@ def main():
 			print(features_numpy.shape)
 
 		# - Append to main list
-		#feature_list.append(features_numpy)
-		#sname_list.append(sname)
-		#classid_list.append(class_ids_numpy)
-		feature_list.extend(features_numpy)
-		sname_list.extend(sname)
-		classid_list.extend(class_ids_numpy)
+		feature_list.append(features_numpy)
+		sname_list.append(sname)
+		classid_list.append(class_ids_numpy)
+		#feature_list.extend(features_numpy)
+		#sname_list.extend(sname)
+		#classid_list.extend(class_ids_numpy)
 
 	#===========================
 	#==   SAVE FEATURES
