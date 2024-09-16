@@ -92,7 +92,7 @@ def get_args():
 	
 	# - Linear classifier custom options
 	parser.add_argument('-tol','--tol', dest='tol', required=False, type=float, default=None, help='Linear classifier tol parameter')
-	parser.add_argument('-verbosity','--verbosity', dest='verbosity', required=False, type=float, default=None, help='Linear classifier verbosity parameter')
+	parser.add_argument('-verbosity','--verbosity', dest='verbosity', required=False, type=int, default=None, help='Linear classifier verbosity parameter')
 	
 	
 	# - Outlier detection
