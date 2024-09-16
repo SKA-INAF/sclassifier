@@ -1105,7 +1105,7 @@ class SClassifier(object):
 			###"n_estimators": trial.suggest_categorical("n_estimators", [10000]),
 			"n_estimators": trial.suggest_categorical("n_estimators", [1,2,5,10,100,200,1000]),
 			#"num_leaves": trial.suggest_int("num_leaves", 5, 4096, step=10),
-			"num_leaves": trial.suggest_categorical("num_leaves", [1,2,5,10,20,30,40,50,100]),
+			"num_leaves": trial.suggest_categorical("num_leaves", [2,5,10,20,30,40,50,100]),
 			"max_depth": trial.suggest_int("max_depth", 2, 10, step=1),
 			###"lambda_l1": trial.suggest_int("lambda_l1", 0, 100, step=5),
 			###"lambda_l2": trial.suggest_int("lambda_l2", 0, 100, step=5),
