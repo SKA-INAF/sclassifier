@@ -1160,7 +1160,7 @@ class SClassifier(object):
 			)
 			
 			print("model.best_score")
-			print(model.best_score)
+			print(model._best_score)
 		
 			# - Predict model on pre-classified data
 			y_pred= model.predict(X_test)
