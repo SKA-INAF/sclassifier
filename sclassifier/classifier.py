@@ -1138,7 +1138,7 @@ class SClassifier(object):
 		# - Scan over parameters
 		for idx, (train_idx, test_idx) in enumerate(cv.split(X, y)):
 			print(f"Fold {idx}:")
-			print(f"  Train: {len(train_idx)], index={train_idx}")
+			print(f"  Train: {len(train_idx)}, index={train_idx}")
 			print(f"  Test:  {len(test_idx)}, index={test_idx}")
 
 			X_train, X_test = X[train_idx], X[test_idx]
