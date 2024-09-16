@@ -1091,7 +1091,7 @@ class SClassifier(object):
 			"num_iterations": self.niters,
 			"objective": objective_lgbm,
 			"metric": metric_lgbm,
-			"verbosity": 1,
+			"verbosity": 0,
 			"boosting_type": "gbdt",
 			"is_provide_training_metric": True,
 			###"learning_rate": self.learning_rate,
