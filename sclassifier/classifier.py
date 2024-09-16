@@ -1098,17 +1098,17 @@ class SClassifier(object):
 			#"learning_rate": trial.suggest_categorical("learning_rate", [0.1,0.2,0.5,0.01,0.05,0.001]),
 			"learning_rate": trial.suggest_categorical("learning_rate", [0.1]),
 			###"min_data_in_leaf": self.min_samples_leaf,
-			#"min_data_in_leaf": trial.suggest_categorical("min_data_in_leaf", [1,2,5,10,20,50,100]),
-			"min_data_in_leaf": trial.suggest_categorical("min_data_in_leaf", [5]),
+			"min_data_in_leaf": trial.suggest_categorical("min_data_in_leaf", [1,2,3,4,5,6,7,8,9,10,15,20,30,40,50,100]),
+			#"min_data_in_leaf": trial.suggest_categorical("min_data_in_leaf", [5]),
 			"class_weight": class_weight,
 			"is_unbalance": is_unbalance,
 			### "device_type": trial.suggest_categorical("device_type", ['gpu']),
-			#"n_estimators": trial.suggest_categorical("n_estimators", [1,2,5,10,100,200,1000]),
-			"n_estimators": trial.suggest_categorical("n_estimators", [100]),
-			##"num_leaves": trial.suggest_categorical("num_leaves", [2,5,10,20,30,40,50,100]),
-			"num_leaves": trial.suggest_categorical("num_leaves", [5]),
-			#"max_depth": trial.suggest_int("max_depth", 2, 10, step=1),
-			"max_depth": trial.suggest_categorical("max_depth", [-1]),
+			"n_estimators": trial.suggest_categorical("n_estimators", [1,2,5,10,100,200,1000]),
+			##"n_estimators": trial.suggest_categorical("n_estimators", [100]),
+			"num_leaves": trial.suggest_categorical("num_leaves", [2,5,10,20,30,40,50,100]),
+			##"num_leaves": trial.suggest_categorical("num_leaves", [5]),
+			"max_depth": trial.suggest_int("max_depth", 2, 10, step=1),
+			##"max_depth": trial.suggest_categorical("max_depth", [-1]),
 			###"lambda_l1": trial.suggest_int("lambda_l1", 0, 100, step=5),
 			###"lambda_l2": trial.suggest_int("lambda_l2", 0, 100, step=5),
 			###"min_gain_to_split": trial.suggest_float("min_gain_to_split", 0, 15),
@@ -1116,9 +1116,7 @@ class SClassifier(object):
 			###	"bagging_fraction", 0.2, 0.95, step=0.1
 			###),
  			###"bagging_freq": trial.suggest_categorical("bagging_freq", [1]),
-			###"feature_fraction": trial.suggest_float(
-			###	"feature_fraction", 0.2, 0.95, step=0.1
-			###),
+			"feature_fraction": trial.suggest_float("feature_fraction", 0.2, 1.0, step=0.1),
 		}
 
 		# - Define data split
