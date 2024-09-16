@@ -46,7 +46,7 @@ class ReturnIndexDataset(datasets.ImageFolder):
 class AstroImageDataset(Dataset):
 	""" Dataset to load astro images in FITS format """
 	
-	def __init__(self, filename, transform, in_chans=1, apply_zscale=False, norm_range(0,255)):
+	def __init__(self, filename, transform, in_chans=1, apply_zscale=False, norm_range(0.,1.), to_uint8=False):
 		self.filename= filename
 		self.__read_filelist()
 		self.transform = transform
@@ -54,6 +54,7 @@ class AstroImageDataset(Dataset):
 		self.in_chans= in_chans
 		self.apply_zscale= apply_zscale
 		self.norm_range= norm_range
+		self.to_uint8= to_uint8
 
 	def __getitem__(self, idx):
 		""" Override getitem method """
@@ -155,8 +156,8 @@ class AstroImageDataset(Dataset):
 		# - Normalize to range
 		data_min= data_transf.min()
 		data_max= data_transf.max()
-		norm_min= norm_range[0]
-		norm_max= norm_range[1]
+		norm_min= self.norm_range[0]
+		norm_max= self.norm_range[1]
 		if norm_min==data_min and norm_max==data_max:
 			print("INFO: Data already normalized in range (%f,%f)" % (norm_min, norm_max))
 		else:
@@ -168,7 +169,8 @@ class AstroImageDataset(Dataset):
 		print(data_transf.max())
 	
 		# - Convert to uint8
-		data_transf= data_transf.astype(np.uint8)
+		if self.to_uint8:
+			data_transf= data_transf.astype(np.uint8)
 	
 		return data_transf, is_good_data
 
@@ -255,9 +257,12 @@ def get_args():
 	parser.add_argument('--nmax', default=-1, type=int, help='Number of images to read and process in input file (-1=all)')
 	parser.add_argument('--zscale', dest='zscale', action='store_true',help='Apply zscale transform (default=false)')	
 	parser.set_defaults(zscale=False)
-	parser.add_argument('--norm_min', default=0, type=float, help='Norm min (default=0)')
-	parser.add_argument('--norm_max', default=255, type=float, help='Norm min (default=255)')
-	
+	parser.add_argument('--norm_min', default=0., type=float, help='Norm min (default=0)')
+	parser.add_argument('--norm_max', default=1., type=float, help='Norm max (default=1)')
+	parser.add_argument('--to_uint8', dest='to_uint8', action='store_true',help='Convert to uint8 (default=false)')	
+	parser.set_defaults(to_uint8=False)
+	parser.add_argument('--in_chans', default = 1, type = int, help = 'Length of subset of dataset to use.')
+  
 	# - Model options
 	parser.add_argument('--batch_size_per_gpu', default=1, type=int, help='Per-GPU batch-size')
 	parser.add_argument('--pretrained_weights', default='', type=str, help="Path to pretrained weights to evaluate.")
@@ -265,8 +270,7 @@ def get_args():
 	parser.add_argument('--arch', default='vit_small', type=str, help='Architecture')
 	parser.add_argument('--patch_size', default=16, type=int, help='Patch resolution of the model.')
 	parser.add_argument("--checkpoint_key", default="teacher", type=str, help='Key to use in the checkpoint (example: "teacher")')
-	parser.add_argument('--in_chans', default = 1, type = int, help = 'Length of subset of dataset to use.')
-  
+	
 	parser.add_argument('--dump_features', default=None, help='Path where to save computed features, empty for no saving')
 	parser.add_argument('--num_workers', default=0, type=int, help='Number of data loading workers per GPU.')
 	
@@ -368,7 +372,8 @@ def main():
 		transform=transform,
 		in_chans=args.in_chans,
 		apply_zscale=args.zscale,
-		norm_range=(args.norm_min, args.norm_max)
+		norm_range=(args.norm_min, args.norm_max),
+		to_uint8=args.to_uint8
 	)
 	
 	data_loader= torch.utils.data.DataLoader(
