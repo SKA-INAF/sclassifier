@@ -90,6 +90,8 @@ def get_args():
 	parser.add_argument('-niters','--niters', dest='niters', required=False, type=int, default=100, help='Number of boosting iterations for LGBM classifier and others (TBD)') 
 	parser.add_argument('--importance_type', dest='importance_type', required=False, type=str, default='split', help='LGBM importance_type parameter {"split","gain"}')
 	
+	parser.add_argument('--early_stop_round', dest='early_stop_round', required=False, type=int, default=10, help='LGBM early_stop_round if val data is available (default=10)')
+	
 	# - Linear classifier custom options
 	parser.add_argument('-tol','--tol', dest='tol', required=False, type=float, default=None, help='Linear classifier tol parameter')
 	parser.add_argument('-verbosity','--verbosity', dest='verbosity', required=False, type=int, default=None, help='Linear classifier verbosity parameter')
@@ -206,6 +208,7 @@ def main():
 	learning_rate= args.learning_rate
 	niters= args.niters
 	importance_type= args.importance_type
+	early_stop_round= args.early_stop_round
 	
 	# - Linear classifier options
 	tol= args.tol
@@ -277,6 +280,7 @@ def main():
 	sclass.niters= niters
 	sclass.balance_classes= balance_classes
 	sclass.importance_type= importance_type
+	sclass.early_stop_round= early_stop_round
 	sclass.tol= tol
 	sclass.verbosity= verbosity
 
