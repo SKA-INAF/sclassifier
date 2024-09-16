@@ -46,7 +46,7 @@ class ReturnIndexDataset(datasets.ImageFolder):
 class AstroImageDataset(Dataset):
 	""" Dataset to load astro images in FITS format """
 	
-	def __init__(self, filename, transform, in_chans=1, apply_zscale=False, norm_range=(0.,1.), to_uint8=False):
+	def __init__(self, filename, transform, in_chans=1, apply_zscale=False, norm_range=(0.,1.), to_uint8=False, set_zero_to_min=False):
 		self.filename= filename
 		self.__read_filelist()
 		self.transform = transform
@@ -55,6 +55,7 @@ class AstroImageDataset(Dataset):
 		self.apply_zscale= apply_zscale
 		self.norm_range= norm_range
 		self.to_uint8= to_uint8
+		self.set_zero_to_min= set_zero_to_min
 
 	def __getitem__(self, idx):
 		""" Override getitem method """
@@ -126,7 +127,11 @@ class AstroImageDataset(Dataset):
 		data= fits.open(filename)[0].data
 
 		# - Set NANs to image min
-		cond= np.logical_and(data!=0, np.isfinite(data))
+		if self.set_zero_to_min:
+			cond= np.logical_and(data!=0, np.isfinite(data))
+		else:
+			cond= np.isfinite(data)
+				
 		data_1d= data[cond]
 		if data_1d.size==0:
 			is_good_data= False
@@ -266,7 +271,9 @@ def get_args():
 	parser.add_argument('--to_uint8', dest='to_uint8', action='store_true',help='Convert to uint8 (default=false)')	
 	parser.set_defaults(to_uint8=False)
 	parser.add_argument('--in_chans', default = 1, type = int, help = 'Length of subset of dataset to use.')
-  
+  parser.add_argument('--set_zero_to_min', dest='shift_zero_to_min', action='store_true',help='Set blank pixels to min>0 (default=false)')	
+	parser.set_defaults(set_zero_to_min=False)
+	
 	# - Model options
 	parser.add_argument('--batch_size_per_gpu', default=1, type=int, help='Per-GPU batch-size')
 	parser.add_argument('--pretrained_weights', default='', type=str, help="Path to pretrained weights to evaluate.")
@@ -377,7 +384,8 @@ def main():
 		in_chans=args.in_chans,
 		apply_zscale=args.zscale,
 		norm_range=(args.norm_min, args.norm_max),
-		to_uint8=args.to_uint8
+		to_uint8=args.to_uint8,
+		set_zero_to_min=args.set_zero_to_min
 	)
 	
 	data_loader= torch.utils.data.DataLoader(
