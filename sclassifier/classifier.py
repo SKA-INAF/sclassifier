@@ -1183,8 +1183,12 @@ class SClassifier(object):
 		# - Compute mean scores/losses
 		mean_cv_loss_val= np.mean(cv_losses)
 		mean_cv_score= np.mean(cv_scores)
+		print("cv_scores")
+		print(cv_scores)
 		print("mean_cv_score")
 		print(mean_cv_score)
+		print("cv_losses")
+		print(cv_losses)
 		print("mean_cv_loss_val")
 		print(mean_cv_loss_val)
 		
