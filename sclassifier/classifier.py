@@ -1124,6 +1124,7 @@ class SClassifier(object):
 		#cv = StratifiedKFold(n_splits=nsplits, shuffle=True, random_state=1121218)
 		cv = StratifiedShuffleSplit(n_splits=nsplits, test_size=self.scan_test_size, random_state=1121218)
 		cv_scores = np.empty(nsplits)
+		cv_losses = np.empty(nsplits)
 		
 		# - Define callbacks
 		earlystop_cb= early_stopping(
@@ -1159,8 +1160,13 @@ class SClassifier(object):
 				]
 			)
 			
+			# - Retrieve val loss
 			print("model.best_score")
 			print(model._best_score)
+			loss_val= model._best_score['test'][metric_lgbm]
+			cv_losses[idx]= loss_val
+			print("loss_val")
+			print(loss_val)
 		
 			# - Predict model on pre-classified data
 			y_pred= model.predict(X_test)
@@ -1172,12 +1178,17 @@ class SClassifier(object):
 			print(report)
 			f1score= report['weighted avg']['f1-score']
 			cv_scores[idx]= f1score
-			mean_cv_score= np.mean(cv_scores)
-			print("mean_cv_score")
-			print(mean_cv_score)
-
-
-		return mean_cv_score
+			
+		# - Compute mean scores/losses
+		mean_cv_loss_val= np.mean(cv_losses)
+		mean_cv_score= np.mean(cv_scores)
+		print("mean_cv_score")
+		print(mean_cv_score)
+		print("mean_cv_loss_val")
+		print(mean_cv_loss_val)
+		
+		#return mean_cv_score
+		return mean_cv_loss_val
 
 
 
@@ -1217,7 +1228,8 @@ class SClassifier(object):
 
 		# - Define optuna study	
 		logger.info("Define optuna study ...")
-		study = optuna.create_study(direction="maximize", study_name="LGBM Classifier")
+		#study = optuna.create_study(direction="maximize", study_name="LGBM Classifier")
+		study = optuna.create_study(direction="minimize", study_name="LGBM Classifier")
 		func= lambda trial: self.__lgbm_scan_objective(trial, X, y)
 		
 		#================================
@@ -1272,7 +1284,8 @@ class SClassifier(object):
 
 		# - Define optuna study	
 		logger.info("Define optuna study ...")
-		study = optuna.create_study(direction="maximize", study_name="LGBM Classifier")
+		#study = optuna.create_study(direction="maximize", study_name="LGBM Classifier")
+		study = optuna.create_study(direction="minimize", study_name="LGBM Classifier")
 		func= lambda trial: self.__lgbm_scan_objective(trial, X, y)
 
 		#================================
