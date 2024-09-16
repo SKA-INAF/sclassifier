@@ -32,7 +32,7 @@ from skimage.metrics import mean_squared_error
 from skimage.metrics import structural_similarity
 from scipy.stats import kurtosis, skew
 from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import RepeatedStratifiedKFold, StratifiedKFold
+from sklearn.model_selection import RepeatedStratifiedKFold, StratifiedKFold, StratifiedShuffleSplit
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
@@ -177,6 +177,7 @@ class SClassifier(object):
 		self.metric_lgbm= 'multi_logloss'
 		self.lgbm_eval_dict= {}
 		self.importance_type= 'split' # 'gain'
+		self.scan_test_size= 0.3
 		
 		# - Linear classifier custom options
 		self.tol= None # 1.e-3
@@ -1092,34 +1093,36 @@ class SClassifier(object):
 			"verbosity": 1,
 			"boosting_type": "gbdt",
 			"is_provide_training_metric": True,
-			"learning_rate": self.learning_rate,
-			"min_data_in_leaf": self.min_samples_leaf,
-
+			#"learning_rate": self.learning_rate,
+			###"learning_rate": trial.suggest_float("learning_rate", 0.01, 0.5),
+			"learning_rate": trial.suggest_categorical("learning_rate", [0.1,0.2,0.5,0.01,0.05,0.001])
+			#"min_data_in_leaf": self.min_samples_leaf,
+			###"min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 10, 200, step=10),
+			"min_data_in_leaf": trial.suggest_categorical("min_data_in_leaf", [1,2,5,10,20,50,100]),
 			"class_weight": class_weight,
 			"is_unbalance": is_unbalance,
-
-			# "device_type": trial.suggest_categorical("device_type", ['gpu']),
-			#"n_estimators": trial.suggest_categorical("n_estimators", [10000]),
-			#"learning_rate": trial.suggest_float("learning_rate", 0.01, 0.5),
-			"num_leaves": trial.suggest_int("num_leaves", 5, 4096, step=10),
-			"max_depth": trial.suggest_int("max_depth", 2, 12, step=1),
-			#"min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 10, 200, step=10),
-			#"lambda_l1": trial.suggest_int("lambda_l1", 0, 100, step=5),
-			#"lambda_l2": trial.suggest_int("lambda_l2", 0, 100, step=5),
-			#"min_gain_to_split": trial.suggest_float("min_gain_to_split", 0, 15),
-			#"bagging_fraction": trial.suggest_float(
-			#	"bagging_fraction", 0.2, 0.95, step=0.1
-			#),
- 			#"bagging_freq": trial.suggest_categorical("bagging_freq", [1]),
-			#"feature_fraction": trial.suggest_float(
-			#	"feature_fraction", 0.2, 0.95, step=0.1
-			#),
+			### "device_type": trial.suggest_categorical("device_type", ['gpu']),
+			###"n_estimators": trial.suggest_categorical("n_estimators", [10000]),
+			"n_estimators": trial.suggest_categorical("n_estimators", [1,2,5,10,100,200,1000]),
+			#"num_leaves": trial.suggest_int("num_leaves", 5, 4096, step=10),
+			"num_leaves": trial.suggest_categorical("num_leaves", [1,2,5,10,20,30,40,50,100]),
+			"max_depth": trial.suggest_int("max_depth", 2, 10, step=1),
+			###"lambda_l1": trial.suggest_int("lambda_l1", 0, 100, step=5),
+			###"lambda_l2": trial.suggest_int("lambda_l2", 0, 100, step=5),
+			###"min_gain_to_split": trial.suggest_float("min_gain_to_split", 0, 15),
+			###"bagging_fraction": trial.suggest_float(
+			###	"bagging_fraction", 0.2, 0.95, step=0.1
+			###),
+ 			###"bagging_freq": trial.suggest_categorical("bagging_freq", [1]),
+			###"feature_fraction": trial.suggest_float(
+			###	"feature_fraction", 0.2, 0.95, step=0.1
+			###),
 		}
-
 
 		# - Define data split
 		nsplits= 5
-		cv = StratifiedKFold(n_splits=nsplits, shuffle=True, random_state=1121218)
+		#cv = StratifiedKFold(n_splits=nsplits, shuffle=True, random_state=1121218)
+		cv = StratifiedShuffleSplit(n_splits=nsplits, test_size=self.scan_test_size, random_state=1121218)
 		cv_scores = np.empty(nsplits)
 		
 		# - Define callbacks
@@ -1273,9 +1276,6 @@ class SClassifier(object):
 			print(f"\t\t{key}: {value}")
 
 		return 0
-
-		return 0
-
 
 	def __fit_model(self):
 		""" Fit model """
