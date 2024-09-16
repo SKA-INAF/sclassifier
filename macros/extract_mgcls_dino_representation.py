@@ -46,7 +46,7 @@ class ReturnIndexDataset(datasets.ImageFolder):
 class AstroImageDataset(Dataset):
 	""" Dataset to load astro images in FITS format """
 	
-	def __init__(self, filename, transform, in_chans=1, apply_zscale=False, norm_range(0.,1.), to_uint8=False):
+	def __init__(self, filename, transform, in_chans=1, apply_zscale=False, norm_range=(0.,1.), to_uint8=False):
 		self.filename= filename
 		self.__read_filelist()
 		self.transform = transform
