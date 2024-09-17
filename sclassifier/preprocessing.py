@@ -1662,7 +1662,7 @@ class CenterCropper(object):
 			
 
 	def __call__(self, data, **kwargs):
-	""" Apply transformation and return transformed data """
+		""" Apply transformation and return transformed data """
 			
 		# - Check data
 		if data is None:
