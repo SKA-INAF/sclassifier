@@ -1294,7 +1294,7 @@ class SClassifier(object):
 
 
 
-	def run_lgbm_scan(self, datafile, n_trials=1):
+	def run_lgbm_scan(self, datafile, datafile_cv='', n_trials=1):
 		""" Run LGBM par scan """
 
 		#================================
@@ -1380,7 +1380,7 @@ class SClassifier(object):
 		return 0
 
 
-	def run_lgbm_scan(self, data, class_ids=[], snames=[], scalerfile='', n_trials=1):
+	def run_lgbm_scan(self, data, class_ids=[], snames=[], scalerfile='', data_cv=None, class_ids_cv=[], snames_cv=[], n_trials=1):
 		""" Run train using input dataset """
 
 		#================================

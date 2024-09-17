@@ -337,6 +337,7 @@ def main():
 			status= sclass.run_lgbm_scan(
 				data, classids, snames,
 				scalerfile,
+				data_cv, classids_cv, snames_cv,
 				n_trials=ntrials
 			)
 
