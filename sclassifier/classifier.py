@@ -173,6 +173,7 @@ class SClassifier(object):
 		self.balance_classes= False
 
 		# - LGBM custom options
+		self.feature_fraction= 1.0
 		self.early_stop_round= 10
 		self.metric_lgbm= 'multi_logloss'
 		self.lgbm_eval_dict= {}
@@ -373,6 +374,7 @@ class SClassifier(object):
 				boosting_type='gbdt',
 				class_weight=class_weight,
 				importance_type=self.importance_type,
+				feature_fraction=self.feature_fraction,
 				verbose=1
 				#num_class=self.nclasses
 			)
@@ -399,6 +401,7 @@ class SClassifier(object):
 				boosting_type='gbdt',
 				is_unbalance=is_unbalance,
 				importance_type=self.importance_type,
+				feature_fraction=self.feature_fraction,
 				verbose=1
 				#num_class=self.nclasses
 			)
