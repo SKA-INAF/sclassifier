@@ -1368,8 +1368,10 @@ class SClassifier(object):
 		logger.info("Run optuna study ...")
 		study.optimize(func, n_trials=n_trials)
 
-		#print(f"\tBest value (F1-score): {study.best_value:.5f}")
-		print(f"\tBest value (loss_val): {study.best_value:.5f}")
+		if self.optimize_f1score:
+			print(f"\tBest value (F1-score): {study.best_value:.5f}")
+		else:
+			print(f"\tBest value (loss_val): {study.best_value:.5f}")
 		print(f"\tBest params:")
 
 		for key, value in study.best_params.items():
@@ -1453,8 +1455,10 @@ class SClassifier(object):
 		logger.info("Run optuna study ...")
 		study.optimize(func, n_trials=n_trials)
 
-		#print(f"\tBest value (F1-score): {study.best_value:.5f}")
-		print(f"\tBest value (loss_val): {study.best_value:.5f}")
+		if self.optimize_f1score:
+			print(f"\tBest value (F1-score): {study.best_value:.5f}")
+		else:
+			print(f"\tBest value (loss_val): {study.best_value:.5f}")
 		print(f"\tBest params:")
 
 		for key, value in study.best_params.items():
