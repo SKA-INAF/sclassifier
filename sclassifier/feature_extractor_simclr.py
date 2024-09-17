@@ -1499,8 +1499,16 @@ class FeatExtractorSimCLR(object):
 		
 		# - Merge encoded data
 		logger.info("Adding source info data to encoded data ...")
-		obj_names= np.array(self.source_names).reshape(N,1)
-		obj_ids= np.array(self.source_ids).reshape(N,1)
+		snames= self.source_names
+		sids= self.source_ids
+		if self.augment_test:
+			snames= self.source_names*self.augment_scale_factor
+			sids= self.source_ids*self.augment_scale_factor
+		
+		#obj_names= np.array(self.source_names).reshape(N,1)
+		#obj_ids= np.array(self.source_ids).reshape(N,1)
+		obj_names= np.array(snames).reshape(N,1)
+		obj_ids= np.array(sids).reshape(N,1)
 		enc_data= np.concatenate(
 			(obj_names, self.encoded_data, obj_ids),
 			axis=1
