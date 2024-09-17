@@ -1639,6 +1639,45 @@ class Resizer(object):
 		return data_resized
 
 
+##############################
+##   CenterCropper
+##############################
+class CenterCropper(object):
+	""" Crop image to desired size """
+	
+	def __init__(self, crop_size, resize_back=False):
+		""" Create a data pre-processor object """
+
+		# - Set parameters
+		self.crop_size= crop_size
+		self.resize_back= resize_back
+		
+		# - Define augmentation
+		if resize_back:
+			self.transform= iaa.KeepSizeByResize(
+				iaa.CenterCropToFixedSize(height=self.crop_size, width=self.crop_size)
+			)
+		else:
+			self.transform= iaa.CenterCropToFixedSize(height=self.crop_size, width=self.crop_size)
+			
+
+	def __call__(self, data, **kwargs):
+	""" Apply transformation and return transformed data """
+			
+		# - Check data
+		if data is None:
+			logger.error("Input data is None!")
+			return None
+			
+		# - Crop & resize
+		logger.debug("Applying crop (crop_size=%d) ..." % (self.crop_size))
+
+		data_cropped= self.transform.augment_image(data)
+		if data_cropped is None:
+			logger.error("Cropped image is None!")
+		
+		return data_cropped
+			
 
 ##############################
 ##   ChanDivider

@@ -44,6 +44,7 @@ from sclassifier.preprocessing import Resizer, MinMaxNormalizer, AbsMinMaxNormal
 from sclassifier.preprocessing import Shifter, Standardizer, ChanDivider, MaskShrinker, BorderMasker
 from sclassifier.preprocessing import ChanResizer, ZScaleTransformer, Chan3Trasformer
 from sclassifier.preprocessing import PercentileThresholder, HistEqualizer
+from sclassifier.preprocessing import CenterCropper
 
 #### GET SCRIPT ARGS ####
 def str2bool(v):
@@ -161,6 +162,12 @@ def get_args():
 
 	parser.add_argument('--apply_histeq', dest='apply_histeq', action='store_true',help='Apply histogram equalization to input image')	
 	parser.set_defaults(apply_histeq=False)
+	
+	parser.add_argument('--center_crop', dest='center_crop', action='store_true', help='Center crop image to fixed desired size in pixel, specified in crop_size option (default=no)')	
+	parser.set_defaults(center_crop=False)
+	parser.add_argument('-crop_size', '--crop_size', dest='crop_size', required=False, type=int, default=224, action='store',help='Crop size in pixels (default=224)')
+	parser.add_argument('--crop_resize_back', dest='crop_resize_back', action='store_true', help='Resize image after crop to its original size (default=no)')	
+	parser.set_defaults(crop_resize_back=False)
 	
 	# - Network training options
 	parser.add_argument('-nepochs', '--nepochs', dest='nepochs', required=False, type=int, default=100, action='store',help='Number of epochs used in network training (default=100)')	
@@ -360,6 +367,10 @@ def main():
 	
 	apply_histeq= args.apply_histeq
 	
+	center_crop= args.center_crop
+	crop_size= args.crop_size
+	crop_resize_back= args.crop_resize_back
+	
 	# - Model architecture
 	modelfile= args.modelfile
 	weightfile= args.weightfile
@@ -449,6 +460,9 @@ def main():
 	#   9) min/max (abs) norm, standardize, mean shift
 	logger.info("Create train data pre-processor ...")
 	preprocess_stages= []
+
+	if center_crop:
+		preprocess_stages.append(CenterCrop(crop_size=crop_size, resize_back=crop_resize_back))
 
 	if resize_chans:
 		preprocess_stages.append(ChanResizer(nchans=nchan_resize))
