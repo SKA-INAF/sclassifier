@@ -1479,7 +1479,7 @@ class FeatExtractorSimCLR(object):
 			nsteps= self.augment_scale_factor * self.nsamples
 		
 		# - Apply model to input
-		logger.info("Running SimCLR prediction on input data ...")
+		logger.info("Running SimCLR prediction on input data (nsteps=%d) ..." % (nsteps))
 		predout= self.encoder.predict(
 			x=self.test_data_generator,
 			#steps=self.nsamples,
