@@ -462,7 +462,7 @@ def main():
 	preprocess_stages= []
 
 	if center_crop:
-		preprocess_stages.append(CenterCrop(crop_size=crop_size, resize_back=crop_resize_back))
+		preprocess_stages.append(CenterCropper(crop_size=crop_size, resize_back=crop_resize_back))
 
 	if resize_chans:
 		preprocess_stages.append(ChanResizer(nchans=nchan_resize))
