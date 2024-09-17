@@ -179,6 +179,7 @@ class SClassifier(object):
 		self.importance_type= 'split' # 'gain'
 		self.scan_test_size= 0.3
 		self.nsplits= 5
+		self.optimize_f1score= False
 		
 		# - Linear classifier custom options
 		self.tol= None # 1.e-3
@@ -1064,7 +1065,7 @@ class SClassifier(object):
 
 
 
-	def __lgbm_scan_objective(self, trial, X, y):
+	def __lgbm_scan_objective(self, trial, X, y, optimize_f1score):
 		""" Define optuna objective function for multiclass/binary classification scan """
     
 		# - Define parameters to be optimized
@@ -1161,12 +1162,12 @@ class SClassifier(object):
 			)
 			
 			# - Retrieve val loss
-			print("model.best_score")
-			print(model._best_score)
+			#print("model.best_score")
+			#print(model._best_score)
 			loss_val= model._best_score['test'][metric_lgbm]
 			cv_losses[idx]= loss_val
-			print("loss_val")
-			print(loss_val)
+			#print("loss_val")
+			#print(loss_val)
 		
 			# - Predict model on pre-classified data
 			y_pred= model.predict(X_test)
@@ -1191,8 +1192,10 @@ class SClassifier(object):
 		print("mean_cv_loss_val")
 		print(mean_cv_loss_val)
 		
-		#return mean_cv_score
-		return mean_cv_loss_val
+		if optimize_f1score:
+			return mean_cv_score
+		else:
+			return mean_cv_loss_val
 
 
 
@@ -1232,9 +1235,11 @@ class SClassifier(object):
 
 		# - Define optuna study	
 		logger.info("Define optuna study ...")
-		#study = optuna.create_study(direction="maximize", study_name="LGBM Classifier")
-		study = optuna.create_study(direction="minimize", study_name="LGBM Classifier")
-		func= lambda trial: self.__lgbm_scan_objective(trial, X, y)
+		if self.optimize_f1score:
+			study = optuna.create_study(direction="maximize", study_name="LGBM Classifier")
+		else:
+			study = optuna.create_study(direction="minimize", study_name="LGBM Classifier")
+		func= lambda trial: self.__lgbm_scan_objective(trial, X, y, self.optimize_f1score)
 		
 		#================================
 		#==   RUN SCAN
@@ -1289,9 +1294,11 @@ class SClassifier(object):
 
 		# - Define optuna study	
 		logger.info("Define optuna study ...")
-		#study = optuna.create_study(direction="maximize", study_name="LGBM Classifier")
-		study = optuna.create_study(direction="minimize", study_name="LGBM Classifier")
-		func= lambda trial: self.__lgbm_scan_objective(trial, X, y)
+		if self.optimize_f1score:
+			study = optuna.create_study(direction="maximize", study_name="LGBM Classifier")
+		else:
+			study = optuna.create_study(direction="minimize", study_name="LGBM Classifier")
+		func= lambda trial: self.__lgbm_scan_objective(trial, X, y, self.optimize_f1score)
 
 		#================================
 		#==   RUN SCAN
