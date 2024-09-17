@@ -45,6 +45,7 @@ from sclassifier.preprocessing import Shifter, Standardizer, ChanDivider, MaskSh
 from sclassifier.preprocessing import ChanResizer, ZScaleTransformer, Chan3Trasformer
 from sclassifier.preprocessing import PercentileThresholder, HistEqualizer
 from sclassifier.preprocessing import BBoxResizer
+from sclassifier.preprocessing import CenterCropper
 
 import matplotlib.pyplot as plt
 
@@ -177,6 +178,12 @@ def get_args():
 	parser.add_argument('--shrink_to_mask_bbox', dest='shrink_to_mask_bbox', action='store_true',help='Extract mask from image (where data!=0) and shrink image to mask bbox shape, eventually resizing to desired resize_size')
 	parser.set_defaults(shrink_to_mask_bbox=False)
 
+	parser.add_argument('--center_crop', dest='center_crop', action='store_true', help='Center crop image to fixed desired size in pixel, specified in crop_size option (default=no)')	
+	parser.set_defaults(center_crop=False)
+	parser.add_argument('-crop_size', '--crop_size', dest='crop_size', required=False, type=int, default=224, action='store',help='Crop size in pixels (default=224)')
+	parser.add_argument('--crop_resize_back', dest='crop_resize_back', action='store_true', help='Resize image after crop to its original size (default=no)')	
+	parser.set_defaults(crop_resize_back=False)
+
 	parser.add_argument('--draw', dest='draw', action='store_true',help='Draw images')	
 	parser.set_defaults(draw=False)
 
@@ -302,6 +309,10 @@ def main():
 	apply_histeq= args.apply_histeq
 	shrink_to_mask_bbox= args.shrink_to_mask_bbox
 	
+	center_crop= args.center_crop
+	crop_size= args.crop_size
+	crop_resize_back= args.crop_resize_back
+	
 	outfile_stats= "stats_info.dat"
 	outfile_flags= "stats_flags.dat"
 	outfile_sample_stats= "stats_sample_info.dat"
@@ -326,6 +337,9 @@ def main():
 	#   9) min/max (abs) norm, standardize, mean shift
 	preprocess_stages= []
 
+	if center_crop:
+		preprocess_stages.append(CenterCropper(crop_size=crop_size, resize_back=crop_resize_back))
+		
 	if resize_chans:
 		preprocess_stages.append(ChanResizer(nchans=nchan_resize))
 		
