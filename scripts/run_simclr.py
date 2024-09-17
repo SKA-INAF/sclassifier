@@ -248,6 +248,9 @@ def get_args():
 	# - Run options
 	parser.add_argument('--predict', dest='predict', action='store_true',help='Predict model on input data (default=false)')	
 	parser.set_defaults(predict=False)
+	parser.add_argument('--augment_test', dest='augment_test', action='store_true',help='Augment test images (default=false)')	
+	parser.set_defaults(augment_test=False)
+	parser.add_argument('-augment_scale_factor', '--augment_scale_factor', dest='augment_scale_factor', required=False, type=int, default=1, action='store',help='Number of times images are augmented in test (if augmentation is enabled). E.g. if 2, nsteps_per_epoch=2*nsamples/batch_size (default=1)')
 
 	parser.add_argument('--use_v2_impl', dest='use_v2_impl', action='store_true',help='Use alternative implementation (not based on tf fit method) (default=false)')	
 	parser.set_defaults(use_v2_impl=False)
@@ -436,6 +439,10 @@ def main():
 	# - Run options
 	predict= args.predict
 	use_v2_impl= args.use_v2_impl
+	
+	augment_test= args.augment_test
+	augment_scale_factor= args.augment_scale_factor
+	
 
 	# - Save options
 	save_tb_embeddings= args.save_tb_embeddings
@@ -644,6 +651,9 @@ def main():
 	simclr.nepochs_warmup= nepochs_warmup
 	simclr.nepochs_done= nepochs_done
 	simclr.nepochs_schedule_tot= nepochs_schedule_tot
+	
+	simclr.augment_test= augment_test
+	simclr.augment_scale_factor= augment_scale_factor
 
 	# - Run train/predict
 	if predict:

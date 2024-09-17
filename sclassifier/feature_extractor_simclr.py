@@ -326,6 +326,7 @@ class FeatExtractorSimCLR(object):
 		self.weight_init_seed= None
 		self.shuffle_train_data= True
 		self.augment_scale_factor= 1
+		self.augment_test= False
 
 		self.load_cv_data_in_batches= True
 		self.balance_classes= False
@@ -460,8 +461,10 @@ class FeatExtractorSimCLR(object):
 		# - Create test data generator
 		logger.info("Creating test data generator (deep-copying train data generator) ...")
 		self.dg_test= deepcopy(self.dg)
-		logger.info("Disabling data augmentation in test data generator ...")
-		self.dg_test.disable_augmentation()
+		
+		if not self.augment_test:
+			logger.info("Disabling data augmentation in test data generator ...")
+			self.dg_test.disable_augmentation()
 
 		self.test_data_generator= self.dg_test.generate_cae_data(
 			batch_size=1, 
@@ -471,8 +474,10 @@ class FeatExtractorSimCLR(object):
 		# - Create embeddings data generator
 		logger.info("Creating test data generator for embeddings (deep-copying train data generator) ...")
 		self.dg_test_embeddings= deepcopy(self.dg)
-		logger.info("Disabling data augmentation in test data generator for embeddings ...")
-		self.dg_test_embeddings.disable_augmentation()
+		
+		if not self.augment_test:
+			logger.info("Disabling data augmentation in test data generator for embeddings ...")
+			self.dg_test_embeddings.disable_augmentation()
 
 		self.test_data_generator_embeddings= self.dg_test_embeddings.generate_data(
 			batch_size=1, 
@@ -1468,11 +1473,17 @@ class FeatExtractorSimCLR(object):
 	def __save_embeddings(self):
 		""" Save embeddings """
 
+		# - Set step size
+		nsteps= self.nsamples
+		if self.augment_test:
+			nsteps= self.augment_scale_factor * self.nsamples
+		
 		# - Apply model to input
 		logger.info("Running SimCLR prediction on input data ...")
 		predout= self.encoder.predict(
 			x=self.test_data_generator,
-			steps=self.nsamples,
+			#steps=self.nsamples,
+			steps=nsteps,
     	verbose=2,
     	workers=self.nworkers,
     	use_multiprocessing=self.use_multiprocessing
@@ -1514,6 +1525,8 @@ class FeatExtractorSimCLR(object):
 		# - Set nembeddings to be saved: -1=ALL
 		if self.nembeddings_save==-1 or self.nembeddings_save>self.nsamples:
 			n_embeddings= self.nsamples
+			if self.augment_test:
+				n_embeddings= self.augment_scale_factor * self.nsamples
 		else:
 			n_embeddings= self.nembeddings_save
 
