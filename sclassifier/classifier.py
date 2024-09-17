@@ -1067,6 +1067,8 @@ class SClassifier(object):
 	def __lgbm_scan_objective(self, trial, X_train, y_train, X_test, y_test, optimize_f1score):
 		""" Define optuna objective function for multiclass/binary classification scan """
 		
+		print("== TRIAL NO. %d ==" % (trial))
+		
 		# - Define parameters to be optimized
 		if self.multiclass:
 			objective_lgbm= 'multiclass'
@@ -1162,6 +1164,8 @@ class SClassifier(object):
 		
 	def __lgbm_scan_objective_with_splits(self, trial, X, y, optimize_f1score):
 		""" Define optuna objective function for multiclass/binary classification scan """
+    
+    print("== TRIAL NO. %d ==" % (trial))
     
 		# - Define parameters to be optimized
 		if self.multiclass:
