@@ -180,6 +180,7 @@ class SClassifier(object):
 		self.scan_test_size= 0.3
 		self.nsplits= 5
 		self.optimize_f1score= False
+		self.split_samples_in_scan= False
 		
 		# - Linear classifier custom options
 		self.tol= None # 1.e-3
@@ -1063,9 +1064,103 @@ class SClassifier(object):
 		return 0
 
 
+	def __lgbm_scan_objective(self, trial, X_train, y_train, X_test, y_test, optimize_f1score):
+		""" Define optuna objective function for multiclass/binary classification scan """
+		
+		# - Define parameters to be optimized
+		if self.multiclass:
+			objective_lgbm= 'multiclass'
+			metric_lgbm= 'multi_logloss'
+			
+			class_weight= None
+			is_unbalance= False
+			if self.balance_classes:
+				class_weight= 'balanced'
 
+		else:
+			objective_lgbm= 'binary'
+			metric_lgbm= 'binary_logloss'
 
-	def __lgbm_scan_objective(self, trial, X, y, optimize_f1score):
+			class_weight= None
+			is_unbalance= False
+			if self.balance_classes:
+				is_unbalance= True
+
+	
+		param_grid = {
+			"num_iterations": self.niters,
+			"objective": objective_lgbm,
+			"metric": metric_lgbm,
+			"verbosity": 0,
+			"boosting_type": "gbdt",
+			"is_provide_training_metric": True,
+			###"learning_rate": self.learning_rate,
+			#"learning_rate": trial.suggest_categorical("learning_rate", [0.1,0.2,0.5,0.01,0.05,0.001]),
+			"learning_rate": trial.suggest_categorical("learning_rate", [0.1]),
+			###"min_data_in_leaf": self.min_samples_leaf,
+			"min_data_in_leaf": trial.suggest_categorical("min_data_in_leaf", [1,2,3,4,5,6,7,8,9,10,15,20,30,40,50,100]),
+			#"min_data_in_leaf": trial.suggest_categorical("min_data_in_leaf", [5]),
+			"class_weight": class_weight,
+			"is_unbalance": is_unbalance,
+			### "device_type": trial.suggest_categorical("device_type", ['gpu']),
+			"n_estimators": trial.suggest_categorical("n_estimators", [1,2,5,10,100,200,1000]),
+			##"n_estimators": trial.suggest_categorical("n_estimators", [100]),
+			"num_leaves": trial.suggest_categorical("num_leaves", [2,5,10,20,30,40,50,100]),
+			##"num_leaves": trial.suggest_categorical("num_leaves", [5]),
+			"max_depth": trial.suggest_int("max_depth", 2, 10, step=1),
+			##"max_depth": trial.suggest_categorical("max_depth", [-1]),
+			###"lambda_l1": trial.suggest_int("lambda_l1", 0, 100, step=5),
+			###"lambda_l2": trial.suggest_int("lambda_l2", 0, 100, step=5),
+			###"min_gain_to_split": trial.suggest_float("min_gain_to_split", 0, 15),
+			###"bagging_fraction": trial.suggest_float(
+			###	"bagging_fraction", 0.2, 0.95, step=0.1
+			###),
+ 			###"bagging_freq": trial.suggest_categorical("bagging_freq", [1]),
+			"feature_fraction": trial.suggest_float("feature_fraction", 0.2, 1.0, step=0.1),
+		}
+
+		# - Define callbacks
+		earlystop_cb= early_stopping(
+			stopping_rounds=self.early_stop_round, 
+			first_metric_only=True, verbose=True
+		)
+			
+		logeval_cb= log_evaluation(period=1, show_stdv=True)
+
+		# - Fit model	and find best parameters
+		model= LGBMClassifier(**param_grid)
+
+		model.fit(
+			X_train, y_train,
+			eval_set=[(X_test, y_test), (X_train, y_train)],
+			eval_names=["test", "train"],
+			eval_metric=metric_lgbm,
+			#early_stopping_rounds=100,
+			callbacks=[	
+				earlystop_cb, 
+				logeval_cb, 
+				#receval_cb
+			]
+		)
+		
+		# - Find best model loss
+		loss_val= model._best_score['test'][metric_lgbm]
+			
+		# - Find best model score
+		y_pred= model.predict(X_test)
+		report= classification_report(y_test, y_pred, target_names=self.target_names, output_dict=True)
+		print("report")
+		print(report)
+		f1score= report['weighted avg']['f1-score']
+			
+		# - Return data
+		if optimize_f1score:
+			return f1score
+		else:
+			return loss_val
+		
+		
+	def __lgbm_scan_objective_with_splits(self, trial, X, y, optimize_f1score):
 		""" Define optuna objective function for multiclass/binary classification scan """
     
 		# - Define parameters to be optimized
@@ -1225,6 +1320,16 @@ class SClassifier(object):
 		if self.set_data_from_file(datafile)<0:
 			logger.error("Failed to read datafile %s!" % datafile)
 			return -1
+			
+		#================================
+		#==   LOAD CROSS-VALIDATION DATA
+		#================================
+		if datafile_cv!="":
+			logger.info("Reading validation data from file %s ..." % datafile_cv)
+			
+			if self.set_val_data_from_file(datafile_cv)<0:
+				logger.error("Failed to read validation datafile %s!" % datafile_cv)
+				return -1
 
 		#================================
 		#==   CREATE SCAN MODEL
@@ -1232,6 +1337,13 @@ class SClassifier(object):
 		# - Set scan data
 		X= self.data_preclassified
 		y= self.data_preclassified_targets
+		
+		# - Set scan val data
+		X_val= None
+		y_val= None
+		if data_cv is not None:
+			X_val= self.data_preclassified_cv
+			y_val= self.data_preclassified_targets_cv
 
 		# - Define optuna study	
 		logger.info("Define optuna study ...")
@@ -1239,7 +1351,15 @@ class SClassifier(object):
 			study = optuna.create_study(direction="maximize", study_name="LGBM Classifier")
 		else:
 			study = optuna.create_study(direction="minimize", study_name="LGBM Classifier")
-		func= lambda trial: self.__lgbm_scan_objective(trial, X, y, self.optimize_f1score)
+			
+			
+		if self.split_samples_in_scan:	
+			func= lambda trial: self.__lgbm_scan_objective_with_splits(trial, X, y, self.optimize_f1score)
+		else:
+			if data_cv is None:
+				logger.error("You must provide validation data to scan without sample split!")
+				return -1
+			func= lambda trial: self.__lgbm_scan_objective(trial, X, y, X_val, y_val, self.optimize_f1score)
 		
 		#================================
 		#==   RUN SCAN
@@ -1284,6 +1404,17 @@ class SClassifier(object):
 		if self.set_data(data, class_ids, snames)<0:
 			logger.error("Failed to set data!")
 			return -1
+			
+		#================================
+		#==   LOAD CROSS-VALIDATION DATA
+		#================================
+		if data_cv is not None:
+			logger.info("Loading validation data ...")
+			
+			if self.set_val_data(data_cv, class_ids_cv, snames_cv)<0:
+				logger.error("Failed to set validation data!")
+				return -1	
+	
 
 		#================================
 		#==   CREATE SCAN MODEL
@@ -1291,6 +1422,13 @@ class SClassifier(object):
 		# - Set scan data
 		X= self.data_preclassified
 		y= self.data_preclassified_targets
+		
+		# - Set scan val data
+		X_val= None
+		y_val= None
+		if data_cv is not None:
+			X_val= self.data_preclassified_cv
+			y_val= self.data_preclassified_targets_cv
 
 		# - Define optuna study	
 		logger.info("Define optuna study ...")
@@ -1298,7 +1436,15 @@ class SClassifier(object):
 			study = optuna.create_study(direction="maximize", study_name="LGBM Classifier")
 		else:
 			study = optuna.create_study(direction="minimize", study_name="LGBM Classifier")
-		func= lambda trial: self.__lgbm_scan_objective(trial, X, y, self.optimize_f1score)
+		
+		
+		if self.split_samples_in_scan:	
+			func= lambda trial: self.__lgbm_scan_objective_with_splits(trial, X, y, self.optimize_f1score)
+		else:
+			if data_cv is None:
+				logger.error("You must provide validation data to scan without sample split!")
+				return -1
+			func= lambda trial: self.__lgbm_scan_objective(trial, X, y, X_val, y_val, self.optimize_f1score)
 
 		#================================
 		#==   RUN SCAN

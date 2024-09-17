@@ -95,6 +95,8 @@ def get_args():
 	parser.add_argument('-nsplits','--nsplits', dest='nsplits', required=False, type=int, default=5, help='Number of Optuna fold splits (default=5)')
 	parser.add_argument('--optimize_f1score', dest='optimize_f1score', action='store_true',help='Optimize F1-score (maximize) in LGBM scan, otherwise val loss (minimize) (default=false)')	
 	parser.set_defaults(optimize_f1score=False)
+	parser.add_argument('--split_samples_in_scan', dest='split_samples_in_scan', action='store_true',help='Use train sample split to run scan. If false use train/val data. NB: in this case you must pass val data (default=false)')	
+	parser.set_defaults(split_samples_in_scan=False)
 	
 	# - Linear classifier custom options
 	parser.add_argument('-tol','--tol', dest='tol', required=False, type=float, default=None, help='Linear classifier tol parameter')
@@ -215,6 +217,7 @@ def main():
 	early_stop_round= args.early_stop_round
 	nsplits= args.nsplits
 	optimize_f1score= args.optimize_f1score
+	split_samples_in_scan= args.split_samples_in_scan
 	scan_test_size= args.scan_test_size
 	if args.scan_test_size>1:
 		scan_test_size= int(args.scan_test_size)
@@ -293,6 +296,7 @@ def main():
 	sclass.scan_test_size= scan_test_size
 	sclass.nsplits= nsplits
 	sclass.optimize_f1score= optimize_f1score
+	sclass.split_samples_in_scan= split_samples_in_scan
 	sclass.tol= tol
 	sclass.verbosity= verbosity
 
