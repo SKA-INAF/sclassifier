@@ -1137,7 +1137,7 @@ class SClassifier(object):
 		if self.scan_nestimators:
 			param_grid["n_estimators"]= trial.suggest_categorical("n_estimators", [1,2,5,10,100,200,1000])
 		if self.scan_num_leaves:
-			param_grid["num_leaves"]= trial.suggest_categorical("num_leaves", [2,5,10,20,30,40,50,100])
+			param_grid["num_leaves"]= trial.suggest_categorical("num_leaves", [2,5,10,20,30,40,50,100,200,1000])
 		if self.scan_maxdepth:
 			param_grid["max_depth"]= trial.suggest_int("max_depth", 2, 15, step=1),
 		if self.scan_featfract:
@@ -1251,7 +1251,7 @@ class SClassifier(object):
 		if self.scan_nestimators:
 			param_grid["n_estimators"]= trial.suggest_categorical("n_estimators", [1,2,5,10,100,200,1000])
 		if self.scan_num_leaves:
-			param_grid["num_leaves"]= trial.suggest_categorical("num_leaves", [2,5,10,20,30,40,50,100])
+			param_grid["num_leaves"]= trial.suggest_categorical("num_leaves", [2,5,10,20,30,40,50,100,200,1000])
 		if self.scan_maxdepth:
 			param_grid["max_depth"]= trial.suggest_int("max_depth", 2, 15, step=1),
 		if self.scan_featfract:
