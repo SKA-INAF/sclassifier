@@ -359,9 +359,8 @@ def main():
 	#data_std= (1.0, 1.0, 1.0) 
 	
 	tlist= []
-	#tlist.append( pth_transforms.Resize(imgsize, interpolation=3) )
 	if args.center_crop:
-		tlist.append( tlist.append(pth_transforms.CenterCrop(args.crop_size) )
+		tlist.append( pth_transforms.CenterCrop(args.crop_size) )
 		
 	tlist.append( pth_transforms.Resize(imgsize, interpolation=3) )	
 	tlist.append( pth_transforms.ToTensor() )
