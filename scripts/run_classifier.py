@@ -99,6 +99,19 @@ def get_args():
 	parser.add_argument('--split_samples_in_scan', dest='split_samples_in_scan', action='store_true',help='Use train sample split to run scan. If false use train/val data. NB: in this case you must pass val data (default=false)')	
 	parser.set_defaults(split_samples_in_scan=False)
 	
+	parser.add_argument('--scan_min_data_in_leaf', dest='scan_min_data_in_leaf', action='store_true',help='Enable scan of min_data_in_leaf LGBM par (default=false)')	
+	parser.set_defaults(scan_min_data_in_leaf=False)
+	parser.add_argument('--scan_lr', dest='scan_lr', action='store_true',help='Enable scan of learning_rate LGBM par (default=false)')	
+	parser.set_defaults(scan_lr=False)
+	parser.add_argument('--scan_nestimators', dest='scan_nestimators', action='store_true',help='Enable scan of n_estimators LGBM par (default=false)')	
+	parser.set_defaults(scan_nestimators=False)
+	parser.add_argument('--scan_maxdepth', dest='scan_maxdepth', action='store_true', help='Enable scan of max_depth LGBM par (default=false)')	
+	parser.set_defaults(scan_maxdepth=False)
+	parser.add_argument('--scan_featfract', dest='scan_featfract', action='store_true', help='Enable scan of feature_fraction LGBM par (default=false)')	
+	parser.set_defaults(scan_featfract=False)
+	parser.add_argument('--scan_num_leaves', dest='scan_num_leaves', action='store_true', help='Enable scan of num_leaves LGBM par (default=false)')	
+	parser.set_defaults(scan_num_leaves=False)
+	
 	# - Linear classifier custom options
 	parser.add_argument('-tol','--tol', dest='tol', required=False, type=float, default=None, help='Linear classifier tol parameter')
 	parser.add_argument('-verbosity','--verbosity', dest='verbosity', required=False, type=int, default=None, help='Linear classifier verbosity parameter')
@@ -223,6 +236,13 @@ def main():
 	scan_test_size= args.scan_test_size
 	if args.scan_test_size>1:
 		scan_test_size= int(args.scan_test_size)
+		
+	scan_min_data_in_leaf= args.scan_min_data_in_leaf
+	scan_lr= args.scan_lr
+	scan_nestimators= args.scan_nestimators
+	scan_maxdepth= args.scan_maxdepth
+	scan_featfract= args.scan_featfract
+	scan_num_leaves= args.scan_num_leaves
 	
 	# - Linear classifier options
 	tol= args.tol
@@ -300,6 +320,13 @@ def main():
 	sclass.nsplits= nsplits
 	sclass.optimize_f1score= optimize_f1score
 	sclass.split_samples_in_scan= split_samples_in_scan
+	sclass.scan_min_data_in_leaf= scan_min_data_in_leaf
+	sclass.scan_lr= scan_lr
+	sclass.scan_nestimators= scan_nestimators
+	sclass.scan_maxdepth= scan_maxdepth
+	sclass.scan_featfract= scan_featfract
+	sclass.scan_num_leaves= scan_num_leaves
+	
 	sclass.tol= tol
 	sclass.verbosity= verbosity
 

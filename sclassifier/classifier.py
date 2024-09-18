@@ -183,6 +183,13 @@ class SClassifier(object):
 		self.optimize_f1score= False
 		self.split_samples_in_scan= False
 		
+		self.scan_min_data_in_leaf= False
+		self.scan_lr= False
+		self.scan_nestimators= False
+		self.scan_maxdepth= False
+		self.scan_featfract= False
+		self.scan_num_leaves= False
+		
 		# - Linear classifier custom options
 		self.tol= None # 1.e-3
 		self.verbosity= 1
@@ -1090,8 +1097,11 @@ class SClassifier(object):
 			is_unbalance= False
 			if self.balance_classes:
 				is_unbalance= True
+				
+		max_depth_lgbm= self.max_depth
+		if max_depth_lgbm is None:
+			max_depth_lgbm= -1
 
-	
 		param_grid = {
 			"num_iterations": self.niters,
 			"objective": objective_lgbm,
@@ -1099,30 +1109,39 @@ class SClassifier(object):
 			"verbosity": 0,
 			"boosting_type": "gbdt",
 			"is_provide_training_metric": True,
-			"learning_rate": self.learning_rate,
-			#"learning_rate": trial.suggest_categorical("learning_rate", [0.1,0.2,0.5,0.01,0.05,0.001]),
-			#"learning_rate": trial.suggest_categorical("learning_rate", [0.1]),
-			###"min_data_in_leaf": self.min_samples_leaf,
-			"min_data_in_leaf": trial.suggest_categorical("min_data_in_leaf", [1,2,3,4,5,6,7,8,9,10,15,20,30,40,50,100]),
-			#"min_data_in_leaf": trial.suggest_categorical("min_data_in_leaf", [5]),
 			"class_weight": class_weight,
 			"is_unbalance": is_unbalance,
-			### "device_type": trial.suggest_categorical("device_type", ['gpu']),
-			"n_estimators": trial.suggest_categorical("n_estimators", [1,2,5,10,100,200,1000]),
-			##"n_estimators": trial.suggest_categorical("n_estimators", [100]),
-			"num_leaves": trial.suggest_categorical("num_leaves", [2,5,10,20,30,40,50,100]),
-			##"num_leaves": trial.suggest_categorical("num_leaves", [5]),
-			"max_depth": trial.suggest_int("max_depth", 2, 15, step=1),
-			##"max_depth": trial.suggest_categorical("max_depth", [-1]),
+			"learning_rate": self.learning_rate,
+			"min_data_in_leaf": self.min_samples_leaf,
+			"n_estimators": self.n_estimators,
+			"num_leaves": self.num_leaves,
+			"max_depth": max_depth_lgbm,
+ 			"feature_fraction": self.feature_fraction,
+			##"learning_rate": trial.suggest_categorical("learning_rate", [0.1,0.2,0.5,0.01,0.05,0.001]),
+			##"min_data_in_leaf": trial.suggest_categorical("min_data_in_leaf", [1,2,3,4,5,6,7,8,9,10,15,20,30,40,50,100]),
+			##"n_estimators": trial.suggest_categorical("n_estimators", [1,2,5,10,100,200,1000]),
+			##"num_leaves": trial.suggest_categorical("num_leaves", [2,5,10,20,30,40,50,100]),
+			##"max_depth": trial.suggest_int("max_depth", 2, 15, step=1),
+ 			##"feature_fraction": trial.suggest_float("feature_fraction", 0.1, 1.0, step=0.1),			
 			###"lambda_l1": trial.suggest_int("lambda_l1", 0, 100, step=5),
 			###"lambda_l2": trial.suggest_int("lambda_l2", 0, 100, step=5),
 			###"min_gain_to_split": trial.suggest_float("min_gain_to_split", 0, 15),
-			###"bagging_fraction": trial.suggest_float(
-			###	"bagging_fraction", 0.2, 0.95, step=0.1
-			###),
+			###"bagging_fraction": trial.suggest_float("bagging_fraction", 0.2, 0.95, step=0.1),
  			###"bagging_freq": trial.suggest_categorical("bagging_freq", [1]),
-			"feature_fraction": trial.suggest_float("feature_fraction", 0.1, 1.0, step=0.1),
 		}
+		
+		if self.scan_min_data_in_leaf:
+			param_grid["min_data_in_leaf"]= trial.suggest_categorical("min_data_in_leaf", [1,2,3,4,5,6,7,8,9,10,15,20,30,40,50,100])
+		if self.scan_lr:
+			param_grid["learning_rate"]= trial.suggest_categorical("learning_rate", [0.1,0.2,0.5,0.01,0.05,0.001])
+		if self.scan_nestimators:
+			param_grid["n_estimators"]= trial.suggest_categorical("n_estimators", [1,2,5,10,100,200,1000])
+		if self.scan_num_leaves:
+			param_grid["num_leaves"]= trial.suggest_categorical("num_leaves", [2,5,10,20,30,40,50,100])
+		if self.scan_maxdepth:
+			param_grid["max_depth"]= trial.suggest_int("max_depth", 2, 15, step=1),
+		if self.scan_featfract:
+			param_grid["feature_fraction"]= trial.suggest_float("feature_fraction", 0.1, 1.0, step=0.1)
 
 		# - Define callbacks
 		earlystop_cb= early_stopping(
@@ -1190,6 +1209,10 @@ class SClassifier(object):
 				is_unbalance= True
 
 	
+		max_depth_lgbm= self.max_depth
+		if max_depth_lgbm is None:
+			max_depth_lgbm= -1
+
 		param_grid = {
 			"num_iterations": self.niters,
 			"objective": objective_lgbm,
@@ -1197,30 +1220,40 @@ class SClassifier(object):
 			"verbosity": 0,
 			"boosting_type": "gbdt",
 			"is_provide_training_metric": True,
-			"learning_rate": self.learning_rate,
-			#"learning_rate": trial.suggest_categorical("learning_rate", [0.1,0.2,0.5,0.01,0.05,0.001]),
-			#"learning_rate": trial.suggest_categorical("learning_rate", [0.1]),
-			###"min_data_in_leaf": self.min_samples_leaf,
-			"min_data_in_leaf": trial.suggest_categorical("min_data_in_leaf", [1,2,3,4,5,6,7,8,9,10,15,20,30,40,50,100]),
-			#"min_data_in_leaf": trial.suggest_categorical("min_data_in_leaf", [5]),
 			"class_weight": class_weight,
 			"is_unbalance": is_unbalance,
-			### "device_type": trial.suggest_categorical("device_type", ['gpu']),
-			"n_estimators": trial.suggest_categorical("n_estimators", [1,2,5,10,100,200,1000]),
-			##"n_estimators": trial.suggest_categorical("n_estimators", [100]),
-			"num_leaves": trial.suggest_categorical("num_leaves", [2,5,10,20,30,40,50,100]),
-			##"num_leaves": trial.suggest_categorical("num_leaves", [5]),
-			"max_depth": trial.suggest_int("max_depth", 2, 15, step=1),
-			##"max_depth": trial.suggest_categorical("max_depth", [-1]),
+			"learning_rate": self.learning_rate,
+			"min_data_in_leaf": self.min_samples_leaf,
+			"n_estimators": self.n_estimators,
+			"num_leaves": self.num_leaves,
+			"max_depth": max_depth_lgbm,
+ 			"feature_fraction": self.feature_fraction,
+			##"learning_rate": trial.suggest_categorical("learning_rate", [0.1,0.2,0.5,0.01,0.05,0.001]),
+			##"min_data_in_leaf": trial.suggest_categorical("min_data_in_leaf", [1,2,3,4,5,6,7,8,9,10,15,20,30,40,50,100]),
+			##"n_estimators": trial.suggest_categorical("n_estimators", [1,2,5,10,100,200,1000]),
+			##"num_leaves": trial.suggest_categorical("num_leaves", [2,5,10,20,30,40,50,100]),
+			##"max_depth": trial.suggest_int("max_depth", 2, 15, step=1),
+ 			##"feature_fraction": trial.suggest_float("feature_fraction", 0.1, 1.0, step=0.1),			
 			###"lambda_l1": trial.suggest_int("lambda_l1", 0, 100, step=5),
 			###"lambda_l2": trial.suggest_int("lambda_l2", 0, 100, step=5),
 			###"min_gain_to_split": trial.suggest_float("min_gain_to_split", 0, 15),
-			###"bagging_fraction": trial.suggest_float(
-			###	"bagging_fraction", 0.2, 0.95, step=0.1
-			###),
+			###"bagging_fraction": trial.suggest_float("bagging_fraction", 0.2, 0.95, step=0.1),
  			###"bagging_freq": trial.suggest_categorical("bagging_freq", [1]),
-			"feature_fraction": trial.suggest_float("feature_fraction", 0.1, 1.0, step=0.1),
 		}
+		
+		if self.scan_min_data_in_leaf:
+			param_grid["min_data_in_leaf"]= trial.suggest_categorical("min_data_in_leaf", [1,2,3,4,5,6,7,8,9,10,15,20,30,40,50,100])
+		if self.scan_lr:
+			param_grid["learning_rate"]= trial.suggest_categorical("learning_rate", [0.1,0.2,0.5,0.01,0.05,0.001])
+		if self.scan_nestimators:
+			param_grid["n_estimators"]= trial.suggest_categorical("n_estimators", [1,2,5,10,100,200,1000])
+		if self.scan_num_leaves:
+			param_grid["num_leaves"]= trial.suggest_categorical("num_leaves", [2,5,10,20,30,40,50,100])
+		if self.scan_maxdepth:
+			param_grid["max_depth"]= trial.suggest_int("max_depth", 2, 15, step=1),
+		if self.scan_featfract:
+			param_grid["feature_fraction"]= trial.suggest_float("feature_fraction", 0.1, 1.0, step=0.1)
+
 
 		# - Define data split
 		nsplits= self.nsplits
