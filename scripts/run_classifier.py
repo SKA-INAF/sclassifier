@@ -90,6 +90,7 @@ def get_args():
 	parser.add_argument('-niters','--niters', dest='niters', required=False, type=int, default=100, help='Number of boosting iterations for LGBM classifier and others (TBD)') 
 	parser.add_argument('--importance_type', dest='importance_type', required=False, type=str, default='split', help='LGBM importance_type parameter {"split","gain"}')
 	parser.add_argument('--feature_fraction', dest='feature_fraction', required=False, type=float, default=1.0, help='LGBM feature_fraction parameter (default=1.0)')
+	parser.add_argument('--max_bin', dest='max_bin', required=False, type=int, default=255, help='LGBM max_bin parameter (default=1.0)')
 	
 	parser.add_argument('--early_stop_round', dest='early_stop_round', required=False, type=int, default=10, help='LGBM early_stop_round if val data is available (default=10)')
 	parser.add_argument('--scan_test_size', dest='scan_test_size', required=False, type=float, default=0.3, help='LGBM scan fold test size. (default=0.2)')
@@ -111,6 +112,8 @@ def get_args():
 	parser.set_defaults(scan_featfract=False)
 	parser.add_argument('--scan_num_leaves', dest='scan_num_leaves', action='store_true', help='Enable scan of num_leaves LGBM par (default=false)')	
 	parser.set_defaults(scan_num_leaves=False)
+	parser.add_argument('--scan_maxbin', dest='scan_maxbin', action='store_true', help='Enable scan of max_bin LGBM par (default=false)')	
+	parser.set_defaults(scan_maxbin=False)
 	
 	# - Linear classifier custom options
 	parser.add_argument('-tol','--tol', dest='tol', required=False, type=float, default=None, help='Linear classifier tol parameter')
@@ -229,6 +232,7 @@ def main():
 	niters= args.niters
 	importance_type= args.importance_type
 	feature_fraction= args.feature_fraction
+	max_bin= args.max_bin
 	early_stop_round= args.early_stop_round
 	nsplits= args.nsplits
 	optimize_f1score= args.optimize_f1score
@@ -243,6 +247,7 @@ def main():
 	scan_maxdepth= args.scan_maxdepth
 	scan_featfract= args.scan_featfract
 	scan_num_leaves= args.scan_num_leaves
+	scan_maxbin= args.scan_maxbin
 	
 	# - Linear classifier options
 	tol= args.tol
@@ -311,6 +316,7 @@ def main():
 	sclass.n_estimators= n_estimators
 	sclass.num_leaves= num_leaves
 	sclass.learning_rate= learning_rate
+	sclass.max_bin= max_bin
 	sclass.niters= niters
 	sclass.balance_classes= balance_classes
 	sclass.importance_type= importance_type
@@ -326,6 +332,7 @@ def main():
 	sclass.scan_maxdepth= scan_maxdepth
 	sclass.scan_featfract= scan_featfract
 	sclass.scan_num_leaves= scan_num_leaves
+	sclass.scan_maxbin= scan_maxbin
 	
 	sclass.tol= tol
 	sclass.verbosity= verbosity

@@ -171,6 +171,7 @@ class SClassifier(object):
 		self.nclasses= 7
 		self.multiclass= multiclass
 		self.balance_classes= False
+		self.max_bin= 255
 
 		# - LGBM custom options
 		self.feature_fraction= 1.0
@@ -189,6 +190,7 @@ class SClassifier(object):
 		self.scan_maxdepth= False
 		self.scan_featfract= False
 		self.scan_num_leaves= False
+		self.scan_maxbin= False
 		
 		# - Linear classifier custom options
 		self.tol= None # 1.e-3
@@ -382,6 +384,7 @@ class SClassifier(object):
 				class_weight=class_weight,
 				importance_type=self.importance_type,
 				feature_fraction=self.feature_fraction,
+				max_bin=self.max_bin,
 				verbose=1
 				#num_class=self.nclasses
 			)
@@ -409,6 +412,7 @@ class SClassifier(object):
 				is_unbalance=is_unbalance,
 				importance_type=self.importance_type,
 				feature_fraction=self.feature_fraction,
+				max_bin=self.max_bin,
 				verbose=1
 				#num_class=self.nclasses
 			)
@@ -1117,6 +1121,7 @@ class SClassifier(object):
 			"num_leaves": self.num_leaves,
 			"max_depth": max_depth_lgbm,
  			"feature_fraction": self.feature_fraction,
+ 			"max_bin": self.max_bin,
 			##"learning_rate": trial.suggest_categorical("learning_rate", [0.1,0.2,0.5,0.01,0.05,0.001]),
 			##"min_data_in_leaf": trial.suggest_categorical("min_data_in_leaf", [1,2,3,4,5,6,7,8,9,10,15,20,30,40,50,100]),
 			##"n_estimators": trial.suggest_categorical("n_estimators", [1,2,5,10,100,200,1000]),
@@ -1142,6 +1147,8 @@ class SClassifier(object):
 			param_grid["max_depth"]= trial.suggest_int("max_depth", 2, 15, step=1),
 		if self.scan_featfract:
 			param_grid["feature_fraction"]= trial.suggest_float("feature_fraction", 0.1, 1.0, step=0.1)
+		if self.scan_maxbin:
+			param_grid["max_bin"]= trial.suggest_int("max_bin", 10, 260, step=10)
 
 		print("param_grid")
 		print(param_grid)
@@ -1231,6 +1238,7 @@ class SClassifier(object):
 			"num_leaves": self.num_leaves,
 			"max_depth": max_depth_lgbm,
  			"feature_fraction": self.feature_fraction,
+ 			"max_bin": self.max_bin,
 			##"learning_rate": trial.suggest_categorical("learning_rate", [0.1,0.2,0.5,0.01,0.05,0.001]),
 			##"min_data_in_leaf": trial.suggest_categorical("min_data_in_leaf", [1,2,3,4,5,6,7,8,9,10,15,20,30,40,50,100]),
 			##"n_estimators": trial.suggest_categorical("n_estimators", [1,2,5,10,100,200,1000]),
@@ -1256,7 +1264,9 @@ class SClassifier(object):
 			param_grid["max_depth"]= trial.suggest_int("max_depth", 2, 15, step=1),
 		if self.scan_featfract:
 			param_grid["feature_fraction"]= trial.suggest_float("feature_fraction", 0.1, 1.0, step=0.1)
-
+		if self.scan_maxbin:
+			param_grid["max_bin"]= trial.suggest_int("max_bin", 10, 260, step=10)
+			
 		print("param_grid")
 		print(param_grid)
 
