@@ -1143,6 +1143,9 @@ class SClassifier(object):
 		if self.scan_featfract:
 			param_grid["feature_fraction"]= trial.suggest_float("feature_fraction", 0.1, 1.0, step=0.1)
 
+		print("param_grid")
+		print(param_grid)
+
 		# - Define callbacks
 		earlystop_cb= early_stopping(
 			stopping_rounds=self.early_stop_round, 
@@ -1254,6 +1257,8 @@ class SClassifier(object):
 		if self.scan_featfract:
 			param_grid["feature_fraction"]= trial.suggest_float("feature_fraction", 0.1, 1.0, step=0.1)
 
+		print("param_grid")
+		print(param_grid)
 
 		# - Define data split
 		nsplits= self.nsplits
