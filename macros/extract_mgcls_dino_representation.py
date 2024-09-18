@@ -32,13 +32,7 @@ from torchvision import datasets
 from torchvision import transforms as pth_transforms
 from torchvision import models as torchvision_models
 from torch.utils.data import Dataset, DataLoader
-
-
-class ReturnIndexDataset(datasets.ImageFolder):
-    def __getitem__(self, idx):
-        img, lab = super(ReturnIndexDataset, self).__getitem__(idx)
-        return img, idx
-        
+     
         
 ######################################
 ###      DATASET
@@ -273,6 +267,10 @@ def get_args():
 	parser.add_argument('--in_chans', default = 1, type = int, help = 'Length of subset of dataset to use.')
 	parser.add_argument('--set_zero_to_min', dest='shift_zero_to_min', action='store_true',help='Set blank pixels to min>0 (default=false)')	
 	parser.set_defaults(set_zero_to_min=False)
+	parser.add_argument('--center_crop', dest='center_crop', action='store_true', help='Center crop image to fixed desired size in pixel, specified in crop_size option (default=no)')	
+	parser.set_defaults(center_crop=False)
+	parser.add_argument('-crop_size', '--crop_size', dest='crop_size', required=False, type=int, default=224, action='store',help='Crop size in pixels (default=224)')
+	
 	
 	# - Model options
 	parser.add_argument('--batch_size_per_gpu', default=1, type=int, help='Per-GPU batch-size')
@@ -354,30 +352,24 @@ def main():
 	#===========================
 	#==   SET DATA LOADER
 	#===========================
+	# - Set data transform
 	data_mean= (0.485, 0.456, 0.406)
 	data_std= (0.229, 0.224, 0.225)
 	#data_mean= (0.0, 0.0, 0.0)
 	#data_std= (1.0, 1.0, 1.0) 
 	
-	transform_RGB = pth_transforms.Compose([
-		pth_transforms.Resize(imgsize, interpolation=3),
-		pth_transforms.ToTensor(),
-		#pth_transforms.Normalize(data_mean, data_std),
-	])
+	tlist= []
+	#tlist.append( pth_transforms.Resize(imgsize, interpolation=3) )
+	if args.center_crop:
+		tlist.append( tlist.append(pth_transforms.CenterCrop(args.crop_size) )
+		
+	tlist.append( pth_transforms.Resize(imgsize, interpolation=3) )	
+	tlist.append( pth_transforms.ToTensor() )
+	#tlist.append( pth_transforms.Normalize(data_mean, data_std) )
 	
-	transform_gray = pth_transforms.Compose([
-		pth_transforms.Resize(imgsize, interpolation=3),
-		pth_transforms.ToTensor(),
-		#pth_transforms.Normalize(data_mean, data_std),
-	])
+	transform= pth_transforms.Compose(tlist)
 	
-	if args.in_chans==1:
-		transform= transform_gray
-	elif args.in_chans==3:
-		transform= transform_RGB
-	else:
-		print("ERROR: Invalid/unknown in_chan (%d)!" % (args.in_chans))
-	
+	# - Set dataset
 	dataset= AstroImageDataset(
 		filename=datalist,
 		transform=transform,
@@ -429,7 +421,6 @@ def main():
 			print("Bad data image %d, skipping ..." % (i+1))
 			continue
 
-		
 		# - Run inference
 		with torch.no_grad():
 			feats = model(imgs)
