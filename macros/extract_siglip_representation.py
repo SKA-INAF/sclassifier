@@ -66,8 +66,10 @@ def get_args():
 	# - Data options
 	parser.add_argument('-nmax','--nmax', dest='nmax', required=False, type=int, default=-1, help='Max number of entries processed in filelist (-1=all)') 
 	parser.add_argument('--imgsize', default=256, type=int, help='Image resize size in pixels (default=256)')
-	parser.add_argument('--reset_meanstd', dest='reset_meanstd', action='store_true',help='Apply zscale transform (default=false)')	
+	parser.add_argument('--reset_meanstd', dest='reset_meanstd', action='store_true',help='Reset original mean/std transform used in processor (default=false)')	
 	parser.set_defaults(reset_meanstd=False)
+	parser.add_argument('--reset_rescale', dest='reset_rescale', action='store_true',help='Reset original rescale transform used in processor (default=false)')	
+	parser.set_defaults(reset_rescale=False)
 	
 	parser.add_argument('--zscale', dest='zscale', action='store_true',help='Apply zscale transform (default=false)')	
 	parser.set_defaults(zscale=False)
@@ -343,16 +345,13 @@ def main():
 		processor.image_processor.image_mean= [0.,0.,0.]
 		processor.image_processor.image_std= [1.,1.,1.]
 		
+	if args.reset_rescale
+		processor.image_processor.do_rescale= False
+		processor.image_processor.rescale_factor= 1.0
+		
 	print("== FINAL PROCESSOR OPTIONS ==")
-	imgsize_final= (image_processor.size["height"], image_processor.size["width"])
-	imgmean_final= image_processor.image_mean
-	imgstd_final= image_processor.image_std
-	print("imgsize_final")
-	print(imgsize_final)
-	print("imgmean_final")
-	print(imgmean_final)
-	print("imgstd_final")
-	print(imgstd_final)	
+	print("image_processor")
+	print(processor.image_processor)	
 	
 	# - Loop over images and get representation
 	feature_list= []
