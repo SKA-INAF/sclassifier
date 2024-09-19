@@ -321,6 +321,8 @@ def main():
 	
 	print("image_processor")
 	print(image_processor)
+	print("image_processor.size")
+	print(image_processor.size)
 	
 	print("== ORIGINAL PROCESSOR OPTIONS ==")
 	imgsize_orig= (image_processor["size"]["height"], image_processor["size"]["width"])
