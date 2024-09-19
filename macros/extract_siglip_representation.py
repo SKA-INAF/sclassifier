@@ -345,7 +345,7 @@ def main():
 		processor.image_processor.image_mean= [0.,0.,0.]
 		processor.image_processor.image_std= [1.,1.,1.]
 		
-	if args.reset_rescale
+	if args.reset_rescale:
 		processor.image_processor.do_rescale= False
 		processor.image_processor.rescale_factor= 1.0
 		
