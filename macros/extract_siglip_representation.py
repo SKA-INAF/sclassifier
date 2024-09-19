@@ -317,6 +317,9 @@ def main():
 	# - Load model processor
 	print("INFO: Loading model processor ...")
 	processor = AutoProcessor.from_pretrained(model_id)
+	image_processor= processor.image_processor
+	print("image_processor")
+	print(image_processor)
 	
 	print("== ORIGINAL PROCESSOR OPTIONS ==")
 	imgsize_orig= (processor.image_processor.size.height, processor.image_processor.size.width)
