@@ -65,7 +65,10 @@ def get_args():
 	
 	# - Data options
 	parser.add_argument('-nmax','--nmax', dest='nmax', required=False, type=int, default=-1, help='Max number of entries processed in filelist (-1=all)') 
-	parser.add_argument('--imgsize', default=224, type=int, help='Image resize size in pixels')
+	parser.add_argument('--imgsize', default=256, type=int, help='Image resize size in pixels (default=256)')
+	parser.add_argument('--reset_meanstd', dest='reset_meanstd', action='store_true',help='Apply zscale transform (default=false)')	
+	parser.set_defaults(reset_meanstd=False)
+	
 	parser.add_argument('--zscale', dest='zscale', action='store_true',help='Apply zscale transform (default=false)')	
 	parser.set_defaults(zscale=False)
 	parser.add_argument('--norm_min', default=0., type=float, help='Norm min (default=0)')
@@ -314,7 +317,37 @@ def main():
 	# - Load model processor
 	print("INFO: Loading model processor ...")
 	processor = AutoProcessor.from_pretrained(model_id)
-
+	
+	print("== ORIGINAL PROCESSOR OPTIONS ==")
+	imgsize_orig= (processor.size.height, processor.size.width)
+	imgmean_orig= processor.image_mean
+	imgstd_orig= processor.image_std
+	print("imgsize_orig")
+	print(imgsize_orig)
+	print("imgmean_orig")
+	print(imgmean_orig)
+	print("imgstd_orig")
+	print(imgstd_orig)
+	
+	# - Update processor options
+	processor.size.height= args.imgsize
+	processor.size.width= args.imgsize
+	
+	if args.reset_meanstd:
+		processor.image_mean= [0.,0.,0.]
+		processor.image_std= [1.,1.,1.]
+		
+	print("== FINAL PROCESSOR OPTIONS ==")
+	imgsize_final= (processor.size.height, processor.size.width)
+	imgmean_final= processor.image_mean
+	imgstd_final= processor.image_std
+	print("imgsize_final")
+	print(imgsize_final)
+	print("imgmean_final")
+	print(imgmean_final)
+	print("imgstd_final")
+	print(imgstd_final)	
+	
 	# - Loop over images and get representation
 	feature_list= []
 	snames= []
