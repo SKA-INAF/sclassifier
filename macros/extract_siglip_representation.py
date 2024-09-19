@@ -321,13 +321,13 @@ def main():
 	
 	print("image_processor")
 	print(image_processor)
-	print("image_processor.size")
-	print(image_processor.size)
+	#print("image_processor.size")
+	#print(image_processor.size)
 	
 	print("== ORIGINAL PROCESSOR OPTIONS ==")
-	imgsize_orig= (image_processor["size"]["height"], image_processor["size"]["width"])
-	imgmean_orig= image_processor["image_mean"]
-	imgstd_orig= image_processor["image_std"]
+	imgsize_orig= (image_processor.size["height"], image_processor.size["width"])
+	imgmean_orig= image_processor.image_mean
+	imgstd_orig= image_processor.image_std
 	print("imgsize_orig")
 	print(imgsize_orig)
 	print("imgmean_orig")
@@ -336,17 +336,17 @@ def main():
 	print(imgstd_orig)
 	
 	# - Update processor options
-	processor.image_processor["size"]["height"]= args.imgsize
-	processor.image_processor["size"]["width"]= args.imgsize
+	processor.image_processor.size["height"]= args.imgsize
+	processor.image_processor.size["width"]= args.imgsize
 	
 	if args.reset_meanstd:
-		processor.image_processor["image_mean"]= [0.,0.,0.]
-		processor.image_processor["image_std"]= [1.,1.,1.]
+		processor.image_processor.image_mean= [0.,0.,0.]
+		processor.image_processor.image_std= [1.,1.,1.]
 		
 	print("== FINAL PROCESSOR OPTIONS ==")
-	imgsize_final= (image_processor["size"]["height"], image_processor["size"]["width"])
-	imgmean_final= image_processor["image_mean"]
-	imgstd_final= image_processor["image_std"]
+	imgsize_final= (image_processor.size["height"], image_processor.size["width"])
+	imgmean_final= image_processor.image_mean
+	imgstd_final= image_processor.image_std
 	print("imgsize_final")
 	print(imgsize_final)
 	print("imgmean_final")
