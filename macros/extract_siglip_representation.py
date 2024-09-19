@@ -65,7 +65,6 @@ def get_args():
 	
 	# - Data options
 	parser.add_argument('-nmax','--nmax', dest='nmax', required=False, type=int, default=-1, help='Max number of entries processed in filelist (-1=all)') 
-	parser.add_argument('--in_chans', default=1, type=int, help = 'Length of subset of dataset to use.')
 	parser.add_argument('--imgsize', default=224, type=int, help='Image resize size in pixels')
 	parser.add_argument('--zscale', dest='zscale', action='store_true',help='Apply zscale transform (default=false)')	
 	parser.set_defaults(zscale=False)
