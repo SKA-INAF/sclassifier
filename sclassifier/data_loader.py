@@ -32,6 +32,7 @@ from astropy.stats import sigma_clipped_stats
 from sklearn.model_selection import train_test_split
 import imgaug
 from imgaug import augmenters as iaa
+from PIL import Image
 
 ## OPENCV
 import cv2
@@ -229,6 +230,7 @@ class SourceData(object):
 		# - Read images
 		nimgs= len(self.filepaths)
 		self.nchannels= nimgs
+		fileext= os.path.splitext(self.filepaths[0])[1]
 		#print("filepaths")
 		#print(self.filepaths)
 
@@ -236,11 +238,15 @@ class SourceData(object):
 			# - Read image
 			logger.debug("Reading file %s ..." % filename) 
 			data= None
-			try:
-				data, header, wcs= Utils.read_fits(filename)
-			except Exception as e:
-				logger.error("Failed to read image data from file %s (err=%s)!" % (filename,str(e)))
-				return -1
+			if fileext=='.fits':
+				try:
+					data, header, wcs= Utils.read_fits(filename)
+				except Exception as e:
+					logger.error("Failed to read image data from file %s (err=%s)!" % (filename,str(e)))
+					return -1
+			else:
+				image= Image.open(filename)
+				data= np.asarray(image)
 
 			# - Compute data mask
 			#   NB: =1 good values, =0 bad (pix=0 or pix=inf or pix=nan)
