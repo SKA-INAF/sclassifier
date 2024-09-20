@@ -238,6 +238,7 @@ class SourceData(object):
 			# - Read image
 			logger.debug("Reading file %s ..." % filename) 
 			data= None
+			header= None
 			if fileext=='.fits':
 				try:
 					data, header, wcs= Utils.read_fits(filename)
