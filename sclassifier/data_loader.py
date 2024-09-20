@@ -246,7 +246,7 @@ class SourceData(object):
 					return -1
 			else:
 				image= Image.open(filename)
-				data= np.asarray(image)
+				data= np.asarray(image).copy()
 
 			# - Compute data mask
 			#   NB: =1 good values, =0 bad (pix=0 or pix=inf or pix=nan)
