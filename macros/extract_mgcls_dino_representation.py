@@ -182,6 +182,71 @@ class AstroImageDataset(Dataset):
 		return data_transf, is_good_data
 
 
+	def __transform_data(self, data):
+		""" Transform numpy data """
+
+		is_good_data= True
+
+		# - Set NANs to image min
+		if self.set_zero_to_min:
+			cond= np.logical_and(data!=0, np.isfinite(data))
+		else:
+			cond= np.isfinite(data)
+				
+		data_1d= data[cond]
+		if data_1d.size==0:
+			is_good_data= False
+			print("WARN: All NAN image, setting image to 0...")
+			data[~cond]= 0
+			return data.astype(np.uint8), is_good_data
+			#return None
+
+		data_min= np.min(data_1d)
+		data[~cond]= data_min
+
+		data_transf= data
+		
+		print("== DATA MIN/MAX ==")
+		print(data_transf.min())
+		print(data_transf.max())
+
+		# - Clip data?
+		if self.clip_data:
+			data_clipped= self.__get_clipped_data(data_transf, sigma_low=5, sigma_up=30)
+			data_transf= data_clipped
+
+		# - Apply zscale stretch
+		if self.apply_zscale:
+			print("Apply zscale stretch ...")
+			data_stretched= self.__get_zscaled_data(data_transf, contrast=0.25)
+			data_transf= data_stretched
+
+		# - Convert to uint8
+		#data_transf= (data_transf*255.).astype(np.uint8)
+		
+		# - Normalize to range
+		data_min= data_transf.min()
+		data_max= data_transf.max()
+		norm_min= self.norm_range[0]
+		norm_max= self.norm_range[1]
+		if norm_min==data_min and norm_max==data_max:
+			print("INFO: Data already normalized in range (%f,%f)" % (norm_min, norm_max))
+		else:
+			data_norm= (data_transf-data_min)/(data_max-data_min) * (norm_max-norm_min) + norm_min
+			data_transf= data_norm
+			
+		print("== DATA MIN/MAX (AFTER TRANSF) ==")
+		print(data_transf.min())
+		print(data_transf.max())
+	
+		# - Convert to uint8
+		if self.to_uint8:
+			data_transf= data_transf.astype(np.uint8)
+	
+		return data_transf, is_good_data
+
+
+
 	def load_image(self, idx):
 		""" Load image """
 
@@ -191,16 +256,25 @@ class AstroImageDataset(Dataset):
 		image_ext= os.path.splitext(image_path)[1]
 		print("INFO: Reading image %s ..." % (image_path))
 
-		# - Read FITS image as numpy array and then convert to PIL
+		# - Read FITS image as numpy array
 		is_good_data= True
 		if image_ext=='.fits':
-			data, is_good_data= self.__read_fits(image_path)
-			if data is None or not is_good_data:
-				print("WARN: Failed to read FITS data ...")
-				#return None
-			image= Image.fromarray(data)
+			data= fits.open(filename)[0].data
+			##data, is_good_data= self.__read_fits(image_path)
+			##if data is None or not is_good_data:
+			##	print("WARN: Failed to read FITS data ...")
+			##	###return None
+			###image= Image.fromarray(data)
 		else:
-			image= Image.open(image_path)
+			###image= Image.open(image_path)
+			data= np.asarray(Image.open(image_path))
+			
+		# - Transform numpy array
+		data_transf, is_good_data= self.__transform_data(data)
+		data= data_transf
+			
+		# - Convert numpy to PIL image
+		image= Image.fromarray(data)
 
 		# - Convert to RGB image
 		if self.in_chans==3:
