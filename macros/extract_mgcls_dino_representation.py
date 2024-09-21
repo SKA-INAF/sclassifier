@@ -150,6 +150,7 @@ class AstroImageDataset(Dataset):
 
 		# - Apply zscale stretch
 		if self.apply_zscale:
+			print("Apply zscale stretch ...")
 			data_stretched= self.__get_zscaled_data(data_transf, contrast=0.25)
 			data_transf= data_stretched
 
