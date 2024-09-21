@@ -60,6 +60,20 @@ def get_args():
 	# - Input options
 	parser.add_argument('-inputfile','--inputfile', dest='inputfile', required=True, type=str, help='Path to file with image datalist (.json)') 
 	
+	# - Data options
+	parser.add_argument('--imgsize', default=224, type=int, help='Image resize size in pixels')
+	parser.add_argument('--clip_data', dest='clip_data', action='store_true',help='Apply sigma clipping transform (default=false)')	
+	parser.set_defaults(clip_data=False)
+	parser.add_argument('--zscale', dest='zscale', action='store_true',help='Apply zscale transform (default=false)')	
+	parser.set_defaults(zscale=False)
+	parser.add_argument('--norm_min', default=0., type=float, help='Norm min (default=0)')
+	parser.add_argument('--norm_max', default=1., type=float, help='Norm max (default=1)')
+	parser.add_argument('--to_uint8', dest='to_uint8', action='store_true',help='Convert to uint8 (default=false)')	
+	parser.set_defaults(to_uint8=False)
+	parser.add_argument('--set_zero_to_min', dest='shift_zero_to_min', action='store_true',help='Set blank pixels to min>0 (default=false)')	
+	parser.set_defaults(set_zero_to_min=False)
+	parser.add_argument('--in_chans', default = 1, type = int, help = 'Length of subset of dataset to use.')
+	
 	# - Model option
 	parser.add_argument('-model','--model', dest='model', required=False, type=str, default="dinov2_vits14", help='DINO v2 pretrained model {dinov2_vits14,dinov2_vits14_reg,dinov2_vitl14,dinov2_vitl14_reg}') 
 	
@@ -70,112 +84,151 @@ def get_args():
 
 	return args
 	
-	
-def sigma_clipping(data, sigma_low, sigma_up, sigma_bkg=3):
-	""" Clip input data """
 
-	# - Get 1D data
+	
+def get_clipped_data(self, data, sigma_low=5, sigma_up=30):
+	""" Apply sigma clipping to input data and return transformed data """
+
+	# - Find NaNs pixels
 	cond= np.logical_and(data!=0, np.isfinite(data))
 	data_1d= data[cond]
-	
-	# - Subtract background
-	bkgval, _, _ = sigma_clipped_stats(data_1d, sigma=sigma_bkg)
-	data_bkgsub= data - bkgval
-	data= data_bkgsub
 
 	# - Clip all pixels that are below sigma clip
-	cond= np.logical_and(data!=0, np.isfinite(data))
-	data_1d= data[cond]
 	res= sigma_clip(data_1d, sigma_lower=sigma_low, sigma_upper=sigma_up, masked=True, return_bounds=True)
-	thr_low= float(res[1])
-	thr_up= float(res[2])
-	#print("thr_low=%f, thr_up=%f" % (thr_low, thr_up))
+	thr_low= res[1]
+	thr_up= res[2]
 
 	data_clipped= np.copy(data)
 	data_clipped[data_clipped<thr_low]= thr_low
 	data_clipped[data_clipped>thr_up]= thr_up
-	
+
+	# - Set NaNs to 0
+	data_clipped[~cond]= 0
+
 	return data_clipped
 
-def zscale_stretch(data, contrast):
-	""" Apply zscale stretch """	
-	
-	transform = ZScaleInterval(contrast=contrast)
-	data_stretched = transform(data)
-	
-	return data_stretched
 
-def transform_img(data, contrast, clip_data, sigma_low, sigma_up, sigma_bkg=3):
+def get_zscaled_data(self, data, contrast=0.25):
+	""" Apply sigma clipping to input data and return transformed data """
+
+	# - Find NaNs pixels
+	cond= np.logical_and(data!=0, np.isfinite(data))
+
+	# - Apply zscale transform
+	transform= ZScaleInterval(contrast=contrast)
+	data_transf= transform(data)	
+
+	# - Set NaNs to 0
+	data_transf[~cond]= 0
+
+	return data_transf
+
+
+def transform_img(data, args):
 	""" Transform input data """
-
-	data_transf= np.copy(data)
 	
-	# - Replace nan values with min
-	cond= np.logical_and(data_transf!=0, np.isfinite(data_transf))
+	data_transf= np.copy(data)
+
+	# - Set NANs to image min
+	if args.set_zero_to_min:
+		cond= np.logical_and(data_transf!=0, np.isfinite(data_transf))
+	else:
+		cond= np.isfinite(data_transf)
+				
 	data_1d= data_transf[cond]
-	if data_1d.size == 0:
+	if data_1d.size==0:
 		print("WARN: Input data are all zeros/nan, return None!")
 		return None
-		
+			
 	data_min= np.min(data_1d)
-	data_transf[~np.isfinite(data_transf)]= data_min 
+	data_transf[~cond]= data_min
+
+	print("== DATA MIN/MAX ==")
+	print(data_transf.min())
+	print(data_transf.max())
 
 	# - Clip data?
-	if clip_data:
-		data_clipped= sigma_clipping(data_transf, sigma_low, sigma_up, sigma_bkg)
+	if args.clip_data:
+		data_clipped= get_clipped_data(data_transf, sigma_low=5, sigma_up=30)
 		data_transf= data_clipped
 
 	# - Apply zscale stretch
-	data_stretched= zscale_stretch(data_transf, contrast=contrast)
-	data_transf= data_stretched 
+	if args.zscale:
+		print("Apply zscale stretch ...")
+		data_stretched= get_zscaled_data(data_transf, contrast=0.25)
+		data_transf= data_stretched
+
+	# - Convert to uint8
+	#data_transf= (data_transf*255.).astype(np.uint8)
+		
+	# - Normalize to range
+	data_min= data_transf.min()
+	data_max= data_transf.max()
+	norm_min= args.norm_range[0]
+	norm_max= args.norm_range[1]
+	if norm_min==data_min and norm_max==data_max:
+		print("INFO: Data already normalized in range (%f,%f)" % (norm_min, norm_max))
+	else:
+		data_norm= (data_transf-data_min)/(data_max-data_min) * (norm_max-norm_min) + norm_min
+		data_transf= data_norm
+			
+	print("== DATA MIN/MAX (AFTER TRANSF) ==")
+	print(data_transf.min())
+	print(data_transf.max())
 	
 	# - Convert to uint8
-	data_transf= (data_transf*255.).astype(np.uint8)
+	if args.to_uint8:
+		data_transf= data_transf.astype(np.uint8)
+	
+	return data_transf
 
-	# - Convert to 3 channels
-	data_cube= np.zeros((data_transf.shape[0], data_transf.shape[1], 3), dtype=data_transf.dtype)
-	data_cube[:,:,0]= data_transf
-	data_cube[:,:,1]= data_transf
-	data_cube[:,:,2]= data_transf
+
+def read_img(filename, args):
+	""" Read fits image """
+
+	# - Check filename
+	if filename=="":
+		return None
 	
-	# - Import image in pytorch
-	PIL_image = Image.fromarray(data_cube)
+	file_ext= os.path.splitext(filename)[1]
+		
+	# - Read fits image
+	if file_ext=='.fits':
+		data= fits.open(filename)[0].data
+	else:
+		image= Image.open(image_path)
+		data= np.asarray(image)
 	
-	# - Resize
+	if data is None:
+		return None
+		
+	# - Apply transform to numpy array
+	data_transf= transform_img(data)
+	data= data_transf
+	
+	# - Convert numpy to PIL image
+	image = Image.fromarray(data)
+	
+	# - Convert to RGB image
+	if args.in_chans==3:
+		image= image.convert("RGB")
+
+	print("--> image.shape")
+	print(np.asarray(image).shape)	
+		
+	# - Apply other transforms (e.g. resize, model-specific transforms)
 	transform = T.Compose(
   	[
-  	  T.Resize(224, interpolation=T.InterpolationMode.BICUBIC),
+  	  T.Resize(args.imgsize, interpolation=T.InterpolationMode.BICUBIC),
   	  T.ToTensor(),
   	  #T.Normalize(mean=[0.5], std=[0.5])
   	  T.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
   	]
 	)
 	
-	img= transform(PIL_image)[:3].unsqueeze(0)
-	#print(type(img))
+	image_tensor= transform(image)[:3].unsqueeze(0)
 	
-	return img
-	
-def read_img(filename):
-	""" Read fits image """
-
-	# - Check filename
-	if filename=="":
-		return None
-		
-	# - Read fits image
-	data= fits.open(filename)[0].data
-	if data is None:
-		return None
-		
-	# - Apply transform
-	img= transform_img(data, 
-		contrast=0.25, 
-		clip_data=False, 
-		sigma_low=5, sigma_up=30, sigma_bkg=3
-	)
-	
-	return img
+	return image_tensor
 	
 def write_ascii(data, filename, header=''):
 	""" Write data to ascii file """
@@ -265,15 +318,15 @@ def main():
 		class_id= datalist[i]["id"]
 		
 		print("INFO: Reading image %s ..." % (filename))
-		img= read_img(filename)
-		if img is None:
+		image_tensor= read_img(filename, args)
+		if image_tensor is None:
 			print("WARN: Read/processed image %s is None, skip to next!" % (filename))
 			continue
 		
 		# - Extract model prediction
 		with torch.no_grad():
-			features = model(img.to(device))[0]
-			##features = model(img.to("cuda"))[0]
+			features = model(image_tensor.to(device))[0]
+			##features = model(image_tensor.to("cuda"))[0]
 	
 		features_numpy= features.cpu().numpy()
 		
