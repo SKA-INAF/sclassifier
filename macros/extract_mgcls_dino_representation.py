@@ -186,26 +186,25 @@ class AstroImageDataset(Dataset):
 		""" Transform numpy data """
 
 		is_good_data= True
+		data_transf= np.copy(data)
 
 		# - Set NANs to image min
 		if self.set_zero_to_min:
-			cond= np.logical_and(data!=0, np.isfinite(data))
+			cond= np.logical_and(data_transf!=0, np.isfinite(data_transf))
 		else:
-			cond= np.isfinite(data)
+			cond= np.isfinite(data_transf)
 				
-		data_1d= data[cond]
+		data_1d= data_transf[cond]
 		if data_1d.size==0:
 			is_good_data= False
 			print("WARN: All NAN image, setting image to 0...")
-			data[~cond]= 0
-			return data.astype(np.uint8), is_good_data
+			data_transf[~cond]= 0
+			return data_transf.astype(np.uint8), is_good_data
 			#return None
 
 		data_min= np.min(data_1d)
-		data[~cond]= data_min
+		data_transf[~cond]= data_min
 
-		data_transf= data
-		
 		print("== DATA MIN/MAX ==")
 		print(data_transf.min())
 		print(data_transf.max())
