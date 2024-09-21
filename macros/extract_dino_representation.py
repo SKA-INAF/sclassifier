@@ -196,7 +196,7 @@ def read_img(filename, args):
 	if file_ext=='.fits':
 		data= fits.open(filename)[0].data
 	else:
-		image= Image.open(image_path)
+		image= Image.open(filename)
 		data= np.asarray(image)
 	
 	if data is None:
