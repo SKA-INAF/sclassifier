@@ -316,6 +316,9 @@ def main():
 	imgsize= args.imgsize
 	nmax= args.nmax
 	
+	print("args.zscale")
+	print(args.zscale)
+	
 	#===========================
 	#==   BUILD MODEL
 	#===========================
