@@ -164,8 +164,8 @@ def transform_img(data, args):
 	# - Normalize to range
 	data_min= data_transf.min()
 	data_max= data_transf.max()
-	norm_min= args.norm_range[0]
-	norm_max= args.norm_range[1]
+	norm_min= args.norm_min
+	norm_max= args.norm_max
 	if norm_min==data_min and norm_max==data_max:
 		print("INFO: Data already normalized in range (%f,%f)" % (norm_min, norm_max))
 	else:
