@@ -203,7 +203,7 @@ def read_img(filename, args):
 		return None
 		
 	# - Apply transform to numpy array
-	data_transf= transform_img(data)
+	data_transf= transform_img(data, args)
 	data= data_transf
 	
 	# - Convert numpy to PIL image
