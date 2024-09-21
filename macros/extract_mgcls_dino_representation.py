@@ -50,6 +50,9 @@ class AstroImageDataset(Dataset):
 		self.norm_range= norm_range
 		self.to_uint8= to_uint8
 		self.set_zero_to_min= set_zero_to_min
+		
+		print("self.apply_zscale")
+		print(self.apply_zscale)
 
 	def __getitem__(self, idx):
 		""" Override getitem method """
