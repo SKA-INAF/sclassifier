@@ -202,6 +202,8 @@ def read_img(filename, args):
 	if filename=="":
 		return None
 		
+	file_ext= os.path.splitext(filename)[1]
+	
 	# - Read fits image
 	if file_ext=='.fits':
 		data= fits.open(filename)[0].data
