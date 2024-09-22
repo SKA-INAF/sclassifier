@@ -82,7 +82,6 @@ def get_args():
 	parser.add_argument('--in_chans', default = 1, type = int, help = 'Length of subset of dataset to use.')
 	parser.add_argument('--set_zero_to_min', dest='shift_zero_to_min', action='store_true',help='Set blank pixels to min>0 (default=false)')	
 	parser.set_defaults(set_zero_to_min=False)
-	parser.add_argument('--in_chans', default = 1, type = int, help = 'Length of subset of dataset to use.')
 	
 	# - Model option
 	parser.add_argument('-model','--model', dest='model', required=False, type=str, default="google/siglip-so400m-patch14-384", help='SigLIP pretrained model {google/siglip-so400m-patch14-384,google/siglip-so400m-patch14-224,google/siglip-base-patch16-256,google/siglip-large-patch16-256}') 
