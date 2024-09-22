@@ -189,7 +189,8 @@ def transform_img(data, args):
 		data_transf= data_transf.astype(np.uint8)
 	
 	# - Convert to 5 channels (see original paper: https://iopscience.iop.org/article/10.3847/2041-8213/abf2c7#apjlabf2c7app1)
-	data_cube= np.zeros((data_transf.shape[0], data_transf.shape[1], 5), dtype=data_transf.dtype)
+	#data_cube= np.zeros((data_transf.shape[0], data_transf.shape[1], 5), dtype=data_transf.dtype)
+	data_cube= np.zeros((data_transf.shape[0], data_transf.shape[1], 5), dtype=np.float32)
 	data_cube[:,:,0]= data_transf
 	data_cube[:,:,1]= data_transf
 	data_cube[:,:,2]= data_transf
