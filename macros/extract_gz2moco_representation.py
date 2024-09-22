@@ -94,7 +94,7 @@ def get_args():
 	parser.add_argument('-model_checkpoint','--model_checkpoint', dest='model_checkpoint', required=True, type=str, help='Model checkpoint (ex. pretrained_paper_model.pth.tar)') 
 	
 	# - Run options
-	parser.add_argument('-device','--device', dest='device', required=False, type=str, default="cuda", help='Device where to run inference. Default is cuda, if not found use cpu.') 
+	parser.add_argument('-device','--device', dest='device', required=False, type=str, default="cpu", help='Device where to run inference. Default is cuda, if not found use cpu.') 
 	
 	# - Outfile option
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='featdata.dat', help='Output filename (.dat) of feature data') 
