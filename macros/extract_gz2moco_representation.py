@@ -340,7 +340,7 @@ def main():
 		class_id= datalist[i]["id"]
 		
 		print("INFO: Reading image %s ..." % (filename))
-		img= read_img(filename)
+		img= read_img(filename, args)
 		if img is None:
 			print("WARN: Read/processed image %s is None, skip to next!" % (filename))
 			continue
