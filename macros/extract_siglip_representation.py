@@ -97,7 +97,7 @@ def get_args():
 	return args
 	
 	
-def get_clipped_data(self, data, sigma_low=5, sigma_up=30):
+def get_clipped_data(data, sigma_low=5, sigma_up=30):
 	""" Apply sigma clipping to input data and return transformed data """
 
 	# - Find NaNs pixels
@@ -120,7 +120,7 @@ def get_clipped_data(self, data, sigma_low=5, sigma_up=30):
 
 
 	
-def get_zscaled_data(self, data, contrast=0.25):
+def get_zscaled_data(data, contrast=0.25):
 	""" Apply sigma clipping to input data and return transformed data """
 
 	# - Find NaNs pixels
