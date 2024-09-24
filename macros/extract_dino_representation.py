@@ -77,6 +77,9 @@ def get_args():
 	# - Model option
 	parser.add_argument('-model','--model', dest='model', required=False, type=str, default="dinov2_vits14", help='DINO v2 pretrained model {dinov2_vits14,dinov2_vits14_reg,dinov2_vitl14,dinov2_vitl14_reg}') 
 	
+	# - Run options
+	parser.add_argument('-device','--device', dest='device', required=False, type=str, default="cuda", help='Device where to run inference. Default is cuda, if not found use cpu.') 
+	
 	# - Outfile option
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='featdata.dat', help='Output filename (.dat) of feature data') 
 	
@@ -204,6 +207,8 @@ def read_img(filename, args):
 		
 	# - Apply transform to numpy array
 	data_transf= transform_img(data, args)
+	if data_transf is None:
+		return None
 	data= data_transf
 	
 	# - Convert numpy to PIL image
@@ -280,6 +285,14 @@ def main():
 	inputfile= args.inputfile
 	model= args.model
 	outfile= args.outfile
+	
+	device= args.device
+	if "cuda" in device:
+		if not torch.cuda.is_available():
+			print("WARN: cuda not available, using cpu...")
+			device= "cpu"
+	
+	print('device:',device)
 		
 	#===========================
 	#==   READ DATALIST
@@ -294,10 +307,6 @@ def main():
 	#===========================
 	# - Load model
 	print("INFO: Loading model %s ..." % (model))
-	device = 'cuda' if torch.cuda.is_available() else 'cpu'
-	#device= 'cuda'
-	print('device:',device)
-
 	model= torch.hub.load('facebookresearch/dinov2', model)
 	model.to(device)
 
