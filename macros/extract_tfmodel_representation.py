@@ -659,7 +659,7 @@ def save_features_to_json(datalist, outfile):
 	
 	print("Saving datalist to file %s ..." % (outfile))
 	with open(outfile, 'w') as fp:
-		json.dump(data_dict, fp, indent=2)
+		json.dump(datalist, fp, indent=2)
 	
 	return 0
 	
