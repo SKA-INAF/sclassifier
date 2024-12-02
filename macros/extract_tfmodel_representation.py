@@ -362,7 +362,8 @@ def read_img(filename, nchans=1, norm_range=(0.,1.), resize=False, resize_size=2
   if filename=="":
     return None
     
-  fileext= os.path.splitext(filename)  
+  fileext= os.path.splitext(filename)
+  print("fileext=",fileext)
 
   # - Read FITS/PNG/JPEG image
   if fileext=='.fits':
