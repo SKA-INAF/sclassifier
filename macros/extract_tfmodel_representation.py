@@ -30,6 +30,7 @@ import pickle
 
 ## IMPORT IMAGE PROCESSING MODULES
 import skimage
+import skimage.transform
 from PIL import Image
 
 ## TF MODULES
