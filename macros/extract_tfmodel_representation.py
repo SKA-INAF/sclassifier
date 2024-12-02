@@ -602,9 +602,9 @@ def extract_features(datalist, model, imgsize=224, zscale=True, contrast=0.25, n
 
     # - Append features
     feats_list= list(feats[0])
-    feats_list= [NoIndent(float(item)) for item in feats_list]
+    feats_list= [float(item) for item in feats_list]
     
-    datalist[idx]["feats"]= feats_list
+    datalist[idx]["feats"]= NoIndent(feats_list)
     
   return datalist
 
@@ -664,6 +664,8 @@ def jsonIndentLimit(jsonString, indent, limit):
 	regexPattern = re.compile(f'\n({indent}){{{limit}}}(({indent})+|(?=(}}|])))')
 	return regexPattern.sub('', jsonString)
 
+
+## TAKEN FROM: https://stackoverflow.com/questions/42710879/write-two-dimensional-list-to-json-file
 class NoIndent(object):
     """ Value wrapper. """
     def __init__(self, value):
