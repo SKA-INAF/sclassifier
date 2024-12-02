@@ -614,7 +614,7 @@ def save_features_to_ascii(datalist, outfile, save_labels=False):
 	for idx, item in enumerate(datalist):
 		sname= item['sname']
 		class_id= item['id']
- 		class_label= item['label']
+		class_label= item['label']
 		feats= item['feats']
     
 		features.append(feats)
@@ -633,7 +633,7 @@ def save_features_to_ascii(datalist, outfile, save_labels=False):
 	classlabels_arr= np.array(class_labels).reshape(N,1)
   
 	if save_labels:
-  	outdata= np.concatenate(
+		outdata= np.concatenate(
 			(snames_arr, featdata_arr, classlabels_arr),
 			axis=1
 		)
@@ -722,16 +722,16 @@ def main():
 	#===========================
 	print("INFO: Saving features to file %s ..." % (args.outfile))
 	if args.save_to_json:
-	  save_features_to_json(
-      args.outfile, 
-      datalist
-    )
+		save_features_to_json(
+			args.outfile, 
+			datalist
+		)
 	else:
-    save_features_to_ascii(
-      args.outfile, 
-      datalist,
-      args.save_labels_in_ascii
-    )
+		save_features_to_ascii(
+			args.outfile, 
+			datalist,
+			args.save_labels_in_ascii
+		)
 	
 	return 0
 
