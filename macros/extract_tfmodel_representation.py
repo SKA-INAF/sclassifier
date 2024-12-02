@@ -596,13 +596,8 @@ def extract_features(datalist, model, imgsize=224, zscale=True, contrast=0.25, n
     )
 
     # - Append features
-		datalist[idx]["feats"]= feats[0]
+    datalist[idx]["feats"]= feats[0]
     
-    #features.append(feats[0])
-    #snames.append(sname)
-    #class_ids.append(class_id)
-
-  #return features, snames, class_ids
   return datalist
 
 
