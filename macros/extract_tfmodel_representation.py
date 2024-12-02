@@ -663,20 +663,23 @@ def jsonIndentLimit(jsonString, indent, limit):
 	regexPattern = re.compile(f'\n({indent}){{{limit}}}(({indent})+|(?=(}}|])))')
 	return regexPattern.sub('', jsonString)
 
-def save_features_to_json(datalist, outfile, limit_indent=False):
+def save_features_to_json(datalist, datalist_key, outfile, limit_indent=False):
 	""" Save feat data to json """
+	
+	# - Create dict
+	d= {datalist_key: datalist}
 	
 	# - Use above method to limit indentation 
 	if limit_indent:
 		print("INFO: Limiting indentation ...")
-		jsonString= json.dumps(datalist, indent=2)
-		jsonString= jsonIndentLimit(jsonString, '  ', 2)
-		datalist= json.loads(jsonString)
+		d_str= json.dumps(d, indent=2)
+		d_str= jsonIndentLimit(d_str, '  ', 2)
+		d= json.loads(d_str)
 	
 	# - Save to file
 	print("Saving datalist to file %s ..." % (outfile))
 	with open(outfile, 'w') as fp:
-		json.dump(datalist, fp, indent=1)
+		json.dump(d, fp, indent=2)
 	
 	return 0
 	
@@ -744,6 +747,7 @@ def main():
 	if args.save_to_json:
 		save_features_to_json(
 			datalist_out,
+			args.datalist_key,
 			args.outfile
 		)
 	else:
