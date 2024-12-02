@@ -599,6 +599,9 @@ def extract_features(datalist, model, imgsize=224, zscale=True, contrast=0.25, n
     )
 
     # - Append features
+    feats_list= list(feats[0])
+    feats_list= [float(item) for item in feats_list]
+    
     datalist[idx]["feats"]= list(feats[0])
     
   return datalist
