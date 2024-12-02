@@ -20,6 +20,7 @@ import math
 import logging
 import io
 import re
+from _ctypes import PyObj_FromPtr  # see https://stackoverflow.com/a/15012814/355230
 
 ## COMMAND-LINE ARG MODULES
 import getopt
@@ -601,7 +602,7 @@ def extract_features(datalist, model, imgsize=224, zscale=True, contrast=0.25, n
 
     # - Append features
     feats_list= list(feats[0])
-    feats_list= [float(item) for item in feats_list]
+    feats_list= [NoIndent(float(item)) for item in feats_list]
     
     datalist[idx]["feats"]= feats_list
     
@@ -663,23 +664,67 @@ def jsonIndentLimit(jsonString, indent, limit):
 	regexPattern = re.compile(f'\n({indent}){{{limit}}}(({indent})+|(?=(}}|])))')
 	return regexPattern.sub('', jsonString)
 
-def save_features_to_json(datalist, datalist_key, outfile, limit_indent=False):
+class NoIndent(object):
+    """ Value wrapper. """
+    def __init__(self, value):
+        if not isinstance(value, (list, tuple)):
+            raise TypeError('Only lists and tuples can be wrapped')
+        self.value = value
+
+
+class MyEncoder(json.JSONEncoder):
+    FORMAT_SPEC = '@@{}@@'  # Unique string pattern of NoIndent object ids.
+    regex = re.compile(FORMAT_SPEC.format(r'(\d+)'))  # compile(r'@@(\d+)@@')
+
+    def __init__(self, **kwargs):
+        # Keyword arguments to ignore when encoding NoIndent wrapped values.
+        ignore = {'cls', 'indent'}
+
+        # Save copy of any keyword argument values needed for use here.
+        self._kwargs = {k: v for k, v in kwargs.items() if k not in ignore}
+        super(MyEncoder, self).__init__(**kwargs)
+
+    def default(self, obj):
+        return (self.FORMAT_SPEC.format(id(obj)) if isinstance(obj, NoIndent)
+                    else super(MyEncoder, self).default(obj))
+
+    def iterencode(self, obj, **kwargs):
+        format_spec = self.FORMAT_SPEC  # Local var to expedite access.
+
+        # Replace any marked-up NoIndent wrapped values in the JSON repr
+        # with the json.dumps() of the corresponding wrapped Python object.
+        for encoded in super(MyEncoder, self).iterencode(obj, **kwargs):
+            match = self.regex.search(encoded)
+            if match:
+                id = int(match.group(1))
+                no_indent = PyObj_FromPtr(id)
+                json_repr = json.dumps(no_indent.value, **self._kwargs)
+                # Replace the matched id string with json formatted representation
+                # of the corresponding Python object.
+                encoded = encoded.replace(
+                            '"{}"'.format(format_spec.format(id)), json_repr)
+
+            yield encoded
+
+def save_features_to_json(datalist, datalist_key, outfile):
 	""" Save feat data to json """
 	
 	# - Create dict
 	d= {datalist_key: datalist}
 	
 	# - Use above method to limit indentation 
-	if limit_indent:
-		print("INFO: Limiting indentation ...")
-		d_str= json.dumps(d, indent=2)
-		d_str= jsonIndentLimit(d_str, '  ', 2)
-		d= json.loads(d_str)
+	#if limit_indent:
+	#	print("INFO: Limiting indentation ...")
+	#	d_str= json.dumps(d, indent=2)
+	#	d_str= jsonIndentLimit(d_str, '  ', 2)
+	#	d= json.loads(d_str)
 	
 	# - Save to file
 	print("Saving datalist to file %s ..." % (outfile))
 	with open(outfile, 'w') as fp:
-		json.dump(d, fp, indent=2)
+		#json.dump(d, fp, indent=2)
+		json.dump(d, fp, cls=MyEncoder, sort_keys=True, indent=2)
+		
 	
 	return 0
 	
