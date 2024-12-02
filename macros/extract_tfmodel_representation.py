@@ -668,9 +668,9 @@ def save_features_to_json(datalist, outfile, limit_indent=True):
 	
 	# - Use above method to limit indentation 
 	if limit_indent:
-		print("Limiting indentation ...")
+		print("INFO: Limiting indentation ...")
 		jsonString= json.dumps(datalist, indent=2)
-		jsonString= jsonIndentLimit(jsonString, '  ', 3)
+		jsonString= jsonIndentLimit(jsonString, '  ', 2)
 		datalist= json.loads(jsonString)
 	
 	# - Save to file
