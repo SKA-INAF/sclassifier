@@ -573,7 +573,7 @@ def extract_features(datalist, model, imgsize=224, zscale=True, contrast=0.25, n
     class_id= item['id']
     sname= item['sname']
     filename= item["filepaths"][0]
-    filename_fullpath= os.path.join(topdir, filename)
+    filename_fullpath= os.path.abspath(filename)
     fileext= os.path.splitext(filename)
 
     image_npy= load_img_as_npy_float(
