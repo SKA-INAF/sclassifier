@@ -726,13 +726,13 @@ def main():
 	print("INFO: Saving features to file %s ..." % (args.outfile))
 	if args.save_to_json:
 		save_features_to_json(
-			args.outfile, 
-			datalist
+			datalist_out,
+			args.outfile
 		)
 	else:
 		save_features_to_ascii(
+			datalist_out,
 			args.outfile, 
-			datalist,
 			args.save_labels_in_ascii
 		)
 	
