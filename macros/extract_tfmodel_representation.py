@@ -43,6 +43,7 @@ from astropy.stats import sigma_clip
 from astropy.visualization import ZScaleInterval
 from astropy.io.fits.verify import VerifyWarning
 from astropy.wcs import FITSFixedWarning
+import warnings
 warnings.filterwarnings('ignore', category=UserWarning, append=True)
 warnings.simplefilter('ignore', category=VerifyWarning)
 warnings.filterwarnings('ignore', category=FITSFixedWarning)
