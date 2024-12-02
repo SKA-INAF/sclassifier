@@ -564,7 +564,7 @@ def extract_features(datalist, model, imgsize=224, zscale=True, contrast=0.25, n
   nsamples= len(datalist)
 
   for idx, item in enumerate(datalist):
-    if nmax!=-1 and i>=nmax:
+    if nmax!=-1 and idx>=nmax:
       print("INFO: Max number of entries processed (n=%d), exit." % (nmax))
       break
 
