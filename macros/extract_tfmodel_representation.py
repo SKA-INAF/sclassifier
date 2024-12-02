@@ -714,18 +714,12 @@ def save_features_to_json(datalist, datalist_key, outfile):
 	# - Create dict
 	d= {datalist_key: datalist}
 	
-	# - Use above method to limit indentation 
-	#if limit_indent:
-	#	print("INFO: Limiting indentation ...")
-	#	d_str= json.dumps(d, indent=2)
-	#	d_str= jsonIndentLimit(d_str, '  ', 2)
-	#	d= json.loads(d_str)
-	
 	# - Save to file
 	print("Saving datalist to file %s ..." % (outfile))
 	with open(outfile, 'w') as fp:
 		#json.dump(d, fp, indent=2)
-		json.dump(d, fp, cls=MyEncoder, sort_keys=True, indent=2)
+		#json.dump(d, fp, cls=MyEncoder, sort_keys=True, indent=2)
+		json.dump(d, fp, cls=MyEncoder, indent=2)
 		
 	
 	return 0
