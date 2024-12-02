@@ -19,6 +19,7 @@ import random
 import math
 import logging
 import io
+import re
 
 ## COMMAND-LINE ARG MODULES
 import getopt
@@ -657,9 +658,22 @@ def save_features_to_ascii(datalist, outfile, save_labels=False):
 	return 0
 
 
-def save_features_to_json(datalist, outfile):
+def jsonIndentLimit(jsonString, indent, limit):
+	""" Apply limits to json indent """
+	regexPattern = re.compile(f'\n({indent}){{{limit}}}(({indent})+|(?=(}}|])))')
+	return regexPattern.sub('', jsonString)
+
+def save_features_to_json(datalist, outfile, limit_indent=True):
 	""" Save feat data to json """
 	
+	# - Use above method to limit indentation 
+	if limit_indent:
+		print("Limiting indentation ...")
+		jsonString= json.dumps(datalist, indent=2)
+		jsonString= jsonIndentLimit(jsonString, '  ', 3)
+		datalist= json.loads(jsonString)
+	
+	# - Save to file
 	print("Saving datalist to file %s ..." % (outfile))
 	with open(outfile, 'w') as fp:
 		json.dump(datalist, fp, indent=2)
