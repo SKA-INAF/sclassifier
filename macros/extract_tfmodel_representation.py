@@ -706,7 +706,7 @@ def main():
 	#===========================
 	#==   EXTRACT FEATURES
 	#===========================
-	print("INFO: Extracting features ...")
+	print("INFO: Extracting features from file %s ..." % (args.inputfile))
 	datalist_out= extract_features(
 		datalist, 
 		model, 
