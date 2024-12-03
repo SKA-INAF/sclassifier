@@ -380,7 +380,7 @@ def extract_features(datalist, model, device, args):
 	
 		features_numpy= features.cpu().numpy()
 		
-		if i==0:
+		if idx==0:
 			print("features.shape")
 			print(features.shape)
 			print("features_numpy.shape")
