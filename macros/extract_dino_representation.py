@@ -22,6 +22,10 @@ import io
 import re
 from _ctypes import PyObj_FromPtr  # see https://stackoverflow.com/a/15012814/355230
 
+# - Fix SSL CERT VERIFY FAILED
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+
 
 ## COMMAND-LINE ARG MODULES
 import getopt
