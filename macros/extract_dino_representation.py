@@ -377,7 +377,7 @@ def extract_features(datalist, model, args):
     
 		datalist[idx]["feats"]= NoIndent(feats_list)
     
-  return datalist
+	return datalist
 
 ##############
 ##   MAIN   ##
