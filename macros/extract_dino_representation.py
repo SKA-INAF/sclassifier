@@ -19,6 +19,9 @@ import random
 import math
 import logging
 import io
+import re
+from _ctypes import PyObj_FromPtr  # see https://stackoverflow.com/a/15012814/355230
+
 
 ## COMMAND-LINE ARG MODULES
 import getopt
