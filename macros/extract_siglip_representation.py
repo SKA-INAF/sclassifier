@@ -417,8 +417,6 @@ def extract_features(datalist, model, processor, device, args):
 		features_numpy= features.cpu().numpy()[0]
 		
 		if idx==0:
-			print("inputsr.shape")
-			print(inputs.shape)
 			print("features.shape")
 			print(features.shape)
 			print("features_numpy.shape")
