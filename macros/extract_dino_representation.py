@@ -169,9 +169,9 @@ def transform_img(data, args):
 	data_min= np.min(data_1d)
 	data_transf[~cond]= data_min
 
-	print("== DATA MIN/MAX ==")
-	print(data_transf.min())
-	print(data_transf.max())
+	#print("== DATA MIN/MAX ==")
+	#print(data_transf.min())
+	#print(data_transf.max())
 
 	# - Clip data?
 	if args.clip_data:
@@ -198,9 +198,9 @@ def transform_img(data, args):
 		data_norm= (data_transf-data_min)/(data_max-data_min) * (norm_max-norm_min) + norm_min
 		data_transf= data_norm
 			
-	print("== DATA MIN/MAX (AFTER TRANSF) ==")
-	print(data_transf.min())
-	print(data_transf.max())
+	#print("== DATA MIN/MAX (AFTER TRANSF) ==")
+	#print(data_transf.min())
+	#print(data_transf.max())
 	
 	# - Convert to uint8
 	if args.to_uint8:
