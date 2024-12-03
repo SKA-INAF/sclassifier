@@ -348,7 +348,7 @@ def save_features_to_json(datalist, datalist_key, outfile):
 	return 0
 
 
-def extract_features(datalist, model, args):
+def extract_features(datalist, model, device, args):
 	""" Function to extract features from trained models """
 	
 	# - Loop over datalist and extract features per each image
@@ -444,7 +444,8 @@ def main():
 	print("INFO: Extracting features from file %s ..." % (args.inputfile))
 	datalist_out= extract_features(
 		datalist, 
-		model, 
+		model,
+		device, 
 		args
 	)
 	if datalist_out is None:
