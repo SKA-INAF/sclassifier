@@ -475,13 +475,13 @@ def main():
 	#==   LOAD MODEL
 	#===========================
 	# - Load model
-	print("INFO: Loading model %s ..." % (args.model_id))
+	print("INFO: Loading model %s ..." % (args.model))
 	
-	model = AutoModel.from_pretrained(args.model_id).to(device)
+	model = AutoModel.from_pretrained(args.model).to(device)
 	
 	# - Load model processor
 	print("INFO: Loading model processor ...")
-	processor = AutoProcessor.from_pretrained(args.model_id)
+	processor = AutoProcessor.from_pretrained(args.model)
 	image_processor= processor.image_processor
 	
 	print("image_processor")
