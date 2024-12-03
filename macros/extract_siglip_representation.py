@@ -19,6 +19,9 @@ import random
 import math
 import logging
 import io
+import re
+from _ctypes import PyObj_FromPtr  # see https://stackoverflow.com/a/15012814/355230
+
 
 ## COMMAND-LINE ARG MODULES
 import getopt
@@ -62,9 +65,10 @@ def get_args():
 
 	# - Input options
 	parser.add_argument('-inputfile','--inputfile', dest='inputfile', required=True, type=str, help='Path to file with image datalist (.json)') 
+	parser.add_argument('-datalist_key','--datalist_key', dest='datalist_key', required=False, type=str, default="data", help='Dictionary key name to be read in input datalist (default=data)') 
+	parser.add_argument('-nmax','--nmax', dest='nmax', required=False, type=int, default=-1, help='Max number of entries processed in filelist (-1=all)') 
 	
 	# - Data options
-	parser.add_argument('-nmax','--nmax', dest='nmax', required=False, type=int, default=-1, help='Max number of entries processed in filelist (-1=all)') 
 	parser.add_argument('--imgsize', default=256, type=int, help='Image resize size in pixels (default=256)')
 	parser.add_argument('--reset_meanstd', dest='reset_meanstd', action='store_true',help='Reset original mean/std transform used in processor (default=false)')	
 	parser.set_defaults(reset_meanstd=False)
@@ -75,6 +79,7 @@ def get_args():
 	parser.set_defaults(clip_data=False)
 	parser.add_argument('--zscale', dest='zscale', action='store_true',help='Apply zscale transform (default=false)')	
 	parser.set_defaults(zscale=False)
+	parser.add_argument('--zscale_contrast', default=0.25, type=float, help='ZScale transform contrast (default=0.25)')
 	parser.add_argument('--norm_min', default=0., type=float, help='Norm min (default=0)')
 	parser.add_argument('--norm_max', default=1., type=float, help='Norm max (default=1)')
 	parser.add_argument('--to_uint8', dest='to_uint8', action='store_true',help='Convert to uint8 (default=false)')	
@@ -90,12 +95,25 @@ def get_args():
 	parser.add_argument('-device','--device', dest='device', required=False, type=str, default="cuda", help='Device where to run inference. Default is cuda, if not found use cpu.') 
 	
 	# - Outfile option
+	parser.add_argument('--save_to_json', dest='save_to_json', action='store_true',help='Save features to json (default=save to ascii)')
+	parser.set_defaults(save_to_json=False)
+	parser.add_argument('--save_labels_in_ascii', dest='save_labels_in_ascii', action='store_true',help='Save class labels to ascii (default=save classids)')
+	parser.set_defaults(save_labels_in_ascii=False)
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='featdata.dat', help='Output filename (.dat) of feature data') 
 	
 	args = parser.parse_args()	
 
 	return args
 	
+
+def read_datalist(filename, key="data"):
+  """ Read datalist """
+
+  f= open(filename, "r")
+  d= json.load(f)
+  if key in d:
+    return d[key]
+  return d
 	
 def get_clipped_data(data, sigma_low=5, sigma_up=30):
 	""" Apply sigma clipping to input data and return transformed data """
@@ -166,7 +184,7 @@ def transform_img(data, args):
 	# - Apply zscale stretch
 	if args.zscale:
 		print("Apply zscale stretch ...")
-		data_stretched= get_zscaled_data(data_transf, contrast=0.25)
+		data_stretched= get_zscaled_data(data_transf, contrast=args.zscale_contrast)
 		data_transf= data_stretched
 
 	# - Convert to uint8
@@ -194,7 +212,6 @@ def transform_img(data, args):
 	return data_transf
 
 
-	
 def read_img(filename, args):
 	""" Read fits image """
 
@@ -207,10 +224,13 @@ def read_img(filename, args):
 	# - Read fits image
 	if file_ext=='.fits':
 		data= fits.open(filename)[0].data
-	else:
+	elif file_ext in ['.png', '.jpg']:
 		image= Image.open(filename)
 		data= np.asarray(image)
-	
+	else:
+		print("ERROR: Invalid or unrecognized file extension (%s)!" % (file_ext))
+		return None
+		
 	if data is None:
 		return None
 				
@@ -258,6 +278,160 @@ def write_ascii(data, filename, header=''):
 
 	fout.close()
 
+## TAKEN FROM: https://stackoverflow.com/questions/42710879/write-two-dimensional-list-to-json-file
+class NoIndent(object):
+    """ Value wrapper. """
+    def __init__(self, value):
+        if not isinstance(value, (list, tuple)):
+            raise TypeError('Only lists and tuples can be wrapped')
+        self.value = value
+
+
+class MyEncoder(json.JSONEncoder):
+    FORMAT_SPEC = '@@{}@@'  # Unique string pattern of NoIndent object ids.
+    regex = re.compile(FORMAT_SPEC.format(r'(\d+)'))  # compile(r'@@(\d+)@@')
+
+    def __init__(self, **kwargs):
+        # Keyword arguments to ignore when encoding NoIndent wrapped values.
+        ignore = {'cls', 'indent'}
+
+        # Save copy of any keyword argument values needed for use here.
+        self._kwargs = {k: v for k, v in kwargs.items() if k not in ignore}
+        super(MyEncoder, self).__init__(**kwargs)
+
+    def default(self, obj):
+        return (self.FORMAT_SPEC.format(id(obj)) if isinstance(obj, NoIndent)
+                    else super(MyEncoder, self).default(obj))
+
+    def iterencode(self, obj, **kwargs):
+        format_spec = self.FORMAT_SPEC  # Local var to expedite access.
+
+        # Replace any marked-up NoIndent wrapped values in the JSON repr
+        # with the json.dumps() of the corresponding wrapped Python object.
+        for encoded in super(MyEncoder, self).iterencode(obj, **kwargs):
+            match = self.regex.search(encoded)
+            if match:
+                id = int(match.group(1))
+                no_indent = PyObj_FromPtr(id)
+                json_repr = json.dumps(no_indent.value, **self._kwargs)
+                # Replace the matched id string with json formatted representation
+                # of the corresponding Python object.
+                encoded = encoded.replace(
+                            '"{}"'.format(format_spec.format(id)), json_repr)
+
+            yield encoded
+
+
+def save_features_to_ascii(datalist, outfile, save_labels=False):
+	""" Save feature data to ascii file """
+
+	# - Loop over datalist and fill lists
+	features= []
+	snames= []
+	class_ids= []
+	class_labels= []
+	nsamples= len(datalist)
+
+	for idx, item in enumerate(datalist):
+		sname= item['sname']
+		class_id= item['id']
+		class_label= item['label']
+		feats= item['feats']
+    
+		features.append(feats)
+		snames.append(sname)
+		class_ids.append(class_id)
+		class_labels.append(class_label)
+		
+	# - Save features to ascii file with format: sname, f1, f2, ..., fn, classid
+	N= len(features)
+	nfeats= features[0].shape[0]
+	print("INFO: Writing %d feature data (nfeats=%d) to file %s ..." % (N, nfeats, outfile))
+
+	featdata_arr= np.array(features)
+	snames_arr= np.array(snames).reshape(N,1)
+	classids_arr= np.array(class_ids).reshape(N,1)
+	classlabels_arr= np.array(class_labels).reshape(N,1)
+  
+	if save_labels:
+		outdata= np.concatenate(
+			(snames_arr, featdata_arr, classlabels_arr),
+			axis=1
+		)
+	else:
+		outdata= np.concatenate(
+			(snames_arr, featdata_arr, classids_arr),
+			axis=1
+		)
+
+	znames_counter= list(range(1,nfeats+1))
+	znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
+	head= '{} {} {}'.format("# sname",znames,"id")
+	write_ascii(outdata, outfile, head)
+
+	return 0
+
+def save_features_to_json(datalist, datalist_key, outfile):
+	""" Save feat data to json """
+	
+	# - Create dict
+	d= {datalist_key: datalist}
+	
+	# - Save to file
+	print("Saving datalist to file %s ..." % (outfile))
+	with open(outfile, 'w') as fp:
+		#json.dump(d, fp, indent=2)
+		#json.dump(d, fp, cls=MyEncoder, sort_keys=True, indent=2)
+		json.dump(d, fp, cls=MyEncoder, indent=2)
+		
+	return 0
+
+def extract_features(datalist, processor, device, args):
+	""" Function to extract features from trained models """
+	
+	# - Loop over datalist and extract features per each image
+	nsamples= len(datalist)
+	
+	for idx, item in enumerate(datalist):
+		if args.nmax!=-1 and idx>=args.nmax:
+			print("INFO: Max number of entries processed (n=%d), exit." % (args.nmax))
+			break
+
+		if idx%1000==0:
+			print("%d/%d entries processed ..." % (idx, nsamples))
+
+		print("INFO: Reading image %s ..." % (filename))
+		img= read_img(filename, args)
+		if img is None:
+			print("WARN: Read/processed image %s is None, skip to next!" % (filename))
+			continue
+			
+		# - Apply model pre-processing
+		inputs = processor(images=img, return_tensors="pt").to(device)
+		
+		# - Extract image features
+		with torch.no_grad():
+			features= model.get_image_features(**inputs)
+    
+		features_numpy= features.cpu().numpy()[0]
+		
+		if idx==0:
+			print("inputsr.shape")
+			print(inputs.shape)
+			print("features.shape")
+			print(features.shape)
+			print("features_numpy.shape")
+			print(features_numpy.shape)
+			
+		# - Append to main list
+		feats_list= list(features_numpy)
+		feats_list= [float(item) for item in feats_list]
+    
+		datalist[idx]["feats"]= NoIndent(feats_list)
+    
+	return datalist
+		
+
 ##############
 ##   MAIN   ##
 ##############
@@ -279,9 +453,6 @@ def main():
 		print("ERROR: Empty datalist input file!")
 		return 1	
 	
-	inputfile= args.inputfile
-	nmax= args.nmax
-	model_id= args.model
 	outfile= args.outfile
 	
 	#device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -293,26 +464,24 @@ def main():
 	
 	print('device:',device)
 
-		
 	#===========================
 	#==   READ DATALIST
 	#===========================
-	print("INFO: Read image dataset filelist %s ..." % (inputfile))
-	fp= open(inputfile, "r")
-	datalist= json.load(fp)["data"]
+	print("INFO: Read image dataset filelist %s ..." % (args.inputfile))
+	datalist= read_datalist(args.inputfile, args.datalist_key)
 	nfiles= len(datalist)
 	
 	#===========================
-	#==   MODEL PREDICTION
+	#==   LOAD MODEL
 	#===========================
 	# - Load model
-	print("INFO: Loading model %s ..." % (model_id))
+	print("INFO: Loading model %s ..." % (args.model_id))
 	
-	model = AutoModel.from_pretrained(model_id).to(device)
+	model = AutoModel.from_pretrained(args.model_id).to(device)
 	
 	# - Load model processor
 	print("INFO: Loading model processor ...")
-	processor = AutoProcessor.from_pretrained(model_id)
+	processor = AutoProcessor.from_pretrained(args.model_id)
 	image_processor= processor.image_processor
 	
 	print("image_processor")
@@ -347,72 +516,37 @@ def main():
 	print("image_processor")
 	print(processor.image_processor)	
 	
-	# - Loop over images and get representation
-	feature_list= []
-	snames= []
-	class_ids= []
-	
-	for i in range(nfiles):
-		if nmax!=-1 and i>=nmax:
-			print("INFO: Max number of entries processed (n=%d), exit." % (nmax))
-			break
-			
-		if i%1000==0:
-			print("%d/%d images processed ..." % (i+1, nfiles))
-	
-		# - Read image
-		filename= datalist[i]["filepaths"][0]
-		sname= datalist[i]["sname"]
-		class_id= datalist[i]["id"]
-		
-		print("INFO: Reading image %s ..." % (filename))
-		img= read_img(filename, args)
-		if img is None:
-			print("WARN: Read/processed image %s is None, skip to next!" % (filename))
-			continue
-			
-		# - Apply model pre-processing
-		inputs = processor(images=img, return_tensors="pt").to(device)
-		
-		# - Extract image features
-		with torch.no_grad():
-			features= model.get_image_features(**inputs)
-    
-		features_numpy= features.cpu().numpy()[0]
-		
-		if i==0:
-			print("features.shape")
-			print(features.shape)
-			print("features_numpy.shape")
-			print(features_numpy.shape)
-		
-		# - Append to main list
-		feature_list.append(features_numpy)
-		snames.append(sname)
-		class_ids.append(class_id)
-		
-	# - Write selected feature data table
-	print("INFO: Writing selected feature data to file %s ..." % (outfile))
-	
-	N= len(feature_list)
-	nfeats= feature_list[0].shape[0]
-	print("INFO: N=%d, nfeats=%d" % (N, nfeats))
-	
-	featdata_arr= np.array(feature_list)
-	snames_arr= np.array(snames).reshape(N,1)
-	classids_arr= np.array(class_ids).reshape(N,1)
-	
-	outdata= np.concatenate(
-		(snames_arr, featdata_arr, classids_arr),
-		axis=1
+	#===========================
+	#==   EXTRACT FEATURES
+	#===========================
+	print("INFO: Extracting features from file %s ..." % (args.inputfile))
+	datalist_out= extract_features(
+		datalist, 
+		processor,
+		device, 
+		args
 	)
-	
-	znames_counter= list(range(1,nfeats+1))
-	znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
-	head= '{} {} {}'.format("# sname",znames,"id")
-	
-	write_ascii(outdata, outfile, head)
-	
+	if datalist_out is None:
+	  print("ERROR: Failed to extract features!")
+	  return 1
+
+	#===========================
+	#==   SAVE FEATURES
+	#===========================
+	print("INFO: Saving features to file %s ..." % (args.outfile))
+	if args.save_to_json:
+		save_features_to_json(
+			datalist_out,
+			args.datalist_key,
+			args.outfile
+		)
+	else:
+		save_features_to_ascii(
+			datalist_out,
+			args.outfile, 
+			args.save_labels_in_ascii
+		)
+		
 	return 0
 	
 ###################

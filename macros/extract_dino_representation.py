@@ -331,6 +331,56 @@ class MyEncoder(json.JSONEncoder):
 
             yield encoded
 
+
+def save_features_to_ascii(datalist, outfile, save_labels=False):
+	""" Save feature data to ascii file """
+
+	# - Loop over datalist and fill lists
+	features= []
+	snames= []
+	class_ids= []
+	class_labels= []
+	nsamples= len(datalist)
+
+	for idx, item in enumerate(datalist):
+		sname= item['sname']
+		class_id= item['id']
+		class_label= item['label']
+		feats= item['feats']
+    
+		features.append(feats)
+		snames.append(sname)
+		class_ids.append(class_id)
+		class_labels.append(class_label)
+		
+	# - Save features to ascii file with format: sname, f1, f2, ..., fn, classid
+	N= len(features)
+	nfeats= features[0].shape[0]
+	print("INFO: Writing %d feature data (nfeats=%d) to file %s ..." % (N, nfeats, outfile))
+
+	featdata_arr= np.array(features)
+	snames_arr= np.array(snames).reshape(N,1)
+	classids_arr= np.array(class_ids).reshape(N,1)
+	classlabels_arr= np.array(class_labels).reshape(N,1)
+  
+	if save_labels:
+		outdata= np.concatenate(
+			(snames_arr, featdata_arr, classlabels_arr),
+			axis=1
+		)
+	else:
+		outdata= np.concatenate(
+			(snames_arr, featdata_arr, classids_arr),
+			axis=1
+		)
+
+	znames_counter= list(range(1,nfeats+1))
+	znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
+	head= '{} {} {}'.format("# sname",znames,"id")
+	write_ascii(outdata, outfile, head)
+
+	return 0
+
 def save_features_to_json(datalist, datalist_key, outfile):
 	""" Save feat data to json """
 	
