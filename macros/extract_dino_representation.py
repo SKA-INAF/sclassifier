@@ -99,7 +99,15 @@ def get_args():
 	return args
 	
 
-	
+def read_datalist(filename, key="data"):
+  """ Read datalist """
+
+  f= open(filename, "r")
+  d= json.load(f)
+  if key in d:
+    return d[key]
+  return d
+  
 def get_clipped_data(data, sigma_low=5, sigma_up=30):
 	""" Apply sigma clipping to input data and return transformed data """
 
@@ -403,10 +411,6 @@ def main():
 		print("ERROR: Empty datalist input file!")
 		return 1	
 	
-	inputfile= args.inputfile
-	model_id= args.model
-	outfile= args.outfile
-	
 	device= args.device
 	if "cuda" in device:
 		if not torch.cuda.is_available():
@@ -418,17 +422,16 @@ def main():
 	#===========================
 	#==   READ DATALIST
 	#===========================
-	print("INFO: Read image dataset filelist %s ..." % (inputfile))
-	fp= open(inputfile, "r")
-	datalist= json.load(fp)[datalist_key]
+	print("INFO: Read image dataset filelist %s ..." % (args.inputfile))
+	datalist= read_datalist(args.inputfile, args.datalist_key)
 	nfiles= len(datalist)
 	
 	#===========================
 	#==   LOAD MODEL
 	#===========================
 	# - Load model
-	print("INFO: Loading model %s ..." % (model_id))
-	model= torch.hub.load('facebookresearch/dinov2', model_id)
+	print("INFO: Loading model %s ..." % (args.model))
+	model= torch.hub.load('facebookresearch/dinov2', args.model)
 	model.to(device)
 
 	#===========================
