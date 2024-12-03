@@ -23,8 +23,8 @@ import re
 from _ctypes import PyObj_FromPtr  # see https://stackoverflow.com/a/15012814/355230
 
 # - Fix SSL CERT VERIFY FAILED
-import ssl
-ssl._create_default_https_context = ssl._create_unverified_context
+#import ssl
+#ssl._create_default_https_context = ssl._create_unverified_context
 
 
 ## COMMAND-LINE ARG MODULES
@@ -221,11 +221,11 @@ def read_img(filename, args):
 	# - Read fits image
 	if file_ext=='.fits':
 		data= fits.open(filename)[0].data
-	elif fileext in ['.png', '.jpg']:
+	elif file_ext in ['.png', '.jpg']:
 		image= Image.open(filename)
 		data= np.asarray(image)
 	else:
-		print("ERROR: Invalid or unrecognized file extension (%s)!" % (fileext))
+		print("ERROR: Invalid or unrecognized file extension (%s)!" % (file_ext))
 		return None
     
 	if data is None:
