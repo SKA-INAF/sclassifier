@@ -340,12 +340,12 @@ def extract_features(datalist, model, args):
 	nsamples= len(datalist)
 	
 	for idx, item in enumerate(datalist):
-    if args.nmax!=-1 and idx>=args.nmax:
-      print("INFO: Max number of entries processed (n=%d), exit." % (args.nmax))
-      break
+		if args.nmax!=-1 and idx>=args.nmax:
+			print("INFO: Max number of entries processed (n=%d), exit." % (args.nmax))
+			break
 
-    if idx%1000==0:
-      print("%d/%d entries processed ..." % (idx, nsamples))
+		if idx%1000==0:
+			print("%d/%d entries processed ..." % (idx, nsamples))
 	
 		# - Read image
 		filename= datalist[idx]["filepaths"][0]
@@ -373,7 +373,7 @@ def extract_features(datalist, model, args):
 		
 		# - Append to main list
 		feats_list= list(features_numpy)
-    feats_list= [float(item) for item in feats_list]
+		feats_list= [float(item) for item in feats_list]
     
 		datalist[idx]["feats"]= NoIndent(feats_list)
     
