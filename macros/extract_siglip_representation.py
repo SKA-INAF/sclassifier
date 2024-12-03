@@ -22,7 +22,6 @@ import io
 import re
 from _ctypes import PyObj_FromPtr  # see https://stackoverflow.com/a/15012814/355230
 
-
 ## COMMAND-LINE ARG MODULES
 import getopt
 import argparse
@@ -400,6 +399,8 @@ def extract_features(datalist, processor, device, args):
 		if idx%1000==0:
 			print("%d/%d entries processed ..." % (idx, nsamples))
 
+		# - Read image
+		filename= datalist[idx]["filepaths"][0]
 		print("INFO: Reading image %s ..." % (filename))
 		img= read_img(filename, args)
 		if img is None:
