@@ -180,7 +180,7 @@ def transform_img(data, args):
 
 	# - Apply zscale stretch
 	if args.zscale:
-		print("Apply zscale stretch ...")
+		#print("Apply zscale stretch ...")
 		data_stretched= get_zscaled_data(data_transf, contrast=args.zscale_contrast)
 		data_transf= data_stretched
 
@@ -244,8 +244,8 @@ def read_img(filename, args):
 	if args.in_chans==3:
 		image= image.convert("RGB")
 
-	print("--> image.shape")
-	print(np.asarray(image).shape)	
+	#print("--> image.shape")
+	#print(np.asarray(image).shape)	
 		
 	# - Apply other transforms (e.g. resize, model-specific transforms)
 	transform = T.Compose(
@@ -381,6 +381,8 @@ def extract_features(datalist, model, device, args):
 		features_numpy= features.cpu().numpy()
 		
 		if idx==0:
+			print("image_tensor.shape")
+			print(image_tensor.shape)
 			print("features.shape")
 			print(features.shape)
 			print("features_numpy.shape")
