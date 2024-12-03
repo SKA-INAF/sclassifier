@@ -68,6 +68,8 @@ def get_args():
 	parser.set_defaults(clip_data=False)
 	parser.add_argument('--zscale', dest='zscale', action='store_true',help='Apply zscale transform (default=false)')	
 	parser.set_defaults(zscale=False)
+	parser.add_argument('--zscale_contrast', default=0.25, type=float, help='ZScale transform contrast (default=0.25)')
+	
 	parser.add_argument('--norm_min', default=0., type=float, help='Norm min (default=0)')
 	parser.add_argument('--norm_max', default=1., type=float, help='Norm max (default=1)')
 	parser.add_argument('--to_uint8', dest='to_uint8', action='store_true',help='Convert to uint8 (default=false)')	
@@ -164,7 +166,7 @@ def transform_img(data, args):
 	# - Apply zscale stretch
 	if args.zscale:
 		print("Apply zscale stretch ...")
-		data_stretched= get_zscaled_data(data_transf, contrast=0.25)
+		data_stretched= get_zscaled_data(data_transf, contrast=args.zscale_contrast)
 		data_transf= data_stretched
 
 	# - Convert to uint8
@@ -209,7 +211,7 @@ def read_img(filename, args):
 		data= np.asarray(image)
 	else:
 		print("ERROR: Invalid or unrecognized file extension (%s)!" % (fileext))
-    return None
+		return None
     
 	if data is None:
 		return None
