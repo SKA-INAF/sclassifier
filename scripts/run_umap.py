@@ -58,6 +58,7 @@ def get_args():
 
 	# - Input options
 	parser.add_argument('-inputfile','--inputfile', dest='inputfile', required=True, type=str, help='Input feature data table filename') 
+	parser.add_argument('-datalist_key','--datalist_key', dest='datalist_key', required=False, type=str, default="data", help='Dictionary key name to be read in input datalist (default=data)') 
 	
 	# - Pre-processing options
 	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize feature data in range [0,1] before applying models (default=false)')	
@@ -74,6 +75,10 @@ def get_args():
 	parser.add_argument('-outfile_umap_unsupervised', '--outfile_umap_unsupervised', dest='outfile_umap_unsupervised', required=False, type=str, default='latent_data_umap_unsupervised.dat', action='store',help='Name of UMAP encoded data output file')
 	parser.add_argument('-outfile_umap_supervised', '--outfile_umap_supervised', dest='outfile_umap_supervised', required=False, type=str, default='latent_data_umap_supervised.dat', action='store',help='Name of UMAP output file with encoded data produced using supervised method')
 	parser.add_argument('-outfile_umap_preclassified', '--outfile_umap_preclassified', dest='outfile_umap_preclassified', required=False, type=str, default='latent_data_umap_preclass.dat', action='store',help='Name of UMAP output file with encoded data produced from pre-classified data')
+	parser.add_argument('-outfile_umap_unsupervised_json', '--outfile_umap_unsupervised_json', dest='outfile_umap_unsupervised_json', required=False, type=str, default='latent_data_umap_unsupervised.json', action='store',help='Name of UMAP encoded data json output file')
+	
+	parser.add_argument('--save_labels_in_ascii', dest='save_labels_in_ascii', action='store_true',help='Save class labels to ascii (default=save classids)')
+	parser.set_defaults(save_labels_in_ascii=False)
 
 	parser.add_argument('-modelfile_umap', '--modelfile_umap', dest='modelfile_umap', required=False, type=str, action='store',help='UMAP model filename (.h5)')
 
@@ -108,6 +113,7 @@ def main():
 
 	# - Input filelist
 	inputfile= args.inputfile
+	datalist_key=args.datalist_key
 
 	# - Data pre-processing
 	normalize= args.normalize
@@ -133,7 +139,8 @@ def main():
 	outfile_umap_unsupervised= args.outfile_umap_unsupervised
 	outfile_umap_supervised= args.outfile_umap_supervised
 	outfile_umap_preclassified= args.outfile_umap_preclassified
-
+	outfile_umap_unsupervised_json= args.outfile_umap_unsupervised_json
+	save_labels_in_ascii= args.save_labels_in_ascii
 	modelfile_umap= args.modelfile_umap
 	predict= args.predict
 
@@ -143,14 +150,14 @@ def main():
 	#===========================
 	#==   READ FEATURE DATA
 	#===========================
-	ret= Utils.read_feature_data(inputfile)
-	if not ret:
-		logger.error("Failed to read data from file %s!" % (inputfile))
-		return 1
+	#ret= Utils.read_feature_data(inputfile)
+	#if not ret:
+	#	logger.error("Failed to read data from file %s!" % (inputfile))
+	#	return 1
 
-	data= ret[0]
-	snames= ret[1]
-	classids= ret[2]
+	#data= ret[0]
+	#snames= ret[1]
+	#classids= ret[2]
 
 	#==============================
 	#==   RUN UMAP
@@ -160,6 +167,7 @@ def main():
 	umap_class.set_encoded_data_unsupervised_outfile(outfile_umap_unsupervised)
 	umap_class.set_encoded_data_supervised_outfile(outfile_umap_supervised)
 	umap_class.set_encoded_data_preclassified_outfile(outfile_umap_preclassified)
+	umap_class.set_encoded_data_unsupervised_json_outfile(outfile_umap_unsupervised_json)
 	umap_class.set_encoded_data_dim(latentdim_umap)
 	umap_class.set_min_dist(mindist_umap)
 	umap_class.set_n_neighbors(nneighbors_umap)
@@ -167,19 +175,21 @@ def main():
 	
 	umap_class.classid_label_map= classid_label_map
 	umap_class.excluded_objids_train = objids_excluded_in_train
+	umap_class.save_labels_in_ascii= save_labels_in_ascii
 
 	status= 0
 	if predict:
 		logger.info("Running UMAP classifier prediction using modelfile %s on input feature data ..." % (modelfile_umap))
-		if umap_class.run_predict(data, class_ids=classids, snames=snames, modelfile=modelfile_umap, scalerfile=scalerfile)<0:
+		#if umap_class.run_predict(data, class_ids=classids, snames=snames, modelfile=modelfile_umap, scalerfile=scalerfile)<0:
+		if umap_class.run_predict(inputfile, modelfile=modelfile_umap, scalerfile=scalerfile, datalist_key=datalist_key)<0:
 			logger.error("UMAP prediction failed!")
 			return 1
 	else:
 		logger.info("Running UMAP classifier training on input feature data ...")
-		if umap_class.run_train(data, class_ids=classids, snames=snames, scalerfile=scalerfile)<0:
+		#if umap_class.run_train(data, class_ids=classids, snames=snames, scalerfile=scalerfile)<0:
+		if umap_class.run_train(inputfile, modelfile='', scalerfile=scalerfile, datalist_key=datalist_key)<0:
 			logger.error("UMAP training failed!")
 			return 1
-
 
 	return 0
 

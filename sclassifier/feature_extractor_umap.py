@@ -34,6 +34,7 @@ matplotlib.use('Agg')
 
 ## SCLASSIFIER MODULES
 from .utils import Utils
+from .utils import NoIndent, MyEncoder
 
 ##############################
 ##     GLOBAL VARS
@@ -60,6 +61,7 @@ class FeatExtractorUMAP(object):
 		self.data_preclassified= None
 		self.data_preclassified_labels= None
 		self.data_preclassified_classids= None
+		self.datalist_json= None
 		self.data_labels= []
 		self.data_classids= []
 		self.source_names= []
@@ -121,9 +123,11 @@ class FeatExtractorUMAP(object):
 		# *****************************
 		self.outfile_encoded_data_unsupervised= 'encoded_data_unsupervised.dat'
 		self.outfile_encoded_data_supervised= 'encoded_data_supervised.dat'
-		self.outfile_encoded_data_preclassified= 'encoded_data_preclassified.dat'	
+		self.outfile_encoded_data_preclassified= 'encoded_data_preclassified.dat'
+		self.outfile_encoded_data_unsupervised_json= 'encoded_data_unsupervised.json'
 		self.outfile_scaler = 'datascaler.sav'
-		self.outfile_model= "umap_model.sav"
+		self.outfile_model= 'umap_model.sav'
+		self.save_labels_in_ascii= False
 
 	#####################################
 	##     SETTERS/GETTERS
@@ -139,6 +143,10 @@ class FeatExtractorUMAP(object):
 	def set_encoded_data_preclassified_outfile(self,outfile):
 		""" Set name of encoded preclassified data output file """
 		self.outfile_encoded_data_preclassified= outfile	
+		
+	def set_encoded_data_unsupervised_json_outfile(self,outfile):
+		""" Set name of encoded data json output unsupervised file """
+		self.outfile_encoded_data_unsupervised_json= outfile	
 
 	def set_encoded_data_dim(self,dim):
 		""" Set encoded data dim """
@@ -248,8 +256,6 @@ class FeatExtractorUMAP(object):
 		return x_transf
 
 
-
-
 	def __set_preclass_data(self):
 		""" Set pre-classified data """
 
@@ -265,9 +271,17 @@ class FeatExtractorUMAP(object):
 			
 			add_to_train_list= True
 			for obj_id_excl in self.excluded_objids_train:
-				if obj_id==obj_id_excl:
-					add_to_train_list= False
-					break
+				if isinstance(obj_id, list):
+					for item in obj_id:
+						if item==obj_id_excl:
+							add_to_train_list= False
+							break
+					if not add_to_train_list:
+						break
+				else:
+					if obj_id==obj_id_excl:
+						add_to_train_list= False
+						break
 
 			if add_to_train_list:
 			#if obj_id!=0 and obj_id!=-1:
@@ -284,7 +298,6 @@ class FeatExtractorUMAP(object):
 			self.data_preclassified_labels= np.array(label_list)
 			self.data_preclassified_classids= np.array(classid_list)
 
-		
 		if self.data_preclassified is not None:
 			logger.info("#nsamples_preclass=%d" % (len(self.data_preclassified_labels)))
 
@@ -338,6 +351,90 @@ class FeatExtractorUMAP(object):
 			logger.error("Empty feature data vector read!")
 			return -1
 
+		self.nsamples= data_shape[0]
+		self.nfeatures= data_shape[1]
+		logger.info("#nsamples=%d" % (self.nsamples))
+		
+		# - Normalize feature data?
+		if self.normalize:
+			logger.info("Normalizing feature data ...")
+			data_norm= self.__transform_data(self.data, self.norm_min, self.norm_max)
+			if data_norm is None:
+				logger.error("Data transformation failed!")
+				return -1
+			self.data= data_norm
+
+		# - Set pre-classified data
+		logger.info("Setting pre-classified data (if any) ...")
+		self.__set_preclass_data()
+
+		return 0
+		
+	#####################################
+	##     SET DATA FROM ASCII FILE
+	#####################################
+	def set_data_from_ascii_file(self, filename):
+		""" Set data from input ascii file. Expected format: sname, N features, classid """
+
+		# - Read ascii file
+		ret= Utils.read_feature_data(filename)
+		if not ret:
+			logger.error("Failed to read data from file %s!" % (filename))
+			return -1
+
+		data= ret[0]
+		snames= ret[1]
+		classids= ret[2]
+
+		return self.set_data(data, snames, class_ids)
+		
+	
+	#####################################
+	##     SET DATA FROM JSON FILE
+	#####################################
+	def set_data_from_json_file(self, filename, datakey="data"):
+		""" Set data from input json file. Expected format: dict with featdata key """
+
+		# - Read json file
+		try:
+			f= open(filename, "r")
+			self.datalist_json= json.load(f)[datakey]
+		except Exception as e:
+			logger.error("Failed to read feature file %s (err=%s)!" % (filename, str(e)))
+			return -1
+		
+		# - Set data vectors
+		self.data_labels= []
+		self.data_classids= []
+		self.source_names= []
+		featdata= []
+		
+		for item in self.datalist_json:
+			sname= item['sname']
+			classid= item['id']
+			label= item['label']
+			feats= item['feats']
+			nfeat= len(feats)
+			
+			# - Remap labels?
+			if self.classid_label_map:
+				if isinstance(classid, list):
+					label= [self.classid_label_map[i] for i in classid]
+				else:
+					label= self.classid_label_map[classid]
+			
+			# - Add entries to list
+			self.source_names.append(sname)
+			self.data_labels.append(label)
+			self.data_classids.append(classid)
+			featdata.append(feats)
+
+		self.data= np.array(featdata)
+		if self.data.size==0:
+			logger.error("Empty feature data vector read!")
+			return -1
+
+		data_shape= self.data.shape
 		self.nsamples= data_shape[0]
 		self.nfeatures= data_shape[1]
 		logger.info("#nsamples=%d" % (self.nsamples))
@@ -421,7 +518,9 @@ class FeatExtractorUMAP(object):
 
 		return 0
 
-
+	#####################################
+	##     SET MODEL
+	#####################################
 	def __build_model(self):
 		""" Create UMAP model """
 	
@@ -454,7 +553,7 @@ class FeatExtractorUMAP(object):
 	#####################################
 	##     PREDICT
 	#####################################
-	def run_predict(self, datafile, modelfile, scalerfile=''):
+	def run_predict(self, datafile, modelfile, scalerfile='', datalist_key='data'):
 		""" Run predict using input dataset """
 
 		#================================
@@ -477,9 +576,18 @@ class FeatExtractorUMAP(object):
 			logger.error("Empty data file specified!")
 			return -1
 
-		if self.set_data_from_file(datafile)<0:
-			logger.error("Failed to read datafile %s!" % datafile)
-			return -1
+		# - Check input file extension
+		file_ext= os.path.splitext(datafile)[1]
+
+		if file_ext=='.json':
+			if self.set_data_from_json_file(datafile, datalist_key)<0:
+				logger.error("Failed to read datafile %s!" % datafile)
+				return -1
+		else:
+			#if self.set_data_from_file(datafile)<0:
+			if self.set_data_from_ascii_file(datafile)<0:
+				logger.error("Failed to read datafile %s!" % datafile)
+				return -1
 
 		#================================
 		#==   LOAD MODEL
@@ -580,27 +688,8 @@ class FeatExtractorUMAP(object):
 		#================================
 		#==   SAVE ENCODED DATA
 		#================================
-		# - Unsupervised encoded data
-		logger.info("Saving unsupervised encoded data to file ...")
-		N= self.encoded_data_unsupervised.shape[0]
-		print("Unsupervised encoded data shape=",self.encoded_data_unsupervised.shape)
-		print("Unsupervised encoded data N=",N)
-
-		snames= np.array(self.source_names).reshape(N,1)
-		objids= np.array(self.data_classids).reshape(N,1)
-			
-		# - Save unsupervised encoded data
-		enc_data= np.concatenate(
-			(snames, self.encoded_data_unsupervised, objids),
-			axis=1
-		)
-
-		znames_counter= list(range(1,self.encoded_data_dim+1))
-		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
-		head= '{} {} {}'.format("# sname",znames,"id")
-
-		Utils.write_ascii(enc_data, self.outfile_encoded_data_unsupervised, head)	
-
+		if self.__save_encoded_data()<0:
+			logger.warn("Failed to save encoded data to file!")
 
 		return 0
 
@@ -608,7 +697,7 @@ class FeatExtractorUMAP(object):
 	#####################################
 	##     TRAIN
 	#####################################
-	def run_train(self, datafile, modelfile='', scalerfile=''):
+	def run_train(self, datafile, modelfile='', scalerfile='', datalist_key='data'):
 		""" Run train using input dataset """
 
 		#================================
@@ -630,10 +719,19 @@ class FeatExtractorUMAP(object):
 		if datafile=="":
 			logger.error("Empty data file specified!")
 			return -1
+			
+		# - Check input file extension
+		file_ext= os.path.splitext(datafile)[1]
 
-		if self.set_data_from_file(datafile)<0:
-			logger.error("Failed to read datafile %s!" % datafile)
-			return -1
+		if file_ext=='.json':
+			if self.set_data_from_json_file(datafile, datalist_key)<0:
+				logger.error("Failed to read datafile %s!" % datafile)
+				return -1
+		else:
+			#if self.set_data_from_file(datafile)<0:
+			if self.set_data_from_ascii_file(datafile)<0:
+				logger.error("Failed to read datafile %s!" % datafile)
+				return -1
 
 		#================================
 		#==   LOAD MODEL
@@ -656,6 +754,13 @@ class FeatExtractorUMAP(object):
 		if self.__train()<0:
 			logger.error("Failed to train!")
 			return -1
+			
+		#================================
+		#==   PLOT
+		#================================
+		if self.draw:
+			logger.info("Plotting results ...")
+			self.plot()
 
 		return 0
 
@@ -735,10 +840,12 @@ class FeatExtractorUMAP(object):
 		#==========================================================
 		#==   FIT PRE-CLASSIFIED DATA (IF AVAILABLE) SUPERVISED
 		#==========================================================
+		# - This is performed if we have preclassified data AND if labels are not lists (e.g. single-label classification)
 		if self.use_preclassified_data:
-			if self.data_preclassified is not None and len(self.data_preclassified)>=self.preclassified_data_minsize:
+			is_single_label= (self.data_preclassified.ndim==1)
+			if self.data_preclassified is not None and len(self.data_preclassified)>=self.preclassified_data_minsize and is_single_label:
 				logger.info("Fitting input pre-classified data in a supervised way ...")
-				self.learned_transf= self.reducer.fit(self.data_preclassified,self.data_preclassified_classids)
+				self.learned_transf= self.reducer.fit(self.data_preclassified, self.data_preclassified_classids)
 				self.encoded_data_preclassified= self.learned_transf.transform(self.data_preclassified)
 
 		#================================
@@ -762,25 +869,51 @@ class FeatExtractorUMAP(object):
 		#================================
 		#==   SAVE ENCODED DATA
 		#================================
+		if self.__save_encoded_data()<0:
+			logger.warn("Failed to save encoded data to file!")
+		
+		return 0
+
+
+	def __save_encoded_data(self):
+		""" Save encoded data """
+
+		###################################
+		##     SAVE ASCII
+		###################################
 		# - Unsupervised encoded data
 		logger.info("Saving unsupervised encoded data to file ...")
 		N= self.encoded_data_unsupervised.shape[0]
-		print("Unsupervised encoded data shape=",self.encoded_data_unsupervised.shape)
-		print("Unsupervised encoded data N=",N)
+		print("Unsupervised encoded data shape=", self.encoded_data_unsupervised.shape)
+		print("Unsupervised encoded data N=", N)
 
-		
 		snames= np.array(self.source_names).reshape(N,1)
-		objids= np.array(self.data_classids).reshape(N,1)
+		
+		if isinstance(self.data_classids[0], list): # concatenate ids/labels comma separated
+			objids_concat= [','.join(map(str,item)) for item in self.data_classids]
+			objlabels_concat= [','.join(map(str,item)) for item in self.data_labels]
+			objids= np.array(objids_concat).reshape(N,1)
+			objlabels= np.array(objlabels_concat).reshape(N,1)
+		else:
+			objids= np.array(self.data_classids).reshape(N,1)
+			objlabels= np.array(self.data_labels).reshape(N,1)
 			
 		# - Save unsupervised encoded data
-		enc_data= np.concatenate(
-			(snames, self.encoded_data_unsupervised, objids),
-			axis=1
-		)
-
 		znames_counter= list(range(1,self.encoded_data_dim+1))
 		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
-		head= '{} {} {}'.format("# sname",znames,"id")
+		
+		if self.save_labels_in_ascii:
+			enc_data= np.concatenate(
+				(snames, self.encoded_data_unsupervised, objlabels),
+				axis=1
+			)
+			head= '{} {} {}'.format("# sname",znames,"label")
+		else:
+			enc_data= np.concatenate(
+				(snames, self.encoded_data_unsupervised, objids),
+				axis=1
+			)
+			head= '{} {} {}'.format("# sname",znames,"id")
 
 		Utils.write_ascii(enc_data, self.outfile_encoded_data_unsupervised, head)	
 
@@ -791,29 +924,73 @@ class FeatExtractorUMAP(object):
 			print("Supervised encoded data shape=",self.encoded_data_supervised.shape)
 			print("Supervised encoded data N=",N)
 
-			enc_data= np.concatenate(
-				(snames, self.encoded_data_supervised, objids),
-				axis=1
-			)
-
+			if self.save_labels_in_ascii:
+				enc_data= np.concatenate(
+					(snames, self.encoded_data_supervised, objids),
+					axis=1
+				)
+			else:
+				enc_data= np.concatenate(
+					(snames, self.encoded_data_supervised, objlabels),
+					axis=1
+				)
+			
 			Utils.write_ascii(enc_data, self.outfile_encoded_data_supervised, head)	
 
 		# - Pre-classified data
 		if self.encoded_data_preclassified is not None:
 			logger.info("Saving pre-classified encoded data to file ...")
 			N= self.encoded_data_preclassified.shape[0]
-			print("Pre-classified encoded data shape=",self.encoded_data_preclassified.shape)
-			print("Pre-classified encoded data N=",N)
+			print("Pre-classified encoded data shape=", self.encoded_data_preclassified.shape)
+			print("Pre-classified encoded data N=", N)
 
 			snames_preclass= np.array(self.source_names_preclassified).reshape(N,1)
-			objids_preclass= np.array(self.data_preclassified_classids).reshape(N,1)
 			
-			enc_data= np.concatenate(
-				(snames_preclass, self.encoded_data_preclassified, objids_preclass),
-				axis=1
-			)
+			if isinstance(self.data_classids[0], list): # concatenate ids/labels comma separated
+				objids_preclass_concat= [','.join(map(str,item)) for item in self.data_preclassified_classids]
+				objlabels_preclass_concat= [','.join(map(str,item)) for item in self.data_preclassified_labels]
+				objids_preclass= np.array(objids_preclass_concat).reshape(N,1)
+				objlabels_preclass= np.array(objlabels_preclass_concat).reshape(N,1)
+			else:
+				objids_preclass= np.array(self.data_preclassified_classids).reshape(N,1)
+				objlabels_preclass= np.array(self.data_preclassified_labels).reshape(N,1)
+			
+			if self.save_labels_in_ascii:
+				enc_data= np.concatenate(
+					(snames_preclass, self.encoded_data_preclassified, objlabels_preclass),
+					axis=1
+				)
+			else:
+				enc_data= np.concatenate(
+					(snames_preclass, self.encoded_data_preclassified, objids_preclass),
+					axis=1
+				)
 
 			Utils.write_ascii(enc_data, self.outfile_encoded_data_preclassified, head)	
+
+
+		###################################
+		##     SAVE JSON
+		###################################
+		# - Save unsupervised encoded data
+		if self.datalist_json is not None:
+			N= self.encoded_data_unsupervised.shape[0]
+		
+			# - Loop over data and replace original feats with UMAP feats
+			outdata= {"data": []}
+			
+			for i in range(N):
+				feats_umap= list(self.encoded_data_unsupervised[i])
+				feats_umap= [float(item) for item in feats_umap]
+				
+				d= self.datalist_json[i]
+				d['feats']= NoIndent(feats_umap)
+				outdata["data"].append(d)
+
+			# - Save to json 
+			logger.info("Saving unsupervised encoded data to json file %s ..." % (self.outfile_encoded_data_unsupervised_json))	
+			with open(self.outfile_encoded_data_unsupervised_json, 'w') as fp:
+				json.dump(outdata, fp, cls=MyEncoder, indent=2)
 
 		return 0
 
