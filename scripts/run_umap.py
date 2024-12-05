@@ -37,7 +37,6 @@ import collections
 from sclassifier import __version__, __date__
 from sclassifier import logger
 from sclassifier.utils import Utils
-from sclassifier.data_loader import DataLoader
 from sclassifier.feature_extractor_umap import FeatExtractorUMAP
 
 #### GET SCRIPT ARGS ####
