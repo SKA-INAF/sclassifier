@@ -296,8 +296,10 @@ class FeatExtractorUMAP(object):
 
 		if row_list:	
 			self.data_preclassified= self.data[row_list,:]
-			self.data_preclassified_labels= np.array(label_list)
-			self.data_preclassified_classids= np.array(classid_list)
+			#self.data_preclassified_labels= np.array(label_list)
+			#self.data_preclassified_classids= np.array(classid_list)
+			self.data_preclassified_labels= label_list
+			self.data_preclassified_classids= classid_list
 
 		if self.data_preclassified is not None:
 			logger.info("#nsamples_preclass=%d" % (len(self.data_preclassified_labels)))
@@ -846,7 +848,8 @@ class FeatExtractorUMAP(object):
 			is_single_label= (self.data_preclassified.ndim==1)
 			if self.data_preclassified is not None and len(self.data_preclassified)>=self.preclassified_data_minsize and is_single_label:
 				logger.info("Fitting input pre-classified data in a supervised way ...")
-				self.learned_transf= self.reducer.fit(self.data_preclassified, self.data_preclassified_classids)
+				#self.learned_transf= self.reducer.fit(self.data_preclassified, self.data_preclassified_classids)
+				self.learned_transf= self.reducer.fit(self.data_preclassified, np.array(self.data_preclassified_classids))
 				self.encoded_data_preclassified= self.learned_transf.transform(self.data_preclassified)
 
 		#================================
