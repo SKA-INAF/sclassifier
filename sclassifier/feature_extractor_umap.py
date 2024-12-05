@@ -19,6 +19,7 @@ import random
 import math
 import logging
 import pickle
+import json
 
 ## ASTRO MODULES
 from astropy.io import ascii
