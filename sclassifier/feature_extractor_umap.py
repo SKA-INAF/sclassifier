@@ -553,7 +553,7 @@ class FeatExtractorUMAP(object):
 	#####################################
 	##     PREDICT
 	#####################################
-	def run_predict(self, datafile, modelfile, scalerfile='', datalist_key='data'):
+	def run_predict_from_file(self, datafile, modelfile, scalerfile='', datalist_key='data'):
 		""" Run predict using input dataset """
 
 		#================================
@@ -697,7 +697,7 @@ class FeatExtractorUMAP(object):
 	#####################################
 	##     TRAIN
 	#####################################
-	def run_train(self, datafile, modelfile='', scalerfile='', datalist_key='data'):
+	def run_train_from_file(self, datafile, modelfile='', scalerfile='', datalist_key='data'):
 		""" Run train using input dataset """
 
 		#================================

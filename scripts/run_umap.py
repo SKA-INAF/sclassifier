@@ -180,13 +180,13 @@ def main():
 	if predict:
 		logger.info("Running UMAP classifier prediction using modelfile %s on input feature data ..." % (modelfile_umap))
 		#if umap_class.run_predict(data, class_ids=classids, snames=snames, modelfile=modelfile_umap, scalerfile=scalerfile)<0:
-		if umap_class.run_predict(inputfile, modelfile=modelfile_umap, scalerfile=scalerfile, datalist_key=datalist_key)<0:
+		if umap_class.run_predict_from_file(inputfile, modelfile=modelfile_umap, scalerfile=scalerfile, datalist_key=datalist_key)<0:
 			logger.error("UMAP prediction failed!")
 			return 1
 	else:
 		logger.info("Running UMAP classifier training on input feature data ...")
 		#if umap_class.run_train(data, class_ids=classids, snames=snames, scalerfile=scalerfile)<0:
-		if umap_class.run_train(inputfile, modelfile='', scalerfile=scalerfile, datalist_key=datalist_key)<0:
+		if umap_class.run_train_from_file(inputfile, modelfile='', scalerfile=scalerfile, datalist_key=datalist_key)<0:
 			logger.error("UMAP training failed!")
 			return 1
 
