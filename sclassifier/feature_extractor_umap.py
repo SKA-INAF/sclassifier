@@ -291,7 +291,7 @@ class FeatExtractorUMAP(object):
 				label_list.append(label)
 				self.source_names_preclassified.append(source_name)
 			else:
-				logger.info("Exclude source with id=%d from list (excluded_ids=%s) ..." % (obj_id, str(self.excluded_objids_train)))
+				logger.info("Exclude source with id=%s from list (excluded_ids=%s) ..." % (str(obj_id), str(self.excluded_objids_train)))
 				
 
 		if row_list:	
