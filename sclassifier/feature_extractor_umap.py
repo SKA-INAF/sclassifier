@@ -84,7 +84,6 @@ class FeatExtractorUMAP(object):
 		# - Reducer & parameters
 		self.dump_model= True
 		self.reducer= None
-		self.use_preclassified_data= True
 		self.preclassified_data_minsize= 20
 		self.encoded_data_dim= 2
 		self.encoded_data_unsupervised= None
@@ -110,6 +109,10 @@ class FeatExtractorUMAP(object):
 		self.random_seed= 42
 
 		self.classid_label_map= {}
+		
+		#self.run_semisupervised= False
+		self.run_supervised= False
+		#self.use_preclassified_data= True
 
 		
 		# *****************************
@@ -129,6 +132,8 @@ class FeatExtractorUMAP(object):
 		self.outfile_scaler = 'datascaler.sav'
 		self.outfile_model= 'umap_model.sav'
 		self.save_labels_in_ascii= False
+		self.save_ascii= True
+		self.save_json= True
 
 	#####################################
 	##     SETTERS/GETTERS
@@ -291,7 +296,7 @@ class FeatExtractorUMAP(object):
 				label_list.append(label)
 				self.source_names_preclassified.append(source_name)
 			else:
-				logger.info("Exclude source with id=%s from list (excluded_ids=%s) ..." % (str(obj_id), str(self.excluded_objids_train)))
+				logger.debug("Exclude source with id=%s from list (excluded_ids=%s) ..." % (str(obj_id), str(self.excluded_objids_train)))
 				
 
 		if row_list:	
@@ -844,7 +849,8 @@ class FeatExtractorUMAP(object):
 		#==   FIT PRE-CLASSIFIED DATA (IF AVAILABLE) SUPERVISED
 		#==========================================================
 		# - This is performed if we have preclassified data AND if labels are not lists (e.g. single-label classification)
-		if self.use_preclassified_data:
+		#if self.use_preclassified_data:
+		if self.run_supervised:
 			is_single_label= (self.data_preclassified.ndim==1)
 			if self.data_preclassified is not None and len(self.data_preclassified)>=self.preclassified_data_minsize and is_single_label:
 				logger.info("Fitting input pre-classified data in a supervised way ...")
@@ -879,12 +885,9 @@ class FeatExtractorUMAP(object):
 		return 0
 
 
-	def __save_encoded_data(self):
-		""" Save encoded data """
-
-		###################################
-		##     SAVE ASCII
-		###################################
+	def __save_encoded_data_to_ascii(self):
+		""" Save encoded data to ascii """
+		
 		# - Unsupervised encoded data
 		logger.info("Saving unsupervised encoded data to file ...")
 		N= self.encoded_data_unsupervised.shape[0]
@@ -973,9 +976,11 @@ class FeatExtractorUMAP(object):
 			Utils.write_ascii(enc_data, self.outfile_encoded_data_preclassified, head)	
 
 
-		###################################
-		##     SAVE JSON
-		###################################
+		return 0
+		
+	def __save_encoded_data_to_json(self):
+		""" Save encoded data to json format """
+		
 		# - Save unsupervised encoded data
 		if self.datalist_json is not None:
 			N= self.encoded_data_unsupervised.shape[0]
@@ -995,6 +1000,24 @@ class FeatExtractorUMAP(object):
 			logger.info("Saving unsupervised encoded data to json file %s ..." % (self.outfile_encoded_data_unsupervised_json))	
 			with open(self.outfile_encoded_data_unsupervised_json, 'w') as fp:
 				json.dump(outdata, fp, cls=MyEncoder, indent=2)
+		
+		return 0
+		
+		
+	def __save_encoded_data(self):
+		""" Save encoded data """
+
+		###################################
+		##     SAVE ASCII
+		###################################
+		if self.save_ascii and self.__save_encoded_data_to_ascii()<0:
+			logger.warn("Failed to save outputs to ascii format...")
+		
+		###################################
+		##     SAVE JSON
+		###################################
+		if self.save_json and self.__save_encoded_data_to_json()<0:
+			logger.warn("Failed to save outputs to json format...")
 
 		return 0
 

@@ -68,22 +68,30 @@ def get_args():
 	parser.add_argument('--objids_excluded_in_train', dest='objids_excluded_in_train', required=False, type=str, default='-1,0', help='Source ids not included for training as considered unknown classes')
 
 	# - UMAP classifier options
+	parser.add_argument('-modelfile_umap', '--modelfile_umap', dest='modelfile_umap', required=False, type=str, action='store',help='UMAP model filename (.h5)')
+	parser.add_argument('--predict', dest='predict', action='store_true',help='Only predict data according to loaded UMAP model (default=false)')	
+	parser.set_defaults(predict=False)
 	parser.add_argument('-latentdim_umap', '--latentdim_umap', dest='latentdim_umap', required=False, type=int, default=2, action='store',help='Encoded data dim in UMAP (default=2)')
 	parser.add_argument('-mindist_umap', '--mindist_umap', dest='mindist_umap', required=False, type=float, default=0.1, action='store',help='Min dist UMAP par (default=0.1)')
 	parser.add_argument('-nneighbors_umap', '--nneighbors_umap', dest='nneighbors_umap', required=False, type=int, default=15, action='store',help='N neighbors UMAP par (default=15)')
+	
+	parser.add_argument('--run_supervised', dest='run_supervised', action='store_true',help='Run also supervised UMAP over labelled data (if available) (default=false)')	
+	parser.set_defaults(run_supervised=False)
+	
+	# - Save options
 	parser.add_argument('-outfile_umap_unsupervised', '--outfile_umap_unsupervised', dest='outfile_umap_unsupervised', required=False, type=str, default='latent_data_umap_unsupervised.dat', action='store',help='Name of UMAP encoded data output file')
 	parser.add_argument('-outfile_umap_supervised', '--outfile_umap_supervised', dest='outfile_umap_supervised', required=False, type=str, default='latent_data_umap_supervised.dat', action='store',help='Name of UMAP output file with encoded data produced using supervised method')
 	parser.add_argument('-outfile_umap_preclassified', '--outfile_umap_preclassified', dest='outfile_umap_preclassified', required=False, type=str, default='latent_data_umap_preclass.dat', action='store',help='Name of UMAP output file with encoded data produced from pre-classified data')
 	parser.add_argument('-outfile_umap_unsupervised_json', '--outfile_umap_unsupervised_json', dest='outfile_umap_unsupervised_json', required=False, type=str, default='latent_data_umap_unsupervised.json', action='store',help='Name of UMAP encoded data json output file')
-	
 	parser.add_argument('--save_labels_in_ascii', dest='save_labels_in_ascii', action='store_true',help='Save class labels to ascii (default=save classids)')
 	parser.set_defaults(save_labels_in_ascii=False)
+	
+	parser.add_argument('--no_save_ascii', dest='no_save_ascii', action='store_true',help='Do not save output data to ascii (default=false)')	
+	parser.set_defaults(no_save_ascii=False)
+	parser.add_argument('--no_save_json', dest='no_save_json', action='store_true',help='Do not save output data to josn (default=false)')	
+	parser.set_defaults(no_save_json=False)
 
-	parser.add_argument('-modelfile_umap', '--modelfile_umap', dest='modelfile_umap', required=False, type=str, action='store',help='UMAP model filename (.h5)')
-
-	parser.add_argument('--predict', dest='predict', action='store_true',help='Only predict data according to loaded UMAP model (default=false)')	
-	parser.set_defaults(predict=False)
-
+	# - Plot options
 	parser.add_argument('--draw', dest='draw', action='store_true',help='Draw plots (default=false)')	
 	parser.set_defaults(draw=False)
 
@@ -135,16 +143,21 @@ def main():
 	latentdim_umap= args.latentdim_umap
 	mindist_umap= args.mindist_umap
 	nneighbors_umap= args.nneighbors_umap
+	modelfile_umap= args.modelfile_umap
+	predict= args.predict
+	run_supervised= args.run_supervised
+
+	# - Draw options
+	draw= args.draw
+	
+	# - Save options
+	no_save_ascii= args.no_save_ascii
+	no_save_json= args.no_save_json
 	outfile_umap_unsupervised= args.outfile_umap_unsupervised
 	outfile_umap_supervised= args.outfile_umap_supervised
 	outfile_umap_preclassified= args.outfile_umap_preclassified
 	outfile_umap_unsupervised_json= args.outfile_umap_unsupervised_json
 	save_labels_in_ascii= args.save_labels_in_ascii
-	modelfile_umap= args.modelfile_umap
-	predict= args.predict
-
-	# - Draw options
-	draw= args.draw
 
 	#===========================
 	#==   READ FEATURE DATA
@@ -175,6 +188,9 @@ def main():
 	umap_class.classid_label_map= classid_label_map
 	umap_class.excluded_objids_train = objids_excluded_in_train
 	umap_class.save_labels_in_ascii= save_labels_in_ascii
+	umap_class.run_supervised= run_supervised
+	umap_class.save_ascii= False if no_save_ascii else True
+	umap_class.save_json= False if no_save_json else True
 
 	status= 0
 	if predict:
