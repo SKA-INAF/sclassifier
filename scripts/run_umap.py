@@ -88,8 +88,10 @@ def get_args():
 	
 	parser.add_argument('--no_save_ascii', dest='no_save_ascii', action='store_true',help='Do not save output data to ascii (default=false)')	
 	parser.set_defaults(no_save_ascii=False)
-	parser.add_argument('--no_save_json', dest='no_save_json', action='store_true',help='Do not save output data to josn (default=false)')	
+	parser.add_argument('--no_save_json', dest='no_save_json', action='store_true',help='Do not save output data to json (default=false)')	
 	parser.set_defaults(no_save_json=False)
+	parser.add_argument('--no_save_model', dest='no_save_model', action='store_true',help='Do not save model (default=false)')	
+	parser.set_defaults(no_save_model=False)
 
 	# - Plot options
 	parser.add_argument('--draw', dest='draw', action='store_true',help='Draw plots (default=false)')	
@@ -153,6 +155,7 @@ def main():
 	# - Save options
 	no_save_ascii= args.no_save_ascii
 	no_save_json= args.no_save_json
+	no_save_model= args.no_save_model
 	outfile_umap_unsupervised= args.outfile_umap_unsupervised
 	outfile_umap_supervised= args.outfile_umap_supervised
 	outfile_umap_preclassified= args.outfile_umap_preclassified
@@ -191,6 +194,7 @@ def main():
 	umap_class.run_supervised= run_supervised
 	umap_class.save_ascii= False if no_save_ascii else True
 	umap_class.save_json= False if no_save_json else True
+	umap_class.save_model= False if no_save_model else True
 
 	status= 0
 	if predict:

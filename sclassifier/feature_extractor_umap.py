@@ -82,7 +82,6 @@ class FeatExtractorUMAP(object):
 		# ** UMAP parameters
 		# *****************************
 		# - Reducer & parameters
-		self.dump_model= True
 		self.reducer= None
 		self.preclassified_data_minsize= 20
 		self.encoded_data_dim= 2
@@ -134,6 +133,8 @@ class FeatExtractorUMAP(object):
 		self.save_labels_in_ascii= False
 		self.save_ascii= True
 		self.save_json= True
+		self.save_model= True
+		self.save_scaler= True
 
 	#####################################
 	##     SETTERS/GETTERS
@@ -865,7 +866,7 @@ class FeatExtractorUMAP(object):
 		self.encoded_data_unsupervised= self.reducer.fit_transform(self.data)
 
 		# - Save model to file
-		if self.dump_model:
+		if self.save_model:
 			logger.info("Dumping model to file %s ..." % self.outfile_model)
 			pickle.dump(self.reducer, open(self.outfile_model, 'wb'))
 
