@@ -597,7 +597,7 @@ class OutlierFinder(object):
 		return 0		
 
 
-	def run(self, datafile, modelfile='', scalerfile='', datalist_key='data'):
+	def run_from_file(self, datafile, modelfile='', scalerfile='', datalist_key='data'):
 		""" Find outliers in input data """
 		
 		#================================

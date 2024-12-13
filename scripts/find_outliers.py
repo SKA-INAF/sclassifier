@@ -219,7 +219,7 @@ def main():
 	#	modelfile, scalerfile
 	#)
 	
-	status= ofinder.run(
+	status= ofinder.run_from_file(
 		datafile=inputfile, 
 		modelfile=modelfile, 
 		scalerfile=scalerfile, 
