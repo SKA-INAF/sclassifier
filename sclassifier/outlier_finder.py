@@ -43,7 +43,7 @@ matplotlib.use('Agg')
 
 ## PACKAGE MODULES
 from .utils import Utils
-
+from .utils import NoIndent, MyEncoder
 
 ##################################
 ##     OutlierFinder CLASS
@@ -63,6 +63,7 @@ class OutlierFinder(object):
 		self.data_preclassified= None
 		self.data_preclassified_labels= None
 		self.data_preclassified_classids= None
+		self.datalist_json= None
 		self.data_labels= []
 		self.data_classids= []
 		self.source_names= []
@@ -113,12 +114,15 @@ class OutlierFinder(object):
 		# *****************************
 		# ** Output data
 		# *****************************
-		self.save_to_file= True
-		self.save_features= False
+		self.save_ascii= True
+		self.save_json= True
+		self.save_features= True
+		self.save_model= True
 		self.outfile= "outlier_data.dat"
 		self.outfile_model= "outlier_model.sav"
 		self.outfile_scaler = 'datascaler.sav'
-
+		self.outfile_json= "outlier_data.json"
+		
 	#####################################
 	##     PRE-PROCESSING
 	#####################################
@@ -183,12 +187,20 @@ class OutlierFinder(object):
 			source_name= self.source_names[i]
 			obj_id= self.data_classids[i]
 			label= self.data_labels[i]
-			
+				
 			add_to_train_list= True
 			for obj_id_excl in self.excluded_objids_train:
-				if obj_id==obj_id_excl:
-					add_to_train_list= False
-					break
+				if isinstance(obj_id, list):
+					for item in obj_id:
+						if item==obj_id_excl:
+							add_to_train_list= False
+							break
+					if not add_to_train_list:
+						break
+				else:
+					if obj_id==obj_id_excl:
+						add_to_train_list= False
+						break
 
 			if add_to_train_list:
 			#if obj_id!=0 and obj_id!=-1:
@@ -197,75 +209,22 @@ class OutlierFinder(object):
 				label_list.append(label)
 				self.source_names_preclassified.append(source_name)
 			else:
-				logger.info("Exclude source with id=%d from list (excluded_ids=%s) ..." % (obj_id, str(self.excluded_objids_train)))
+				logger.debug("Exclude source with id=%d from list (excluded_ids=%s) ..." % (obj_id, str(self.excluded_objids_train)))
 				
 
 		if row_list:	
 			self.data_preclassified= self.data[row_list,:]
-			self.data_preclassified_labels= np.array(label_list)
-			self.data_preclassified_classids= np.array(classid_list)
-
+			#self.data_preclassified_labels= np.array(label_list)
+			#self.data_preclassified_classids= np.array(classid_list)
+			self.data_preclassified_labels= label_list
+			self.data_preclassified_classids= classid_list
 		
 		if self.data_preclassified is not None:
 			logger.info("#nsamples_preclass=%d" % (len(self.data_preclassified_labels)))
 
 		return 0
 
-	###########################################
-	##     SET DATA FROM FILE (OLD VERSION)
-	###########################################
-	def set_data_from_file_old(self, filename):
-		""" Set data from input file. Expected format: sname, N features, classid """
-
-		# - Read table
-		row_start= 0
-		try:
-			table= ascii.read(filename, data_start=row_start)
-		except:
-			logger.error("Failed to read feature file %s!" % filename)
-			return -1
 	
-		ncols= len(table.colnames)
-		nfeat= ncols-2
-
-		# - Set data vectors
-		rowIndex= 0
-		self.data_classids= []
-		self.source_names= []
-		featdata= []
-
-		for data in table:
-			sname= data[0]
-			obj_id= data[ncols-1]
-			
-			self.source_names.append(sname)
-			self.data_classids.append(obj_id)
-			featdata_curr= []
-			for k in range(nfeat):
-				featdata_curr.append(data[k+1])
-			featdata.append(featdata_curr)
-
-		self.data= np.array(featdata)
-		if self.data.size==0:
-			logger.error("Empty feature data vector read!")
-			return -1
-
-		data_shape= self.data.shape
-		self.nsamples= data_shape[0]
-		self.nfeatures= data_shape[1]
-		logger.info("#nsamples=%d, #nfeatures=%d" % (self.nsamples, self.nfeatures))
-		
-		# - Normalize feature data?
-		if self.normalize:
-			logger.info("Normalizing feature data ...")
-			data_norm= self.__transform_data(self.data, self.norm_min, self.norm_max)
-			if data_norm is None:
-				logger.error("Data transformation failed!")
-				return -1
-			self.data= data_norm
-
-		return 0
-		
 		
 	#####################################
 	##     SET DATA FROM FILE
@@ -334,49 +293,74 @@ class OutlierFinder(object):
 
 		return 0
 
-	##############################################
-	##     SET DATA FROM VECTOR (OLD VERSION)
-	##############################################
-	def set_data_old(self, featdata, class_ids=[], snames=[]):
-		""" Set data from input array. Optionally give labels & obj names """
+	
+	#####################################
+	##     SET DATA FROM ASCII FILE
+	#####################################
+	def set_data_from_ascii_file(self, filename):
+		""" Set data from input ascii file. Expected format: sname, N features, classid """
 
-		# - Set data vector
-		self.data_classids= []
-		self.source_names= []
-
-		# - Set feature data
-		self.data= featdata
-		data_shape= self.data.shape
-
-		if self.data.size==0:
-			logger.error("Empty feature data vector given!")
+		# - Read ascii file
+		ret= Utils.read_feature_data(filename)
+		if not ret:
+			logger.error("Failed to read data from file %s!" % (filename))
 			return -1
 
+		data= ret[0]
+		snames= ret[1]
+		classids= ret[2]
+
+		return self.set_data(data, snames, class_ids)
+	
+	#####################################
+	##     SET DATA FROM JSON FILE
+	#####################################
+	def set_data_from_json_file(self, filename, datakey="data"):
+		""" Set data from input json file. Expected format: dict with featdata key """
+
+		# - Read json file
+		try:
+			f= open(filename, "r")
+			self.datalist_json= json.load(f)[datakey]
+		except Exception as e:
+			logger.error("Failed to read feature file %s (err=%s)!" % (filename, str(e)))
+			return -1
+		
+		# - Set data vectors
+		self.data_labels= []
+		self.data_classids= []
+		self.source_names= []
+		featdata= []
+		
+		for item in self.datalist_json:
+			sname= item['sname']
+			classid= item['id']
+			label= item['label']
+			feats= item['feats']
+			nfeat= len(feats)
+			
+			# - Remap labels?
+			if self.classid_label_map:
+				if isinstance(classid, list):
+					label= [self.classid_label_map[i] for i in classid]
+				else:
+					label= self.classid_label_map[classid]
+			
+			# - Add entries to list
+			self.source_names.append(sname)
+			self.data_labels.append(label)
+			self.data_classids.append(classid)
+			featdata.append(feats)
+
+		self.data= np.array(featdata)
+		if self.data.size==0:
+			logger.error("Empty feature data vector read!")
+			return -1
+
+		data_shape= self.data.shape
 		self.nsamples= data_shape[0]
 		self.nfeatures= data_shape[1]
-
-		# - Set class ids & labels
-		if class_ids:
-			nids= len(class_ids)
-			if nids!=self.nsamples:
-				logger.error("Given class ids have size (%d) different than feature data (%d)!" % (nids,self.nsamples))
-				return -1
-			self.data_classids= class_ids
-
-		else:
-			self.data_classids= [0]*self.nsamples # Init to unknown type
-		
-		# - Set obj names
-		if snames:
-			n= len(snames)	
-			if n!=self.nsamples:
-				logger.error("Given source names have size (%d) different than feature data (%d)!" % (n,self.nsamples))
-				return -1
-			self.source_names= snames
-		else:
-			self.source_names= ["XXX"]*self.nsamples # Init to unclassified
-		
-		logger.info("#nsamples=%d, #nfeatures=%d" % (self.nsamples, self.nfeatures))
+		logger.info("#nsamples=%d" % (self.nsamples))
 		
 		# - Normalize feature data?
 		if self.normalize:
@@ -387,9 +371,12 @@ class OutlierFinder(object):
 				return -1
 			self.data= data_norm
 
+		# - Set pre-classified data
+		logger.info("Setting pre-classified data (if any) ...")
+		self.__set_preclass_data()
+
 		return 0
-
-
+	
 	#####################################
 	##     SET DATA FROM VECTOR
 	#####################################
@@ -589,7 +576,6 @@ class OutlierFinder(object):
 		logger.info("Predicting outliers ...")
 		self.data_pred= self.model.predict(self.data)
 		
-
 		# - Retrieve the anomaly scores
 		#   NB: The lower, the more abnormal. Negative scores represent outliers, positive scores represent inliers
 		logger.info("Retrieving the anomaly score (-1 or negative values means outliers) ...")
@@ -611,7 +597,7 @@ class OutlierFinder(object):
 		return 0		
 
 
-	def run(self, datafile, modelfile='', scalerfile=''):
+	def run(self, datafile, modelfile='', scalerfile='', datalist_key='data'):
 		""" Find outliers in input data """
 		
 		#================================
@@ -633,10 +619,19 @@ class OutlierFinder(object):
 		if datafile=="":
 			logger.error("Empty data file specified!")
 			return -1
-
-		if self.set_data_from_file(datafile)<0:
-			logger.error("Failed to read datafile %s!" % datafile)
-			return -1
+			
+		# - Check input file extension
+		file_ext= os.path.splitext(datafile)[1]
+		
+		if file_ext=='.json':
+			if self.set_data_from_json_file(datafile, datalist_key)<0:
+				logger.error("Failed to read datafile %s!" % datafile)
+				return -1
+		else:
+			#if self.set_data_from_file(datafile)<0:
+			if self.set_data_from_ascii_file(datafile)<0:
+				logger.error("Failed to read datafile %s!" % datafile)
+				return -1
 	
 		#================================
 		#==   LOAD MODEL
@@ -752,11 +747,10 @@ class OutlierFinder(object):
 		#================================
 		#==   SAVE
 		#================================
-		if self.save_to_file:
-			logger.info("Saving results ...")
-			if self.__save()<0:
-				logger.error("Failed to save outlier search results!")
-				return -1
+		logger.info("Saving results ...")
+		if self.__save()<0:
+			logger.error("Failed to save outlier search results!")
+			return -1
 
 		return 0
 
@@ -764,7 +758,63 @@ class OutlierFinder(object):
 	##     SAVE DATA
 	#####################################
 	def __save(self):
-		""" Save selected data """
+		""" Save data  """
+		
+		###################################
+		##     SAVE ASCII
+		###################################
+		if self.save_ascii and self.__save_to_ascii()<0:
+			logger.warn("Failed to save outputs to ascii format...")
+		
+		###################################
+		##     SAVE JSON
+		###################################
+		if self.save_json and self.__save_to_json()<0:
+			logger.warn("Failed to save outputs to json format...")
+			
+		###################################
+		##     SAVE MODEL
+		###################################	
+		if self.model and self.save_model:
+			logger.info("Saving model to file %s ..." % (self.outfile_model))
+			pickle.dump(self.model, open(self.outfile_model, 'wb'))
+	
+		return 0
+		
+	def __save_to_json(self):
+		""" Save data to ascii """
+		
+		# - Save unsupervised encoded data
+		if self.datalist_json is not None:
+			N= self.data.shape[0]
+		
+			# - Loop over data and replace original feats with UMAP feats
+			outdata= {"data": []}
+			
+			for i in range(N):
+				feats= list(self.data[i])
+				feats= [float(item) for item in feats]
+				is_outlier= self.data_pred[i]
+				outlier_score= self.anomaly_scores_orig[i]
+				
+				d= self.datalist_json[i]
+				if self.save_features:
+					d['feats']= NoIndent(feats_umap)
+				else:
+					del d['feats']
+				d['is_outlier']= is_outlier
+				d['outlier_score']= outlier_score
+				outdata["data"].append(d)
+
+			# - Save to json 
+			logger.info("Saving unsupervised encoded data to json file %s ..." % (self.outfile_encoded_data_unsupervised_json))	
+			with open(self.outfile_encoded_data_unsupervised_json, 'w') as fp:
+				json.dump(outdata, fp, cls=MyEncoder, indent=2)
+		
+		return 0
+	
+	def __save_to_ascii(self):
+		""" Save data to ascii """
 
 		# - Check if selected data is available
 		if self.data is None:
@@ -780,7 +830,16 @@ class OutlierFinder(object):
 		N= self.data.shape[0]
 		Nfeat= self.data.shape[1]
 		snames= np.array(self.source_names).reshape(N,1)
-		objids= np.array(self.data_classids).reshape(N,1)
+		
+		if isinstance(self.data_classids[0], list): # concatenate ids/labels comma separated
+			objids_concat= [','.join(map(str,item)) for item in self.data_classids]
+			objlabels_concat= [','.join(map(str,item)) for item in self.data_labels]
+			objids= np.array(objids_concat).reshape(N,1)
+			objlabels= np.array(objlabels_concat).reshape(N,1)
+		else:
+			objids= np.array(self.data_classids).reshape(N,1)
+			objlabels= np.array(self.data_labels).reshape(N,1)
+		
 		outlier_outputs= np.array(self.data_pred).reshape(N,1)
 		#outlier_outputs[outlier_outputs==1]= 0   # set non-outliers to 0 
 		#outlier_outputs[outlier_outputs==-1]= 1  # set outliers to 1
@@ -789,31 +848,38 @@ class OutlierFinder(object):
 		outlier_score_orig= np.array(self.anomaly_scores_orig).reshape(N,1)
 
 		if self.save_features:
-			outdata= np.concatenate(
-				(snames, self.data, objids, outlier_outputs, outlier_score_orig),
-				axis=1
-			)
-			znames_counter= list(range(1,Nfeat+1))
+			znames_counter= list(range(1, Nfeat+1))
 			znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
-			head= '{} {} {}'.format("# sname",znames," id is_outlier outlier_score")
-
+			
+			if self.save_labels_in_ascii:
+				outdata= np.concatenate(
+					(snames, self.data, objlabels, outlier_outputs, outlier_score_orig),
+					axis=1
+				)
+				head= '{} {} {}'.format("# sname",znames," label is_outlier outlier_score")
+			else:
+				outdata= np.concatenate(
+					(snames, self.data, objids, outlier_outputs, outlier_score_orig),
+					axis=1
+				)
+				head= '{} {} {}'.format("# sname",znames," id is_outlier outlier_score")
 		else:
-			outdata= np.concatenate(
-				(snames, objids, outlier_outputs, outlier_score_orig),
-				axis=1
-			)
-			head= "# sname id is_outlier outlier_score"
+			if self.save_labels_in_ascii:
+				outdata= np.concatenate(
+					(snames, objlabels, outlier_outputs, outlier_score_orig),
+					axis=1
+				)
+				head= "# sname label is_outlier outlier_score"
+			else:
+				outdata= np.concatenate(
+					(snames, objids, outlier_outputs, outlier_score_orig),
+					axis=1
+				)
+				head= "# sname id is_outlier outlier_score"
 		
-
 		# - Save outlier data 
 		logger.info("Saving outlier output data to file %s ..." % (self.outfile))
 		Utils.write_ascii(outdata, self.outfile, head)
 
-		# - Save model
-		if self.model:
-			logger.info("Saving model to file %s ..." % (self.outfile_model))
-			pickle.dump(self.model, open(self.outfile_model, 'wb'))
-
-	
 		return 0
 
