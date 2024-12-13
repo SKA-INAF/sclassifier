@@ -67,6 +67,7 @@ class FeatExtractorUMAP(object):
 		self.data_classids= []
 		self.source_names= []
 		self.source_names_preclassified= []
+		self.selcols= []
 		
 		self.excluded_objids_train= [-1,0] # Sources with these ids are considered not labelled and therefore excluded from training or metric calculation
 		
@@ -355,11 +356,16 @@ class FeatExtractorUMAP(object):
 				featdata_curr.append(data[k+1])
 			featdata.append(featdata_curr)
 
-		self.data= np.array(featdata)
+		# - Select data columns?
+		if self.selcols:
+			self.data= Utils.get_selected_data_cols(np.array(featdata), self.selcols)
+		else:
+			self.data= np.array(featdata)
+		
 		if self.data.size==0:
 			logger.error("Empty feature data vector read!")
 			return -1
-
+		
 		self.nsamples= data_shape[0]
 		self.nfeatures= data_shape[1]
 		logger.info("#nsamples=%d" % (self.nsamples))
@@ -386,7 +392,7 @@ class FeatExtractorUMAP(object):
 		""" Set data from input ascii file. Expected format: sname, N features, classid """
 
 		# - Read ascii file
-		ret= Utils.read_feature_data(filename)
+		ret= Utils.read_feature_data(filename, self.selcols)
 		if not ret:
 			logger.error("Failed to read data from file %s!" % (filename))
 			return -1
@@ -438,7 +444,11 @@ class FeatExtractorUMAP(object):
 			self.data_classids.append(classid)
 			featdata.append(feats)
 
-		self.data= np.array(featdata)
+		if self.selcols:
+			self.data= Utils.get_selected_data_cols(np.array(featdata), self.selcols)
+		else:
+			self.data= np.array(featdata)
+		
 		if self.data.size==0:
 			logger.error("Empty feature data vector read!")
 			return -1

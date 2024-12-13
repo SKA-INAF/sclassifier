@@ -257,7 +257,36 @@ class Utils(object):
 		return table
 
 	@classmethod
-	def read_feature_data(cls, filename):
+	def get_selected_data_cols(cls, data, selcols):
+		""" Select data columns provided in selcols list """
+
+		# - Check sel cols
+		if not selcols:
+			logger.error("Empty sel col list!")
+			return None
+
+		data_shape= data.shape
+		nsamples= data_shape[0]
+		nfeatures= data_shape[1]
+
+		# - Remove any duplicated col ids, sort and set colsel flags
+		selcols= list(set(selcols))
+		selcols.sort()
+		selcolflags= [False]*nfeatures
+		for col in selcols:
+			if col<0 or col>=nfeatures:
+				logger.error("Given sel col id %d is not in nfeature col range [0,%d]!" % (col, nfeatures-1))
+				return None
+			selcolflags[col]= True
+	
+		# - Extract selected data columns
+		logger.info("Extracting %d selected data columns from original data ..." % (len(selcols)))
+		data_sel= data[:,selcolflags]
+		
+		return data_sel
+
+	@classmethod
+	def read_feature_data(cls, filename, selcols=[]):
 		""" Read data table. Format: sname data classid """	
 
 		# - Read table
@@ -277,7 +306,11 @@ class Utils(object):
 		classids= table[colnames[ndim-1]].data.tolist()
 		x= np.lib.recfunctions.structured_to_unstructured(table.as_array())
 		data= x[:,1:1+nvars].astype(np.float32)
-
+		
+		# - Select data columns?
+		if selcols:
+			data= cls.get_selected_data_cols(np.copy(data), selcols)
+			
 		return (data, snames, classids)
 
 	@classmethod

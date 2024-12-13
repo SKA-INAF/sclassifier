@@ -72,6 +72,7 @@ class OutlierFinder(object):
 		
 		#self.excluded_objids_train= [-1,0] # Sources with these ids are considered not labelled and therefore excluded from training or metric calculation
 		self.excluded_objids_train= [] # Sources with these ids are considered not labelled and therefore excluded from training or metric calculation
+		self.selcols= []
 		
 		self.classid_label_map= {
 			1: "INLIER",
@@ -270,7 +271,12 @@ class OutlierFinder(object):
 				featdata_curr.append(data[k+1])
 			featdata.append(featdata_curr)
 
-		self.data= np.array(featdata)
+		# - Select data columns?
+		if self.selcols:
+			self.data= Utils.get_selected_data_cols(np.array(featdata), self.selcols)
+		else:
+			self.data= np.array(featdata)
+		
 		if self.data.size==0:
 			logger.error("Empty feature data vector read!")
 			return -1
@@ -302,7 +308,7 @@ class OutlierFinder(object):
 		""" Set data from input ascii file. Expected format: sname, N features, classid """
 
 		# - Read ascii file
-		ret= Utils.read_feature_data(filename)
+		ret= Utils.read_feature_data(filename, self.selcols)
 		if not ret:
 			logger.error("Failed to read data from file %s!" % (filename))
 			return -1
@@ -353,7 +359,11 @@ class OutlierFinder(object):
 			self.data_classids.append(classid)
 			featdata.append(feats)
 
-		self.data= np.array(featdata)
+		if self.selcols:
+			self.data= Utils.get_selected_data_cols(np.array(featdata), self.selcols)
+		else:
+			self.data= np.array(featdata)
+		
 		if self.data.size==0:
 			logger.error("Empty feature data vector read!")
 			return -1
