@@ -802,8 +802,8 @@ class OutlierFinder(object):
 					d['feats']= NoIndent(feats)
 				else:
 					del d['feats']
-				d['is_outlier']= is_outlier
-				d['outlier_score']= outlier_score
+				d['is_outlier']= int(is_outlier)
+				d['outlier_score']= float(outlier_score)
 				outdata["data"].append(d)
 
 			# - Save to json 
