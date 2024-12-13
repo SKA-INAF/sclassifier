@@ -807,8 +807,8 @@ class OutlierFinder(object):
 				outdata["data"].append(d)
 
 			# - Save to json 
-			logger.info("Saving unsupervised encoded data to json file %s ..." % (self.outfile_encoded_data_unsupervised_json))	
-			with open(self.outfile_encoded_data_unsupervised_json, 'w') as fp:
+			logger.info("Saving unsupervised encoded data to json file %s ..." % (self.outfile_json))	
+			with open(self.outfile_json, 'w') as fp:
 				json.dump(outdata, fp, cls=MyEncoder, indent=2)
 		
 		return 0
