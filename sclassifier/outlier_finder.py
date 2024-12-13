@@ -673,11 +673,10 @@ class OutlierFinder(object):
 		#================================
 		#==   SAVE
 		#================================
-		if self.save_to_file:
-			logger.info("Saving results ...")
-			if self.__save()<0:
-				logger.error("Failed to save outlier search results!")
-				return -1
+		logger.info("Saving results ...")
+		if self.__save()<0:
+			logger.error("Failed to save outlier search results!")
+			return -1
 
 		return 0
 
