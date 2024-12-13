@@ -28,7 +28,6 @@ import collections
 ## MODULES
 from sclassifier import __version__, __date__
 from sclassifier import logger
-from sclassifier.data_loader import DataLoader
 from sclassifier.utils import Utils
 from sclassifier.outlier_finder import OutlierFinder
 
