@@ -799,7 +799,7 @@ class OutlierFinder(object):
 				
 				d= self.datalist_json[i]
 				if self.save_features:
-					d['feats']= NoIndent(feats_umap)
+					d['feats']= NoIndent(feats)
 				else:
 					del d['feats']
 				d['is_outlier']= is_outlier
