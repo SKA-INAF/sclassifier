@@ -351,7 +351,7 @@ class Clusterer(object):
 				label_list.append(label)
 				self.source_names_preclassified.append(source_name)
 			else:
-				logger.info("Exclude source with id=%s from list (excluded_ids=%s) ..." % (str(obj_id), str(self.excluded_objids_train)))
+				logger.debug("Exclude source with id=%s from list (excluded_ids=%s) ..." % (str(obj_id), str(self.excluded_objids_train)))
 					
 
 		if row_list:	
@@ -983,18 +983,17 @@ class Clusterer(object):
 		self.exemplars= self.clusterer.exemplars_  # list
 		self.cluster_persistence= self.clusterer.cluster_persistence_  # shape (n_clusters, )
 		
-		print("self.labels")
-		print(type(self.labels))
-		print(self.labels)
-		print(self.labels.tolist())
-		print(type(self.labels.tolist()))
-		
+		#print("self.labels")
+		#print(type(self.labels))
+		#print(self.labels)
+		#print(self.labels.tolist())
+		#print(type(self.labels.tolist()))
 
 		labels_unique= set(self.labels.tolist())
 		labels_unique.discard(-1) # get set of unique labels, without -1=noise
-		print("labels_unique")
-		print(labels_unique)
-		#self.nclusters= self.labels.max()
+		#print("labels_unique")
+		#print(labels_unique)
+		###self.nclusters= self.labels.max()
 		self.nclusters= len(labels_unique)
 		logger.info("#%d clusters found ..." % (self.nclusters))
 	
