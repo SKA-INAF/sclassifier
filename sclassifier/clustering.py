@@ -1003,7 +1003,7 @@ class Clusterer(object):
 		#==   SAVE CLUSTERED DATA
 		#================================
 		logger.info("Saving clustered data to file ...")
-		if self.__save(data, source_names_all, data_ids_all, data_labels_all, self.labels, self.probs, self.outlier_scores)<0:
+		if self.__save(data_all, source_names_all, data_ids_all, data_labels_all, self.labels, self.probs, self.outlier_scores)<0:
 			logger.error("Failed to save clustering results!")
 			return -1
 		
