@@ -521,11 +521,22 @@ class Clusterer(object):
 		# - Normalize feature data?
 		if self.normalize:
 			logger.info("Normalizing feature data ...")
-			data_norm= self.__transform_data(self.data, self.norm_min, self.norm_max)
+			data_norm= self.__transform_data(self.data)
 			if data_norm is None:
 				logger.error("Data transformation failed!")
 				return -1
 			self.data= data_norm
+
+		# - Apply dimensionality reduction?
+		if self.reduce_dim:
+			logger.info("Reducing data dimensionality using method %s ..." % (self.reduce_dim_method))
+			post_normalize= False
+			data_transf= self.__reduce_data_dim(self.data, normalize=post_normalize)
+			self.data= data_transf
+			data_shape= self.data.shape
+			self.nsamples= data_shape[0]
+			self.nfeatures= data_shape[1]
+			logger.info("#nsamples=%d, #nfeatures=%d (after dim reduction)" % (self.nsamples, self.nfeatures))
 
 		# - Set pre-classified data
 		logger.info("Setting pre-classified data (if any) ...")
