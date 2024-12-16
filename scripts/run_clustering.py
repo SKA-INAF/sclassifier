@@ -76,7 +76,7 @@ def get_args():
 
 	# - Clustering options
 	parser.add_argument('-min_cluster_size', '--min_cluster_size', dest='min_cluster_size', required=False, type=int, default=5, action='store',help='Minimum cluster size for HDBSCAN clustering (default=5)')
-	parser.add_argument('-min_samples', '--min_samples', dest='min_samples', required=False, type=int, default=None, action='store',help='Minimum cluster sample parameter for HDBSCAN clustering. Typically equal to min_cluster_size (default=None')
+	parser.add_argument('-min_samples', '--min_samples', dest='min_samples', required=False, type=int, default=-1, action='store',help='Minimum cluster sample parameter for HDBSCAN clustering. <0 means setting it to None, which means equal to min_cluster_size (default=-1')
 	parser.add_argument('-cluster_selection_epsilon', '--cluster_selection_epsilon', dest='cluster_selection_epsilon', required=False, type=float, default=0.0, action='store',help='A distance threshold. Clusters below this value will be merged. (default=0')
 	parser.add_argument('-modelfile_clust', '--modelfile_clust', dest='modelfile_clust', required=False, type=str, action='store',help='Clustering model filename (.h5)')
 	parser.add_argument('--predict_clust', dest='predict_clust', action='store_true',help='Only predict clustering according to current clustering model (default=false)')	
@@ -131,7 +131,6 @@ def main():
 	if args.selcols!="":
 		selcols= [int(x.strip()) for x in args.selcols.split(',')]
 		
-
 	# - Data pre-processing
 	normalize= args.normalize
 	scalerfile= args.scalerfile
@@ -155,7 +154,9 @@ def main():
 	
 	# - Clustering options
 	min_cluster_size= args.min_cluster_size
-	min_samples= args.min_samples	
+	min_samples= args.min_samples
+	if args.min_samples<0:
+		min_samples= None	
 	cluster_selection_epsilon= args.cluster_selection_epsilon
 	modelfile_clust= args.modelfile_clust
 	predict_clust= args.predict_clust
