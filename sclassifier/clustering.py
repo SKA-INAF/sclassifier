@@ -19,6 +19,7 @@ import random
 import math
 import logging
 import pickle
+import json
 
 ## ASTRO MODULES
 from astropy.io import ascii 
@@ -37,6 +38,7 @@ matplotlib.use('Agg')
 
 ## SCLASSIFIER MODULES
 from .utils import Utils
+from .utils import NoIndent, MyEncoder
 
 ##############################
 ##     GLOBAL VARS
@@ -73,6 +75,7 @@ class Clusterer(object):
 		self.data_preclassified= None
 		self.data_preclassified_labels= None
 		self.data_preclassified_classids= None
+		self.datalist_json= None
 		self.data_labels= []
 		self.data_classids= []
 		self.source_names= []
@@ -80,6 +83,7 @@ class Clusterer(object):
 		
 		self.excluded_objids_train= [-1,0] # Sources with these ids are considered not labelled and therefore excluded from training or metric calculation
 		self.classid_label_map= {}
+		self.selcols= []
 		
 		# *****************************
 		# ** Pre-processing
@@ -180,10 +184,14 @@ class Clusterer(object):
 		# ** Output
 		# *****************************
 		# - Output data
-		self.dump_model= True
+		self.save_ascii= True
+		self.save_json= True
+		self.save_features= True
+		self.save_model= True
 		self.outfile_model= "clustering_model.sav"
 		self.outfile_model_preclass= "clustering_preclass_model.sav"
 		self.outfile= 'clustered_data.dat'
+		self.outfile_json= 'clustered_data.json'
 		self.outfile_plot= 'clusters.png'
 		self.outfile_scaler = 'datascaler.sav'
 		self.outfile_pca= 'pca_data.dat'
@@ -324,9 +332,17 @@ class Clusterer(object):
 			
 			add_to_train_list= True
 			for obj_id_excl in self.excluded_objids_train:
-				if obj_id==obj_id_excl:
-					add_to_train_list= False
-					break
+				if isinstance(obj_id, list):
+					for item in obj_id:
+						if item==obj_id_excl:
+							add_to_train_list= False
+							break
+					if not add_to_train_list:
+						break
+				else:
+					if obj_id==obj_id_excl:
+						add_to_train_list= False
+						break
 				
 			#if obj_id!=0 and obj_id!=-1:
 			if add_to_train_list:
@@ -340,9 +356,10 @@ class Clusterer(object):
 
 		if row_list:	
 			self.data_preclassified= self.data[row_list,:]
-			self.data_preclassified_labels= np.array(label_list)
-			self.data_preclassified_classids= np.array(classid_list)
-
+			#self.data_preclassified_labels= np.array(label_list)
+			#self.data_preclassified_classids= np.array(classid_list)
+			self.data_preclassified_labels= label_list
+			self.data_preclassified_classids= classid_list
 		
 		if self.data_preclassified is not None:
 			logger.info("#nsamples_preclass=%d" % (len(self.data_preclassified_labels)))
@@ -428,6 +445,94 @@ class Clusterer(object):
 
 		return 0
 
+
+	#####################################
+	##     SET DATA FROM ASCII FILE
+	#####################################
+	def set_data_from_ascii_file(self, filename):
+		""" Set data from input ascii file. Expected format: sname, N features, classid """
+
+		# - Read ascii file
+		ret= Utils.read_feature_data(filename, self.selcols)
+		if not ret:
+			logger.error("Failed to read data from file %s!" % (filename))
+			return -1
+
+		data= ret[0]
+		snames= ret[1]
+		classids= ret[2]
+
+		return self.set_data(data, snames, class_ids)
+	
+	#####################################
+	##     SET DATA FROM JSON FILE
+	#####################################
+	def set_data_from_json_file(self, filename, datakey="data"):
+		""" Set data from input json file. Expected format: dict with featdata key """
+
+		# - Read json file
+		try:
+			f= open(filename, "r")
+			self.datalist_json= json.load(f)[datakey]
+		except Exception as e:
+			logger.error("Failed to read feature file %s (err=%s)!" % (filename, str(e)))
+			return -1
+		
+		# - Set data vectors
+		self.data_labels= []
+		self.data_classids= []
+		self.source_names= []
+		featdata= []
+		
+		for item in self.datalist_json:
+			sname= item['sname']
+			classid= item['id']
+			label= item['label']
+			feats= item['feats']
+			nfeat= len(feats)
+			
+			# - Remap labels?
+			if self.classid_label_map:
+				if isinstance(classid, list):
+					label= [self.classid_label_map[i] for i in classid]
+				else:
+					label= self.classid_label_map[classid]
+			
+			# - Add entries to list
+			self.source_names.append(sname)
+			self.data_labels.append(label)
+			self.data_classids.append(classid)
+			featdata.append(feats)
+
+		if self.selcols:
+			self.data= Utils.get_selected_data_cols(np.array(featdata), self.selcols)
+		else:
+			self.data= np.array(featdata)
+		
+		if self.data.size==0:
+			logger.error("Empty feature data vector read!")
+			return -1
+
+		data_shape= self.data.shape
+		self.nsamples= data_shape[0]
+		self.nfeatures= data_shape[1]
+		logger.info("#nsamples=%d" % (self.nsamples))
+		
+		# - Normalize feature data?
+		if self.normalize:
+			logger.info("Normalizing feature data ...")
+			data_norm= self.__transform_data(self.data, self.norm_min, self.norm_max)
+			if data_norm is None:
+				logger.error("Data transformation failed!")
+				return -1
+			self.data= data_norm
+
+		# - Set pre-classified data
+		logger.info("Setting pre-classified data (if any) ...")
+		self.__set_preclass_data()
+
+		return 0
+		
 	#####################################
 	##     SET DATA FROM VECTOR
 	#####################################
@@ -521,7 +626,7 @@ class Clusterer(object):
 	#####################################
 	##     PREDICT
 	#####################################
-	def run_predict(self, datafile, modelfile, scalerfile=''):
+	def run_predict_from_file(self, datafile, modelfile, scalerfile='', datalist_key='data'):
 		""" Run precit using input dataset """
 
 		#================================
@@ -543,11 +648,20 @@ class Clusterer(object):
 		if datafile=="":
 			logger.error("Empty data file specified!")
 			return -1
-
-		if self.set_data_from_file(datafile)<0:
-			logger.error("Failed to read datafile %s!" % datafile)
-			return -1
-
+			
+		# - Check input file extension
+		file_ext= os.path.splitext(datafile)[1]
+		
+		if file_ext=='.json':
+			if self.set_data_from_json_file(datafile, datalist_key)<0:
+				logger.error("Failed to read datafile %s!" % datafile)
+				return -1
+		else:
+			#if self.set_data_from_file(datafile)<0:
+			if self.set_data_from_ascii_file(datafile)<0:
+				logger.error("Failed to read datafile %s!" % datafile)
+				return -1
+				
 		#================================
 		#==   LOAD MODEL
 		#================================
@@ -644,24 +758,10 @@ class Clusterer(object):
 		#================================
 		#==   SAVE CLUSTERED DATA
 		#================================
-		logger.info("Saving unsupervised encoded data to file ...")
-		N= self.data.shape[0]
-		print("Cluster data N=",N)
-
-		snames= np.array(self.source_names).reshape(N,1)
-		objids= np.array(self.data_classids).reshape(N,1)	
-		clustered_data= np.concatenate(
-			(snames, self.data, objids, self.labels, self.probs),
-			#(snames, objids, self.labels, self.probs),
-			axis=1
-		)
-
-		znames_counter= list(range(1,self.nfeatures+1))
-		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
-
-		head= '{} {} {}'.format("# sname",znames,"id clust_id clust_prob")
-		#head= "# sname id clustid clustprob"
-		Utils.write_ascii(clustered_data, self.outfile, head)	
+		logger.info("Saving results ...")
+		if self.__save(self.data, self.source_names, self.data_classids, self.data_labels, self.labels, self.probs, None)<0:
+			logger.error("Failed to save clustering results!")
+			return -1
 
 		#================================
 		#==   PLOT
@@ -681,7 +781,7 @@ class Clusterer(object):
 	#####################################
 	##     RUN CLUSTERING
 	#####################################
-	def run_clustering(self, datafile, modelfile='', scalerfile=''):
+	def run_clustering_from_file(self, datafile, modelfile='', scalerfile='', datalist_key='data'):
 		""" Run clustering using input dataset """
 
 		#================================
@@ -704,9 +804,18 @@ class Clusterer(object):
 			logger.error("Empty data file specified!")
 			return -1
 
-		if self.set_data_from_file(datafile)<0:
-			logger.error("Failed to read datafile %s!" % datafile)
-			return -1
+		# - Check input file extension
+		file_ext= os.path.splitext(datafile)[1]
+		
+		if file_ext=='.json':
+			if self.set_data_from_json_file(datafile, datalist_key)<0:
+				logger.error("Failed to read datafile %s!" % datafile)
+				return -1
+		else:
+			#if self.set_data_from_file(datafile)<0:
+			if self.set_data_from_ascii_file(datafile)<0:
+				logger.error("Failed to read datafile %s!" % datafile)
+				return -1
 
 		#================================
 		#==   LOAD MODEL
@@ -722,7 +831,7 @@ class Clusterer(object):
 		else:
 			logger.info("Creating the clustering model ...")
 			self.clusterer= self.__build_model()
-			self.predition_extra_data= None
+			self.prediction_extra_data= None
 
 		#================================
 		#==   CLUSTER DATA
@@ -775,7 +884,7 @@ class Clusterer(object):
 		else:
 			logger.info("Creating the clustering model ...")
 			self.clusterer= self.__build_model()
-			self.predition_extra_data= None
+			self.prediction_extra_data= None
 
 		#================================
 		#==   CLUSTER DATA
@@ -851,7 +960,6 @@ class Clusterer(object):
 			data_labels_all.extend(classlabels_hist)
 			source_names_all.extend(snames_hist)
 		
-
 		# - Cluster data
 		logger.info("Clustering input data ...")
 		#self.clusterer= self.clusterer.fit(data_all)
@@ -879,49 +987,52 @@ class Clusterer(object):
 		self.nclusters= len(labels_unique)
 		logger.info("#%d clusters found ..." % (self.nclusters))
 	
-
+		
 		#================================
 		#==   SAVE CLUSTERED DATA
 		#================================
 		logger.info("Saving clustered data to file ...")
-		N= data_all.shape[0]
-		print("Clustered data size is N=",N)
+		if self.__save(data, source_names_all, data_ids_all, data_labels_all, self.labels, self.probs, self.outlier_scores)<0:
+			logger.error("Failed to save clustering results!")
+			return -1
+		
 
-		snames= np.array(source_names_all).reshape(N,1)
-		objids= np.array(data_ids_all).reshape(N,1)
-		objlabels= np.array(data_labels_all).reshape(N,1)
+		#N= data_all.shape[0]
+		#print("Clustered data size is N=",N)
 
-		print("snames shape")
-		print(snames.shape)
-		print("objids shape")
-		print(objids.shape)
-		print("objlabels shape")
-		print(objlabels.shape)
-		print("self.labels shape")
-		print(self.labels.shape)
-		print("self.probs shape")
-		print(self.probs.shape)
-		print("self.outlier_scores")
-		print(self.outlier_scores.shape)
+		#snames= np.array(source_names_all).reshape(N,1)
+		#objids= np.array(data_ids_all).reshape(N,1)
+		#objlabels= np.array(data_labels_all).reshape(N,1)
 
-		clustered_data= np.concatenate(
-			#(snames, objids, objlabels, self.labels.reshape(N,1), self.probs.reshape(N,1), self.outlier_scores.reshape(N,1)),
-			(snames, data_all, objids, self.labels.reshape(N,1), self.probs.reshape(N,1), self.outlier_scores.reshape(N,1)),
-			axis=1
-		)
+		#print("snames shape")
+		#print(snames.shape)
+		#print("objids shape")
+		#print(objids.shape)
+		#print("objlabels shape")
+		#print(objlabels.shape)
+		#print("self.labels shape")
+		#print(self.labels.shape)
+		#print("self.probs shape")
+		#print(self.probs.shape)
+		#print("self.outlier_scores")
+		#print(self.outlier_scores.shape)
 
-		znames_counter= list(range(1,self.nfeatures+1))
-		znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
+		#clustered_data= np.concatenate(
+		#	(snames, data_all, objids, self.labels.reshape(N,1), self.probs.reshape(N,1), self.outlier_scores.reshape(N,1)),
+		#	axis=1
+		#)
 
-		#head= "# sname id label clust_id clust_prob outlier_score"
-		head= '{} {} {}'.format("# sname",znames,"id clust_id clust_prob outlier_score")
-		Utils.write_ascii(clustered_data, self.outfile, head)	
+		#znames_counter= list(range(1, self.nfeatures+1))
+		#znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
+
+		#head= '{} {} {}'.format("# sname",znames,"id clust_id clust_prob outlier_score")
+		#Utils.write_ascii(clustered_data, self.outfile, head)	
 
 		#================================
 		#==   SAVE MODEL
 		#================================
 		# - Save model to file
-		if self.dump_model:
+		if self.save_model:
 			# - Create clustering extra data
 			clust_extra_data= ClusteringExtraData()
 			clust_extra_data.snames= source_names_all
@@ -949,14 +1060,167 @@ class Clusterer(object):
 
 
 
+	#####################################
+	##     SAVE DATA
+	#####################################
+	def __save(self, data, snames, data_classids, data_labels, clust_labels, clust_probs, clust_outlier_scores=None):
+		""" Save data  """
+		
+		###################################
+		##     SAVE ASCII
+		###################################
+		if self.save_ascii and self.__save_to_ascii(data, snames, data_classids, data_labels, clust_labels, clust_probs, clust_outlier_scores)<0:
+			logger.warn("Failed to save outputs to ascii format...")
+		
+		###################################
+		##     SAVE JSON
+		###################################
+		if self.save_json and self.__save_to_json()<0:
+			logger.warn("Failed to save outputs to json format...")
+			
+		###################################
+		##     SAVE MODEL
+		###################################	
+		#if self.model and self.save_model:
+		#	logger.info("Saving model to file %s ..." % (self.outfile_model))
+		#	pickle.dump(self.model, open(self.outfile_model, 'wb'))
+	
+		return 0
+		
+		
+	def __save_to_json(self):
+		""" Save data to ascii """
+		
+		# - Save unsupervised encoded data
+		if self.datalist_json is not None:
+			N= self.data.shape[0]
+		
+			# - Loop over data and replace original feats with UMAP feats
+			outdata= {"data": []}
+			
+			for i in range(N):
+				feats= list(self.data[i])
+				feats= [float(item) for item in feats]
+				clust_id= self.labels[i]
+				clust_prob= self.probs[i]
+				
+				d= self.datalist_json[i]
+				if self.save_features:
+					d['feats']= NoIndent(feats)
+				else:
+					del d['feats']
+				d['clust_id']= int(clust_id)
+				d['clust_prob']= float(clust_prob)
+				if self.outlier_scores is not None:
+					d['clust_outlier_score']= float(self.outlier_scores[i])
+					
+				outdata["data"].append(d)
 
+			# - Save to json 
+			logger.info("Saving unsupervised encoded data to json file %s ..." % (self.outfile_json))	
+			with open(self.outfile_json, 'w') as fp:
+				json.dump(outdata, fp, cls=MyEncoder, indent=2)
+		
+		return 0
+	
+	def __save_to_ascii(self, data, source_names, data_classids, data_labels, clust_labels, clust_probs, clust_outlier_scores):
+		""" Save data to ascii """
 
+		# - Check if selected data is available
+		if data is None:
+			logger.error("Input data is None!")
+			return -1
+			
+		N= data.shape[0]
+		Nfeat= data.shape[1]
+		
+		print("Saving cluster data (N=%d) to file ..." % N)
 
+		# - Concatenate data for saving
+		logger.info("Concatenate data for saving ...")
+		snames= np.array(source_names).reshape(N,1)
+		clust_labels= np.array(clust_labels).reshape(N,1)
+		clust_probs= np.array(clust_probs).reshape(N,1)
+		if clust_outlier_scores is not None:
+			clust_outlier_scores= np.array(clust_outlier_scores).reshape(N,1)
+		
+		if isinstance(data_classids[0], list): # concatenate ids/labels comma separated
+			objids_concat= [','.join(map(str,item)) for item in data_classids]
+			objlabels_concat= [','.join(map(str,item)) for item in data_labels]
+			objids= np.array(objids_concat).reshape(N,1)
+			objlabels= np.array(objlabels_concat).reshape(N,1)
+		else:
+			objids= np.array(data_classids).reshape(N,1)
+			objlabels= np.array(data_labels).reshape(N,1)
+			
+		if self.save_features:
+			znames_counter= list(range(1, Nfeat+1))
+			znames= '{}{}'.format('z',' z'.join(str(item) for item in znames_counter))
+		
+			if self.save_labels_in_ascii:
+				if clust_outlier_scores is None:
+					clustered_data= np.concatenate(
+						(snames, data, objlabels, clust_labels, clust_probs),
+						axis=1
+					)
+					head= '{} {} {}'.format("# sname",znames,"label clust_id clust_prob")
+				else:
+					clustered_data= np.concatenate(
+						(snames, data, objlabels, clust_labels, clust_probs, clust_outlier_scores),
+						axis=1
+					)
+					head= '{} {} {}'.format("# sname",znames,"label clust_id clust_prob clust_outlier_score")
+			else:
+				if clust_outlier_scores is None:
+					clustered_data= np.concatenate(
+						(snames, data, objids, clust_labels, clust_probs),
+						axis=1
+					)
+					head= '{} {} {}'.format("# sname",znames,"id clust_id clust_prob")
+				else:
+					clustered_data= np.concatenate(
+						(snames, data, objids, clust_labels, clust_probs, clust_outlier_scores),
+						axis=1
+					)
+					head= '{} {} {}'.format("# sname",znames,"id clust_id clust_prob clust_outlier_score")
+		else:
+			if self.save_labels_in_ascii:
+				if clust_outlier_scores is None:
+					clustered_data= np.concatenate(
+						(snames, objlabels, clust_labels, clust_probs),
+						axis=1
+					)
+					head= "# sname label clust_id clust_prob"
+				else:
+					clustered_data= np.concatenate(
+						(snames, objlabels, clust_labels, clust_probs, clust_outlier_scores),
+						axis=1
+					)
+					head= "# sname label clust_id clust_prob clust_outlier_score"
+			else:
+				if clust_outlier_scores is None:
+					clustered_data= np.concatenate(
+						(snames, objids, clust_labels, clust_probs),
+						axis=1
+					)
+					head= "# sname id clust_id clust_prob"
+				else:
+					clustered_data= np.concatenate(
+						(snames, objids, clust_labels, clust_probs, clust_outlier_scores),
+						axis=1
+					)
+					head= "# sname id clust_id clust_prob clust_outlier_score"
+				
+		# - Save clustering data 
+		logger.info("Saving clustering output data to file %s ..." % (self.outfile))
+		Utils.write_ascii(clustered_data, self.outfile, head)	
+
+		return 0
 
 	#####################################
 	##     RUN PCA
 	#####################################
-	def run_pca(self, datafile, modelfile='', scalerfile=''):
+	def run_pca_from_file(self, datafile, modelfile='', scalerfile='', datalist_key='data'):
 		""" Run PCA using input dataset """
 
 		#================================
@@ -978,10 +1242,19 @@ class Clusterer(object):
 		if datafile=="":
 			logger.error("Empty data file specified!")
 			return -1
-
-		if self.set_data_from_file(datafile)<0:
-			logger.error("Failed to read datafile %s!" % datafile)
-			return -1
+			
+		# - Check input file extension
+		file_ext= os.path.splitext(datafile)[1]
+		
+		if file_ext=='.json':
+			if self.set_data_from_json_file(datafile, datalist_key)<0:
+				logger.error("Failed to read datafile %s!" % datafile)
+				return -1
+		else:
+			#if self.set_data_from_file(datafile)<0:
+			if self.set_data_from_ascii_file(datafile)<0:
+				logger.error("Failed to read datafile %s!" % datafile)
+				return -1
 
 		#================================
 		#==   LOAD MODEL
@@ -1109,7 +1382,7 @@ class Clusterer(object):
 		#==   SAVE PCA MODEL
 		#================================
 		# - Save model to file
-		if self.dump_model:
+		if self.save_model:
 			logger.info("Dumping PCA to file %s ..." % self.outfile_model_pca)
 			pickle.dump(self.pca, open(self.outfile_model_pca, 'wb'))
 			

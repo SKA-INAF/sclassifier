@@ -37,7 +37,6 @@ import collections
 from sclassifier import __version__, __date__
 from sclassifier import logger
 from sclassifier.utils import Utils
-from sclassifier.data_loader import DataLoader
 from sclassifier.clustering import Clusterer
 
 #### GET SCRIPT ARGS ####
@@ -58,7 +57,9 @@ def get_args():
 
 	# - Input options
 	parser.add_argument('-inputfile','--inputfile', dest='inputfile', required=True, type=str, help='Input feature data table filename') 
-	
+	parser.add_argument('-datalist_key','--datalist_key', dest='datalist_key', required=False, type=str, default="data", help='Dictionary key name to be read in input datalist (default=data)') 
+	parser.add_argument('-selcols','--selcols', dest='selcols', required=False, type=str, default='', help='Data column ids to be selected from input data, separated by commas') 
+
 	# - Pre-processing options
 	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize feature data in range [0,1] before clustering (default=false)')	
 	parser.set_defaults(normalize=False)	
@@ -81,6 +82,22 @@ def get_args():
 	parser.add_argument('--predict_clust', dest='predict_clust', action='store_true',help='Only predict clustering according to current clustering model (default=false)')	
 	parser.set_defaults(predict_clust=False)
 
+	# - Save options
+	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='clustered_data.dat', help='Output filename (.dat) with clustered data') 
+	parser.add_argument('-outfile_json','--outfile_json', dest='outfile_json', required=False, type=str, default='clustered_data.json', help='Output filename (.json) with clustered data') 
+	parser.add_argument('--no_save_ascii', dest='no_save_ascii', action='store_true',help='Do not save output data to ascii (default=false)')	
+	parser.set_defaults(no_save_ascii=False)
+	parser.add_argument('--no_save_json', dest='no_save_json', action='store_true',help='Do not save output data to json (default=false)')	
+	parser.set_defaults(no_save_json=False)
+	parser.add_argument('--no_save_model', dest='no_save_model', action='store_true',help='Do not save model (default=false)')	
+	parser.set_defaults(no_save_model=False)
+	
+	parser.add_argument('--save_labels_in_ascii', dest='save_labels_in_ascii', action='store_true',help='Save class labels to ascii (default=save classids)')
+	parser.set_defaults(save_labels_in_ascii=False)
+	parser.add_argument('--no_save_features', dest='no_save_features', action='store_true',help='Save features in output file (default=yes)')
+	parser.set_defaults(no_save_features=False)
+
+	# - Draw options
 	parser.add_argument('--draw', dest='draw', action='store_true',help='Draw plots (default=false)')	
 	parser.set_defaults(draw=False)
 
@@ -109,6 +126,11 @@ def main():
 
 	# - Input filelist
 	inputfile= args.inputfile
+	datalist_key=args.datalist_key
+	selcols= []
+	if args.selcols!="":
+		selcols= [int(x.strip()) for x in args.selcols.split(',')]
+		
 
 	# - Data pre-processing
 	normalize= args.normalize
@@ -141,23 +163,33 @@ def main():
 	# - Plot
 	draw= args.draw
 
+	# - Output options
+	outfile= args.outfile
+	outfile_json= args.outfile_json
+	no_save_ascii= args.no_save_ascii
+	no_save_json= args.no_save_json
+	no_save_model= args.no_save_model
+	save_labels_in_ascii= args.save_labels_in_ascii
+	no_save_features= args.no_save_features
+	
 	#===========================
 	#==   READ FEATURE DATA
 	#===========================
-	ret= Utils.read_feature_data(inputfile)
-	if not ret:
-		logger.error("Failed to read data from file %s!" % (inputfile))
-		return 1
+	#ret= Utils.read_feature_data(inputfile)
+	#if not ret:
+	#	logger.error("Failed to read data from file %s!" % (inputfile))
+	#	return 1
 
-	data= ret[0]
-	snames= ret[1]
-	classids= ret[2]
+	#data= ret[0]
+	#snames= ret[1]
+	#classids= ret[2]
 
 	#==============================
 	#==   RUN CLUSTERING
 	#==============================
 	logger.info("Running HDBSCAN classifier prediction on input feature data ...")
 	clust_class= Clusterer()
+	clust_class.selcols= selcols
 	clust_class.min_cluster_size= min_cluster_size
 	clust_class.min_samples= min_samples
 	clust_class.cluster_selection_epsilon= cluster_selection_epsilon
@@ -170,15 +202,33 @@ def main():
 	clust_class.classid_label_map= classid_label_map
 	clust_class.excluded_objids_train = objids_excluded_in_train
 
+	clust_class.outfile= outfile
+	clust_class.outfile_json= outfile_json
+	clust_class.save_ascii= False if no_save_ascii else True
+	clust_class.save_json= False if no_save_json else True
+	clust_class.save_model= False if no_save_model else True
+	clust_class.save_features= False if no_save_features else True
+	clust_class.save_labels_in_ascii= save_labels_in_ascii
+	
 	status= 0
 	if predict_clust:
-		if clust_class.run_predict(data, class_ids=classids, snames=snames, modelfile=modelfile_clust, scalerfile=scalerfile)<0:
-			logger.error("Clustering predict failed!")
-			return 1
+		status= clust_class.run_predict_from_file(
+			datafile=inputfile, 
+			modelfile=modelfile_clust, 
+			scalerfile=scalerfile, 
+			datalist_key=datalist_key
+		)
 	else:
-		if clust_class.run_clustering(data, class_ids=classids, snames=snames, modelfile=modelfile_clust, scalerfile=scalerfile)<0:
-			logger.error("Clustering run failed!")
-			return 1
+		status= clust_class.run_clustering_from_file(
+			datafile=inputfile, 
+			modelfile=modelfile_clust, 
+			scalerfile=scalerfile,
+			datalist_key=datalist_key
+		)
+			
+	if status<0:
+		logger.error("Clustering run failed!")
+		return 1
 
 	return 0
 
