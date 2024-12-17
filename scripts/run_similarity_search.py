@@ -398,9 +398,9 @@ def main():
 		outdata[args.datalist_key].append(d)
 
 	# - Write selected datalist
-	logger.info("Write output data to file %s ..." % (outfile))
+	logger.info("Write output data to file %s ..." % (args.outfile))
 	
-	with open(outfile, 'w') as fp:
+	with open(args.outfile, 'w') as fp:
 		json.dump(outdata, fp, cls=MyEncoder, indent=2)
 	
 	return 0
