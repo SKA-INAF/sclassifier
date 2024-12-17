@@ -387,8 +387,10 @@ def main():
 	for i in range(N):
 		feats= list(data[i])
 		feats= [float(item) for item in feats]
-		indices= list(nn_indices[i]) 
+		indices= list(nn_indices[i])
+		indices= [int(item) for item in indices]
 		scores= list(nn_scores[i])
+		scores= [float(item) for item in scores]
 		
 		# - Set output data
 		d= datalist[i]
