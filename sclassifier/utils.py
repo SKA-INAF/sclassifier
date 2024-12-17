@@ -417,6 +417,32 @@ class Utils(object):
 
 		return d
 
+	@classmethod
+	def read_json_datalist(cls, filename, datakey="data"):
+		""" Read json datalist """
+		
+		try:
+			f= open(filename, "r")
+			datalist_json= json.load(f)[datakey]
+		except Exception as e:
+			logger.error("Failed to read file %s (err=%s)!" % (filename, str(e)))
+			return None
+			
+		return datalist_json
+		
+	@classmethod
+	def read_json_datadict(cls, filename):
+		""" Read json datadict """
+		
+		try:
+			f= open(filename, "r")
+			datadict_json= json.load(f)
+		except Exception as e:
+			logger.error("Failed to read file %s (err=%s)!" % (filename, str(e)))
+			return None
+			
+		return datadict_json
+		
 	#===========================
 	#==   WRITE FITS FILE
 	#===========================
