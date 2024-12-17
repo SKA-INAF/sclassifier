@@ -100,6 +100,7 @@ def get_top_k_similar_within_data(
 	
 	N, Nfeat = data.shape
 	if N>large_data_thr:
+		logger.info("Using approximate similarity search with IndexIVFPQ faiss index ...")
 		return get_approx_top_k_similar_within_data(data, k, threshold, nlist, M, nprobe)
 	else:
 		return get_exact_top_k_similar_within_data(data, k, threshold)
