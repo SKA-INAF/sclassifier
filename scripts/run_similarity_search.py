@@ -159,6 +159,9 @@ def get_exact_top_k_similar_within_data(
 	# distances: shape (N, k+1)
 	# indices:   shape (N, k+1)
 	
+	neighbors_indices_list = []
+	neighbors_scores_list = []
+    
 	for i in range(N):
 		# distances[i], indices[i] hold the top-(k+1) neighbors for row i, 
 		# sorted descending by similarity
