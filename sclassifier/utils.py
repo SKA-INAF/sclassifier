@@ -789,7 +789,7 @@ class Utils(object):
 			set_nans_to_min=set_nans_to_min,
 		)
 
-  	return data_transf
+		return data_transf
 		
 	@classmethod
 	def load_img_as_npy_float(
