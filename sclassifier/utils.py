@@ -1199,7 +1199,7 @@ class Utils(object):
 		# - Resize image?
 		if resize:
 			interp_order= 3 # 1=bilinear, 2=biquadratic, 3=bicubic, 4=biquartic, 5=biquintic
-			data_transf= cls.resize_img_v2(
+			res= cls.resize_img_v2(
 				data_transf,
 				min_dim=resize_size, max_dim=resize_size, min_scale=None,
 				mode="square",
@@ -1207,6 +1207,7 @@ class Utils(object):
 				preserve_range=True,
 				anti_aliasing=False
     	)
+    	data_transf= res[0]
 
 		# - Apply min/max normalization
 		data_min= data_transf.min()
