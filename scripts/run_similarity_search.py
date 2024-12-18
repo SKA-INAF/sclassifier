@@ -230,8 +230,8 @@ def main():
 			# - Set output data
 			d= datalist[index]
 			d['feats']= NoIndent(feats)
-			d['nn_index']= index
-			d['nn_score']= score
+			d['nn_index']= int(index)
+			d['nn_score']= float(score)
 			outdata[args.datalist_key].append(d)
 			
 	else:
