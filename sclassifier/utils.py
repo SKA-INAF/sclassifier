@@ -38,7 +38,6 @@ warnings.simplefilter('ignore', category=VerifyWarning)
 from astropy.wcs import FITSFixedWarning
 warnings.filterwarnings('ignore', category=FITSFixedWarning)
 
-
 # Suppress `Invalid 'BLANK' keyword in header.` warnings
 #from astropy.io.fits.verify import VerifyWarning
 #warnings.simplefilter('ignore', category=VerifyWarning)
@@ -48,11 +47,14 @@ from astropy.io import ascii
 from astropy.table import Column
 from astropy.nddata.utils import Cutout2D
 from astropy.stats import sigma_clipped_stats
+from astropy.stats import sigma_clip
+from astropy.visualization import ZScaleInterval
 import regions
 
 import fitsio
 from fitsio import FITS, FITSHDR
 
+from PIL import Image
 
 ## MONTAGE MODULES
 #from montage_wrapper.commands import mImgtbl
@@ -724,17 +726,197 @@ class Utils(object):
 	#==   READ PNG/JPG IMAGE FILE
 	#===============================
 	@classmethod
-	def read_image(cls, filename):
+	def read_image(cls, filename, method='pillow'):
 		""" Read PNG/JPG image and return data """
 		
 		try:
-			data= plt.imread(filename)
+			if method=="matplotlib":
+				data= plt.imread(filename)
+			elif method=="pillow":
+				image= Image.open(filename)
+				data= np.asarray(image)
+			else:
+				logger.error("Invalid method (%s) given!" % (method))
+				return None
 		except Exception as e:
 			logger.error("Failed to read image file %s (err=%s)!" % (filename, str(e)))
 			return None
 			
 		return data
 		
+	#=====================================
+	#==   READ AND TRANSFORM IMAGE DATA
+	#=====================================
+	@classmethod
+	def read_and_transform_img(
+		cls,
+		filename, 
+		nchans=1, 
+		norm_range=(0.,1.), 
+		resize=False, resize_size=224, 
+		apply_zscale=True, contrast=0.25, 
+		to_uint8=False, 
+		set_nans_to_min=False
+	):
+  	""" Read fits image and returns a numpy array """
+
+  	# - Check filename
+  	if filename=="":
+    	return None
+    
+  	# - Read FITS/PNG/JPEG image
+  	fileext= os.path.splitext(filename)[1]
+  	
+  	if fileext=='.fits':
+  		data, _, _= cls.read_fits(filename, strip_deg_axis=True)
+		elif fileext in ['.png', '.jpg']:
+			data= cls.read_image(filename, method='pillow')    
+		else:
+			logger.error("Invalid or unrecognized file extension (%s)!" % (fileext))
+			return None
+  
+		if data is None:
+			return None
+
+		# - Apply transform
+		data_transf= cls.transform_img(
+			data,
+			nchans=nchans,
+			norm_range=norm_range,
+			resize=resize, resize_size=resize_size,
+			apply_zscale=apply_zscale, contrast=contrast,
+			to_uint8=to_uint8,
+			set_nans_to_min=set_nans_to_min,
+		)
+
+  	return data_transf
+		
+	@classmethod
+	def load_img_as_npy_float(
+		cls,
+		filename, 
+		add_chan_axis=True, add_batch_axis=True, 
+		resize=False, resize_size=224, 
+		apply_zscale=True, contrast=0.25, 
+		set_nans_to_min=False
+	):
+  """ Return numpy float image array norm to [0,1] """
+
+  	# - Read image from file and get transformed npy array
+  	data= cls.read_and_transform_img(
+			filename,
+			nchans=1,
+			norm_range=(0.,1.),
+			resize=resize, resize_size=resize_size,
+			apply_zscale=apply_zscale, contrast=contrast,
+			to_uint8=False,
+			set_nans_to_min=set_nans_to_min,
+		)
+  
+		if data is None:
+			logger.warn("Read image is None!")
+			return None
+
+		# - Add channel axis if missing?
+		ndim= data.ndim
+		if ndim==2 and add_chan_axis:
+			data_reshaped= np.stack((data,), axis=-1)
+			data= data_reshaped
+
+		# - Add batch axis if requested
+		if add_batch_axis:
+			data_reshaped= np.stack((data,), axis=0)
+			data= data_reshaped
+
+		return data	
+		
+	@classmethod
+	def load_img_as_npy_rgb(
+		cls,
+		filename, 
+		add_batch_axis=True, 
+		resize=False, resize_size=224, 
+		apply_zscale=True, contrast=0.25, 
+		set_nans_to_min=False
+	):
+  """ Return 3chan RGB image numpy norm to [0,255], uint8 """
+
+  	# - Read image from file and get transformed npy array
+  	data= cls.read_and_transform_img(
+			filename,
+			nchans=3,
+			norm_range=(0.,255.),
+			resize=resize, resize_size=resize_size,
+			apply_zscale=apply_zscale, contrast=contrast,
+			to_uint8=True,
+			set_nans_to_min=set_nans_to_min,
+		)
+
+		if data is None:
+			logger.warn("Read image is None!")
+			return None
+
+		# - Add batch axis if requested
+		if add_batch_axis:
+			data_reshaped= np.stack((data,), axis=0)
+			data= data_reshaped
+
+		return data	
+
+	@classmethod
+	def load_img_as_pil_float(
+		cls,
+		filename, 
+		resize=False, resize_size=224, 
+		apply_zscale=True, contrast=0.25, 
+		set_nans_to_min=False
+	):
+  """ Convert numpy array to PIL float image norm to [0,1] """
+
+		# - Read FITS from file and get transformed npy array
+		data= cls.read_and_transform_img(
+			filename,
+			nchans=1,
+			norm_range=(0.,1.),
+			resize=resize, resize_size=resize_size,
+			apply_zscale=apply_zscale, contrast=contrast,
+			to_uint8=False,
+			set_nans_to_min=set_nans_to_min
+		)
+		if data is None:
+			logger.warn("Read image is None!")
+			return None
+
+		# - Convert to PIL image
+		return Image.fromarray(data)
+
+	@classmethod
+	def load_img_as_pil_rgb(
+		cls,
+		filename, 
+		resize=False, resize_size=224, 
+		apply_zscale=True, contrast=0.25, 
+		set_nans_to_min=False
+	):
+  	""" Convert numpy array to PIL 3chan RGB image norm to [0,255], uint8 """
+
+	# - Read FITS from file and get transformed npy array
+	data= cls.read_and_transform_img(
+		filename,
+		nchans=3,
+		norm_range=(0.,255.),
+		resize=resize, resize_size=resize_size,
+		apply_zscale=apply_zscale, contrast=contrast,
+		to_uint8=True,
+		set_nans_to_min=set_nans_to_min,
+	)
+	if data is None:
+		logger.warn("Read image is None!")
+		return None
+
+	# - Convert to PIL RGB image
+	return Image.fromarray(data).convert("RGB")
+  		
 	#===========================
 	#==   MAKE IMG METADATA
 	#===========================
@@ -978,6 +1160,71 @@ class Utils(object):
     
 		return image.astype(image_dtype), window, scale, padding, crop
 
+
+	@classmethod
+	def transform_img(
+		cls,
+		data, 
+		nchans=1, 
+		norm_range=(0.,1.), 
+		resize=False, 
+		resize_size=224, 
+		apply_zscale=True, contrast=0.25, 
+		to_uint8=False, 
+		set_nans_to_min=False
+	):
+		""" Transform image """
+
+		# - Replace NANs pixels with 0 or min
+		cond_nonan= np.isfinite(data)
+		cond_nonan_noblank= np.logical_and(data!=0, np.isfinite(data))
+		data_1d= data[cond_nonan_noblank]
+		if data_1d.size==0:
+			logger.warn("Input data are all zeros/nan, return None!")
+			return None
+
+		if set_nans_to_min:
+			data[~cond_nonan]= data_min
+		else:
+			data[~cond_nonan]= 0
+
+		data_transf= data
+
+		# - Apply zscale stretch?
+		if apply_zscale:
+			transform= ZScaleInterval(contrast=contrast)
+			data_zscaled= transform(data_transf)
+			data_transf= data_zscaled
+
+		# - Resize image?
+		if resize:
+			interp_order= 3 # 1=bilinear, 2=biquadratic, 3=bicubic, 4=biquartic, 5=biquintic
+			data_transf= csl.resize_img_v2(
+				data_transf,
+				min_dim=resize_size, max_dim=resize_size, min_scale=None,
+				mode="square",
+				order=interp_order,
+				preserve_range=True,
+				anti_aliasing=False
+    	)
+
+		# - Apply min/max normalization
+		data_min= data_transf.min()
+		data_max= data_transf.max()
+		norm_min= norm_range[0]
+		norm_max= norm_range[1]
+		data_norm= (data_transf-data_min)/(data_max-data_min) * (norm_max-norm_min) + norm_min
+		data_transf= data_norm
+
+		# - Expand 2D data to desired number of channels (if>1): shape=(ny,nx,nchans)
+		if nchans>1:
+			data_transf= np.stack((data_transf,) * nchans, axis=-1)
+
+		# - Convert to uint8
+		if to_uint8:
+			data_transf= data_transf.astype(np.uint8)
+
+		return data_transf
 
 	@classmethod
 	def draw_histo(cls,data,nbins=100,logscale=False):

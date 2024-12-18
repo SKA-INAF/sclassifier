@@ -22,10 +22,6 @@ import collections
 import csv
 import pickle
 
-##############################
-##     GLOBAL VARS
-##############################
-from sclassifier import logger
 
 ## TENSORFLOW & KERAS MODULES
 import tensorflow as tf
@@ -72,6 +68,11 @@ from tensorflow.python.framework.ops import disable_eager_execution, enable_eage
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.activations import softmax
 
+##############################
+##     SCLASSIFIER MODULES
+##############################
+from sclassifier import logger
+from .utils import Utils
 
 ###############################################
 ##     ChanMinMaxNorm LAYER
@@ -520,4 +521,163 @@ def nt_xent_loss(z, temperature):
 	losses = -tf.math.log(numerators/denominators)
 
 	return tf.reduce_mean(losses)
+	
+###############################################
+##     TF UTILS
+###############################################
+def load_img_as_tftensor_float(
+	filename, 
+	add_chan_axis=True, add_batch_axis=True, 
+	resize=False, resize_size=224, 
+	apply_zscale=True, contrast=0.25, 
+	set_nans_to_min=False
+):
+	""" Return TensorFlow float image tensor norm to [0,1] """
 
+  # - Read FITS from file and get transformed npy array
+  data= Utils.load_img_as_npy_float(
+    filename,
+    add_chan_axis=add_chan_axis, add_batch_axis=add_batch_axis,
+    resize=resize, resize_size=resize_size,
+    apply_zscale=apply_zscale, contrast=contrast,
+    set_nans_to_min=set_nans_to_min
+  )
+  if data is None:
+		logger.warn("Read image is None!")
+		return None
+
+	return tf.convert_to_tensor(data)
+	
+def load_img_as_tftensor_rgb(
+	filename, 
+	add_batch_axis=True, 
+	resize=False, resize_size=224, 
+	apply_zscale=True, contrast=0.25, 
+	set_nans_to_min=False
+):
+	""" Return 3chan RGB image tensor norm to [0,255], uint8 """
+
+	# - Read FITS from file and get transformed npy array
+	data= Utils.load_img_as_npy_rgb(
+		filename,
+		add_chan_axis=add_chan_axis, add_batch_axis=add_batch_axis,
+		resize=resize, resize_size=resize_size,
+		apply_zscale=apply_zscale, contrast=contrast,
+		set_nans_to_min=set_nans_to_min,
+	)
+
+	if data is None:
+		logger.warn("Read image is None!")
+		return None
+
+	return tf.convert_to_tensor(data)
+	
+def load_tf_encoder_model(modelfile, weightfile):
+	""" Load tf encoder model and weights from input h5 file """
+
+	# - Load model
+	try:
+		logger.info("Loading model from file %s ..." % (modelfile))
+		encoder= load_model(modelfile, compile=False)
+	except Exception as e:
+		logger.error("Failed to load model %s (err=%s)!" % (modelfile, str(e)))
+		return None
+
+	# - Load weights
+	try:
+		logger.info("Loading model weights from file %s ..." % (weightfile))
+		encoder.load_weights(weightfile)
+	except Exception as e:
+		logger.error("Failed to load model weights %s (err=%s)!" % (weightfile, str(e)))
+		return None
+
+	return encoder
+	
+def extract_tf_features_from_img(filename, modelfile, weightfile, imgsize=224, zscale=True, contrast=0.25):
+	""" Function to extract features from image using TF trained encoder models """		
+	
+	# - Load model
+	logger.info("Loading model (path=%s, weights=%s) ..." % (modelfile, weightfile))
+	model= load_tf_encoder_model(modelfile, weightfile)
+	if model is None:
+		logger.error("Failed to load model and/or weights!")
+		return None
+		
+	# - Read image
+	logger.info("Extracting feature from image %s ..." % (filename))
+	image_npy= Utils.load_img_as_npy_float(
+		filename,
+		add_chan_axis=True, add_batch_axis=True,
+		resize=True, resize_size=imgsize,
+		apply_zscale=zscale, contrast=contrast,
+		set_nans_to_min=False
+	)
+	if image_npy is None:
+		logger.warn("Failed to load image %s!" % (filename))
+		return None
+		
+	# - Run model inference and extract features
+	feats= model.predict(
+		x=image_npy,
+		batch_size=1,
+		verbose=0,
+		workers=1,
+		use_multiprocessing=False
+	)
+	
+	feats_list= list(feats[0])
+	feats_list= [float(item) for item in feats_list]
+	
+	return np.array(feats_list)
+			
+	
+def extract_tf_features_from_datalist(datalist, modelfile, weightfile, imgsize=224, zscale=True, contrast=0.25, nmax=-1):
+  """ Function to extract features from datalist using TF trained encoder models """
+
+	# - Load model
+	logger.info("Loading model (path=%s, weights=%s) ..." % (modelfile, weightfile))
+	model= load_tf_encoder_model(modelfile, weightfile)
+	if model is None:
+		logger.error("Failed to load model and/or weights!")
+		return None
+
+	# - Loop over datalist and extract features per each image
+	features= []
+	nsamples= len(datalist)
+
+	for idx, item in enumerate(datalist):
+		if nmax!=-1 and idx>=nmax:
+			logger.info("Max number of entries processed (n=%d), exit." % (nmax))
+			break
+
+		if idx%1000==0:
+			logger.info("%d/%d entries processed ..." % (idx, nsamples))
+
+		# - Read image as numpy float image
+		filename= item["filepaths"][0]
+    image_npy= Utils.load_img_as_npy_float(
+			filename,
+			add_chan_axis=True, add_batch_axis=True,
+			resize=True, resize_size=imgsize,
+			apply_zscale=zscale, contrast=contrast,
+			set_nans_to_min=False
+		)
+		if image_npy is None:
+			logger.warn("Failed to load image %s, skip it ..." % (filename))
+			continue
+
+		# - Run model inference
+		feats= model.predict(
+			x=image_npy,
+			batch_size=1,
+			verbose=0,
+			workers=1,
+			use_multiprocessing=False
+		)
+		feats_list= list(feats[0])
+		feats_list= [float(item) for item in feats_list]
+		features.append(feats_list)
+    
+	return np.array(features)
+  
+  

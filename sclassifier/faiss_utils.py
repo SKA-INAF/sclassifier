@@ -54,7 +54,7 @@ def get_top_k_similar_within_data(
 	M: int = 8,
 	nprobe: int = 10
 ):
-	""" Return top_k similar entries above a threshold. If data size larger than large_data_thr an approximate computation is used. """
+	""" Return top_k similar entries above a threshold within a data array. If data size larger than large_data_thr an approximate computation is used. """
 	
 	N, Nfeat = data.shape
 	if N>large_data_thr:
@@ -239,3 +239,211 @@ def get_approx_top_k_similar_within_data(
 	return neighbors_indices_list, neighbors_scores_list
 	
 
+
+
+####################################################
+##  FIND NN BETWEEN DATA COLLECTION AND VECTOR
+####################################################
+def get_top_k_similar(
+	data: np.ndarray, 
+	data_vector: np.ndarray, 
+	k: int = 5, 
+	threshold: float = 0.8,
+	nlist: int = 256,
+	M: int = 8,
+	nprobe: int = 10
+):
+	""" Return top_k similar entries above a threshold between a data vector and a data array. If data size larger than large_data_thr an approximate computation is used."""
+	
+	N, Nfeat = data.shape
+	if N>large_data_thr:
+		logger.info("Using approximate similarity search with IndexIVFPQ faiss index ...")
+		return get_approx_top_k_similar(data, k, threshold, nlist, M, nprobe)
+	else:
+		return get_exact_top_k_similar(data, k, threshold)
+	
+def get_exact_top_k_similar(
+	data: np.ndarray, 
+	data_vector: np.ndarray, 
+	k: int = 5, 
+	threshold: float = 0.8
+):
+	"""
+	Extract "at least top-k" observations from 'data' that are most similar (cosine similarity) to 'data_vector', while filtering by a configurable threshold.
+    
+	If more than k neighbors exceed the threshold, we return all of them. 
+	If fewer than k neighbors exceed the threshold, we return that smaller subset.
+
+	Parameters
+	----------
+	data : np.ndarray
+		Shape (N, Nfeat). The dataset of N observations, each with Nfeat features.
+	data_vector : np.ndarray
+		Shape (1, Nfeat). A single query vector.
+	k : int, optional
+		The minimum number of neighbors to retrieve (if that many pass threshold).
+	threshold : float, optional
+		The cosine similarity threshold for including neighbors.
+
+	Returns
+	-------
+	selected_indices : np.ndarray
+		1D array of row indices from 'data' that pass the threshold. Sorted in descending order of similarity.
+	selected_scores : np.ndarray
+		1D array of corresponding cosine similarity scores, same length as selected_indices.
+	"""
+    
+	# Sanity check for matching number of features
+	if data.shape[1] != data_vector.shape[1]:
+		logger.error("Input data has %d features, but data_vector has %d features. They must match!" % (data.shape[1], data_vector.shape[1]))
+		return None
+           
+	# Ensure float32 for Faiss
+	if data.dtype != np.float32:
+		data = data.astype(np.float32)
+	if data_vector.dtype != np.float32:
+		data_vector = data_vector.astype(np.float32)
+
+	N, Nfeat = data.shape
+    
+	# 1) Normalize data rows => inner product = cosine similarity
+	data_norms = np.linalg.norm(data, axis=1, keepdims=True)
+	data_norm = data / data_norms
+
+	# 2) Normalize the query vector
+	query_norm = np.linalg.norm(data_vector, axis=1, keepdims=True)
+	query_vector_norm = data_vector / query_norm
+
+	# 3) Build a Faiss index for inner product (exact search)
+	index = faiss.IndexFlatIP(Nfeat)
+	index.add(data_norm)  # add the normalized data
+
+	# 4) Perform a top-N search with the single query vector
+	#    This returns similarity scores for all N items in the dataset
+	distances, indices = index.search(query_vector_norm, N)
+	# distances.shape: (1, N)
+	# indices.shape:   (1, N)
+	# Both sorted by similarity descending
+
+	all_scores = distances[0]  # shape (N,)
+	all_indices = indices[0]   # shape (N,)
+
+	# 5) Filter by threshold
+	mask = (all_scores >= threshold)
+	filtered_indices = all_indices[mask]
+	filtered_scores  = all_scores[mask]
+
+	# The results are already sorted in descending order of similarity.
+	# If the threshold is very low, you might get many neighbors above threshold.
+	# If the threshold is very high, you might get fewer than k neighbors.
+
+	# 6) "At least top-k": 
+	#    If you have more than k neighbors above threshold, keep them all.
+	#    If fewer than k pass threshold, just return those few.
+	#    So effectively we just return 'filtered_indices' as is.
+
+	return filtered_indices, filtered_scores
+
+
+def get_approximate_top_k_similar(
+	data: np.ndarray, 
+	data_vector: np.ndarray, 
+	k: int = 5, 
+	threshold: float = 0.8,
+	nlist: int = 256,
+	M: int = 8,
+	nprobe: int = 10
+):
+	"""
+	Extract "at least top-k" observations from 'data' that are most similar (cosine similarity)
+	to 'data_vector', while filtering by a configurable threshold. Uses Faiss IndexIVFPQ
+	for large datasets (approximate nearest neighbor).
+
+	If more than k neighbors exceed the threshold, we return all of them.
+	If fewer than k neighbors exceed the threshold, we return that smaller subset.
+
+	Parameters
+	----------
+	data : np.ndarray
+		Shape (N, Nfeat). The dataset of N observations, each with Nfeat features.
+	data_vector : np.ndarray
+		Shape (1, Nfeat). A single query vector.
+	k : int, optional
+		The minimum number of neighbors to retrieve (if that many pass threshold).
+	threshold : float, optional
+		The cosine similarity threshold for including neighbors.
+	nlist : int, optional
+		Number of clusters (inverted lists) for IVF.
+	M : int, optional
+		Number of sub-quantizers for product quantization.
+	nprobe : int, optional
+		Number of clusters to visit during search. Larger nprobe = better recall, slower search.
+
+	Returns
+	-------
+	selected_indices : np.ndarray
+		1D array of row indices from 'data' that pass the threshold, sorted in descending order of similarity.
+	selected_scores : np.ndarray
+		1D array of corresponding cosine similarity scores, same length as selected_indices.
+	"""
+
+	# Check feature dimension consistency
+	if data.shape[1] != data_vector.shape[1]:
+		logger.error("Input data has %d features, but data_vector has %d features. They must match!" % (data.shape[1], data_vector.shape[1]))
+		return None
+
+	# 1) Ensure float32 for Faiss
+	if data.dtype != np.float32:
+		data = data.astype(np.float32)
+	if data_vector.dtype != np.float32:
+		data_vector = data_vector.astype(np.float32)
+
+	N, D = data.shape
+
+	# 2) Normalize data => inner product = cosine similarity
+	data_norms = np.linalg.norm(data, axis=1, keepdims=True)
+	data_norm = data / data_norms
+
+	# 3) Normalize the query vector
+	query_norms = np.linalg.norm(data_vector, axis=1, keepdims=True)
+	query_vector_norm = data_vector / query_norms
+
+	# 4) Build an IVF-PQ index for approximate nearest neighbor search
+	#    - The quantizer is a flat IP index
+	#    - nlist is the number of clusters
+	#    - M is the number of sub-quantizers for product quantization
+	quantizer = faiss.IndexFlatIP(D)
+	index = faiss.IndexIVFPQ(quantizer, D, nlist, M, 8)
+	index.metric_type = faiss.METRIC_INNER_PRODUCT
+
+	# 5) Train the index on data_norm
+	#    For very large data, you can sample a subset to speed up training
+	index.train(data_norm)
+
+	# 6) Add the normalized data to the index
+	index.add(data_norm)
+
+	# 7) Set the number of clusters to search (nprobe)
+	index.nprobe = nprobe
+
+	# 8) We want a top-N search so we can filter by threshold.
+	#    If N is extremely large, searching top-N might be prohibitive. 
+	#    A common approach is to search the top-X (X << N), then filter.
+	#    For demonstration, we'll search top-N. Tweak as needed.
+	distances, indices = index.search(query_vector_norm, N)
+	# shapes: (1, N)
+
+	all_scores = distances[0]  # shape (N,)
+	all_indices = indices[0]   # shape (N,)
+
+	# 9) Filter by threshold
+	mask = all_scores >= threshold
+	filtered_indices = all_indices[mask]
+	filtered_scores  = all_scores[mask]
+
+	# Results are in descending order of similarity.
+	# "At least top-k": if more neighbors exceed threshold, return them all.
+	# If fewer than k pass threshold, just return those.
+	
+	return filtered_indices, filtered_scores
+	
