@@ -71,7 +71,7 @@ def get_args():
 	
 	# - Similarity search options
 	parser.add_argument('-k', '--k', dest='k', required=False, type=int, default=10, action='store',help='Number of neighbors in similarity search (default=10)')
-	parser.add_argument('-score_thr', '--score_thr', dest='score_thr', required=False, type=float, default=0.6, action='store',help='Similarity threshold below which neighbors are not include in graph (default=0.0)')
+	parser.add_argument('-score_thr', '--score_thr', dest='score_thr', required=False, type=float, default=0.0, action='store',help='Similarity threshold below which neighbors are not include in graph (default=0.0)')
 	parser.add_argument('-large_data_thr', '--large_data_thr', dest='large_data_thr', required=False, type=int, default=1000000, action='store',help='Number of entries in data above which an approximate search algorithm is used (default=1000000)')
 	parser.add_argument('-nlist', '--nlist', dest='nlist', required=False, type=int, default=100, action='store',help='The number of clusters (inverted lists) for the IVFPQ index (default=100)')
 	parser.add_argument('-M', '--M', dest='M', required=False, type=int, default=8, action='store',help='The number of sub-quantizers in Product Quantization. (default=8)')
