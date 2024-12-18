@@ -346,7 +346,7 @@ def get_exact_top_k_similar(
 	return filtered_indices, filtered_scores
 
 
-def get_approximate_top_k_similar(
+def get_approx_top_k_similar(
 	data: np.ndarray, 
 	data_vector: np.ndarray, 
 	k: int = 5, 
