@@ -259,9 +259,9 @@ def get_top_k_similar(
 	N, Nfeat = data.shape
 	if N>large_data_thr:
 		logger.info("Using approximate similarity search with IndexIVFPQ faiss index ...")
-		return get_approx_top_k_similar(data, k, threshold, nlist, M, nprobe)
+		return get_approx_top_k_similar(data, data_vector, k, threshold, nlist, M, nprobe)
 	else:
-		return get_exact_top_k_similar(data, k, threshold)
+		return get_exact_top_k_similar(data, data_vector, k, threshold)
 	
 def get_exact_top_k_similar(
 	data: np.ndarray, 
