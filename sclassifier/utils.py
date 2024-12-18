@@ -764,11 +764,11 @@ class Utils(object):
 		if filename=="":
 			return None
     
-  	# - Read FITS/PNG/JPEG image
-  	fileext= os.path.splitext(filename)[1]
-  	
-  	if fileext=='.fits':
-  		data, _, _= cls.read_fits(filename, strip_deg_axis=True)
+		# - Read FITS/PNG/JPEG image
+		fileext= os.path.splitext(filename)[1]
+
+		if fileext=='.fits':
+			data, _, _= cls.read_fits(filename, strip_deg_axis=True)
 		elif fileext in ['.png', '.jpg']:
 			data= cls.read_image(filename, method='pillow')    
 		else:
