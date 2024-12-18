@@ -534,15 +534,15 @@ def load_img_as_tftensor_float(
 ):
 	""" Return TensorFlow float image tensor norm to [0,1] """
 
-  # - Read FITS from file and get transformed npy array
-  data= Utils.load_img_as_npy_float(
-    filename,
-    add_chan_axis=add_chan_axis, add_batch_axis=add_batch_axis,
-    resize=resize, resize_size=resize_size,
-    apply_zscale=apply_zscale, contrast=contrast,
-    set_nans_to_min=set_nans_to_min
-  )
-  if data is None:
+	# - Read FITS from file and get transformed npy array
+	data= Utils.load_img_as_npy_float(
+		filename,
+		add_chan_axis=add_chan_axis, add_batch_axis=add_batch_axis,
+		resize=resize, resize_size=resize_size,
+		apply_zscale=apply_zscale, contrast=contrast,
+		set_nans_to_min=set_nans_to_min
+	)
+	if data is None:
 		logger.warn("Read image is None!")
 		return None
 
@@ -632,7 +632,7 @@ def extract_tf_features_from_img(filename, modelfile, weightfile, imgsize=224, z
 			
 	
 def extract_tf_features_from_datalist(datalist, modelfile, weightfile, imgsize=224, zscale=True, contrast=0.25, nmax=-1):
-  """ Function to extract features from datalist using TF trained encoder models """
+	""" Function to extract features from datalist using TF trained encoder models """
 
 	# - Load model
 	logger.info("Loading model (path=%s, weights=%s) ..." % (modelfile, weightfile))
@@ -655,7 +655,7 @@ def extract_tf_features_from_datalist(datalist, modelfile, weightfile, imgsize=2
 
 		# - Read image as numpy float image
 		filename= item["filepaths"][0]
-    image_npy= Utils.load_img_as_npy_float(
+		image_npy= Utils.load_img_as_npy_float(
 			filename,
 			add_chan_axis=True, add_batch_axis=True,
 			resize=True, resize_size=imgsize,

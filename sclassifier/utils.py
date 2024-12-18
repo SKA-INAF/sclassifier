@@ -758,7 +758,7 @@ class Utils(object):
 		to_uint8=False, 
 		set_nans_to_min=False
 	):
-  	""" Read fits image and returns a numpy array """
+		""" Read fits image and returns a numpy array """
 
   	# - Check filename
   	if filename=="":
@@ -800,7 +800,7 @@ class Utils(object):
 		apply_zscale=True, contrast=0.25, 
 		set_nans_to_min=False
 	):
-  """ Return numpy float image array norm to [0,1] """
+		""" Return numpy float image array norm to [0,1] """
 
   	# - Read image from file and get transformed npy array
   	data= cls.read_and_transform_img(
@@ -839,7 +839,7 @@ class Utils(object):
 		apply_zscale=True, contrast=0.25, 
 		set_nans_to_min=False
 	):
-  """ Return 3chan RGB image numpy norm to [0,255], uint8 """
+		""" Return 3chan RGB image numpy norm to [0,255], uint8 """
 
   	# - Read image from file and get transformed npy array
   	data= cls.read_and_transform_img(
@@ -871,7 +871,7 @@ class Utils(object):
 		apply_zscale=True, contrast=0.25, 
 		set_nans_to_min=False
 	):
-  """ Convert numpy array to PIL float image norm to [0,1] """
+		""" Convert numpy array to PIL float image norm to [0,1] """
 
 		# - Read FITS from file and get transformed npy array
 		data= cls.read_and_transform_img(
@@ -898,25 +898,25 @@ class Utils(object):
 		apply_zscale=True, contrast=0.25, 
 		set_nans_to_min=False
 	):
-  	""" Convert numpy array to PIL 3chan RGB image norm to [0,255], uint8 """
+	""" Convert numpy array to PIL 3chan RGB image norm to [0,255], uint8 """
 
-	# - Read FITS from file and get transformed npy array
-	data= cls.read_and_transform_img(
-		filename,
-		nchans=3,
-		norm_range=(0.,255.),
-		resize=resize, resize_size=resize_size,
-		apply_zscale=apply_zscale, contrast=contrast,
-		to_uint8=True,
-		set_nans_to_min=set_nans_to_min,
-	)
-	if data is None:
-		logger.warn("Read image is None!")
-		return None
+		# - Read FITS from file and get transformed npy array
+		data= cls.read_and_transform_img(
+			filename,
+			nchans=3,
+			norm_range=(0.,255.),
+			resize=resize, resize_size=resize_size,
+			apply_zscale=apply_zscale, contrast=contrast,
+			to_uint8=True,
+			set_nans_to_min=set_nans_to_min,
+		)
+		if data is None:
+			logger.warn("Read image is None!")
+			return None
 
-	# - Convert to PIL RGB image
-	return Image.fromarray(data).convert("RGB")
-  		
+		# - Convert to PIL RGB image
+		return Image.fromarray(data).convert("RGB")
+
 	#===========================
 	#==   MAKE IMG METADATA
 	#===========================
