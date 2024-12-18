@@ -760,9 +760,9 @@ class Utils(object):
 	):
 		""" Read fits image and returns a numpy array """
 
-  	# - Check filename
-  	if filename=="":
-    	return None
+		# - Check filename
+		if filename=="":
+			return None
     
   	# - Read FITS/PNG/JPEG image
   	fileext= os.path.splitext(filename)[1]
