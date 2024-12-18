@@ -184,12 +184,12 @@ class Utils(object):
 		return 0
 
 	@classmethod
-	def compose_fcns(csl, *funcs):
+	def compose_fcns(cls, *funcs):
 		""" Compose a list of functions like (f . g . h)(x) = f(g(h(x)) """
 		return functools.reduce(lambda f, g: lambda x: f(g(x)), funcs)
 		
 	@classmethod
-	def compose_fcns_v2(csl, *funcs):
+	def compose_fcns_v2(cls, *funcs):
 		""" Compose a list of functions like (f . g . h)(x) = f(g(h(x)) """
 		return functools.reduce(lambda f, g: lambda x, **kwargs: f(g(x,**kwargs),**kwargs), funcs)
 
@@ -1199,7 +1199,7 @@ class Utils(object):
 		# - Resize image?
 		if resize:
 			interp_order= 3 # 1=bilinear, 2=biquadratic, 3=bicubic, 4=biquartic, 5=biquintic
-			data_transf= csl.resize_img_v2(
+			data_transf= cls.resize_img_v2(
 				data_transf,
 				min_dim=resize_size, max_dim=resize_size, min_scale=None,
 				mode="square",
