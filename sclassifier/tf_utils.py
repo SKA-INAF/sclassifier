@@ -628,8 +628,8 @@ def extract_tf_features_from_img(filename, modelfile, weightfile, imgsize=224, z
 	feats_list= list(feats[0])
 	feats_list= [float(item) for item in feats_list]
 	
-	return np.array(feats_list)
-			
+	#return np.array(feats_list)
+	return np.expand_dims(np.array(feats_list), axis=0)	# shape (1,Nfeat)
 	
 def extract_tf_features_from_datalist(datalist, modelfile, weightfile, imgsize=224, zscale=True, contrast=0.25, nmax=-1):
 	""" Function to extract features from datalist using TF trained encoder models """
