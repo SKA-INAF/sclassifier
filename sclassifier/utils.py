@@ -898,7 +898,7 @@ class Utils(object):
 		apply_zscale=True, contrast=0.25, 
 		set_nans_to_min=False
 	):
-	""" Convert numpy array to PIL 3chan RGB image norm to [0,255], uint8 """
+		""" Convert numpy array to PIL 3chan RGB image norm to [0,255], uint8 """
 
 		# - Read FITS from file and get transformed npy array
 		data= cls.read_and_transform_img(
