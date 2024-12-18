@@ -202,7 +202,7 @@ def main():
 			nprobe= args.nprobe
 		)
 	else:
-		logger.info("Compute indices & scores of top similar data  within dataset ...")
+		logger.info("Compute indices & scores of top similar data within dataset ...")
 		nn_indices, nn_scores= get_top_k_similar_within_data(
 			data,
 			k= args.k,

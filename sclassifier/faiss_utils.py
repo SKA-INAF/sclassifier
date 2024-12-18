@@ -321,13 +321,19 @@ def get_exact_top_k_similar(
 
 	# 4) Perform a top-N search with the single query vector
 	#    This returns similarity scores for all N items in the dataset
-	distances, indices = index.search(query_vector_norm, N)
+	#distances, indices = index.search(query_vector_norm, N)
 	# distances.shape: (1, N)
 	# indices.shape:   (1, N)
+	distances, indices = index.search(query_vector_norm, k)
+	# distances.shape: (1, k)
+	# indices.shape:   (1, k)	
+	
 	# Both sorted by similarity descending
 
-	all_scores = distances[0]  # shape (N,)
-	all_indices = indices[0]   # shape (N,)
+	#all_scores = distances[0]  # shape (N,)
+	#all_indices = indices[0]   # shape (N,)
+	all_scores = distances[0]  # shape (k,)
+	all_indices = indices[0]   # shape (k,)
 
 	# 5) Filter by threshold
 	mask = (all_scores >= threshold)
@@ -431,11 +437,15 @@ def get_approx_top_k_similar(
 	#    If N is extremely large, searching top-N might be prohibitive. 
 	#    A common approach is to search the top-X (X << N), then filter.
 	#    For demonstration, we'll search top-N. Tweak as needed.
-	distances, indices = index.search(query_vector_norm, N)
+	##distances, indices = index.search(query_vector_norm, N)
 	# shapes: (1, N)
+	distances, indices = index.search(query_vector_norm, k)
+	# shapes: (1, k)
 
-	all_scores = distances[0]  # shape (N,)
-	all_indices = indices[0]   # shape (N,)
+	#all_scores = distances[0]  # shape (N,)
+	#all_indices = indices[0]   # shape (N,)
+	all_scores = distances[0]  # shape (k,)
+	all_indices = indices[0]   # shape (k,)
 
 	# 9) Filter by threshold
 	mask = all_scores >= threshold
