@@ -1206,8 +1206,8 @@ class Utils(object):
 				order=interp_order,
 				preserve_range=True,
 				anti_aliasing=False
-    	)
-    	data_transf= res[0]
+			)
+			data_transf= res[0]
 
 		# - Apply min/max normalization
 		data_min= data_transf.min()
