@@ -802,8 +802,8 @@ class Utils(object):
 	):
 		""" Return numpy float image array norm to [0,1] """
 
-  	# - Read image from file and get transformed npy array
-  	data= cls.read_and_transform_img(
+		# - Read image from file and get transformed npy array
+		data= cls.read_and_transform_img(
 			filename,
 			nchans=1,
 			norm_range=(0.,1.),
