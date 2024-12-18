@@ -181,7 +181,7 @@ def main():
 			zscale=args.zscale, 
 			contrast=args.zscale_contrast
 		)
-		if imgdata is None:
+		if data_vector is None:
 			logger.error("Failed to extract data representation from image %s!" % (args.img))
 			return 1
 
