@@ -49,7 +49,7 @@ def get_top_k_similar_within_data(
 	data: np.ndarray,
 	k: int = 10,
 	threshold: float = 0.8,
-	large_data_thr: int = 1000000,  
+	large_data_thr: int = 1000000,
 	nlist: int = 100,
 	M: int = 8,
 	nprobe: int = 10
@@ -249,6 +249,7 @@ def get_top_k_similar(
 	data_vector: np.ndarray, 
 	k: int = 5, 
 	threshold: float = 0.8,
+	large_data_thr: int = 1000000,
 	nlist: int = 256,
 	M: int = 8,
 	nprobe: int = 10
