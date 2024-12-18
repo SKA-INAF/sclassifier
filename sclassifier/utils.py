@@ -841,8 +841,8 @@ class Utils(object):
 	):
 		""" Return 3chan RGB image numpy norm to [0,255], uint8 """
 
-  	# - Read image from file and get transformed npy array
-  	data= cls.read_and_transform_img(
+		# - Read image from file and get transformed npy array
+		data= cls.read_and_transform_img(
 			filename,
 			nchans=3,
 			norm_range=(0.,255.),
