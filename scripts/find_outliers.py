@@ -52,7 +52,8 @@ def get_args():
 	# - Input options
 	parser.add_argument('-inputfile','--inputfile', dest='inputfile', required=True, type=str, help='Input feature data table filename') 
 	parser.add_argument('-datalist_key','--datalist_key', dest='datalist_key', required=False, type=str, default="data", help='Dictionary key name to be read in input datalist (default=data)') 
-	parser.add_argument('-selcols','--selcols', dest='selcols', required=False, type=str, default='', help='Data column ids to be selected from input data, separated by commas') 
+	#parser.add_argument('-selcols','--selcols', dest='selcols', required=False, type=str, default='', help='Data column ids to be selected from input data, separated by commas') 
+	parser.add_argument('-selcols','--selcols', dest='selcols', required=False, type=str, default='', help='Data column ids to be selected from input data, separated by dash') 
 
 	# - Pre-processing options
 	parser.add_argument('--normalize', dest='normalize', action='store_true',help='Normalize feature data in range [0,1] before applying models (default=false)')	
@@ -130,7 +131,8 @@ def main():
 	datalist_key=args.datalist_key
 	selcols= []
 	if args.selcols!="":
-		selcols= [int(x.strip()) for x in args.selcols.split(',')]
+		#selcols= [int(x.strip()) for x in args.selcols.split(',')]
+		selcols= [int(x.strip()) for x in args.selcols.split('-')]
 		
 	# - Data pre-processing
 	normalize= args.normalize
