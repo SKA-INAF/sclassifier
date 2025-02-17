@@ -1164,7 +1164,7 @@ class Utils(object):
 	@classmethod
 	def transform_img(
 		cls,
-		data, 
+		data_arr, 
 		nchans=1, 
 		norm_range=(0.,1.), 
 		resize=False, 
@@ -1176,6 +1176,7 @@ class Utils(object):
 		""" Transform image """
 
 		# - Replace NANs pixels with 0 or min
+		data= np.copy(data_arr)
 		cond_nonan= np.isfinite(data)
 		cond_nonan_noblank= np.logical_and(data!=0, np.isfinite(data))
 		data_1d= data[cond_nonan_noblank]
