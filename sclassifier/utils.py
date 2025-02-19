@@ -726,7 +726,7 @@ class Utils(object):
 	#==   READ PNG/JPG IMAGE FILE
 	#===============================
 	@classmethod
-	def read_image(cls, filename, method='pillow'):
+	def read_image(cls, filename, method='pillow', nchans=1):
 		""" Read PNG/JPG image and return data """
 		
 		try:
@@ -734,6 +734,13 @@ class Utils(object):
 				data= plt.imread(filename)
 			elif method=="pillow":
 				image= Image.open(filename)
+				if nchans==1:
+					image= Image.open(filename).convert('L')
+				elif nchans==3:
+					image= Image.open(filename).convert('RGB')
+				else:
+					logger.error("Unsupported number of channels (%d) given (1 or 3 supported)!" % (nchans))
+					return None
 				data= np.asarray(image)
 			else:
 				logger.error("Invalid method (%s) given!" % (method))
@@ -770,7 +777,7 @@ class Utils(object):
 		if fileext=='.fits':
 			data, _, _= cls.read_fits(filename, strip_deg_axis=True)
 		elif fileext in ['.png', '.jpg']:
-			data= cls.read_image(filename, method='pillow')    
+			data= cls.read_image(filename, method='pillow', nchans=nchans)    
 		else:
 			logger.error("Invalid or unrecognized file extension (%s)!" % (fileext))
 			return None
@@ -1219,6 +1226,8 @@ class Utils(object):
 		data_transf= data_norm
 
 		# - Expand 2D data to desired number of channels (if>1): shape=(ny,nx,nchans)
+		ndim= data_transf.ndim
+		
 		if nchans>1:
 			data_transf= np.stack((data_transf,) * nchans, axis=-1)
 
