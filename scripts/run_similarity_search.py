@@ -57,7 +57,8 @@ def get_args():
 	# - Input options
 	parser.add_argument('-datafile','--datafile', dest='datafile', required=True, type=str, help='Path to feature data file (.json)')
 	parser.add_argument('-datalist_key','--datalist_key', dest='datalist_key', required=False, type=str, default="data", help='Dictionary key name to be read in input datalist (default=data)') 
-	parser.add_argument('-selcols','--selcols', dest='selcols', required=False, type=str, default='', help='Data column ids to be selected from input data, separated by commas') 
+	#parser.add_argument('-selcols','--selcols', dest='selcols', required=False, type=str, default='', help='Data column ids to be selected from input data, separated by commas') 
+	parser.add_argument('-selcols','--selcols', dest='selcols', required=False, type=str, default='', help='Data column ids to be selected from input data, separated by dash') 
 
 	parser.add_argument('-img','--img', dest='img', required=False, default="", type=str, help='Path to image file. If provided the program will find the images in the datafile that are most similar to this image (.fits/.png/.jpg)') 
 	
@@ -113,8 +114,9 @@ def main():
 		
 	selcols= []
 	if args.selcols!="":
-		selcols= [int(x.strip()) for x in args.selcols.split(',')]
-	
+		#selcols= [int(x.strip()) for x in args.selcols.split(',')]
+		selcols= [int(x.strip()) for x in args.selcols.split('-')]
+		
 	#===========================
 	#==   READ FEATURE DATA
 	#===========================
