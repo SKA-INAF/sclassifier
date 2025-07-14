@@ -418,25 +418,27 @@ def extract_features(datalist, model, image_processor, device, args):
 		# - Extract image features
 		with torch.no_grad():
 			#features= model.get_image_features(**inputs)
-			features = model(**inputs)
-			print("features")
+			outputs = model(**inputs)
+			print("outputs")
 			print(type(features))
-			print(features.shape)
-			[0]
+			last_hidden_states = outputs.last_hidden_state
+			print("last_hidden_states")
+			print(type(last_hidden_states))
+			print(last_hidden_states)
     	
-		features_numpy= features.cpu().numpy()[0]
+		#features_numpy= features.cpu().numpy()[0]
 		
-		if idx==0:
-			print("features.shape")
-			print(features.shape)
-			print("features_numpy.shape")
-			print(features_numpy.shape)
+		#if idx==0:
+		#	print("features.shape")
+		#	print(features.shape)
+		#	print("features_numpy.shape")
+		#	print(features_numpy.shape)
 			
 		# - Append to main list
-		feats_list= list(features_numpy)
-		feats_list= [float(item) for item in feats_list]
+		#feats_list= list(features_numpy)
+		#feats_list= [float(item) for item in feats_list]
     
-		datalist[idx]["feats"]= NoIndent(feats_list)
+		#datalist[idx]["feats"]= NoIndent(feats_list)
     
 	return datalist
 		
