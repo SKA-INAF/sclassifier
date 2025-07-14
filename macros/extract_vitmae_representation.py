@@ -129,6 +129,9 @@ def get_args():
 	parser.set_defaults(save_labels_in_ascii=False)
 	parser.add_argument('-outfile','--outfile', dest='outfile', required=False, type=str, default='featdata.dat', help='Output filename (.dat) of feature data') 
 	
+	parser.add_argument('--verbose', dest='verbose', action='store_true',help='Turn on verbose printout')
+	parser.set_defaults(verbose=False)
+	
 	args = parser.parse_args()	
 
 	return args
@@ -302,9 +305,10 @@ def transform_img(data, args):
 	data_min= np.min(data_1d)
 	data_transf[~cond]= data_min
 
-	print("== DATA MIN/MAX ==")
-	print(data_transf.min())
-	print(data_transf.max())
+	if args.verbose:
+		print("== DATA MIN/MAX ==")
+		print(data_transf.min())
+		print(data_transf.max())
 
 	# - Clip data?
 	if args.clip_data:
@@ -317,26 +321,45 @@ def transform_img(data, args):
 		data_stretched= get_zscaled_data(data_transf, contrast=args.zscale_contrast)
 		data_transf= data_stretched
 
-
 	# 2. Robust percentile clipping
 	if args.robust_clip_data:
 		data_clipped= get_robust_clipped_data(data_transf, (args.robust_clip_perc_min, args.robust_clip_perc_max) )
 		data_transf= data_clipped
+		
+		if args.verbose:
+			print("== DATA MIN/MAX (AFTER ROBUST CLIP) ==")
+			print(data_transf.min())
+			print(data_transf.max())
 
 	# 3. Background subtraction
 	if args.subtract_bkg:
 		data_nobkg= get_background_subtracted_data(data_transf, args.bkg_perc)
 		data_transf= data_nobkg
+		
+		if args.verbose:
+			print("== DATA MIN/MAX (AFTER BKG SUB) ==")
+			print(data_transf.min())
+			print(data_transf.max())
 
 	# 4. Biweight normalization
 	if args.biweight_normalization:
 		data_norm= get_biweight_normalized_data(data_transf)
 		data_transf= data_norm
+		
+		if args.verbose:
+			print("== DATA MIN/MAX (AFTER BIWEIGHT) ==")
+			print(data_transf.min())
+			print(data_transf.max())
 
 	# 5. Final quantile scaling to [0,1]
 	if args.quantile_scaling:
 		data_scaled= get_quantile_scaled_data(data_transf, (args.quantile_perc_min, args.quantile_perc_max))
 		data_transf= data_scaled
+		
+		if args.verbose:
+			print("== DATA MIN/MAX (AFTER QUANTILE SCALING) ==")
+			print(data_transf.min())
+			print(data_transf.max())
 
 	# 6. 3-channel tensor
 	#tensor = torch.from_numpy(data).unsqueeze(0).repeat(3, 1, 1).contiguous().float()
@@ -347,9 +370,10 @@ def transform_img(data, args):
 	if nchans>1 and ndim==2:
 		data_transf= np.stack((data_transf,) * nchans, axis=-1)
 	
-	print("== DATA MIN/MAX (AFTER IMG TRANSF) ==")
-	print(data_transf.min())
-	print(data_transf.max())
+	if args.verbose:
+		print("== DATA MIN/MAX (AFTER IMG TRANSF) ==")
+		print(data_transf.min())
+		print(data_transf.max())
 	
 	# - Normalize to range
 	data_min= data_transf.min()
@@ -365,10 +389,11 @@ def transform_img(data, args):
 	# - Convert to uint8
 	if args.to_uint8:
 		data_transf= data_transf.astype(np.uint8)
-		
-	print("== DATA MIN/MAX (AFTER NORM) ==")
-	print(data_transf.min())
-	print(data_transf.max())
+	
+	if args.verbose:	
+		print("== DATA MIN/MAX (AFTER NORM) ==")
+		print(data_transf.min())
+		print(data_transf.max())
 	
 	
 	return data_transf
