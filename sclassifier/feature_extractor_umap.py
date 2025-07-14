@@ -401,7 +401,7 @@ class FeatExtractorUMAP(object):
 		snames= ret[1]
 		classids= ret[2]
 
-		return self.set_data(data, snames, class_ids)
+		return self.set_data(data, snames, classids)
 		
 	
 	#####################################
