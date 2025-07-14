@@ -37,7 +37,7 @@ from PIL import Image
 
 ## TRANSFORMERS
 from transformers import AutoProcessor, AutoModel
-from transformers import AutoImageProcessor, ViTMAEModel
+from transformers import AutoImageProcessor, ViTMAEModel, ViTForImageClassification
 
 ## ASTRO/IMG PROCESSING MODULES
 from astropy.io import fits
