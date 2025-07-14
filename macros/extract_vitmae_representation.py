@@ -405,10 +405,10 @@ def transform_img(data, args):
 	#tensor = torch.from_numpy(data).unsqueeze(0).repeat(3, 1, 1).contiguous().float()
 
 	# - Expand 2D data to desired number of channels (if>1): shape=(ny,nx,nchans)
-  ndim= data_transf.ndim
-  nchans= args.in_chans
-  if nchans>1 and ndim==2:
-    data_transf= np.stack((data_transf,) * nchans, axis=-1)
+	ndim= data_transf.ndim
+	nchans= args.in_chans
+	if nchans>1 and ndim==2:
+		data_transf= np.stack((data_transf,) * nchans, axis=-1)
 	
 	# - Normalize to range
 	data_min= data_transf.min()
