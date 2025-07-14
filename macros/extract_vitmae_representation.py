@@ -508,6 +508,8 @@ def save_features_to_ascii(datalist, outfile, save_labels=False):
 		sname= item['sname']
 		class_id= item['id']
 		class_label= item['label']
+		if 'feats' not in item: # Skip None Images
+			continue
 		feats= item['feats']
     
 		features.append(feats)
