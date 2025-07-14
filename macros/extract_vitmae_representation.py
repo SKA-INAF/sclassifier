@@ -7,6 +7,7 @@ from __future__ import print_function
 ##################################################
 ## STANDARD MODULES
 import os
+from pathlib import Path
 import sys
 import subprocess
 import string
@@ -32,6 +33,7 @@ import pickle
 
 ## PYTORCH
 import torch
+import torchvision.transforms.functional as TF
 #import torchvision.transforms as T
 from PIL import Image
 
@@ -44,6 +46,7 @@ from astropy.io import fits
 from astropy.stats import sigma_clipped_stats
 from astropy.stats import sigma_clip
 from astropy.visualization import ZScaleInterval
+from astropy.stats import biweight_location, biweight_scale
 
 import matplotlib.pyplot as plt
 
@@ -105,6 +108,173 @@ def get_args():
 
 	return args
 	
+
+
+####################################
+###   UTIL FUNCTIONS
+####################################
+class RadioFoundationProcessor:
+    """
+    Preprocessing pipeline for radio astronomy images, ensuring telescope independence
+    and compatibility with a foundation model.
+    """
+
+    def __init__(self, image_size=224):
+        self.image_size = image_size
+        self.clip_percentiles = (2, 98) #(0.5, 99.5)
+        self.bg_percentile = 25
+        self.final_scale_percentiles = (1, 99)
+
+    def __call__(self, fits_path):
+        # 1. Load FITS and handle NaNs/Infs
+        with fits.open(fits_path, memmap=True) as hdul:
+            data = hdul[0].data.astype(np.float32)
+            data = np.nan_to_num(data, nan=0.0, posinf=0.0, neginf=0.0)
+
+        tensor = self._pipeline(data) #run processing
+
+        # 7. Resize to arbitrary model input size
+        tensor = TF.resize(tensor, [self.image_size, self.image_size], interpolation=TF.InterpolationMode.BICUBIC)
+
+        return tensor
+
+    def process_numpy(self, data, resize=False):
+        """
+        Process a numpy array (single-channel radio image) through the same pipeline as __call__.
+        """
+        # 1. Clean up NaNs
+        data = np.array(data, dtype=np.float32)
+        data = np.nan_to_num(data, nan=0.0, posinf=0.0, neginf=0.0)
+
+        tensor = self._pipeline(data) #run processing
+
+        # 7. Optional resize to arbitrary model input size
+        if resize:
+            tensor = TF.resize(tensor, [self.image_size, self.image_size], interpolation=TF.InterpolationMode.BICUBIC)
+
+        return tensor
+
+    def _pipeline(self,data):
+        # 2. Robust percentile clipping
+        data = self.robust_clip(data, self.clip_percentiles)
+
+        # 3. Background subtraction
+        data = self.background_subtract(data, self.bg_percentile)
+
+        # 4. Biweight normalization
+        data = self.biweight_normalize(data)
+
+        # 5. Final quantile scaling to [0,1]
+        data = self.quantile_scale(data, self.final_scale_percentiles)
+
+        # 6. 3-channel tensor
+        tensor = torch.from_numpy(data).unsqueeze(0).repeat(3, 1, 1).contiguous().float()
+
+        return tensor
+
+    @staticmethod
+    def robust_clip(data, percentiles):
+        """
+        Clips the input data to specified lower and upper percentiles.
+
+        Purpose:
+            Removes extreme outlier pixel values to stabilize the image dynamic range.
+
+        Relation to radio astronomy:
+            Radio images often contain outlier intensities due to bright compact sources,
+            calibration artifacts, or residual RFI. Clipping to e.g. (2,98) percentiles
+            ensures that the majority of the background noise and faint source structures
+            are preserved without extreme pixel values dominating scaling.
+
+        Caveats:
+            - May suppress true flux of very bright sources.
+            - The chosen percentile range should balance outlier removal with preserving
+              astrophysically significant peaks.
+        """
+        p_low, p_high = np.percentile(data, percentiles)
+        return np.clip(data, p_low, p_high).astype(np.float32)
+
+    @staticmethod
+    def background_subtract(data, bg_percentile):
+        """
+        Subtracts a background estimate computed as a specified percentile of the data.
+
+        Purpose:
+            Centers the image around zero by removing a robust estimate of the background level.
+
+        Relation to radio astronomy:
+            In typical radio cutouts, the majority of pixels represent background noise.
+            Using a low percentile (e.g. 25th) provides a stable approximation of the
+            noise floor, enhancing the relative contrast of faint sources.
+
+        Caveats:
+            - In images with extensive bright emission, this percentile may overestimate
+              the true background, leading to negative residuals.
+        """
+        background = np.percentile(data, bg_percentile)
+        return (data - background).astype(np.float32)
+
+    @staticmethod
+    def biweight_normalize(data):
+        """
+        Normalizes data using biweight location and scale as robust estimators.
+
+        Purpose:
+            Robustly centers and scales the data to reduce the influence of outliers
+            compared to standard mean/std normalization.
+
+        Relation to radio astronomy:
+            Radio images often include Gaussian-like noise with occasional bright sources.
+            Biweight location (robust mean) and scale (robust std) provide stable estimates
+            even in the presence of such outliers, maintaining background structure while
+            preventing bright sources from dominating the normalization.
+
+        Caveats:
+            - If the image has extremely low SNR or is nearly empty, biweight scale can
+              approach zero; a small floor (1e-6) is used to prevent division errors.
+        """
+        flat = data.flatten()
+        center = biweight_location(flat)
+        scale = biweight_scale(flat)
+        if scale < 1e-6:
+            scale = 1e-6
+        return ((data - center) / scale).astype(np.float32)
+
+    @staticmethod
+    def quantile_scale(data, percentiles):
+        """
+        Linearly rescales image pixel intensities to the [0,1] range based on specified lower and upper quantiles.
+
+        Input:
+            data (np.ndarray): Single-channel radio astronomy image as a float32 array.
+            percentiles (tuple): Two percentile values (e.g. (1,99)) defining the intensity range to map to [0,1].
+
+        Output:
+            np.ndarray: Rescaled image as float32, with intensities clipped and linearly mapped to [0,1].
+
+        Purpose:
+            Normalizes each image to a fixed numeric range for stable neural network training and to ensure
+            that differences in telescope flux scales or noise levels do not affect input distributions.
+
+        Relation to radio astronomy:
+            Radio images often span wide dynamic ranges due to strong sources and background noise variations.
+            Quantile-based scaling ensures faint sources remain detectable while normalizing extreme outliers.
+
+        Caveats:
+            - If the specified quantile range is too narrow (e.g. in nearly flat images), output may be zero everywhere.
+            - Absolute flux density calibration is lost; this method is appropriate for tasks focusing on morphology
+              rather than calibrated flux measurements.
+        """
+        q_low, q_high = np.percentile(data, percentiles)
+        if q_high - q_low < 1e-6:
+            return np.zeros_like(data, dtype=np.float32)
+        scaled = (data - q_low) / (q_high - q_low)
+        return np.clip(scaled, 0, 1).astype(np.float32)
+
+
+
+
+
 
 def read_datalist(filename, key="data"):
   """ Read datalist """
@@ -333,6 +503,8 @@ def save_features_to_ascii(datalist, outfile, save_labels=False):
 	nsamples= len(datalist)
 
 	for idx, item in enumerate(datalist):
+		print("--> item")
+		print(item)
 		sname= item['sname']
 		class_id= item['id']
 		class_label= item['label']
