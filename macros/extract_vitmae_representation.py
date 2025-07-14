@@ -434,14 +434,16 @@ def extract_features(datalist, model, image_processor, device, args):
 			for hidden_state in hidden_states:
 				print(hidden_state.shape)
     	
-    	# To get the features vector use token [CLS] (indice 0)
-    	features= hidden_states[-1][:,0,:]
+			# To get the features vector use token [CLS] (indice 0)
+			features= hidden_states[-1][:,0,:]
     	
+    if idx==0:
+			print("features.shape")
+			print(features.shape)
+			
 		features_numpy= features.cpu().numpy()[0]
 		
 		if idx==0:
-			print("features.shape")
-			print(features.shape)
 			print("features_numpy.shape")
 			print(features_numpy.shape)
 			
