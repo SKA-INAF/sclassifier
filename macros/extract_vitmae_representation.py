@@ -437,7 +437,7 @@ def extract_features(datalist, model, image_processor, device, args):
 			# To get the features vector use token [CLS] (indice 0)
 			features= hidden_states[-1][:,0,:]
     	
-    if idx==0:
+		if idx==0:
 			print("features.shape")
 			print(features.shape)
 			
