@@ -386,7 +386,7 @@ def save_features_to_json(datalist, datalist_key, outfile):
 		
 	return 0
 
-def extract_features(datalist, model, processor, device, args):
+def extract_features(datalist, model, image_processor, device, args):
 	""" Function to extract features from trained models """
 	
 	# - Loop over datalist and extract features per each image
@@ -409,7 +409,8 @@ def extract_features(datalist, model, processor, device, args):
 			continue
 			
 		# - Apply model pre-processing
-		inputs = processor(images=img, return_tensors="pt").to(device)
+		#inputs = processor(images=img, return_tensors="pt").to(device)
+		inputs = image_processor(images=img, return_tensors="pt").to(device)
 		
 		# - Extract image features
 		with torch.no_grad():
@@ -526,7 +527,7 @@ def main():
 	datalist_out= extract_features(
 		datalist,
 		model, 
-		processor,
+		image_processor,
 		device, 
 		args
 	)
