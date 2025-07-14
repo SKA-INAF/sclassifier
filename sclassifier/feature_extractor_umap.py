@@ -933,6 +933,15 @@ class FeatExtractorUMAP(object):
 			)
 			head= '{} {} {}'.format("# sname",znames,"id")
 
+
+		print("snames")
+		print(snames[0])
+		print("objids")
+		print(objids[0])
+		print("enc_data")
+		print(enc_data[0])
+		
+
 		Utils.write_ascii(enc_data, self.outfile_encoded_data_unsupervised, head)	
 
 		# - Supervised encoded data
