@@ -89,7 +89,7 @@ def get_args():
 	parser.set_defaults(set_zero_to_min=False)
 	
 	# - Model option
-	parser.add_argument('-model','--model', dest='model', required=False, type=str, default="google/siglip-so400m-patch14-384", help='SigLIP pretrained model {google/siglip-so400m-patch14-384,google/siglip-so400m-patch14-224,google/siglip-base-patch16-256,google/siglip-large-patch16-256}') 
+	parser.add_argument('-model','--model', dest='model', required=False, type=str, default="facebook/vit-mae-base", help='ViTMAE pretrained model {"facebook/vit-mae-base"}') 
 	
 	# - Run options
 	parser.add_argument('-device','--device', dest='device', required=False, type=str, default="cuda", help='Device where to run inference. Default is cuda, if not found use cpu.') 
