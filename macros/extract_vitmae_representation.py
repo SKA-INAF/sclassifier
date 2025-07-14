@@ -543,7 +543,7 @@ def save_features_to_ascii(datalist, outfile, save_labels=False):
 		
 	# - Save features to ascii file with format: sname, f1, f2, ..., fn, classid
 	N= len(features)
-	nfeats= features[0].shape[0]
+	nfeats= len(features[0])
 	print("INFO: Writing %d feature data (nfeats=%d) to file %s ..." % (N, nfeats, outfile))
 
 	featdata_arr= np.array(features)
