@@ -456,6 +456,8 @@ def load_as_pil_float(filename, args):
 		
 	# - Read image as numpy (ny,nx) with all transforms applied
 	data= load_as_npy(filename, args)
+	if data is None:
+		return None
 	
 	# - Convert numpy to PIL image
 	#   NB: This works only for 2D images (e.g. 1-chan from FITS, args.in_chan=1)
@@ -486,6 +488,8 @@ def load_as_pil_rgb(filename, args):
 		args.to_uint8= True
 	
 	data= load_as_npy(filename, args)
+	if data is None:
+		return None
 	
 	# - Convert numpy to PIL RGB image
 	#   NB: This works only for 3D uint8 data (e.g. 1-chan from FITS has to be converted with args.in_chan=3)
@@ -510,6 +514,8 @@ def load_as_tensor_3chan(filename, args):
 	#	args.norm_max= 1.0
 		
 	data= load_as_npy(filename, args)
+	if data is None:
+		return None
 		
 	# - Convert to tensor
 	tensor= torch.from_numpy(data.transpose((2, 0, 1))).contiguous().float()
