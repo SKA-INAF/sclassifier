@@ -102,7 +102,7 @@ def get_args():
 	parser.add_argument('--quantile_scaling', dest='quantile_scaling', action='store_true',help='Apply quantile scaling transform (default=false)')	
 	parser.set_defaults(quantile_scaling=False)
 	parser.add_argument('--quantile_perc_min', dest='quantile_perc_min', default=1., type=float, help='Quantile percentile min (default=1.0)')
-	parser.add_argument('--quantile_perc_max', dest='quantile_perc_max', default=1., type=float, help='Quantile percentile max (default=99.0)')
+	parser.add_argument('--quantile_perc_max', dest='quantile_perc_max', default=99., type=float, help='Quantile percentile max (default=99.0)')
 	
 	
 	parser.add_argument('--norm_min', default=0., type=float, help='Norm min (default=0)')
@@ -381,7 +381,8 @@ def transform_img(data, args):
 	norm_min= args.norm_min
 	norm_max= args.norm_max
 	if norm_min==data_min and norm_max==data_max:
-		print("INFO: Data already normalized in range (%f,%f)" % (norm_min, norm_max))
+		if args.verbose:
+			print("INFO: Data already normalized in range (%f,%f)" % (norm_min, norm_max))
 	else:
 		data_norm= (data_transf-data_min)/(data_max-data_min) * (norm_max-norm_min) + norm_min
 		data_transf= data_norm
