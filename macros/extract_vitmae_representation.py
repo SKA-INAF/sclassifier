@@ -421,9 +421,9 @@ def extract_features(datalist, model, image_processor, device, args):
 			outputs = model(**inputs)
 			print("outputs")
 			print(type(outputs))
-			last_hidden_states = outputs.last_hidden_state
-			print("last_hidden_states")
-			print(type(last_hidden_states))
+			hidden_states = outputs.last_hidden_state
+			print("hidden_states")
+			print(type(hidden_states))
 			print(last_hidden_states)
     	
 		#features_numpy= features.cpu().numpy()[0]
