@@ -389,6 +389,10 @@ def save_features_to_json(datalist, datalist_key, outfile):
 def extract_features(datalist, model, image_processor, device, args):
 	""" Function to extract features from trained models """
 	
+	# - Print model
+	print("--> model")
+	print(model)
+	
 	# - Loop over datalist and extract features per each image
 	nsamples= len(datalist)
 	
@@ -409,36 +413,43 @@ def extract_features(datalist, model, image_processor, device, args):
 			continue
 			
 		# - Apply model pre-processing
-		#inputs = processor(images=img, return_tensors="pt").to(device)
 		inputs = image_processor(images=img, return_tensors="pt").to(device)
-		
-		print("inputs")
-		print(type(inputs))
 		
 		# - Extract image features
 		with torch.no_grad():
-			#features= model.get_image_features(**inputs)
 			outputs = model(**inputs)
 			print("outputs")
 			print(type(outputs))
-			hidden_states = outputs.last_hidden_state
+			
+			# - Retrieve hidden states
+			#   hidden_states are a tuple: (batch_size, num_patches + 1, hidden_size)
+			#     - hidden_states[0]: output layer initial embedding
+			#     - hidden_states[1]: output first layer Transformer.
+      #     - ...
+      #     - hidden_states[-1]: output last layer Transformer (we need this for feature extraction)
+			hidden_states = outputs.hidden_states
 			print("hidden_states")
 			print(type(hidden_states))
-			print(last_hidden_states)
+			print(len(hidden_states))
+			for hidden_state in hidden_states:
+				print(hidden_state.shape)
     	
-		#features_numpy= features.cpu().numpy()[0]
+    	# To get the features vector use token [CLS] (indice 0)
+    	features= hidden_states[-1][:,0,:]
+    	
+		features_numpy= features.cpu().numpy()[0]
 		
-		#if idx==0:
-		#	print("features.shape")
-		#	print(features.shape)
-		#	print("features_numpy.shape")
-		#	print(features_numpy.shape)
+		if idx==0:
+			print("features.shape")
+			print(features.shape)
+			print("features_numpy.shape")
+			print(features_numpy.shape)
 			
 		# - Append to main list
-		#feats_list= list(features_numpy)
-		#feats_list= [float(item) for item in feats_list]
+		feats_list= list(features_numpy)
+		feats_list= [float(item) for item in feats_list]
     
-		#datalist[idx]["feats"]= NoIndent(feats_list)
+		datalist[idx]["feats"]= NoIndent(feats_list)
     
 	return datalist
 		
