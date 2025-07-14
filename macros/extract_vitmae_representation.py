@@ -431,6 +431,11 @@ def load_as_npy(filename, args):
 		
 	if data is None:
 		return None
+		
+	# - Check if image contains all zeros
+	if data.min()==data.max():
+		print("Image contains the same pixel value (%d), returning None!" % (data.min()))
+		return None
 				
 	# - Apply transform to numpy array
 	data_transf= transform_img(data, args)
