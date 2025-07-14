@@ -72,22 +72,47 @@ def get_args():
 	parser.add_argument('-nmax','--nmax', dest='nmax', required=False, type=int, default=-1, help='Max number of entries processed in filelist (-1=all)') 
 	
 	# - Data options
+	parser.add_argument('-dataloader','--dataloader', dest='dataloader', required=False, type=str, default="tensor_3chan", help='Data loader mode {"pil_gray", "pil_rgb", "tensor_3chan"}') 
+	
 	parser.add_argument('--imgsize', default=256, type=int, help='Image resize size in pixels (default=256)')
-	parser.add_argument('--reset_meanstd', dest='reset_meanstd', action='store_true',help='Reset original mean/std transform used in processor (default=false)')	
+	parser.add_argument('--reset_meanstd', dest='reset_meanstd', action='store_true', help='Reset original mean/std transform used in processor (default=false)')	
 	parser.set_defaults(reset_meanstd=False)
-	parser.add_argument('--reset_rescale', dest='reset_rescale', action='store_true',help='Reset original rescale transform used in processor (default=false)')	
+	parser.add_argument('--reset_rescale', dest='reset_rescale', action='store_true', help='Reset original rescale transform used in processor (default=false)')	
 	parser.set_defaults(reset_rescale=False)
 	
 	parser.add_argument('--clip_data', dest='clip_data', action='store_true',help='Apply sigma clipping transform (default=false)')	
 	parser.set_defaults(clip_data=False)
+	
+	parser.add_argument('--robust_clip_data', dest='robust_clip_data', action='store_true',help='Apply robust sigma clipping transform (default=false)')	
+	parser.set_defaults(robust_clip_data=False)
+	parser.add_argument('--robust_clip_perc_min', dest='robust_clip_perc_min', default=2., type=float, help='Robust clipping min perc (default=2.0)')
+	parser.add_argument('--robust_clip_perc_max', dest='robust_clip_perc_max', default=98., type=float, help='Robust clipping max perc (default=98.0)')
+	
 	parser.add_argument('--zscale', dest='zscale', action='store_true',help='Apply zscale transform (default=false)')	
 	parser.set_defaults(zscale=False)
 	parser.add_argument('--zscale_contrast', default=0.25, type=float, help='ZScale transform contrast (default=0.25)')
+	
+	parser.add_argument('--subtract_bkg', dest='subtract_bkg', action='store_true',help='Apply bkg subtraction transform (default=false)')	
+	parser.set_defaults(subtract_bkg=False)
+	parser.add_argument('--bkg_perc', dest='bkg_perc', default=25., type=float, help='Bkg percentile (default=25.0)')
+	
+	parser.add_argument('--biweight_normalization', dest='biweight_normalization', action='store_true',help='Apply biweight normalization transform (default=false)')	
+	parser.set_defaults(biweight_normalization=False)
+	
+	parser.add_argument('--quantile_scaling', dest='quantile_scaling', action='store_true',help='Apply quantile scaling transform (default=false)')	
+	parser.set_defaults(quantile_scaling=False)
+	parser.add_argument('--quantile_perc_min', dest='quantile_perc_min', default=1., type=float, help='Quantile percentile min (default=1.0)')
+	parser.add_argument('--quantile_perc_max', dest='quantile_perc_max', default=1., type=float, help='Quantile percentile max (default=99.0)')
+	
+	
 	parser.add_argument('--norm_min', default=0., type=float, help='Norm min (default=0)')
 	parser.add_argument('--norm_max', default=1., type=float, help='Norm max (default=1)')
+	
 	parser.add_argument('--to_uint8', dest='to_uint8', action='store_true',help='Convert to uint8 (default=false)')	
 	parser.set_defaults(to_uint8=False)
+	
 	parser.add_argument('--in_chans', default = 1, type = int, help = 'Length of subset of dataset to use.')
+	
 	parser.add_argument('--set_zero_to_min', dest='shift_zero_to_min', action='store_true',help='Set blank pixels to min>0 (default=false)')	
 	parser.set_defaults(set_zero_to_min=False)
 	
@@ -114,166 +139,65 @@ def get_args():
 ###   UTIL FUNCTIONS
 ####################################
 class RadioFoundationProcessor:
-    """
-    Preprocessing pipeline for radio astronomy images, ensuring telescope independence
-    and compatibility with a foundation model.
-    """
+	"""
+	Preprocessing pipeline for radio astronomy images, ensuring telescope independence
+	and compatibility with a foundation model.
+	"""
 
-    def __init__(self, image_size=224):
-        self.image_size = image_size
-        self.clip_percentiles = (2, 98) #(0.5, 99.5)
-        self.bg_percentile = 25
-        self.final_scale_percentiles = (1, 99)
+	def __init__(self, image_size=224):
+		self.image_size = image_size
+		self.clip_percentiles = (2, 98) #(0.5, 99.5)
+		self.bg_percentile = 25
+		self.final_scale_percentiles = (1, 99)
 
-    def __call__(self, fits_path):
-        # 1. Load FITS and handle NaNs/Infs
-        with fits.open(fits_path, memmap=True) as hdul:
-            data = hdul[0].data.astype(np.float32)
-            data = np.nan_to_num(data, nan=0.0, posinf=0.0, neginf=0.0)
+	def __call__(self, fits_path):
+		# 1. Load FITS and handle NaNs/Infs
+		with fits.open(fits_path, memmap=True) as hdul:
+			data = hdul[0].data.astype(np.float32)
+			data = np.nan_to_num(data, nan=0.0, posinf=0.0, neginf=0.0)
 
-        tensor = self._pipeline(data) #run processing
+		tensor = self._pipeline(data) #run processing
 
-        # 7. Resize to arbitrary model input size
-        tensor = TF.resize(tensor, [self.image_size, self.image_size], interpolation=TF.InterpolationMode.BICUBIC)
+		# 7. Resize to arbitrary model input size
+		tensor = TF.resize(tensor, [self.image_size, self.image_size], interpolation=TF.InterpolationMode.BICUBIC)
 
-        return tensor
+		return tensor
 
-    def process_numpy(self, data, resize=False):
-        """
-        Process a numpy array (single-channel radio image) through the same pipeline as __call__.
-        """
-        # 1. Clean up NaNs
-        data = np.array(data, dtype=np.float32)
-        data = np.nan_to_num(data, nan=0.0, posinf=0.0, neginf=0.0)
+	def process_numpy(self, data, resize=False):
+		"""
+		Process a numpy array (single-channel radio image) through the same pipeline as __call__.
+		"""
+		# 1. Clean up NaNs
+		data = np.array(data, dtype=np.float32)
+		data = np.nan_to_num(data, nan=0.0, posinf=0.0, neginf=0.0)
 
-        tensor = self._pipeline(data) #run processing
+		tensor = self._pipeline(data) #run processing
 
-        # 7. Optional resize to arbitrary model input size
-        if resize:
-            tensor = TF.resize(tensor, [self.image_size, self.image_size], interpolation=TF.InterpolationMode.BICUBIC)
+		# 7. Optional resize to arbitrary model input size
+		if resize:
+			tensor = TF.resize(tensor, [self.image_size, self.image_size], interpolation=TF.InterpolationMode.BICUBIC)
 
-        return tensor
+		return tensor
 
-    def _pipeline(self,data):
-        # 2. Robust percentile clipping
-        data = self.robust_clip(data, self.clip_percentiles)
+	def _pipeline(self,data):
+		# 2. Robust percentile clipping
+		data = self.robust_clip(data, self.clip_percentiles)
 
-        # 3. Background subtraction
-        data = self.background_subtract(data, self.bg_percentile)
+		# 3. Background subtraction
+		data = self.background_subtract(data, self.bg_percentile)
 
-        # 4. Biweight normalization
-        data = self.biweight_normalize(data)
+		# 4. Biweight normalization
+		data = self.biweight_normalize(data)
 
-        # 5. Final quantile scaling to [0,1]
-        data = self.quantile_scale(data, self.final_scale_percentiles)
+		# 5. Final quantile scaling to [0,1]
+		data = self.quantile_scale(data, self.final_scale_percentiles)
 
-        # 6. 3-channel tensor
-        tensor = torch.from_numpy(data).unsqueeze(0).repeat(3, 1, 1).contiguous().float()
+		# 6. 3-channel tensor
+		tensor = torch.from_numpy(data).unsqueeze(0).repeat(3, 1, 1).contiguous().float()
 
-        return tensor
+	return tensor
 
-    @staticmethod
-    def robust_clip(data, percentiles):
-        """
-        Clips the input data to specified lower and upper percentiles.
-
-        Purpose:
-            Removes extreme outlier pixel values to stabilize the image dynamic range.
-
-        Relation to radio astronomy:
-            Radio images often contain outlier intensities due to bright compact sources,
-            calibration artifacts, or residual RFI. Clipping to e.g. (2,98) percentiles
-            ensures that the majority of the background noise and faint source structures
-            are preserved without extreme pixel values dominating scaling.
-
-        Caveats:
-            - May suppress true flux of very bright sources.
-            - The chosen percentile range should balance outlier removal with preserving
-              astrophysically significant peaks.
-        """
-        p_low, p_high = np.percentile(data, percentiles)
-        return np.clip(data, p_low, p_high).astype(np.float32)
-
-    @staticmethod
-    def background_subtract(data, bg_percentile):
-        """
-        Subtracts a background estimate computed as a specified percentile of the data.
-
-        Purpose:
-            Centers the image around zero by removing a robust estimate of the background level.
-
-        Relation to radio astronomy:
-            In typical radio cutouts, the majority of pixels represent background noise.
-            Using a low percentile (e.g. 25th) provides a stable approximation of the
-            noise floor, enhancing the relative contrast of faint sources.
-
-        Caveats:
-            - In images with extensive bright emission, this percentile may overestimate
-              the true background, leading to negative residuals.
-        """
-        background = np.percentile(data, bg_percentile)
-        return (data - background).astype(np.float32)
-
-    @staticmethod
-    def biweight_normalize(data):
-        """
-        Normalizes data using biweight location and scale as robust estimators.
-
-        Purpose:
-            Robustly centers and scales the data to reduce the influence of outliers
-            compared to standard mean/std normalization.
-
-        Relation to radio astronomy:
-            Radio images often include Gaussian-like noise with occasional bright sources.
-            Biweight location (robust mean) and scale (robust std) provide stable estimates
-            even in the presence of such outliers, maintaining background structure while
-            preventing bright sources from dominating the normalization.
-
-        Caveats:
-            - If the image has extremely low SNR or is nearly empty, biweight scale can
-              approach zero; a small floor (1e-6) is used to prevent division errors.
-        """
-        flat = data.flatten()
-        center = biweight_location(flat)
-        scale = biweight_scale(flat)
-        if scale < 1e-6:
-            scale = 1e-6
-        return ((data - center) / scale).astype(np.float32)
-
-    @staticmethod
-    def quantile_scale(data, percentiles):
-        """
-        Linearly rescales image pixel intensities to the [0,1] range based on specified lower and upper quantiles.
-
-        Input:
-            data (np.ndarray): Single-channel radio astronomy image as a float32 array.
-            percentiles (tuple): Two percentile values (e.g. (1,99)) defining the intensity range to map to [0,1].
-
-        Output:
-            np.ndarray: Rescaled image as float32, with intensities clipped and linearly mapped to [0,1].
-
-        Purpose:
-            Normalizes each image to a fixed numeric range for stable neural network training and to ensure
-            that differences in telescope flux scales or noise levels do not affect input distributions.
-
-        Relation to radio astronomy:
-            Radio images often span wide dynamic ranges due to strong sources and background noise variations.
-            Quantile-based scaling ensures faint sources remain detectable while normalizing extreme outliers.
-
-        Caveats:
-            - If the specified quantile range is too narrow (e.g. in nearly flat images), output may be zero everywhere.
-            - Absolute flux density calibration is lost; this method is appropriate for tasks focusing on morphology
-              rather than calibrated flux measurements.
-        """
-        q_low, q_high = np.percentile(data, percentiles)
-        if q_high - q_low < 1e-6:
-            return np.zeros_like(data, dtype=np.float32)
-        scaled = (data - q_low) / (q_high - q_low)
-        return np.clip(scaled, 0, 1).astype(np.float32)
-
-
-
-
+    
 
 
 def read_datalist(filename, key="data"):
@@ -345,6 +269,81 @@ def get_robust_clipped_data(data, percentiles):
 	p_low, p_high = np.percentile(data, percentiles)
 	return np.clip(data, p_low, p_high).astype(np.float32)
 
+def get_background_subtracted_data(data, bg_percentile):
+	"""
+		Subtracts a background estimate computed as a specified percentile of the data.
+
+		Purpose:
+			Centers the image around zero by removing a robust estimate of the background level.
+
+		Relation to radio astronomy:
+			In typical radio cutouts, the majority of pixels represent background noise.
+			Using a low percentile (e.g. 25th) provides a stable approximation of the
+			noise floor, enhancing the relative contrast of faint sources.
+
+		Caveats:
+			- In images with extensive bright emission, this percentile may overestimate
+				the true background, leading to negative residuals.
+	"""
+	background = np.percentile(data, bg_percentile)
+	return (data - background).astype(np.float32)
+  
+  
+def get_biweight_normalized_data(data):
+	"""
+		Normalizes data using biweight location and scale as robust estimators.
+
+		Purpose:
+			Robustly centers and scales the data to reduce the influence of outliers
+			compared to standard mean/std normalization.
+
+		Relation to radio astronomy:
+			Radio images often include Gaussian-like noise with occasional bright sources.
+			Biweight location (robust mean) and scale (robust std) provide stable estimates
+			even in the presence of such outliers, maintaining background structure while
+			preventing bright sources from dominating the normalization.
+
+		Caveats:
+			- If the image has extremely low SNR or is nearly empty, biweight scale can
+				approach zero; a small floor (1e-6) is used to prevent division errors.
+	"""
+	flat = data.flatten()
+	center = biweight_location(flat)
+	scale = biweight_scale(flat)
+	if scale < 1e-6:
+		scale = 1e-6
+	return ((data - center) / scale).astype(np.float32)      
+	
+
+def get_quantile_scaled_data(data, percentiles):
+	"""
+		Linearly rescales image pixel intensities to the [0,1] range based on specified lower and upper quantiles.
+
+		Input:
+			data (np.ndarray): Single-channel radio astronomy image as a float32 array.
+      percentiles (tuple): Two percentile values (e.g. (1,99)) defining the intensity range to map to [0,1].
+
+		Output:
+			np.ndarray: Rescaled image as float32, with intensities clipped and linearly mapped to [0,1].
+
+		Purpose:
+			Normalizes each image to a fixed numeric range for stable neural network training and to ensure
+			that differences in telescope flux scales or noise levels do not affect input distributions.
+
+		Relation to radio astronomy:
+			Radio images often span wide dynamic ranges due to strong sources and background noise variations.
+			Quantile-based scaling ensures faint sources remain detectable while normalizing extreme outliers.
+
+		Caveats:
+			- If the specified quantile range is too narrow (e.g. in nearly flat images), output may be zero everywhere.	
+			- Absolute flux density calibration is lost; this method is appropriate for tasks focusing on morphology
+				rather than calibrated flux measurements.
+	"""
+	q_low, q_high = np.percentile(data, percentiles)
+	if q_high - q_low < 1e-6:
+		return np.zeros_like(data, dtype=np.float32)
+	scaled = (data - q_low) / (q_high - q_low)
+	return np.clip(scaled, 0, 1).astype(np.float32)	
 	
 	
 def transform_img(data, args):
@@ -381,9 +380,36 @@ def transform_img(data, args):
 		data_stretched= get_zscaled_data(data_transf, contrast=args.zscale_contrast)
 		data_transf= data_stretched
 
-	# - Convert to uint8
-	#data_transf= (data_transf*255.).astype(np.uint8)
-		
+
+	# 2. Robust percentile clipping
+	if args.robust_clip_data:
+		data_clipped= get_robust_clipped_data(data_transf, (args.robust_clip_perc_min, args.robust_clip_perc_max) )
+		data_transf= data_clipped
+
+	# 3. Background subtraction
+	if args.subtract_bkg:
+		data_nobkg= get_background_subtracted_data(data_transf, args.bkg_perc)
+		data_transf= data_nobkg
+
+	# 4. Biweight normalization
+	if args.biweight_normalization:
+		data_norm= get_biweight_normalized_data(data_transf)
+		data_transf= data_norm
+
+	# 5. Final quantile scaling to [0,1]
+	if args.quantile_scaling:
+		data_scaled= get_quantile_scaled_data(data_transf, (args.quantile_perc_min, args.quantile_perc_max))
+		data_transf= data_scaled
+
+	# 6. 3-channel tensor
+	#tensor = torch.from_numpy(data).unsqueeze(0).repeat(3, 1, 1).contiguous().float()
+
+	# - Expand 2D data to desired number of channels (if>1): shape=(ny,nx,nchans)
+  ndim= data_transf.ndim
+  nchans= args.in_chans
+  if nchans>1 and ndim==2:
+    data_transf= np.stack((data_transf,) * nchans, axis=-1)
+	
 	# - Normalize to range
 	data_min= data_transf.min()
 	data_max= data_transf.max()
@@ -395,10 +421,6 @@ def transform_img(data, args):
 		data_norm= (data_transf-data_min)/(data_max-data_min) * (norm_max-norm_min) + norm_min
 		data_transf= data_norm
 			
-	#print("== DATA MIN/MAX (AFTER TRANSF) ==")
-	#print(data_transf.min())
-	#print(data_transf.max())
-	
 	# - Convert to uint8
 	if args.to_uint8:
 		data_transf= data_transf.astype(np.uint8)
@@ -417,7 +439,10 @@ def read_img(filename, args):
 	
 	# - Read fits image
 	if file_ext=='.fits':
-		data= fits.open(filename)[0].data
+		with fits.open(filename, memmap=True) as hdul:
+			data = hdul[0].data.astype(np.float32)
+			data = np.nan_to_num(data, nan=0.0, posinf=0.0, neginf=0.0)
+		
 	elif file_ext in ['.png', '.jpg']:
 		image= Image.open(filename)
 		data= np.asarray(image)
@@ -444,6 +469,117 @@ def read_img(filename, args):
 		
 	return image
 	
+	
+def load_as_npy(filename, args):
+	""" Read fits image """
+
+	# - Check filename
+	if filename=="":
+		return None
+		
+	file_ext= os.path.splitext(filename)[1]
+	
+	# - Read fits image
+	if file_ext=='.fits':
+		with fits.open(filename, memmap=True) as hdul:
+			data = hdul[0].data.astype(np.float32)
+			data = np.nan_to_num(data, nan=0.0, posinf=0.0, neginf=0.0)
+		
+	elif file_ext in ['.png', '.jpg']:
+		image= Image.open(filename)
+		data= np.asarray(image)
+	else:
+		print("ERROR: Invalid or unrecognized file extension (%s)!" % (file_ext))
+		return None
+		
+	if data is None:
+		return None
+				
+	# - Apply transform to numpy array
+	data_transf= transform_img(data, args)
+	if data_transf is None:
+		return None
+		
+	return data_transf
+	
+	
+def load_as_pil_float(filename, args):
+	""" Load image as PIL gray scale image """	
+	
+	# - Check number of channels is 1
+	if args.in_chans!=1:
+		print("WARN: Overriding args.in_chans (%d) to 1..." % (args.in_chans))
+		args.in_chans= 1
+		
+	# - Check normalize to [0,1] range
+	if args.norm_min!=0 or args.norm_max!=1:
+		print("WARN: Overriding args.norm_min/args.norm_max (%d, %d) to [0,1] ..." % (args.norm_min, args.norm_max))	
+		args.norm_min= 0.0
+		args.norm_max= 1.0
+		
+	# - Read image as numpy (ny,nx) with all transforms applied
+	data= load_as_npy(filename, args)
+	
+	# - Convert numpy to PIL image
+	#   NB: This works only for 2D images (e.g. 1-chan from FITS, args.in_chan=1)
+	image = Image.fromarray(data)
+	
+	return image
+	
+	
+def load_as_pil_rgb(filename, args):
+	""" Load image as PIL RGB image """	
+	
+	# - Read image as numpy (1-chan from FITS, 3-chan from natural images)
+	#   with all transforms applied
+	# - Overriding args.in_chans=3
+	if args.in_chans!=3:
+		print("WARN: Overriding args.in_chans (%d) to 3..." % (args.in_chans))
+		args.in_chans= 3
+		
+	# - Check normalize to [0,255] range
+	if args.norm_min!=0 or args.norm_max!=1:
+		print("WARN: Overriding args.norm_min/args.norm_max (%d, %d) to [0,1] ..." % (args.norm_min, args.norm_max))	
+		args.norm_min= 0.0
+		args.norm_max= 1.0
+		
+	# - Check uint8 is enabled
+	if not args.to_uint8:
+		print("WARN: Enabling uint8 conversion ...")	
+		args.to_uint8= True
+	
+	data= load_as_npy(filename, args)
+	
+	# - Convert numpy to PIL RGB image
+	#   NB: This works only for 3D uint8 data (e.g. 1-chan from FITS has to be converted with args.in_chan=3)
+	image = Image.fromarray(data).convert("RGB")
+	
+	return image
+	
+	
+def load_as_tensor_3chan(filename, args):
+	""" Load image as torch tensor """
+	
+	# - Read image as numpy (1-chan from FITS, 3-chan from natural images) with all transforms applied
+	# - Overriding args.in_chans=3
+	if args.in_chans!=3:
+		print("WARN: Overriding args.in_chans (%d) to 3..." % (args.in_chans))
+		args.in_chans= 3
+	
+	# - Check normalize to [0,1] range
+	#if args.norm_min!=0 or args.norm_max!=1:
+	#	print("WARN: Overriding args.norm_min/args.norm_max (%d, %d) to [0,1] ..." % (args.norm_min, args.norm_max))	
+	#	args.norm_min= 0.0
+	#	args.norm_max= 1.0
+		
+	data= load_as_npy(filename, args)
+		
+	# - Convert to tensor
+	tensor= torch.from_numpy(data.transpose((2, 0, 1))).contiguous().float()
+		
+	return tensor
+	
+
 	
 	
 def write_ascii(data, filename, header=''):
@@ -591,6 +727,15 @@ def extract_features(datalist, model, image_processor, device, args):
 	print("--> model")
 	print(model)
 	
+	# - Set data loader
+	dataloader_fcn= load_as_tensor_3chan
+	if args.dataloader=="pil_float":
+		dataloader_fcn= load_as_pil_float
+	elif args.dataloader=="pil_rgb":
+		dataloader_fcn= load_as_pil_rgb
+	elif args.dataloader=="tensor_3chan":
+		dataloader_fcn= load_as_tensor_3chan
+	
 	# - Loop over datalist and extract features per each image
 	nsamples= len(datalist)
 	
@@ -605,7 +750,9 @@ def extract_features(datalist, model, image_processor, device, args):
 		# - Read image
 		filename= datalist[idx]["filepaths"][0]
 		print("INFO: Reading image %s ..." % (filename))
-		img= read_img(filename, args)
+		#img= read_img(filename, args)
+		img= dataloader_fcn(filename, args)
+		
 		if img is None:
 			print("WARN: Read/processed image %s is None, skip to next!" % (filename))
 			continue
