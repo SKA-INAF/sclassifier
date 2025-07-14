@@ -323,6 +323,30 @@ def get_zscaled_data(data, contrast=0.25):
 
 	return data_transf
 	
+	
+def get_robust_clipped_data(data, percentiles):
+	"""
+		Clips the input data to specified lower and upper percentiles.
+	
+			Purpose:
+				Removes extreme outlier pixel values to stabilize the image dynamic range.
+
+				Relation to radio astronomy:
+					Radio images often contain outlier intensities due to bright compact sources,
+					calibration artifacts, or residual RFI. Clipping to e.g. (2,98) percentiles
+					ensures that the majority of the background noise and faint source structures
+					are preserved without extreme pixel values dominating scaling.
+
+			Caveats:
+				- May suppress true flux of very bright sources.
+				- The chosen percentile range should balance outlier removal with preserving astrophysically significant peaks.
+	"""
+
+	p_low, p_high = np.percentile(data, percentiles)
+	return np.clip(data, p_low, p_high).astype(np.float32)
+
+	
+	
 def transform_img(data, args):
 	""" Transform input data """
 	
@@ -512,7 +536,7 @@ def save_features_to_ascii(datalist, outfile, save_labels=False):
 			continue
 		feats= item['feats']
     
-		features.append(feats)
+		features.append(feats.value)
 		snames.append(sname)
 		class_ids.append(class_id)
 		class_labels.append(class_label)
