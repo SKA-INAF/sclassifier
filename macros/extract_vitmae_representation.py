@@ -418,8 +418,10 @@ def extract_features(datalist, model, image_processor, device, args):
 		# - Extract image features
 		with torch.no_grad():
 			outputs = model(**inputs, output_hidden_states=True)
-			print("outputs")
-			print(type(outputs))
+			
+			if idx==0:
+				print("outputs")
+				print(type(outputs))
 			
 			# - Retrieve hidden states
 			#   hidden_states are a tuple: (batch_size, num_patches + 1, hidden_size)
@@ -428,11 +430,13 @@ def extract_features(datalist, model, image_processor, device, args):
       #     - ...
       #     - hidden_states[-1]: output last layer Transformer (we need this for feature extraction)
 			hidden_states = outputs.hidden_states
-			print("hidden_states")
-			print(type(hidden_states))
-			print(len(hidden_states))
-			for hidden_state in hidden_states:
-				print(hidden_state.shape)
+
+			if idx==0:
+				print("hidden_states")
+				print(type(hidden_states))
+				print(len(hidden_states))
+				for hidden_state in hidden_states:
+					print(hidden_state.shape)
     	
 			# To get the features vector use token [CLS] (indice 0)
 			features= hidden_states[-1][:,0,:]
