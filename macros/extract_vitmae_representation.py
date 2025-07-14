@@ -74,7 +74,7 @@ def get_args():
 	# - Data options
 	parser.add_argument('-dataloader','--dataloader', dest='dataloader', required=False, type=str, default="tensor_3chan", help='Data loader mode {"pil_gray", "pil_rgb", "tensor_3chan"}') 
 	
-	parser.add_argument('--imgsize', default=256, type=int, help='Image resize size in pixels (default=256)')
+	parser.add_argument('--imgsize', default=224, type=int, help='Image resize size in pixels (default=224)')
 	parser.add_argument('--reset_meanstd', dest='reset_meanstd', action='store_true', help='Reset original mean/std transform used in processor (default=false)')	
 	parser.set_defaults(reset_meanstd=False)
 	parser.add_argument('--reset_rescale', dest='reset_rescale', action='store_true', help='Reset original rescale transform used in processor (default=false)')	
@@ -111,7 +111,7 @@ def get_args():
 	parser.add_argument('--to_uint8', dest='to_uint8', action='store_true',help='Convert to uint8 (default=false)')	
 	parser.set_defaults(to_uint8=False)
 	
-	parser.add_argument('--in_chans', default = 1, type = int, help = 'Length of subset of dataset to use.')
+	parser.add_argument('--in_chans', default = 1, type = int, help = 'Number of image channels to be used as input.')
 	
 	parser.add_argument('--set_zero_to_min', dest='shift_zero_to_min', action='store_true',help='Set blank pixels to min>0 (default=false)')	
 	parser.set_defaults(set_zero_to_min=False)
