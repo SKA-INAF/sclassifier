@@ -135,69 +135,6 @@ def get_args():
 	
 
 
-####################################
-###   UTIL FUNCTIONS
-####################################
-class RadioFoundationProcessor:
-	"""
-	Preprocessing pipeline for radio astronomy images, ensuring telescope independence
-	and compatibility with a foundation model.
-	"""
-
-	def __init__(self, image_size=224):
-		self.image_size = image_size
-		self.clip_percentiles = (2, 98) #(0.5, 99.5)
-		self.bg_percentile = 25
-		self.final_scale_percentiles = (1, 99)
-
-	def __call__(self, fits_path):
-		# 1. Load FITS and handle NaNs/Infs
-		with fits.open(fits_path, memmap=True) as hdul:
-			data = hdul[0].data.astype(np.float32)
-			data = np.nan_to_num(data, nan=0.0, posinf=0.0, neginf=0.0)
-
-		tensor = self._pipeline(data) #run processing
-
-		# 7. Resize to arbitrary model input size
-		tensor = TF.resize(tensor, [self.image_size, self.image_size], interpolation=TF.InterpolationMode.BICUBIC)
-
-		return tensor
-
-	def process_numpy(self, data, resize=False):
-		"""
-		Process a numpy array (single-channel radio image) through the same pipeline as __call__.
-		"""
-		# 1. Clean up NaNs
-		data = np.array(data, dtype=np.float32)
-		data = np.nan_to_num(data, nan=0.0, posinf=0.0, neginf=0.0)
-
-		tensor = self._pipeline(data) #run processing
-
-		# 7. Optional resize to arbitrary model input size
-		if resize:
-			tensor = TF.resize(tensor, [self.image_size, self.image_size], interpolation=TF.InterpolationMode.BICUBIC)
-
-		return tensor
-
-	def _pipeline(self,data):
-		# 2. Robust percentile clipping
-		data = self.robust_clip(data, self.clip_percentiles)
-
-		# 3. Background subtraction
-		data = self.background_subtract(data, self.bg_percentile)
-
-		# 4. Biweight normalization
-		data = self.biweight_normalize(data)
-
-		# 5. Final quantile scaling to [0,1]
-		data = self.quantile_scale(data, self.final_scale_percentiles)
-
-		# 6. 3-channel tensor
-		tensor = torch.from_numpy(data).unsqueeze(0).repeat(3, 1, 1).contiguous().float()
-
-	return tensor
-
-    
 
 
 def read_datalist(filename, key="data"):
