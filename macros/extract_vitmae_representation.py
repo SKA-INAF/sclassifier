@@ -456,7 +456,7 @@ def extract_features(datalist, model, image_processor, device, args):
 		feats_list= [float(item) for item in feats_list]
     
 		datalist[idx]["feats"]= NoIndent(feats_list)
-    
+		
 	return datalist
 		
 
@@ -562,6 +562,9 @@ def main():
 	if datalist_out is None:
 	  print("ERROR: Failed to extract features!")
 	  return 1
+
+	print("datalist_out")
+	print(datalist_out)
 
 	#===========================
 	#==   SAVE FEATURES
