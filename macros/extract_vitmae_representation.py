@@ -517,7 +517,7 @@ def main():
 		
 	print("== FINAL PROCESSOR OPTIONS ==")
 	print("image_processor")
-	print(processor.image_processor)	
+	print(image_processor)	
 	
 	#===========================
 	#==   EXTRACT FEATURES
