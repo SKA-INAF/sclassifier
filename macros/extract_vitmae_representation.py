@@ -302,9 +302,9 @@ def transform_img(data, args):
 	data_min= np.min(data_1d)
 	data_transf[~cond]= data_min
 
-	#print("== DATA MIN/MAX ==")
-	#print(data_transf.min())
-	#print(data_transf.max())
+	print("== DATA MIN/MAX ==")
+	print(data_transf.min())
+	print(data_transf.max())
 
 	# - Clip data?
 	if args.clip_data:
@@ -347,6 +347,10 @@ def transform_img(data, args):
 	if nchans>1 and ndim==2:
 		data_transf= np.stack((data_transf,) * nchans, axis=-1)
 	
+	print("== DATA MIN/MAX (AFTER IMG TRANSF) ==")
+	print(data_transf.min())
+	print(data_transf.max())
+	
 	# - Normalize to range
 	data_min= data_transf.min()
 	data_max= data_transf.max()
@@ -361,6 +365,11 @@ def transform_img(data, args):
 	# - Convert to uint8
 	if args.to_uint8:
 		data_transf= data_transf.astype(np.uint8)
+		
+	print("== DATA MIN/MAX (AFTER NORM) ==")
+	print(data_transf.min())
+	print(data_transf.max())
+	
 	
 	return data_transf
 
