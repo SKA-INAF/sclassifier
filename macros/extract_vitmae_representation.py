@@ -504,16 +504,16 @@ def main():
 	print(imgstd_orig)
 	
 	# - Update processor options
-	processor.image_processor.size["height"]= args.imgsize
-	processor.image_processor.size["width"]= args.imgsize
+	image_processor.size["height"]= args.imgsize
+	image_processor.size["width"]= args.imgsize
 	
 	if args.reset_meanstd:
-		processor.image_processor.image_mean= [0.,0.,0.]
-		processor.image_processor.image_std= [1.,1.,1.]
+		image_processor.image_mean= [0.,0.,0.]
+		image_processor.image_std= [1.,1.,1.]
 		
 	if args.reset_rescale:
-		processor.image_processor.do_rescale= False
-		processor.image_processor.rescale_factor= 1.0
+		image_processor.do_rescale= False
+		image_processor.rescale_factor= 1.0
 		
 	print("== FINAL PROCESSOR OPTIONS ==")
 	print("image_processor")
