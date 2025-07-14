@@ -420,7 +420,7 @@ def extract_features(datalist, model, image_processor, device, args):
 			#features= model.get_image_features(**inputs)
 			outputs = model(**inputs)
 			print("outputs")
-			print(type(features))
+			print(type(outputs))
 			last_hidden_states = outputs.last_hidden_state
 			print("last_hidden_states")
 			print(type(last_hidden_states))
@@ -489,7 +489,8 @@ def main():
 	print("INFO: Loading model %s ..." % (args.model))
 	
 	#model = AutoModel.from_pretrained(args.model).to(device)
-	model = ViTMAEModel.from_pretrained(args.model).to(device)
+	#model = ViTMAEModel.from_pretrained(args.model).to(device)
+	model = ViTForImageClassification.from_pretrained(args.model).to(device)
 	
 	# - Load model processor
 	print("INFO: Loading model processor ...")
