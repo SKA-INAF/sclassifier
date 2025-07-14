@@ -414,12 +414,15 @@ def extract_features(datalist, model, image_processor, device, args):
 		
 		print("inputs")
 		print(type(inputs))
-		print(inputs.shape)
 		
 		# - Extract image features
 		with torch.no_grad():
 			#features= model.get_image_features(**inputs)
-			features = model(**inputs)[0]
+			features = model(**inputs)
+			print("features")
+			print(type(features))
+			print(features.shape)
+			[0]
     	
 		features_numpy= features.cpu().numpy()[0]
 		
