@@ -746,9 +746,21 @@ def extract_features(datalist, model, image_processor, device, args):
 			
 		# - Apply model pre-processing
 		if args.skip_imgprocessor:
-			inputs= img
+			if isinstance(img, torch.Tensor):
+				if img.ndim == 3:
+					img = img.unsqueeze(0)  # (3, H, W) -> (1, 3, H, W)
+				elif img.ndim != 4:
+					raise ValueError("Expected image tensor with shape (3, H, W) or (1, 3, H, W)")
+
+				img = img.to(device)
+				inputs = {"pixel_values": img}  # wrap as dict
+			else:
+				raise ValueError("When skipping image_processor, `img` must be a torch.Tensor")
+
 		else:
 			inputs= image_processor(images=img, return_tensors="pt").to(device)
+		
+		
 		
 		# - Extract image features
 		with torch.no_grad():
