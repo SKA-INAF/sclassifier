@@ -73,6 +73,8 @@ def get_args():
 	
 	# - Data options
 	parser.add_argument('-dataloader','--dataloader', dest='dataloader', required=False, type=str, default="tensor_3chan", help='Data loader mode {"pil_gray", "pil_rgb", "tensor_3chan"}') 
+	parser.add_argument('--skip_imgprocessor', dest='skip_imgprocessor', action='store_true', help='Do not use model original image processor (default=false)')	
+	parser.set_defaults(skip_imgprocessor=False)
 	
 	parser.add_argument('--imgsize', default=224, type=int, help='Image resize size in pixels (default=224)')
 	parser.add_argument('--reset_meanstd', dest='reset_meanstd', action='store_true', help='Reset original mean/std transform used in processor (default=false)')	
@@ -743,7 +745,10 @@ def extract_features(datalist, model, image_processor, device, args):
 			continue
 			
 		# - Apply model pre-processing
-		inputs = image_processor(images=img, return_tensors="pt").to(device)
+		if args.skip_imgprocessor:
+			inputs= img
+		else:
+			inputs= image_processor(images=img, return_tensors="pt").to(device)
 		
 		# - Extract image features
 		with torch.no_grad():
