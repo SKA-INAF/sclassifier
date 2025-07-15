@@ -748,7 +748,7 @@ def extract_features(datalist, model, image_processor, device, args):
 		if args.skip_imgprocessor:
 			if isinstance(img, torch.Tensor):
 				# - Resize to model input size
-        img= TF.resize(img, [args.imgsize, args.imgsize], interpolation=TF.InterpolationMode.BICUBIC)
+				img= TF.resize(img, [args.imgsize, args.imgsize], interpolation=TF.InterpolationMode.BICUBIC)
         
 				# - Add batch dimension
 				if img.ndim == 3:
