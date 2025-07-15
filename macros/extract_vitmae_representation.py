@@ -118,6 +118,8 @@ def get_args():
 	
 	# - Model option
 	parser.add_argument('-model','--model', dest='model', required=False, type=str, default="facebook/vit-mae-base", help='ViTMAE pretrained model {"facebook/vit-mae-base"}') 
+	parser.add_argument('--load_as_vitmae_model', dest='load_as_vitmae_model', action='store_true',help='If true load the model as ViTMAEModel otherwise as ViTForImageClassification (default=false)')	
+	parser.set_defaults(load_as_vitmae_model=False)
 	
 	# - Run options
 	parser.add_argument('-device','--device', dest='device', required=False, type=str, default="cuda", help='Device where to run inference. Default is cuda, if not found use cpu.') 
@@ -832,8 +834,10 @@ def main():
 	#===========================
 	# - Load model
 	print("INFO: Loading model %s ..." % (args.model))
-	model = ViTMAEModel.from_pretrained(args.model).to(device)
-	#model = ViTForImageClassification.from_pretrained(args.model).to(device)
+	if args.load_as_vitmae_model:
+		model = ViTMAEModel.from_pretrained(args.model).to(device)
+	else:
+		model = ViTForImageClassification.from_pretrained(args.model).to(device)
 	
 	# - Load model processor
 	print("INFO: Loading model processor ...")
