@@ -832,15 +832,12 @@ def main():
 	#===========================
 	# - Load model
 	print("INFO: Loading model %s ..." % (args.model))
-	
-	#model = AutoModel.from_pretrained(args.model).to(device)
-	#model = ViTMAEModel.from_pretrained(args.model).to(device)
-	model = ViTForImageClassification.from_pretrained(args.model).to(device)
+	model = ViTMAEModel.from_pretrained(args.model).to(device)
+	#model = ViTForImageClassification.from_pretrained(args.model).to(device)
 	
 	# - Load model processor
 	print("INFO: Loading model processor ...")
-	processor = AutoProcessor.from_pretrained(args.model)
-	#image_processor= processor.image_processor
+	##processor = AutoProcessor.from_pretrained(args.model)
 	image_processor = AutoImageProcessor.from_pretrained(args.model)
 	
 	
