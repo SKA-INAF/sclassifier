@@ -747,21 +747,25 @@ def extract_features(datalist, model, image_processor, device, args):
 		# - Apply model pre-processing
 		if args.skip_imgprocessor:
 			if isinstance(img, torch.Tensor):
+				# - Resize to model input size
+        img= TF.resize(img, [args.imgsize, args.imgsize], interpolation=TF.InterpolationMode.BICUBIC)
+        
+				# - Add batch dimension
 				if img.ndim == 3:
 					img = img.unsqueeze(0)  # (3, H, W) -> (1, 3, H, W)
 				elif img.ndim != 4:
 					raise ValueError("Expected image tensor with shape (3, H, W) or (1, 3, H, W)")
 
+				# - Wrap as dict
 				img = img.to(device)
-				inputs = {"pixel_values": img}  # wrap as dict
+				inputs = {"pixel_values": img}  
 			else:
 				raise ValueError("When skipping image_processor, `img` must be a torch.Tensor")
 
 		else:
 			inputs= image_processor(images=img, return_tensors="pt").to(device)
 		
-		
-		
+
 		# - Extract image features
 		with torch.no_grad():
 			outputs = model(**inputs, output_hidden_states=True)
