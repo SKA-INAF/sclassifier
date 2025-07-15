@@ -757,8 +757,8 @@ def extract_features(datalist, model, image_processor, device, args):
 					raise ValueError("Expected image tensor with shape (3, H, W) or (1, 3, H, W)")
 
 				# - Wrap as dict
-				img = img.to(device)
-				inputs = {"pixel_values": img}  
+				inputs = {"pixel_values": img}.to(device) 
+			
 			else:
 				raise ValueError("When skipping image_processor, `img` must be a torch.Tensor")
 
