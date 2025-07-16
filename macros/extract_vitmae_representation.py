@@ -72,7 +72,7 @@ def get_args():
 	parser.add_argument('-nmax','--nmax', dest='nmax', required=False, type=int, default=-1, help='Max number of entries processed in filelist (-1=all)') 
 	
 	# - Data options
-	parser.add_argument('-dataloader','--dataloader', dest='dataloader', required=False, type=str, default="tensor_3chan", help='Data loader mode {"pil_gray", "pil_rgb", "tensor_3chan"}') 
+	parser.add_argument('-dataloader','--dataloader', dest='dataloader', required=False, type=str, default="tensor_3chan", help='Data loader mode {"pil_gray", "pil_rgb", "tensor_3chan", "tensor_1chan"}') 
 	parser.add_argument('--skip_imgprocessor', dest='skip_imgprocessor', action='store_true', help='Do not use model original image processor (default=false)')	
 	parser.set_defaults(skip_imgprocessor=False)
 	
@@ -567,6 +567,35 @@ def load_as_tensor_3chan(filename, args):
 	return tensor
 	
 
+def load_as_tensor_1chan(filename, args):
+	""" Load image as torch tensor """
+	
+	# - Read image as numpy (1-chan from FITS, 3-chan from natural images) with all transforms applied
+	# - Overriding args.in_chans=3
+	if args.in_chans!=1:
+		print("WARN: Overriding args.in_chans (%d) to 3..." % (args.in_chans))
+		args.in_chans= 1
+	
+	# - Check normalize to [0,1] range
+	#if args.norm_min!=0 or args.norm_max!=1:
+	#	print("WARN: Overriding args.norm_min/args.norm_max (%d, %d) to [0,1] ..." % (args.norm_min, args.norm_max))	
+	#	args.norm_min= 0.0
+	#	args.norm_max= 1.0
+		
+	data= load_as_npy(filename, args)
+	if data is None:
+		return None
+		
+	# - Expand 2D data to shape=(ny,nx,nchans)
+	ndim= data.ndim
+	if ndim==2:
+		data= np.expand_dims(data, axis=-1)
+				
+	# - Convert to tensor
+	tensor= torch.from_numpy(data.transpose((2, 0, 1))).contiguous().float()
+		
+	return tensor	
+
 	
 	
 def write_ascii(data, filename, header=''):
@@ -722,7 +751,9 @@ def extract_features(datalist, model, image_processor, device, args):
 		dataloader_fcn= load_as_pil_rgb
 	elif args.dataloader=="tensor_3chan":
 		dataloader_fcn= load_as_tensor_3chan
-	
+	elif args.dataloader=="tensor_1chan":
+		dataloader_fcn= load_as_tensor_1chan
+		
 	# - Loop over datalist and extract features per each image
 	nsamples= len(datalist)
 	
