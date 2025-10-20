@@ -201,7 +201,7 @@ def get_approx_top_k_similar_within_data(
 
 	# Ensure no NaN or Inf remain
 	if not np.all(np.isfinite(data_norm)):
-		print("Non-finite values found in normalized data, setting them to 0 ..."
+		print("Non-finite values found in normalized data, setting them to 0 ...")
 		#raise ValueError("Non-finite values found in normalized data")
 		data_norm = np.nan_to_num(data_norm, nan=0.0, posinf=0.0, neginf=0.0)
 
