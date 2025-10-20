@@ -187,9 +187,23 @@ def get_approx_top_k_similar_within_data(
 	if data.dtype != np.float32:
 		data = data.astype(np.float32)
 
+	# Replace NaNs and Infs in data with 0
+	data = np.nan_to_num(data, nan=0.0, posinf=0.0, neginf=0.0)
+
 	# 1) Normalize data so that inner product = cosine similarity
+	# Compute row-wise norms
+	# Avoid division by zero by clipping very small norms
 	norms = np.linalg.norm(data, axis=1, keepdims=True)
+	norms = np.clip(norms, a_min=1e-12, a_max=None)
+
+	# Normalize safely
 	data_norm = data / norms
+
+	# Ensure no NaN or Inf remain
+	if not np.all(np.isfinite(data_norm)):
+		print("Non-finite values found in normalized data, setting them to 0 ..."
+		#raise ValueError("Non-finite values found in normalized data")
+		data_norm = np.nan_to_num(data_norm, nan=0.0, posinf=0.0, neginf=0.0)
 
 	# 2) Create an IVF quantizer for the IndexIVFPQ
 	#    We'll use an IndexFlatIP quantizer since we want to approximate an inner-product space
